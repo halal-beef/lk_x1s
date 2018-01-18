@@ -57,6 +57,7 @@ GLOBAL_INCLUDES := $(BUILDDIR) $(addsuffix /include,$(LKINC))
 GLOBAL_OPTFLAGS ?= $(ARCH_OPTFLAGS)
 GLOBAL_COMPILEFLAGS := -g -finline -include $(CONFIGHEADER)
 GLOBAL_COMPILEFLAGS += -W -Wall -Wno-multichar -Wno-unused-parameter -Wno-unused-function -Wno-unused-label -Werror=return-type
+GLOBAL_COMPILEFLAGS += -mstrict-align
 GLOBAL_COMPILEFLAGS += -fno-common
 GLOBAL_COMPILEFLAGS += -fno-builtin
 GLOBAL_COMPILEFLAGS += -D__UFS_CAL_LK__
@@ -148,6 +149,7 @@ $(info TARGET = $(TARGET))
 include arch/$(ARCH)/rules.mk
 include top/rules.mk
 include lib/bio/rules.mk
+include dev/scsi/rules.mk
 
 # recursively include any modules in the MODULE variable, leaving a trail of included
 # modules in the ALLMODULES list
