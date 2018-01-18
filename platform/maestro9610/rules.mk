@@ -7,7 +7,9 @@ MODULE_SRCS += \
     $(LOCAL_DIR)/platform.c \
 	$(LOCAL_DIR)/debug.c \
 	$(LOCAL_DIR)/uart_simple.c \
-	$(LOCAL_DIR)/delay.c
+	$(LOCAL_DIR)/delay.c \
+	$(LOCAL_DIR)/ufs.c \
+	$(LOCAL_DIR)/ufs-cal-9610.c
 
 MODULE_DEPS += \
     dev/interrupt/arm_gic \
