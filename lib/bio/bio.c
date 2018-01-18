@@ -297,6 +297,180 @@ static ssize_t bio_default_write_block(struct bdev *dev, const void *buf, bnum_t
     return ERR_NOT_SUPPORTED;
 }
 
+static uint bio_new_read(struct bdev *dev, void *_buf, bnum_t _block, uint count)
+{
+	uint8_t *buf = (uint8_t *)_buf;
+	bnum_t block = _block;
+	uint block_read = 0;
+	uint native_block_size = dev->block_size / USER_BLOCK_SIZE;
+	uint block_per_time;
+	ssize_t byte_size;
+	ssize_t byte_offset;
+	STACKBUF_DMA_ALIGN(temp, dev->block_size);
+	uint max_blkcnt = ((dev->max_blkcnt_per_cmd) ?
+				dev->max_blkcnt_per_cmd : 32) * native_block_size;
+
+
+	/* Not support for cache alignment */
+	if ((dev->flags & BIO_FLAG_CACHE_ALIGNED_READS) &&
+			(IS_ALIGNED((size_t)buf, CACHE_LINE) == false)) {
+		printf("Not support for cache alignement !!\n");
+		goto end;
+	}
+
+	/*
+	 * handle partial first block
+	 *
+	 * Each device driver's maximum size can exist when it executes
+	 * a read command. So we determine what the size is and
+	 * should use less and equal than the size
+	 * every time we issue a read command
+	 */
+	if ((block % native_block_size) != 0) {
+		block = (block / native_block_size) * native_block_size;
+		if (dev->new_read_native(dev, temp, block / native_block_size, 1))
+			goto end;
+
+		byte_offset = (block - _block) * dev->block_size;
+		byte_size = dev->block_size - byte_offset;
+		memcpy(buf, temp + byte_offset, byte_size);
+
+		block_read += _block + native_block_size - block;
+		buf += byte_size;
+		block += native_block_size;
+	}
+
+	/* Loop */
+	do {
+		block_per_time = count - block_read;
+		if (block_per_time) {
+			if (block_per_time >= max_blkcnt)
+				block_per_time = max_blkcnt;
+		} else
+			goto end;
+
+		if (dev->new_read_native(dev, buf, block / native_block_size,
+					block_per_time / native_block_size))
+			goto end;
+
+		block_read += block_per_time;
+		buf += block_per_time * USER_BLOCK_SIZE;
+		block += block_per_time;
+
+	} while (1);
+
+	/* handle partial last block */
+	if (((count - block_read) % native_block_size) != 0) {
+		if (dev->new_read_native(dev, temp, block / native_block_size, 1))
+			goto end;
+
+		byte_size = (count - block_read) * USER_BLOCK_SIZE;
+		memcpy(buf, temp, byte_size);
+
+		block_read += count - block_read;
+		buf += byte_size;
+	}
+end:
+	return block_read;
+}
+
+static uint bio_new_write(struct bdev *dev, const void *_buf, bnum_t _block, uint count)
+{
+	uint8_t *buf = (uint8_t *)_buf;
+	bnum_t block = _block;
+	uint block_written = 0;
+	uint native_block_size = dev->block_size / USER_BLOCK_SIZE;
+	uint block_per_time;
+	ssize_t byte_size;
+	ssize_t byte_offset;
+	STACKBUF_DMA_ALIGN(temp, dev->block_size);
+	uint max_blkcnt = ((dev->max_blkcnt_per_cmd) ?
+				dev->max_blkcnt_per_cmd : 32) * native_block_size;
+
+
+	/* Not support for cache alignment */
+	if ((dev->flags & BIO_FLAG_CACHE_ALIGNED_WRITES) &&
+			(IS_ALIGNED((size_t)buf, CACHE_LINE) == false)) {
+		printf("Not support for cache alignement !!\n");
+		goto end;
+	}
+
+	/*
+	 * handle partial first block
+	 *
+	 * Each device driver's maximum size can exist when it executes
+	 * a write command. So we determine what the size is and
+	 * should use less and equal than the size
+	 * every time we issue a write command
+	 */
+	if ((block % native_block_size) != 0) {
+		block = (block / native_block_size) * native_block_size;
+		if (dev->new_write_native(dev, temp, block / native_block_size, 1))
+			goto end;
+
+		byte_offset = (block - _block) * dev->block_size;
+		byte_size = dev->block_size - byte_offset;
+		memcpy(buf, temp + byte_offset, byte_size);
+
+		block_written += _block + native_block_size - block;
+		buf += byte_size;
+		block += native_block_size;
+	}
+
+	/* Loop */
+	do {
+		block_per_time = count - block_written;
+		if (block_per_time) {
+			if (block_per_time >= max_blkcnt)
+				block_per_time = max_blkcnt;
+		} else
+			goto end;
+
+		if (dev->new_write_native(dev, buf, block / native_block_size,
+					block_per_time / native_block_size))
+			goto end;
+
+		block_written += block_per_time;
+		buf += block_per_time * USER_BLOCK_SIZE;
+		block += block_per_time;
+
+	} while (1);
+
+	/* handle partial last block */
+	if (((count - block_written) % native_block_size) != 0) {
+		if (dev->new_write_native(dev, temp, block / native_block_size, 1))
+			goto end;
+
+		byte_size = (count - block_written) * USER_BLOCK_SIZE;
+		memcpy(buf, temp, byte_size);
+
+		block_written += count - block_written;
+		buf += byte_size;
+	}
+end:
+	return block_written;
+}
+
+static uint bio_new_erase(struct bdev *dev, bnum_t block, uint count)
+{
+	uint native_block_size = dev->block_size / USER_BLOCK_SIZE;
+
+	/*
+	 * Currently, UFS has a capability to erase data as much as 256GB
+	 * with one descriptor, whereas eMMC has no limitation on it
+	 * because it uses a kind of range method.
+	 * However, now we just limit the capability to 256GB
+	 * because mobile storage products hasn't yet had huge capacity
+	 * more than 256GB. If the time comes later, you should do
+	 * further works on here and there including either MMC or UFS driver.
+	 */
+	if (count >= 0x80000)
+		return 0;
+
+	return dev->new_erase_native(dev, block / native_block_size,
+				count / native_block_size);
+}
+
 static void bdev_inc_ref(bdev_t *dev)
 {
     LTRACEF("Add ref \"%s\" %d -> %d\n", dev->name, dev->ref, dev->ref + 1);
@@ -537,6 +711,9 @@ void bio_initialize_bdev(bdev_t *dev,
     dev->write = bio_default_write;
     dev->write_block = bio_default_write_block;
     dev->erase = bio_default_erase;
+    dev->new_read = bio_new_read;
+    dev->new_write = bio_new_write;
+    dev->new_erase = bio_new_erase;
     dev->close = NULL;
 }
 
