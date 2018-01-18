@@ -6,6 +6,7 @@ MODULE_SRCS += \
 	$(LOCAL_DIR)/bio.c \
 	$(LOCAL_DIR)/debug.c \
 	$(LOCAL_DIR)/mem.c \
-	$(LOCAL_DIR)/subdev.c 
+	$(LOCAL_DIR)/subdev.c \
+	$(LOCAL_DIR)/cmd.c
 
 include make/module.mk

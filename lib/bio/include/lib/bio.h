@@ -41,6 +41,8 @@ typedef struct bio_erase_geometry_info {
     size_t erase_shift;
 } bio_erase_geometry_info_t;
 
+#define	USER_BLOCK_SIZE	512
+
 typedef struct bdev {
     struct list_node node;
     volatile int ref;
@@ -52,6 +54,8 @@ typedef struct bdev {
     size_t block_size;
     size_t block_shift;
     bnum_t block_count;
+    bnum_t max_blkcnt_per_cmd;
+    void *private;
 
     size_t geometry_count;
     const bio_erase_geometry_info_t *geometry;
@@ -66,6 +70,12 @@ typedef struct bdev {
     ssize_t (*write)(struct bdev *, const void *buf, off_t offset, size_t len);
     ssize_t (*write_block)(struct bdev *, const void *buf, bnum_t block, uint count);
     ssize_t (*erase)(struct bdev *, off_t offset, size_t len);
+    uint (*new_read)(struct bdev *, void *buf, bnum_t block, uint count);
+    uint (*new_write)(struct bdev *, const void *buf, bnum_t block, uint count);
+    uint (*new_erase)(struct bdev *, bnum_t block, uint count);
+    status_t (*new_read_native)(struct bdev *, void *buf, bnum_t block, uint count);
+    status_t (*new_write_native)(struct bdev *, const void *buf, bnum_t block, uint count);
+    status_t (*new_erase_native)(struct bdev *, bnum_t block, uint count);
     int (*ioctl)(struct bdev *, int request, void *argp);
     void (*close)(struct bdev *);
 } bdev_t;
