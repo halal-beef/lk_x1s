@@ -118,6 +118,17 @@ void itoa_base_custom(unsigned int number, unsigned int uBaseUnit, unsigned int 
     }
 }
 
+void UART_WaitForRxReady(void)
+{
+#define RX_BUF_READY (1 << 0)	/* Rx buffer data ready */
+
+	unsigned int uTxRxStatus;
+
+	do {
+		uTxRxStatus = Get32(globalUartBase + rUART_UTRSTATN) & 0x7;
+	} while (!(uTxRxStatus & RX_BUF_READY));
+}
+
 void UART_WaitForTxEmpty(void)
 {
 #define TX_BUF_EMPTY (1 << 1)	/* Tx buffer register empty */
@@ -127,6 +138,15 @@ void UART_WaitForTxEmpty(void)
 	do {
 		uTxRxStatus = Get32(globalUartBase + rUART_UTRSTATN) & 0x7;
 	} while (!(uTxRxStatus & TX_BUF_EMPTY));
+}
+
+void uart_simple_char_in(char *cData)
+{
+	unsigned int reg;
+
+	UART_WaitForRxReady();
+	reg = Get32(globalUartBase + rUART_URXHN);
+	*cData = (char)reg;
 }
 
 void uart_simple_char_out(char cData)

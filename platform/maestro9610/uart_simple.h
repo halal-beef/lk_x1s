@@ -24,6 +24,7 @@ void uart_simple_UartInit(unsigned int uUartBase, unsigned int clk, unsigned int
 void uart_simple_string_out(const char * string);
 void itoa_base_custom(unsigned int number, unsigned int uBaseUnit, unsigned int uUnitWidth, char *Converted);
 void uart_test_function(void);
+void uart_simple_char_in(char *cData);
 void uart_simple_char_out(char cData);
 
 #endif /* UART_UART_SIMPLE_H_ */

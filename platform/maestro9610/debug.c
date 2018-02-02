@@ -8,5 +8,7 @@ void platform_dputc(char c)
 
 int platform_dgetc(char *c, bool wait)
 {
+	uart_simple_char_in(c);
+
 	return 0;
 }
