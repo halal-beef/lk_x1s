@@ -149,6 +149,7 @@ $(info TARGET = $(TARGET))
 include arch/$(ARCH)/rules.mk
 include top/rules.mk
 include lib/bio/rules.mk
+include lib/gpt/rules.mk
 include dev/scsi/rules.mk
 include dev/boot/rules.mk
 
