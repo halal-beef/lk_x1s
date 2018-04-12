@@ -53,7 +53,10 @@ void uart_test_function(void)
 {
 	char array[9]={0};
 	uart_simple_GPIOInit();
-	uart_simple_UartInit(rUART_BASE, 200000000, 115200);
+	if(*(unsigned int *)0x80000000 == 0xabcdef)
+		uart_simple_UartInit(rUART_BASE, 133250000, 115200);
+	else
+		uart_simple_UartInit(rUART_BASE, 199875000, 115200);
 
 	uart_simple_string_out("Done\nfor\nsure.\n");
 
