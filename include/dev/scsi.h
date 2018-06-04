@@ -65,7 +65,7 @@ struct scsi_command_meta {
 #endif
 };
 
-typedef int (exec_t)(scm *);
+typedef status_t (exec_t)(scm *);
 
 enum scsi_opcode {
 	SCSI_OP_TEST_UNIT_READY		= 0x00,
