@@ -327,7 +327,7 @@ static uint bio_new_read(struct bdev *dev, void *_buf, bnum_t _block, uint count
 	 * every time we issue a read command
 	 */
 	if ((block % native_block_size) != 0) {
-		block = (block / native_block_size) * native_block_size;
+		block = ((block + native_block_size - 1) / native_block_size) * native_block_size;
 		if (dev->new_read_native(dev, temp, block / native_block_size, 1))
 			goto end;
 
@@ -404,7 +404,7 @@ static uint bio_new_write(struct bdev *dev, const void *_buf, bnum_t _block, uin
 	 * every time we issue a write command
 	 */
 	if ((block % native_block_size) != 0) {
-		block = (block / native_block_size) * native_block_size;
+		block = ((block + native_block_size - 1) / native_block_size) * native_block_size;
 		if (dev->new_write_native(dev, temp, block / native_block_size, 1))
 			goto end;
 
