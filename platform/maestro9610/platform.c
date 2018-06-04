@@ -1,6 +1,7 @@
 #include "uart_simple.h"
 #include <dev/ufs.h>
 #include <dev/boot.h>
+#include <pit.h>
 
 void platform_early_init(void)
 {
@@ -12,4 +13,5 @@ void platform_init(void)
 {
 	ufs_init(2);
 	ufs_set_configuration_descriptor();
+	pit_init();
 }

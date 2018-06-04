@@ -16,6 +16,7 @@
 #include <stdlib.h>
 #include <lib/console.h>
 #include "fastboot.h"
+#include <pit.h>
 
 unsigned int download_size;
 unsigned int download_bytes;
@@ -36,6 +37,46 @@ struct cmd_fastboot_interface interface =
 	.transfer_buffer       = (unsigned char *)0xffffffff,
 	.transfer_buffer_size  = 0,
 };
+
+static void flash_using_pit(char *key, char *response,
+		u32 size, void *addr)
+{
+	struct pit_entry *ptn;
+	unsigned long long length;
+
+	/*
+	 * In case of flashing pit, this should be
+	 * passed unconditionally.
+	 */
+	if (!strcmp(key, "pit")) {
+		pit_update(addr, size);
+		sprintf(response, "OKAY");
+		return;
+	}
+
+	ptn = pit_get_part_info(key);
+	if (ptn)
+		length = pit_get_length(ptn);
+
+	if (ptn == 0) {
+		sprintf(response, "FAILpartition does not exist");
+	} else if ((download_bytes > length) && (length != 0)) {
+		sprintf(response, "FAILimage too large for partition");
+	} else {
+		if ((ptn->blknum != 0) && (download_bytes > length)) {
+			printf("flashing '%s' failed\n", ptn->name);
+			sprintf(response, "FAILfailed to too large image");
+		} else if (pit_access(ptn, PIT_OP_FLASH, (u64)addr, size)) {
+			printf("flashing '%s' failed\n", ptn->name);
+			//print_lcd_update(FONT_RED, FONT_BLACK, "flashing '%s' failed", ptn->name);
+			sprintf(response, "FAILfailed to flash partition");
+		} else {
+			printf("partition '%s' flashed\n\n", ptn->name);
+			//print_lcd_update(FONT_GREEN, FONT_BLACK, "partition '%s' flashed", ptn->name);
+			sprintf(response, "OKAY");
+		}
+	}
+}
 
 static int rx_handler (const unsigned char *buffer, unsigned int buffer_size)
 {
@@ -131,7 +172,9 @@ static int rx_handler (const unsigned char *buffer, unsigned int buffer_size)
 		/* Generic failed response */
 		sprintf(response, "FAIL");
 
+#ifdef PIT_DEBUG
 		printf("fb %s\n", cmdbuf);	// test: probing protocol
+#endif
 
 		/* download
 		   download something ..
@@ -186,6 +229,8 @@ static int rx_handler (const unsigned char *buffer, unsigned int buffer_size)
 				fastboot_tx_status(response, strlen(response), FASTBOOT_TX_ASYNC);
 			}
 
+			flash_using_pit((char *)cmdbuf + 6, response,
+					download_bytes, (void *)interface.transfer_buffer);
 			ret = 0;
 			strcpy(response,"OKAY");
 			fastboot_tx_status(response, strlen(response), FASTBOOT_TX_ASYNC);
