@@ -55,4 +55,7 @@
 #define CONFIG_RAMDUMP_LOG_OFFSET						(0x10000)
 #endif
 
+#define BOOT_DEV_INFO								EXYNOS9610_POWER_INFORM3
+#define BOOT_DEV								readl(EXYNOS9610_POWER_INFORM3)
+
 #endif	/* __EXYNOS9610_H__ */

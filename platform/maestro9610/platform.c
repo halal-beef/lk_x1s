@@ -1,8 +1,10 @@
 #include "uart_simple.h"
 #include <dev/ufs.h>
+#include <dev/boot.h>
 
 void platform_early_init(void)
 {
+	set_first_boot_device_info();
 	uart_test_function();
 }
 
