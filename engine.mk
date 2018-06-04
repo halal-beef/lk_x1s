@@ -150,6 +150,7 @@ include arch/$(ARCH)/rules.mk
 include top/rules.mk
 include lib/bio/rules.mk
 include dev/scsi/rules.mk
+include dev/boot/rules.mk
 
 # recursively include any modules in the MODULE variable, leaving a trail of included
 # modules in the ALLMODULES list
