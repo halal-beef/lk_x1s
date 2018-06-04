@@ -1174,7 +1174,7 @@ static status_t ufs_parse_respnse(struct ufs_host *ufs)
  * This is called for SCSI stack to process some SCSI commands.
  * This is registered in SCSI stack when executing scsi_scan().
  */
-status_t scsi_exec(scm * pscm)
+static status_t scsi_exec(scm * pscm)
 {
 	struct ufs_host *ufs;
 	int retry = 0;
