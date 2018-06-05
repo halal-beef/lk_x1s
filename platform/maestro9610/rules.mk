@@ -12,7 +12,9 @@ MODULE_SRCS += \
 	$(LOCAL_DIR)/ufs-cal-9610.c \
 	$(LOCAL_DIR)/fastboot/usbd3-ss.c \
 	$(LOCAL_DIR)/fastboot/phy-exynos-usb3p1.c \
-	$(LOCAL_DIR)/fastboot/fastboot_cmd.c
+	$(LOCAL_DIR)/fastboot/fastboot_cmd.c \
+	$(LOCAL_DIR)/boot/cmd_scatter_load_boot.c \
+	$(LOCAL_DIR)/boot/cmd_boot.c
 
 MODULE_DEPS += \
     dev/interrupt/arm_gic \
