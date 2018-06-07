@@ -307,8 +307,7 @@ static uint bio_new_read(struct bdev *dev, void *_buf, bnum_t _block, uint count
 	ssize_t byte_size;
 	ssize_t byte_offset;
 	STACKBUF_DMA_ALIGN(temp, dev->block_size);
-	uint max_blkcnt = ((dev->max_blkcnt_per_cmd) ?
-				dev->max_blkcnt_per_cmd : 32) * native_block_size;
+	uint max_blkcnt = (dev->max_blkcnt_per_cmd) ? dev->max_blkcnt_per_cmd : 32;
 
 
 	/* Not support for cache alignment */
@@ -384,8 +383,7 @@ static uint bio_new_write(struct bdev *dev, const void *_buf, bnum_t _block, uin
 	ssize_t byte_size;
 	ssize_t byte_offset;
 	STACKBUF_DMA_ALIGN(temp, dev->block_size);
-	uint max_blkcnt = ((dev->max_blkcnt_per_cmd) ?
-				dev->max_blkcnt_per_cmd : 32) * native_block_size;
+	uint max_blkcnt = (dev->max_blkcnt_per_cmd) ? dev->max_blkcnt_per_cmd : 32;
 
 
 	/* Not support for cache alignment */
