@@ -141,7 +141,7 @@ struct gpt_part_table {
 	u64 part_start_lba;
 	u64 part_end_lba;
 	u64 reserved;
-	u8 part_name[72];
+	u16 part_name[36];
 } __attribute__ ((__packed__));
 
 struct gpt_backup_header {
