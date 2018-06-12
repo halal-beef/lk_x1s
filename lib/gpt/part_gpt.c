@@ -27,7 +27,7 @@ static int set_protective_mbr(bdev_t *dev)
 	p_mbr->signature = MSDOS_MBR_SIGNATURE;
 	p_mbr->partition_type = EFI_PMBR_OSTYPE_EFI_GPT;
 	p_mbr->start_sect_cnt = 1;
-	p_mbr->nr_sect = dev->block_count; /* block count */
+	p_mbr->nr_sect = (dev->block_count + 1) * 8 - 1; /* block count */
 
 	/* Write P MBR BLOCK */
 	err = dev->new_write(dev, p_mbr, 0, 8);
@@ -47,7 +47,7 @@ static int set_gpt_header(bdev_t *dev, struct gpt_header *gpt_h)
 	gpt_h->revision = GPT_HEADER_REVISION_V1;
 	gpt_h->head_sz = HEAD_SIZE;
 	gpt_h->gpt_header = 1;
-	gpt_h->gpt_back_header = dev->block_count - 1;
+	gpt_h->gpt_back_header = dev->block_count;
 	gpt_h->start_lba = 6;    		//UFS 1LBA is 4KB
 	gpt_h->end_lba = dev->block_count - 4;
 	gpt_h->part_table_lba = 2;
@@ -76,8 +76,8 @@ static int set_partition_table(bdev_t *dev,
 	uint32_t offset = gpt_h->start_lba;
 	uint32_t start;
 	uint32_t end_use_lba = gpt_h->end_lba;
-	int gpt_p_count = 0;
 	int i, k;
+	int j;
 	size_t efiname_len, dosname_len;
 	char fat[72] = "fat";
 	char fat1[72] = "system";
@@ -114,7 +114,8 @@ static int set_partition_table(bdev_t *dev,
 		gpt_e[0].part_name[k] = (u16)fat[k];
 
 #if USE_FIT
-	for(i = 0; i < pit->count; i++) {	/* PIT NUM COUNT */
+	for(i = 0, j = 0; i < pit->count; i++) {	/* PIT NUM COUNT */
+
 		/* partition start lba */
 		if (pit->pte[i].filesys != 0) {
 			start = offset;
@@ -122,37 +123,37 @@ static int set_partition_table(bdev_t *dev,
 				printf("parttiotn overlap!\n");
 				return -1;
 			}
-			gpt_e[i+1].part_start_lba = start;
+			gpt_e[j+1].part_start_lba = start;
 			offset = start + (pit->pte[i].blknum / 8);
 			if(offset >= end_use_lba) {
 				printf("partition layout over disk size\n");
 //				return -1;
 			}
-			gpt_e[i+1].part_end_lba = offset - 1;
+			gpt_e[j+1].part_end_lba = offset - 1;
 
 			printf("Start LBA : %d\t Size : %d\t\t partition name : ", start * 8, (offset - start) * 8);
 
 			str_disk_guid = strdup(FILE_SYSTEM_DATA);
 			/* UUID */
-			if (uuid_str_to_bin(str_disk_guid, gpt_e[i+1].part_guid, UUID_STR_FORMAT_STD))
+			if (uuid_str_to_bin(str_disk_guid, gpt_e[j+1].part_guid, UUID_STR_FORMAT_STD))
 				return -1;
 
 			/* GUID */
-			memcpy(gpt_e[i+1].part_type, &PARTITION_BASIC_DATA_GUID, 16);
+			memcpy(gpt_e[j+1].part_type, &PARTITION_BASIC_DATA_GUID, 16);
 
-			efiname_len = sizeof(gpt_e[i].part_name)
+			efiname_len = sizeof(gpt_e[j].part_name)
 				/ sizeof(u16);
 			dosname_len = sizeof(pit->pte[i].name);
 
-			memset(gpt_e[i+1].part_name, 0,
-					sizeof(gpt_e[i+1].part_name));
+			memset(gpt_e[j+1].part_name, 0,
+					sizeof(gpt_e[j+1].part_name));
 			for (k = 0; k < MIN(dosname_len, efiname_len); k++) {
-				gpt_e[i+1].part_name[k] =
+				gpt_e[j+1].part_name[k] =
 					(u16)(pit->pte[i].name[k]);
-				printf("%c", gpt_e[i+1].part_name[k]);
+				printf("%c", gpt_e[j+1].part_name[k]);
 			}
 			printf("\n");
-			gpt_p_count++;
+			j++;
 		}
 	}
 #else
