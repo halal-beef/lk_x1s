@@ -43,6 +43,7 @@ static void flash_using_pit(char *key, char *response,
 {
 	struct pit_entry *ptn;
 	unsigned long long length;
+	u32 *env_buf;
 
 	/*
 	 * In case of flashing pit, this should be
@@ -75,6 +76,14 @@ static void flash_using_pit(char *key, char *response,
 			//print_lcd_update(FONT_GREEN, FONT_BLACK, "partition '%s' flashed", ptn->name);
 			sprintf(response, "OKAY");
 		}
+	}
+
+	if (!strcmp(key, "ramdisk")) {
+		ptn = pit_get_part_info("env");
+		env_buf = memalign(0x1000, 0x1000);
+		*env_buf = size;
+		pit_access(ptn, PIT_OP_FLASH, (u64)env_buf, 0);
+		free(env_buf);
 	}
 }
 
@@ -217,6 +226,102 @@ static int rx_handler (const unsigned char *buffer, unsigned int buffer_size)
 			fastboot_tx_status(response, strlen(response), FASTBOOT_TX_ASYNC);
 		}
 
+		/* getvar
+		   Get common fastboot variables
+		   Board has a chance to handle other variables */
+		if (memcmp(cmdbuf, "getvar:", 7) == 0)
+		{
+			strcpy(response,"OKAY");
+
+			if (!strcmp(cmdbuf + 7, "version"))
+			{
+				strcpy(response + 4, FASTBOOT_VERSION);
+			}
+			else if (!strcmp(cmdbuf + 7, "product"))
+			{
+				if (interface.product_name)
+					strcpy(response + 4, interface.product_name);
+			}
+			else if (!strcmp(cmdbuf + 7, "serialno"))
+			{
+				if (interface.serial_no)
+					strcpy(response + 4, interface.serial_no);
+			}
+			else if (!strcmp(cmdbuf + 7, "downloadsize"))
+			{
+				if (interface.transfer_buffer_size)
+					sprintf(response + 4, "%08x", interface.transfer_buffer_size);
+			}
+			else if (!memcmp(cmdbuf + 7, "partition-type", strlen("partition-type")))
+			{
+				char *key = (char *)cmdbuf + 7 + strlen("partition-type:");
+				struct pit_entry *ptn = pit_get_part_info(key);
+
+				/*
+				 * In case of flashing pit, this should be
+				 * passed unconditionally.
+				 */
+				if (strcmp(key, "pit") && ptn->filesys != FS_TYPE_NONE)
+					strcpy(response + 4, "ext4");
+			}
+			else if (!memcmp(cmdbuf + 7, "partition-size", strlen("partition-size")))
+			{
+				char *key = (char *)cmdbuf + 7 + strlen("partition-size:");
+				struct pit_entry *ptn = pit_get_part_info(key);
+
+				/*
+				 * In case of flashing pit, this location
+				 * would not be passed. So it's unnecessary
+				 * to check that this case is pit.
+				 */
+				if (ptn->filesys != FS_TYPE_NONE)
+					sprintf(response + 4, "0x%llx", pit_get_length(ptn));
+			}
+			else
+			{
+			}
+
+			ret = 0;
+			fastboot_tx_status(response, strlen(response), FASTBOOT_TX_ASYNC);
+		}
+
+		/* erase
+		   Erase a register flash partition
+		   Board has to set up flash partitions */
+		if (memcmp(cmdbuf, "erase:", 6) == 0)
+		{
+			char *key = (char *)cmdbuf + 6;
+			struct pit_entry *ptn = pit_get_part_info(key);
+			char run_cmd[80];
+			char if_name[16] = "mmc";
+			int device=0;
+			int status = 1;
+
+			if (strcmp(key, "pit") && ptn == 0)
+			{
+				sprintf(response, "FAILpartition does not exist");
+				ret = 0;
+				fastboot_tx_status(response, strlen(response), FASTBOOT_TX_ASYNC);
+			}
+
+			printf("erasing(formatting) '%s'\n", ptn->name);
+
+			if (ptn->filesys != FS_TYPE_NONE)
+				status = pit_access(ptn, PIT_OP_ERASE, 0, 0);
+
+			if (status)
+			{
+				sprintf(response,"FAILfailed to erase partition");
+			}
+			else
+			{
+				printf("partition '%s' erased\n", ptn->name);
+				sprintf(response, "OKAY");
+			}
+			ret = 0;
+			fastboot_tx_status(response, strlen(response), FASTBOOT_TX_ASYNC);
+		}
+
 		/* flash
 		   Flash what was downloaded */
 		if (memcmp(cmdbuf, "flash:", 6) == 0)
@@ -231,13 +336,6 @@ static int rx_handler (const unsigned char *buffer, unsigned int buffer_size)
 
 			flash_using_pit((char *)cmdbuf + 6, response,
 					download_bytes, (void *)interface.transfer_buffer);
-			ret = 0;
-			strcpy(response,"OKAY");
-			fastboot_tx_status(response, strlen(response), FASTBOOT_TX_ASYNC);
-		}
-
-		if (memcmp(cmdbuf, "getvar:", 7) == 0)
-		{
 			ret = 0;
 			strcpy(response,"OKAY");
 			fastboot_tx_status(response, strlen(response), FASTBOOT_TX_ASYNC);
