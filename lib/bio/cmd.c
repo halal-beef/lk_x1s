@@ -40,11 +40,16 @@ notenoughargs:
 usage:
 		printf("%s read <dev> <buf> <lba> <blks>\n", argv[0].str);
 		printf("%s write <dev> <buf> <lba> <blks>\n", argv[0].str);
+		printf("%s erase <dev> <buf> <lba> <blks>\n", argv[0].str);
+		printf("\n");
+		printf("LBA and count here assumes an 512 bytes of unit.\n");
 		printf("\n");
 		printf("Example: read 4KB data to address 0x80000000 at LBA 0x100 of user partition of a UFS device\n");
 		printf("%s read scsi0 0x80000000 0x100 0x8\n", argv[0].str);
 		printf("Example: write 512B data from address 0x80000000 at LBA 0x200 of the first boot partition of a eMMC device\n");
 		printf("%s write mmc1 0x80000000 0x200 0x1\n", argv[0].str);
+		printf("Example: erase 1MB data at LBA 0x8000 of the user partition of a UFS device\n");
+		printf("%s erase scsi0 0x8000 0x800\n", argv[0].str);
 		return -1;
 	}
 
@@ -83,7 +88,20 @@ usage:
 
 		rc = (cnt == cnt_ret) ? 0 : -1;
 	} else if (!strcmp(argv[1].str, "erase")) {
-		// TODO
+		if (argc < 5) goto notenoughargs;
+
+		bdev_t *dev = bio_open(argv[2].str);
+		if (!dev) {
+			printf("error opening block device\n");
+			return -1;
+		}
+
+		cnt_ret = dev->new_erase(dev, lba, cnt);
+		printf("erase done %u!!\n", cnt_ret);
+
+		bio_close(dev);
+
+		rc = (cnt == cnt_ret) ? 0 : -1;
 	} else {
 		printf("unrecognized subcommand\n");
 		goto usage;
