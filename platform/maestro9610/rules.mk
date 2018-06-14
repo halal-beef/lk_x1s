@@ -13,8 +13,16 @@ MODULE_SRCS += \
 	$(LOCAL_DIR)/fastboot/usbd3-ss.c \
 	$(LOCAL_DIR)/fastboot/phy-exynos-usb3p1.c \
 	$(LOCAL_DIR)/fastboot/fastboot_cmd.c \
+	$(LOCAL_DIR)/fastboot/decompress_ext4.c \
 	$(LOCAL_DIR)/boot/cmd_scatter_load_boot.c \
-	$(LOCAL_DIR)/boot/cmd_boot.c
+	$(LOCAL_DIR)/boot/cmd_boot.c \
+	$(LOCAL_DIR)/security/smc_aarch64.c \
+	$(LOCAL_DIR)/security/ldfw.c \
+	$(LOCAL_DIR)/speedy/speedy.c \
+	$(LOCAL_DIR)/pmic/pmic_s2mpu09.c \
+	$(LOCAL_DIR)/pmic/fg_s2mu004.c \
+	$(LOCAL_DIR)/pmic/if_pmic_s2mu004.c \
+	$(LOCAL_DIR)/gpio_init.S \
 
 MODULE_DEPS += \
     dev/interrupt/arm_gic \
