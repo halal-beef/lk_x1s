@@ -12,11 +12,13 @@
  */
 
 #include <debug.h>
+#include <reg.h>
 #include <string.h>
 #include <stdlib.h>
 #include <lib/console.h>
 #include "fastboot.h"
 #include <pit.h>
+#include <platform/sfr.h>
 
 unsigned int download_size;
 unsigned int download_bytes;
@@ -339,6 +341,16 @@ static int rx_handler (const unsigned char *buffer, unsigned int buffer_size)
 			ret = 0;
 			strcpy(response,"OKAY");
 			fastboot_tx_status(response, strlen(response), FASTBOOT_TX_ASYNC);
+		}
+
+		/* reboot
+		   Reboot the board. */
+		if (memcmp(cmdbuf, "reboot", 6) == 0)
+		{
+			ret = 0;
+			sprintf(response,"OKAY");
+			fastboot_tx_status(response, strlen(response), FASTBOOT_TX_SYNC);
+			writel(0x1, EXYNOS9610_SWRESET);
 		}
 	} /* End of command */
 
