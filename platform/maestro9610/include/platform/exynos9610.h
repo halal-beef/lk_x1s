@@ -58,4 +58,19 @@
 #define BOOT_DEV_INFO								EXYNOS9610_POWER_INFORM3
 #define BOOT_DEV								readl(EXYNOS9610_POWER_INFORM3)
 
+#define DRAM_BASE								0x80000000
+#define DRAM_BASE2								0x880000000
+
+#define CFG_FASTBOOT_MMC_BUFFER						(0xC0000000)
+
+/* iRAM information */
+#define IRAM_BASE								(0x02020000)
+#define IRAM_NS_BASE								(IRAM_BASE + 0x18000)
+#define BL_SYS_INFO								(IRAM_NS_BASE + 0x800)
+#define BL_SYS_INFO_DRAM_SIZE							(BL_SYS_INFO + 0x48)
+
+#define WARM_RESET								(1 << 28)
+#define LITTLE_WDT_RESET							(1 << 23)
+#define BIG_WDT_RESET								(1 << 24)
+
 #endif	/* __EXYNOS9610_H__ */
