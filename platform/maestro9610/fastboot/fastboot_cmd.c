@@ -19,6 +19,7 @@
 #include "fastboot.h"
 #include <pit.h>
 #include <platform/sfr.h>
+#include <platform/if_pmic_s2mu004.h>
 
 unsigned int download_size;
 unsigned int download_bytes;
@@ -370,6 +371,9 @@ int do_fastboot(int argc, const cmd_args *argv)
 	int continue_from_disconnect = 0;
 
 	dprintf(ALWAYS, "This is do_fastboot\n");
+
+	muic_sw_usb();
+
 	do {
 		continue_from_disconnect = 0;
 
