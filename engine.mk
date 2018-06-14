@@ -153,6 +153,7 @@ include lib/gpt/rules.mk
 include dev/scsi/rules.mk
 include dev/boot/rules.mk
 include external/lib/cksum/rules.mk
+include external/lib/fdt/rules.mk
 
 # recursively include any modules in the MODULE variable, leaving a trail of included
 # modules in the ALLMODULES list
