@@ -39,7 +39,8 @@ static int set_protective_mbr(bdev_t *dev)
 	return 0;
 }
 
-static int set_gpt_header(bdev_t *dev, struct gpt_header *gpt_h)
+static int set_gpt_header(bdev_t *dev, struct gpt_header *gpt_h,
+		struct gpt_part_table *gpt_e)
 {
 	char *str_disk_guid;
 
@@ -53,6 +54,7 @@ static int set_gpt_header(bdev_t *dev, struct gpt_header *gpt_h)
 	gpt_h->part_table_lba = 2;
 	gpt_h->part_num_entry = 128;		//MAX partitions
 	gpt_h->part_size_entry = TABLE_SIZE;
+	gpt_h->part_size_entry = sizeof(struct gpt_part_table);
 	gpt_h->head_crc = 0;
 	gpt_h->part_table_crc = 0;
 
@@ -62,7 +64,7 @@ static int set_gpt_header(bdev_t *dev, struct gpt_header *gpt_h)
 
 	return 0;
 }
-#if USE_FIT
+#if USE_PIT
 static int set_partition_table(bdev_t *dev,
 		struct gpt_header *gpt_h,
 		struct gpt_part_table *gpt_e,
@@ -101,9 +103,9 @@ static int set_partition_table(bdev_t *dev,
 	gpt_e[0].part_end_lba = offset - 1;
 
 	str_disk_guid = strdup(BASIC_DATA);
-	if (uuid_str_to_bin(str_disk_guid, gpt_e[0].part_guid, UUID_STR_FORMAT_STD))
+	if (uuid_str_to_bin(str_disk_guid, gpt_e[0].part_guid.b, UUID_STR_FORMAT_STD))
 		return -1;
-	memcpy(gpt_e[0].part_type,&PARTITION_BASIC_DATA_GUID, 16);
+	memcpy(gpt_e[0].part_type.b,&PARTITION_BASIC_DATA_GUID, 16);
 	efiname_len = sizeof(gpt_e[i].part_name)
 		/ sizeof(u16);
 	dosname_len = sizeof(fat);
@@ -113,7 +115,7 @@ static int set_partition_table(bdev_t *dev,
 	for (k = 0; k < MIN(dosname_len, efiname_len); k++)
 		gpt_e[0].part_name[k] = (u16)fat[k];
 
-#if USE_FIT
+#if USE_PIT
 	for(i = 0, j = 0; i < pit->count; i++) {	/* PIT NUM COUNT */
 
 		/* partition start lba */
@@ -135,11 +137,11 @@ static int set_partition_table(bdev_t *dev,
 
 			str_disk_guid = strdup(FILE_SYSTEM_DATA);
 			/* UUID */
-			if (uuid_str_to_bin(str_disk_guid, gpt_e[j+1].part_guid, UUID_STR_FORMAT_STD))
+			if (uuid_str_to_bin(str_disk_guid, gpt_e[j+1].part_guid.b, UUID_STR_FORMAT_STD))
 				return -1;
 
 			/* GUID */
-			memcpy(gpt_e[j+1].part_type, &PARTITION_BASIC_DATA_GUID, 16);
+			memcpy(gpt_e[j+1].part_type.b, &PARTITION_BASIC_DATA_GUID, 16);
 
 			efiname_len = sizeof(gpt_e[j].part_name)
 				/ sizeof(u16);
@@ -167,10 +169,10 @@ static int set_partition_table(bdev_t *dev,
 
 	str_disk_guid = strdup(FILE_SYSTEM_DATA);
 
-	if (uuid_str_to_bin(str_disk_guid, gpt_e[1].part_guid, UUID_STR_FORMAT_STD))
+	if (uuid_str_to_bin(str_disk_guid, gpt_e[1].part_guid.b, UUID_STR_FORMAT_STD))
 		return -1;
 
-	memcpy(gpt_e[1].part_type,&PARTITION_BASIC_DATA_GUID, 16);
+	memcpy(gpt_e[1].part_type.b, &PARTITION_BASIC_DATA_GUID, 16);
 	efiname_len = sizeof(gpt_e[1].part_name)
 		/ sizeof(u16);
 	dosname_len = sizeof(fat1);
@@ -189,10 +191,10 @@ static int set_partition_table(bdev_t *dev,
 	gpt_e[2].part_end_lba = offset - 1;
 
 	str_disk_guid = strdup(FILE_SYSTEM_DATA);
-	if (uuid_str_to_bin(str_disk_guid, gpt_e[2].part_guid, UUID_STR_FORMAT_STD))
+	if (uuid_str_to_bin(str_disk_guid, gpt_e[2].part_guid.b, UUID_STR_FORMAT_STD))
 		return -1;
 
-	memcpy(gpt_e[2].part_type,&PARTITION_BASIC_DATA_GUID, 16);
+	memcpy(gpt_e[2].part_type.b, &PARTITION_BASIC_DATA_GUID, 16);
 	efiname_len = sizeof(gpt_e[2].part_name)
 		/ sizeof(u16);
 	dosname_len = sizeof(fat2);
@@ -210,10 +212,10 @@ static int set_partition_table(bdev_t *dev,
 	gpt_e[3].part_end_lba = offset - 1;
 
 	str_disk_guid = strdup(FILE_SYSTEM_DATA);
-	if (uuid_str_to_bin(str_disk_guid, gpt_e[3].part_guid, UUID_STR_FORMAT_STD))
+	if (uuid_str_to_bin(str_disk_guid, gpt_e[3].part_guid.b, UUID_STR_FORMAT_STD))
 		return -1;
 
-	memcpy(gpt_e[3].part_type,&PARTITION_BASIC_DATA_GUID, 16);
+	memcpy(gpt_e[3].part_type.b, &PARTITION_BASIC_DATA_GUID, 16);
 	efiname_len = sizeof(gpt_e[3].part_name)
 		/ sizeof(u16);
 	dosname_len = sizeof(fat3);
@@ -232,10 +234,10 @@ static int set_partition_table(bdev_t *dev,
 	gpt_e[4].part_end_lba = offset - 1;
 
 	str_disk_guid = strdup(FILE_SYSTEM_DATA);
-	if (uuid_str_to_bin(str_disk_guid, gpt_e[4].part_guid, UUID_STR_FORMAT_STD))
+	if (uuid_str_to_bin(str_disk_guid, gpt_e[4].part_guid.b, UUID_STR_FORMAT_STD))
 		return -1;
 
-	memcpy(gpt_e[4].part_type,&PARTITION_BASIC_DATA_GUID, 16);
+	memcpy(gpt_e[4].part_type.b, &PARTITION_BASIC_DATA_GUID, 16);
 	efiname_len = sizeof(gpt_e[4].part_name)
 		/ sizeof(u16);
 	dosname_len = sizeof(fat4);
@@ -254,10 +256,10 @@ static int set_partition_table(bdev_t *dev,
 	gpt_e[5].part_end_lba = offset - 1;
 
 	str_disk_guid = strdup(FILE_SYSTEM_DATA);
-	if (uuid_str_to_bin(str_disk_guid, gpt_e[5].part_guid, UUID_STR_FORMAT_STD))
+	if (uuid_str_to_bin(str_disk_guid, gpt_e[5].part_guid.b, UUID_STR_FORMAT_STD))
 		return -1;
 
-	memcpy(gpt_e[5].part_type,&PARTITION_BASIC_DATA_GUID, 16);
+	memcpy(gpt_e[5].part_type.b, &PARTITION_BASIC_DATA_GUID, 16);
 	efiname_len = sizeof(gpt_e[5].part_name)
 		/ sizeof(u16);
 	dosname_len = sizeof(fat5);
@@ -276,10 +278,10 @@ static int set_partition_table(bdev_t *dev,
 	gpt_e[6].part_end_lba = offset - 1;
 
 	str_disk_guid = strdup(FILE_SYSTEM_DATA);
-	if (uuid_str_to_bin(str_disk_guid, gpt_e[6].part_guid, UUID_STR_FORMAT_STD))
+	if (uuid_str_to_bin(str_disk_guid, gpt_e[6].part_guid.b, UUID_STR_FORMAT_STD))
 		return -1;
 
-	memcpy(gpt_e[6].part_type,&PARTITION_BASIC_DATA_GUID, 16);
+	memcpy(gpt_e[6].part_type.b, &PARTITION_BASIC_DATA_GUID, 16);
 	efiname_len = sizeof(gpt_e[6].part_name)
 		/ sizeof(u16);
 	dosname_len = sizeof(fat6);
@@ -299,10 +301,10 @@ static int set_partition_table(bdev_t *dev,
 	gpt_e[7].part_end_lba = offset - 1;
 
 	str_disk_guid = strdup(FILE_SYSTEM_DATA);
-	if (uuid_str_to_bin(str_disk_guid, gpt_e[7].part_guid, UUID_STR_FORMAT_STD))
+	if (uuid_str_to_bin(str_disk_guid, gpt_e[7].part_guid.b, UUID_STR_FORMAT_STD))
 		return -1;
 
-	memcpy(gpt_e[7].part_type,&PARTITION_BASIC_DATA_GUID, 16);
+	memcpy(gpt_e[7].part_type.b, &PARTITION_BASIC_DATA_GUID, 16);
 	efiname_len = sizeof(gpt_e[7].part_name)
 		/ sizeof(u16);
 	dosname_len = sizeof(fat7);
@@ -385,7 +387,7 @@ err:
 	printf("** Can't write to device **\n");
 	return -1;
 }
-#if USE_FIT
+#if USE_PIT
 int gpt_create(struct pit_info *pit)
 #else
 int gpt_create(void)
@@ -413,8 +415,8 @@ int gpt_create(void)
 		return -1;
 	}
 	memset(gpt_e, 0, 4096 * 3);
-	err = set_gpt_header(dev, gpt_h);
-#if USE_FIT
+	err = set_gpt_header(dev, gpt_h, gpt_e);
+#if USE_PIT
 	err = set_partition_table(dev, gpt_h, gpt_e, pit);
 #else
 	err = set_partition_table(dev, gpt_h, gpt_e);
@@ -431,8 +433,8 @@ int gpt_create(void)
 static int gpt_test(int argc, const cmd_args *argv)
 {
 	int err;
-#if USE_FIT
-	printf("Use FIT plz!, not create manual gpt.\n");
+#if USE_PIT
+	printf("Use PIT plz!, not create manual gpt.\n");
 #else
 	printf("COMMAND GPT TEST \n");
 	err = gpt_create();

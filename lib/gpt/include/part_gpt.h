@@ -4,7 +4,7 @@
 #include <pit.h>
 #include <lib/bio.h>
 
-#define USE_FIT	1
+#define USE_PIT	1
 
 	/* GPT HEADER  */
 #define MSDOS_MBR_SIGNATURE 0xAA55
@@ -135,13 +135,19 @@ struct gpt_header {
 	u8 reserved1[430];
 } __attribute__ ((__packed__));
 
+typedef union _gpt_table_attributes{
+	struct {
+		u64 reserved;
+	} fields;
+} __attribute__ ((__packed__)) gpt_table_attributes;
+
 struct gpt_part_table {
-	u8 part_type[16];
-	u8 part_guid[16];
+	efi_guid_t part_type;
+	efi_guid_t part_guid;
 	u64 part_start_lba;
 	u64 part_end_lba;
-	u64 reserved;
-	u16 part_name[36];
+	gpt_table_attributes attributes;
+	u16 part_name[72 / sizeof(u16)];
 } __attribute__ ((__packed__));
 
 struct gpt_backup_header {
@@ -164,7 +170,7 @@ struct gpt_backup_header {
 /*
  * Public Function
  */
-#if USE_FIT
+#if USE_PIT
 	int gpt_create(struct pit_info *pit);
 #else
 	int gpt_create(void);
