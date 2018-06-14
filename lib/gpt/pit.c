@@ -15,6 +15,7 @@
 #include <part_gpt.h>
 #include <lib/heap.h>
 #include <dev/boot.h>
+#include <platform/decompress_ext4.h>
 
 // TODO:
 /*
@@ -307,18 +308,14 @@ static int pit_access_ufs(struct pit_entry *ptn, int op, u64 addr, u32 size)
 		printf("[PIT(%s)] flash on UFS..  ", ptn->name);
 
 		if (ptn->filesys == FS_TYPE_EXT4) {
-#if 0
 			if (!check_compress_ext4((char *)addr,
 						pit_get_length(ptn)) != 0) {
 				printf("Compressed ext4 image\n");
 				ret = write_compressed_ext4((char *)addr, blkstart);
 			} else {
-				printf("flash failed\n");
-				print_lcd_update(FONT_RED, FONT_BLACK,
-						"[PIT] %s flash failed on UFS", ptn->name);
+				printf("[PIT] %s flash failed on UFS", ptn->name);
 				return 1;
 			}
-#endif
 
 			return NO_ERROR;
 		}
