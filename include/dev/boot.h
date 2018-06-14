@@ -31,6 +31,9 @@ typedef enum {
 #define BOOT_USB		0x3
 #define BOOT_UFS		0x4
 
+#define BOOTDEVICE_ORDER_ADDR (IRAM_BASE + 0x64)
+
+int is_first_boot(void);
 void set_first_boot_device_info(void);
 int get_boot_device(void);
 

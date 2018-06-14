@@ -9,15 +9,36 @@
  */
 
 #include <reg.h>
-#include <platform/sfr.h>
+#include <sys/types.h>
 #include <dev/boot.h>
+#include <platform/sfr.h>
+#include <platform/smc.h>
+
+static unsigned int get_boot_device_info(void)
+{
+	unsigned int boot_device_info;
+
+	if (*(unsigned int *)DRAM_BASE != 0xabcdef) {
+		/* Running on DRAM by TRACE32 */
+		boot_device_info = *(unsigned int *)BOOTDEVICE_ORDER_ADDR;
+	} else {
+		boot_device_info = find_second_boot();
+	}
+
+	return boot_device_info;
+}
+
+int is_first_boot(void)
+{
+	return ((get_boot_device_info() & 0xF) == 1);
+}
 
 void set_first_boot_device_info(void)
 {
 	unsigned int boot_device = 0;
 	unsigned int boot_device_info = 0;
 
-	boot_device_info = 0xCB000010; /* get_boot_device_info(); */
+	boot_device_info = get_boot_device_info();
 	if ((boot_device_info & 0xFF000000) != 0xCB000000) {
 		/* abnormal boot */
 		while (1) ;
