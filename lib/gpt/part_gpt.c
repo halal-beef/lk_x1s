@@ -52,7 +52,7 @@ static int set_gpt_header(bdev_t *dev, struct gpt_header *gpt_h,
 	gpt_h->start_lba = 6;    		//UFS 1LBA is 4KB
 	gpt_h->end_lba = dev->block_count - 4;
 	gpt_h->part_table_lba = 2;
-	gpt_h->part_num_entry = 128;		//MAX partitions
+	gpt_h->part_num_entry = 90;
 	gpt_h->part_size_entry = TABLE_SIZE;
 	gpt_h->part_size_entry = sizeof(struct gpt_part_table);
 	gpt_h->head_crc = 0;
@@ -129,7 +129,7 @@ static int set_partition_table(bdev_t *dev,
 			offset = start + (pit->pte[i].blknum / 8);
 			if(offset >= end_use_lba) {
 				printf("partition layout over disk size\n");
-//				return -1;
+				return -1;
 			}
 			gpt_e[j+1].part_end_lba = offset - 1;
 
@@ -332,8 +332,7 @@ static int write_gpt_table(bdev_t *dev, struct gpt_header *gpt_h,
 	err = set_protective_mbr(dev);
 	if (err)
 		goto err;
-	pte_blk_cnt = ((gpt_h->part_num_entry *
-			sizeof(struct gpt_part_table) -1 ) /
+	pte_blk_cnt = ((GPT_ENTRY_NUMBERS * sizeof(struct gpt_part_table) -1 ) /
 			(dev->block_size + 1)) * 8;
 
 	/* Generate CRC for the Primary GPT Header */
