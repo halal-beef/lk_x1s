@@ -72,5 +72,6 @@
 #define WARM_RESET								(1 << 28)
 #define LITTLE_WDT_RESET							(1 << 23)
 #define BIG_WDT_RESET								(1 << 24)
+#define PIN_RESET								(1 << 16)
 
 #endif	/* __EXYNOS9610_H__ */
