@@ -5,11 +5,19 @@
 #include <pit.h>
 #include <platform/sfr.h>
 #include <platform/smc.h>
+#include <platform/speedy.h>
 #include <platform/pmic_s2mpu09.h>
 #include <platform/if_pmic_s2mu004.h>
 
 void speedy_gpio_init(void);
 void display_gpio_init(void);
+
+unsigned int charger_mode = 0;
+
+unsigned int get_charger_mode(void)
+{
+	return charger_mode;
+}
 
 static void load_secure_payload(void)
 {
@@ -54,6 +62,27 @@ static void load_secure_payload(void)
 	}
 }
 
+static int check_charger_connect(void)
+{
+	unsigned char read_pwronsrc = 0;
+	unsigned int rst_stat = readl(EXYNOS9610_POWER_RST_STAT);
+
+	if (rst_stat == PIN_RESET) {
+		speedy_init();
+		speedy_read(S2MPU09_PM_ADDR, S2MPU09_PM_PWRONSRC, &read_pwronsrc);
+
+		/* Check USB or TA connected and PWRONSRC(USB)  */
+		if(read_pwronsrc & ACOK)
+			charger_mode = 1;
+		else
+			charger_mode = 0;
+	} else {
+		charger_mode = 0;
+	}
+
+	return 0;
+}
+
 void platform_early_init(void)
 {
 	speedy_gpio_init();
@@ -69,6 +98,7 @@ void platform_early_init(void)
 void platform_init(void)
 {
 	pmic_init();
+	check_charger_connect();
 	display_pmic_info_s2mpu09();
 
 	load_secure_payload();

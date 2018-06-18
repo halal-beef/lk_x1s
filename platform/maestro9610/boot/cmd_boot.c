@@ -21,6 +21,7 @@
 #include <platform/smc.h>
 #include <platform/sfr.h>
 #include <platform/ldfw.h>
+#include <platform/charger.h>
 #include <pit.h>
 
 /* Memory node */
@@ -367,14 +368,15 @@ static void configure_dtb(void)
 	sprintf(str, "<0x%x>", ECT_SIZE);
 	set_fdt_val("/ect", "parameter_size", str);
 
-	/*if (get_charger_mode()) {
-		snprintf(str, 256, "fdt append /chosen bootargs androidboot.mode=charger");
-		run_command(str, 0);
-		snprintf(str, 256, "fdt list /chosen bootargs");
-		run_command(str, 0);
+	if (get_charger_mode()) {
+		noff = fdt_path_offset (DT_BASE, "/chosen");
+		np = fdt_getprop(DT_BASE, noff, "bootargs", &len);
+		snprintf(str, BUFFER_SIZE, "%s %s", np, "androidboot.mode=charger");
+		fdt_setprop(DT_BASE, noff, "bootargs", str,
+			strlen(str) + 1);
 
 		printf("Enter charger mode...");
-	}*/
+	}
 
 	/* Secure memories are carved-out in case of EVT1 */
 	/*
