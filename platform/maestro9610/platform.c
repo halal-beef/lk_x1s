@@ -85,12 +85,14 @@ static int check_charger_connect(void)
 
 void platform_early_init(void)
 {
+	unsigned int rst_stat = readl(EXYNOS9610_POWER_RST_STAT);
+
 	speedy_gpio_init();
 	display_gpio_init();
 
 	set_first_boot_device_info();
 
-	if (is_first_boot())
+	if (is_first_boot() && !(rst_stat & (WARM_RESET | LITTLE_WDT_RESET)))
 		muic_sw_uart();
 	uart_test_function();
 }
