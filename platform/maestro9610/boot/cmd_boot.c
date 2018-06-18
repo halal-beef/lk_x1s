@@ -140,7 +140,7 @@ static void bootargs_init(void)
 		}
 	}
 
-	printf("\nbootargs: %s\n", bootargs);
+	printf("\ndefault bootargs: %s\n", bootargs);
 
 	len = strlen(bootargs);
 	for (i = 0; i < len; i++) {
@@ -180,7 +180,7 @@ static void update_val(const char *name, const char *val)
 
 	for (i = 0; i <= prop_cnt; i++) {
 		if (strncmp(prop[i].prop, name, strlen(name)) == 0) {
-			snprintf(prop[i].val, strlen(val), "%s", val);
+			sprintf(prop[i].val, "%s", val);
 			return;
 		}
 	}
@@ -191,50 +191,39 @@ static void bootargs_update(void)
 	int i = 0;
 	int cur = 0;
 	char bootargs[BUFFER_SIZE];
-	char commands[BUFFER_SIZE];
 
 	memset(bootargs, 0, sizeof(bootargs));
 
 	for (i = 0; i <= prop_cnt; i++) {
 		if (0 == strlen(prop[i].val)) {
-			snprintf(bootargs + cur, sizeof(bootargs - cur), "%s ",
+			sprintf(bootargs + cur, "%s",
 				prop[i].prop);
-			cur += strlen(prop[i].prop) + 1;
+			cur += strlen(prop[i].prop);
+			snprintf(bootargs + cur, 2, " ");
+			cur += 1;
 		} else {
-			snprintf(bootargs + cur, sizeof(bootargs - cur), "%s=%s ",
+			sprintf(bootargs + cur, "%s=%s",
 				prop[i].prop, prop[i].val);
-			cur += strlen(prop[i].prop) + strlen(prop[i].val) + 2;
+			cur += strlen(prop[i].prop) + strlen(prop[i].val) + 1;
+			snprintf(bootargs + cur, 2, " ");
+			cur += 1;
 		}
 	}
-	bootargs[cur - 1] = '\0';
+
+	bootargs[cur] = '\0';
+
+	printf("\nupdated bootargs: %s\n", bootargs);
+
+	set_fdt_val("/chosen", "bootargs", bootargs);
 }
 
 static void set_bootargs(void)
 {
-	char buf[16], uart[BUFFER_SIZE], *str;
-	int ret = 0;
-
 	bootargs_init();
-#if 0
-	memset(buf, 0, sizeof(buf));
-	ret = 1; /* getenv_s("switch_sel", buf, sizeof(buf)); */
-	if (0 < ret) {
-		update_val("console", "ttySAC0,115200");
 
-		if (buf[0] == 'a')
-			update_val("pmic_info", "0x3");
-		else
-			update_val("pmic_info", "0x1");
-	}
-
-	memset(buf, 0, sizeof(buf));
-	ret = 0; /* getenv_s("sec_debug.cp", buf, sizeof(buf)); */
-	if (0 < ret)
-		update_val("sec_debug.cp", buf);
+	update_val("console", "ttySAC0,115200");
 
 	bootargs_update();
-#endif
-	set_fdt_val("/chosen", "bootargs", "console=ttySAC0,115200 root=/dev/ram0 clk_ignore_unused bcm_setup=0xffffff80f8e00000 androidboot.hardware=samsungexynos9610 androidboot.selinux=permissive androidboot.debug_level=0x4948 firmware_class.path=/vendor/firmware ecd_setup=disable reserve-fimc=0xffffff80fa000000 pmic_info=0x3");
 }
 
 static void add_dt_memory_node(unsigned long base, unsigned int size)
