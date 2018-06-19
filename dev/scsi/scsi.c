@@ -361,6 +361,63 @@ static int scsi_format_unit(struct bdev *dev)
 	return ret;
 }
 
+static status_t scsi_secu_prot_in(struct bdev *dev, void *buf, bnum_t block, uint count)
+{
+	scsi_device_t *sdev = (scsi_device_t *)dev->private;
+	status_t ret = 0;
+
+	g_scm.sdev = sdev;
+	g_scm.buf = (u8 *)buf;
+	g_scm.datalen = (u32)count * dev->block_size;
+
+	/*
+	 * Prepare CDB
+	 *
+	 * SECURITY PROTOCOL 0xEC means UFS.
+	 */
+	memset((void *)g_scm.cdb, 0, sizeof(g_scm.cdb));
+	g_scm.cdb[0] = SCSI_OP_SECU_PROT_IN;
+	g_scm.cdb[1] = 0xEC;
+	set_word_le(&g_scm.cdb[2], 0x1);
+	set_dword_le(&g_scm.cdb[6], (u32)count);
+
+	/* Actual issue */
+	ret = sdev->exec(&g_scm);
+	if (!ret)
+		ret = scsi_parse_status(g_scm.status);
+
+	return ret;
+}
+
+static status_t scsi_secu_prot_out(struct bdev *dev, void *buf, bnum_t block, uint count)
+{
+	scsi_device_t *sdev = (scsi_device_t *)dev->private;
+	status_t ret = 0;
+
+	g_scm.sdev = sdev;
+	g_scm.buf = (u8 *)buf;
+	g_scm.datalen = (u32)count * dev->block_size;
+
+	/*
+	 * Prepare CDB
+	 *
+	 * SECURITY PROTOCOL 0xEC means UFS.
+	 * SECURITY PROTOCOL SPECIFIC 0x1 means device specific.
+	 */
+	memset((void *)g_scm.cdb, 0, sizeof(g_scm.cdb));
+	g_scm.cdb[0] = SCSI_OP_SECU_PROT_OUT;
+	g_scm.cdb[1] = 0xEC;
+	set_word_le(&g_scm.cdb[2], 0x1);
+	set_dword_le(&g_scm.cdb[6], (u32)count);
+
+	/* Actual issue */
+	ret = sdev->exec(&g_scm);
+	if (!ret)
+		ret = scsi_parse_status(g_scm.status);
+
+	return ret;
+}
+
 static status_t scsi_scan_common(scsi_device_t *sdev, u32 i)
 {
 	status_t ret = NO_ERROR;
@@ -467,9 +524,14 @@ status_t scsi_scan(scsi_device_t *sdev, u32 wlun, u32 dev_num, exec_t *func,
 				BIO_FLAGS_NONE);
 
 		/* Override operations */
-		sdev->dev.new_read_native = scsi_read_10;
-		sdev->dev.new_write_native = scsi_write_10;
-		sdev->dev.new_erase_native = scsi_unmap;
+		if (wlun == 0) {
+			sdev->dev.new_read_native = scsi_read_10;
+			sdev->dev.new_write_native = scsi_write_10;
+			sdev->dev.new_erase_native = scsi_unmap;
+		} else {
+			sdev->dev.new_read_native = scsi_secu_prot_in;
+			sdev->dev.new_write_native = scsi_secu_prot_out;
+		}
 		sdev->dev.max_blkcnt_per_cmd = max_seg * block_size / USER_BLOCK_SIZE;
 
 		bio_register_device(&sdev->dev);
