@@ -441,3 +441,12 @@ int fastboot_tx_status(const char *buffer, unsigned int buffer_size, const u32 n
 	}
 	return 1;
 }
+
+/* Returns 0 on success
+   Returns 1 on failure */
+int fastboot_tx_mem(u64 buffer, u64 buffer_size)
+{
+	if (!fboot_usb_int_bulkin(buffer, buffer_size))
+		return 0;
+	return 1;
+}
