@@ -19,15 +19,18 @@
 #include "fastboot.h"
 #include <pit.h>
 #include <platform/sfr.h>
+#include <platform/smc.h>
 #include <platform/if_pmic_s2mu004.h>
 
 unsigned int download_size;
 unsigned int download_bytes;
 unsigned int download_error;
 int extention_flag;
+static unsigned int is_ramdump = 0;
 
 static int rx_handler (const unsigned char *buffer, unsigned int buffer_size);
 static void reset_handler (void);
+int fastboot_tx_mem(u64 buffer, u64 buffer_size);
 
 /* cmd_fastboot_interface	in fastboot.h	*/
 struct cmd_fastboot_interface interface =
@@ -90,6 +93,30 @@ static void flash_using_pit(char *key, char *response,
 	}
 }
 
+static void start_ramdump(void *buf)
+{
+	struct fastboot_ramdump_hdr *hdr = buf;
+	static uint32_t ramdump_cnt = 0;
+
+	printf("\nramdump start address is [0x%llx]\n", hdr->base);
+	printf("ramdump size is [0x%llx]\n", hdr->size);
+	printf("version is [0x%llx]\n", hdr->version);
+
+	if (hdr->version != 2) {
+		printf("you are using wrong version of fastboot!!!\n");
+	}
+
+	/* dont't generate DECERR even if permission failure of ASP occurs */
+	if (ramdump_cnt++ == 0)
+		set_tzasc_action(0);
+
+	if (!fastboot_tx_mem(hdr->base, hdr->size)) {
+		printf("Failed ramdump~! \n");
+	} else {
+		printf("Finished ramdump~! \n");
+	}
+}
+
 static int rx_handler (const unsigned char *buffer, unsigned int buffer_size)
 {
 	int ret = 1;
@@ -149,6 +176,11 @@ static int rx_handler (const unsigned char *buffer, unsigned int buffer_size)
 				{
 					extention_flag = 0;
 					exynos_init_trb_buf();
+				}
+
+				if (is_ramdump) {
+					is_ramdump = 0;
+					start_ramdump((void *)buffer);
 				}
 			}
 
@@ -352,6 +384,40 @@ static int rx_handler (const unsigned char *buffer, unsigned int buffer_size)
 			sprintf(response,"OKAY");
 			fastboot_tx_status(response, strlen(response), FASTBOOT_TX_SYNC);
 			writel(0x1, EXYNOS9610_SWRESET);
+		}
+
+		if (memcmp(cmdbuf, "ramdump:", 8) == 0)
+		{
+			printf("\nGot ramdump command\n");
+			is_ramdump = 1;
+			/* save the size */
+			download_size = (unsigned int)strtol(cmdbuf + 8, NULL, 16);
+			/* Reset the bytes count, now it is safe */
+			download_bytes = 0;
+			/* Reset error */
+			download_error = 0;
+
+			printf("Starting download of %d bytes\n", download_size);
+
+			if (0 == download_size)
+			{
+				/* bad user input */
+				sprintf(response, "FAILdata invalid size");
+			}
+			else if (download_size > interface.transfer_buffer_size)
+			{
+				/* set download_size to 0 because this is an error */
+				download_size = 0;
+				sprintf(response, "FAILdata too large");
+			}
+			else
+			{
+				/* The default case, the transfer fits
+				   completely in the interface buffer */
+				sprintf(response, "DATA%08x", download_size);
+			}
+			ret = 0;
+			fastboot_tx_status(response, strlen(response), FASTBOOT_TX_SYNC);
 		}
 	} /* End of command */
 
