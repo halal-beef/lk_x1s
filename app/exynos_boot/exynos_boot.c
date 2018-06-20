@@ -14,6 +14,11 @@ static void exynos_boot_task(const struct app_descriptor *app, void *args)
 
 	printf("RST_STAT: 0x%x\n", rst_stat);
 
+	if (*(unsigned int *)DRAM_BASE != 0xabcdef) {
+		printf("Running on DRAM by TRACE32: skip auto booting\n");
+		return;
+	}
+
 	if (!is_first_boot() || (rst_stat & (WARM_RESET | LITTLE_WDT_RESET | BIG_WDT_RESET)))
 		do_fastboot(0, 0);
 	else
