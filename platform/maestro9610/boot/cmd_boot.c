@@ -33,6 +33,7 @@
 #define KERNEL_BASE 0x80080000
 #define RAMDISK_BASE 0x84000000
 #define DT_BASE 0x8A000000
+#define DT_RESERVE_MEM 0x23000
 #define ECT_BASE 0x90000000
 #define ECT_SIZE 0x32000
 #define BUFFER_SIZE 1024
@@ -41,9 +42,9 @@ unsigned long simple_strtoul(const char *cp,char **endp,unsigned int base);
 
 void resize_dt(void *base)
 {
-	fdt_set_totalsize(base, 0x1A000);
+	fdt_set_totalsize(base, DT_RESERVE_MEM);
 
-	fdt_add_mem_rsv(base, (uint64_t)base, 0x1A000);
+	fdt_add_mem_rsv(base, (uint64_t)base, DT_RESERVE_MEM);
 }
 
 int make_fdt_node(char *path, char *node)
