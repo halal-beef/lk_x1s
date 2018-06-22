@@ -4,9 +4,7 @@
 #include <pit.h>
 #include <lib/bio.h>
 
-#define USE_PIT	1
-
-	/* GPT HEADER  */
+/* GPT HEADER  */
 #define MSDOS_MBR_SIGNATURE 0xAA55
 #define EFI_PMBR_OSTYPE_EFI 0xEF
 #define EFI_PMBR_OSTYPE_EFI_GPT 0xEE
@@ -15,26 +13,25 @@
 #define GPT_HEADER_REVISION_V1 0x00010000
 #define GPT_PRIMARY_PARTITION_TABLE_LBA 1ULL
 
-	/* Test */
-#define GPT_NAME_SYSTEM "system"
-#define GPT_NAME_USER "userdata"
-#define GPT_NAME_CACHE "cache"
-#define GPT_NAME_MODEM "modem"
-#define GPT_NAME_EFS "efs"
-#define GPT_NAME_PERSIST "persist"
-#define GPT_NAME_VENDOR "vendor"
-
-#define GPT_ENTRY_NAME "gpt"
+#define GPT_ENTRY_NAME			"gpt"
 #define GPT_ENTRY_NUMBERS               128
 #define GPT_ENTRY_SIZE                  128
+
+#define GPT_TABLE_BLOCK			32
 
 #define BLOCK_SIZE_4KB                  8
 #define UFS_BSIZE                       4096
 #define MMC_BSIZE                       512
 
+#define PMBR_LBA		1
+#define GPT_HEAD_LBA		1
+#define GPT_TABLE_LBA		2
+
+#define FAT_PART_SIZE		409600
+
 #define UUID_DISK "12345678-1234-1234-1234-123456789012"
-#define FILE_SYSTEM_DATA "0FC63DAF-8483-4772-8E79-3D69D8477DE4"
-#define BASIC_DATA "EBD0A0A2-B9E5-4433-87C0-68B6B72699C7"
+#define FILE_SYSTEM_DATA "0fc63daf-8483-4772-8e79-3d69d8477de4"
+#define BASIC_DATA "ebd0a0a2-b9e5-4433-87c0-68b6b72699c7"
 
 #define HEAD_SIZE 0x5C
 #define TABLE_SIZE 0x80
@@ -170,9 +167,5 @@ struct gpt_backup_header {
 /*
  * Public Function
  */
-#if USE_PIT
-	int gpt_create(struct pit_info *pit);
-#else
-	int gpt_create(void);
-#endif
+int gpt_create(struct pit_info *pit);
 #endif

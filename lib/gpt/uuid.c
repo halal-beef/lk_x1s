@@ -60,9 +60,10 @@
  * GUID is used e.g. in GPT (GUID Partition Table) as a partiions unique id.
  */
 
-unsigned long simple_strtoul(const char *cp,char **endp,unsigned int base)
+unsigned long simple_strtoul(const char *cp, char **endp, unsigned int base)
 {
-	unsigned long result = 0,value;
+	unsigned long result = 0, value;
+
 	if (*cp == '0') {
 		cp++;
 		if ((*cp == 'x') && isxdigit(cp[1])) {
@@ -86,12 +87,13 @@ unsigned long simple_strtoul(const char *cp,char **endp,unsigned int base)
 	return result;
 }
 
-unsigned long long simple_strtoull (const char *cp, char **endp, unsigned int base)
+unsigned long long simple_strtoull(const char *cp, char **endp, unsigned int base)
 {
 	unsigned long long result = 0, value;
+
 	if (*cp == '0') {
 		cp++;
-		if ((*cp == 'x') && isxdigit (cp[1])) {
+		if ((*cp == 'x') && isxdigit(cp[1])) {
 			base = 16;
 			cp++;
 		}
@@ -102,9 +104,9 @@ unsigned long long simple_strtoull (const char *cp, char **endp, unsigned int ba
 	if (!base) {
 		base = 10;
 	}
-	while (isxdigit (*cp) && (value = isdigit (*cp)
+	while (isxdigit(*cp) && (value = isdigit(*cp)
 				? *cp - '0'
-				: (islower (*cp) ? toupper (*cp) : *cp) - 'A' + 10) < base) {
+				: (islower(*cp) ? toupper(*cp) : *cp) - 'A' + 10) < base) {
 		result = result * base + value;
 		cp++;
 	}
