@@ -3,6 +3,7 @@
 #include <app.h>
 #include <lib/console.h>
 #include <platform/sfr.h>
+#include <platform/charger.h>
 #include <platform/fastboot.h>
 #include <dev/boot.h>
 
@@ -19,7 +20,8 @@ static void exynos_boot_task(const struct app_descriptor *app, void *args)
 		return;
 	}
 
-	if (!is_first_boot() || (rst_stat & (WARM_RESET | LITTLE_WDT_RESET | BIG_WDT_RESET)))
+	if (!is_first_boot() || (rst_stat & (WARM_RESET | LITTLE_WDT_RESET | BIG_WDT_RESET)) ||
+		((readl(CONFIG_RAMDUMP_SCRATCH) == CONFIG_RAMDUMP_MODE) && get_charger_mode() == 0))
 		do_fastboot(0, 0);
 	else
 		cmd_boot(0, 0);
