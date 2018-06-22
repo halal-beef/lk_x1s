@@ -139,6 +139,8 @@ typedef union _gpt_table_attributes{
 	} fields;
 } __attribute__ ((__packed__)) gpt_table_attributes;
 
+#define PT_NAME_SZ	(72 / sizeof(u16))
+
 struct gpt_part_table {
 	efi_guid_t part_type;
 	efi_guid_t part_guid;
@@ -169,4 +171,5 @@ struct gpt_backup_header {
  * Public Function
  */
 int gpt_create(struct pit_info *pit);
+extern int get_unique_guid(char *ptr_name, char *buf);
 #endif
