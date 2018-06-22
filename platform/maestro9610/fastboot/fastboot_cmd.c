@@ -383,6 +383,7 @@ static int rx_handler (const unsigned char *buffer, unsigned int buffer_size)
 			ret = 0;
 			sprintf(response,"OKAY");
 			fastboot_tx_status(response, strlen(response), FASTBOOT_TX_SYNC);
+			writel(0, CONFIG_RAMDUMP_SCRATCH);
 			writel(0x1, EXYNOS9610_SWRESET);
 		}
 
