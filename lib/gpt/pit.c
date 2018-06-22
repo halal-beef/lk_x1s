@@ -784,7 +784,6 @@ int pit_update(void *buf, u32 size)
 	/* update gpt */
 	pit_close_dev();
 
-#if USE_PIT
 	/*
 	 * GPT would open the same device as one opened here.
 	 * So, we close here temporarily.
@@ -797,7 +796,6 @@ int pit_update(void *buf, u32 size)
 		printf("[PIT] GPT update failed !\n\n");
 		goto err;
 	}
-#endif
 	pit_open_dev();
 
 	/* display all entries */

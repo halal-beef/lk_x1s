@@ -2,39 +2,40 @@
 #include <stdlib.h>
 #include <malloc.h>
 #include <string.h>
-#include <lib/console.h>
-#include <lib/cksum.h>
 #include <part_gpt.h>
 #include <uuid.h>
+#include <lib/console.h>
+#include <lib/cksum.h>
+#include <dev/boot.h>
+
+u32 num_blk_size;
 
 static int set_protective_mbr(bdev_t *dev)
 {
 	struct p_mbr_head *p_mbr = NULL;
-	int err;
+	int size;
+	u32 write_size;
 
-	p_mbr = malloc(sizeof(struct p_mbr_head) * 8);
-	if (!p_mbr){
+	p_mbr = malloc(sizeof(struct p_mbr_head) * num_blk_size);
+	if (!p_mbr) {
 		printf("p_mbr alloc failed\n");
 		return -1;
 	}
-	memset(p_mbr, 0, sizeof(*p_mbr) * 8);
 
-	if (p_mbr == NULL) {
-		printf("p_mbr_calloc failed\n");
-		return -1;
-	}
-
+	memset(p_mbr, 0, sizeof(struct p_mbr_head) * num_blk_size);
 	p_mbr->signature = MSDOS_MBR_SIGNATURE;
 	p_mbr->partition_type = EFI_PMBR_OSTYPE_EFI_GPT;
-	p_mbr->start_sect_cnt = 1;
-	p_mbr->nr_sect = (dev->block_count + 1) * 8 - 1; /* block count */
+	p_mbr->start_sect_cnt = PMBR_LBA;
+	p_mbr->nr_sect = ((dev->block_count + 1) * num_blk_size) - 1;
 
 	/* Write P MBR BLOCK */
-	err = dev->new_write(dev, p_mbr, 0, 8);
-	if(err != 8) {
+	write_size = PMBR_LBA * num_blk_size;
+	size = dev->new_write(dev, p_mbr, 0, write_size);
+	if (size != write_size) {
 		printf("write failed\n");
 		return -1;
 	}
+
 	printf("P_MBR write done\n");
 	return 0;
 }
@@ -47,276 +48,110 @@ static int set_gpt_header(bdev_t *dev, struct gpt_header *gpt_h,
 	gpt_h->signature = GPT_HEADER_SIGNATURE;
 	gpt_h->revision = GPT_HEADER_REVISION_V1;
 	gpt_h->head_sz = HEAD_SIZE;
-	gpt_h->gpt_header = 1;
-	gpt_h->gpt_back_header = dev->block_count;
-	gpt_h->start_lba = 6;    		//UFS 1LBA is 4KB
-	gpt_h->end_lba = dev->block_count - 4;
-	gpt_h->part_table_lba = 2;
+	gpt_h->gpt_header = GPT_HEAD_LBA;
+	gpt_h->gpt_back_header = dev->block_count - 1;
+	gpt_h->start_lba = PIT_DISK_LOC * PIT_SECTOR_SIZE / dev->block_size;
+	gpt_h->end_lba = (dev->block_count - gpt_h->start_lba) + 1;
+	gpt_h->part_table_lba = GPT_TABLE_LBA;
 	gpt_h->part_num_entry = 90;
-	gpt_h->part_size_entry = TABLE_SIZE;
 	gpt_h->part_size_entry = sizeof(struct gpt_part_table);
 	gpt_h->head_crc = 0;
 	gpt_h->part_table_crc = 0;
 
 	str_disk_guid = strdup(UUID_DISK);
-	if (uuid_str_to_bin(str_disk_guid, gpt_h->guid, UUID_STR_FORMAT_GUID))
+	if (uuid_str_to_bin(str_disk_guid, gpt_h->guid, UUID_STR_FORMAT_GUID)) {
+		printf("disk guid set fail\n");
 		return -1;
+	}
 
 	return 0;
 }
-#if USE_PIT
-static int set_partition_table(bdev_t *dev,
-		struct gpt_header *gpt_h,
-		struct gpt_part_table *gpt_e,
-		struct pit_info *pit)
-#else
-static int set_partition_table(bdev_t *dev,
-		struct gpt_header *gpt_h,
-		struct gpt_part_table *gpt_e)
-#endif
+
+static int set_partition_table(bdev_t *dev, struct gpt_header *gpt_h,
+		struct gpt_part_table *gpt_e, struct pit_info *pit)
 {
 	uint32_t offset = gpt_h->start_lba;
-	uint32_t start;
 	uint32_t end_use_lba = gpt_h->end_lba;
-	int i, k;
-	int j;
-	size_t efiname_len, dosname_len;
-	char fat[72] = "fat";
-	char fat1[72] = "system";
-	char fat2[72] = "userdata";
-	char fat3[72] = "cache";
-	char fat4[72] = "modem";
-	char fat5[72] = "efs";
-	char fat6[72] = "persist";
-	char fat7[72] = "vendor";
+	uint32_t start;
+	int i, j, part_cnt;
+	int ret = 0;
 	char *str_disk_guid;
+	char fat[72] = "fat";
+	u32 name_len;
+	u32 fat_part_size;
 
 	printf("Set up start for Partition Table\n");
 	printf("The default size is 512Byte\n");
 	printf("==============================================================\n");
+
+	/* FAT Partition size is 200MB */
 	start = offset;
-	offset = start + 51200; /* 200MB */
-	printf("Start LBA : %d\t\t Size : %d\t\t partition name : FAT\n", start * 8, (offset - start) * 8);
+	fat_part_size = FAT_PART_SIZE / num_blk_size;
+	offset = start + fat_part_size;
+	printf("Start LBA : %d\t\t Size : %d\t\t partition name : fat\n",
+			start * num_blk_size, (offset - start) * num_blk_size);
 
 	/* FAT Partition */
 	gpt_e[0].part_start_lba = start;
 	gpt_e[0].part_end_lba = offset - 1;
 
+	/* Unique guid */
 	str_disk_guid = strdup(BASIC_DATA);
-	if (uuid_str_to_bin(str_disk_guid, gpt_e[0].part_guid.b, UUID_STR_FORMAT_STD))
+	ret = uuid_str_to_bin(str_disk_guid, gpt_e[0].part_guid.b, UUID_STR_FORMAT_STD);
+	free(str_disk_guid);
+	if (ret) {
+		printf("Unique guid set fail : fat\n");
 		return -1;
-	memcpy(gpt_e[0].part_type.b,&PARTITION_BASIC_DATA_GUID, 16);
-	efiname_len = sizeof(gpt_e[i].part_name)
-		/ sizeof(u16);
-	dosname_len = sizeof(fat);
-
-	memset(&gpt_e[0].part_name, 0, sizeof(gpt_e[0].part_name));
-
-	for (k = 0; k < MIN(dosname_len, efiname_len); k++)
-		gpt_e[0].part_name[k] = (u16)fat[k];
-
-#if USE_PIT
-	for(i = 0, j = 0; i < pit->count; i++) {	/* PIT NUM COUNT */
-
-		/* partition start lba */
-		if (pit->pte[i].filesys != 0) {
-			start = offset;
-			if (start && (start < offset)) {
-				printf("parttiotn overlap!\n");
-				return -1;
-			}
-			gpt_e[j+1].part_start_lba = start;
-			offset = start + (pit->pte[i].blknum / 8);
-			if(offset >= end_use_lba) {
-				printf("partition layout over disk size\n");
-				return -1;
-			}
-			gpt_e[j+1].part_end_lba = offset - 1;
-
-			printf("Start LBA : %d\t Size : %d\t\t partition name : ", start * 8, (offset - start) * 8);
-
-			str_disk_guid = strdup(FILE_SYSTEM_DATA);
-			/* UUID */
-			if (uuid_str_to_bin(str_disk_guid, gpt_e[j+1].part_guid.b, UUID_STR_FORMAT_STD))
-				return -1;
-
-			/* GUID */
-			memcpy(gpt_e[j+1].part_type.b, &PARTITION_BASIC_DATA_GUID, 16);
-
-			efiname_len = sizeof(gpt_e[j].part_name)
-				/ sizeof(u16);
-			dosname_len = sizeof(pit->pte[i].name);
-
-			memset(gpt_e[j+1].part_name, 0,
-					sizeof(gpt_e[j+1].part_name));
-			for (k = 0; k < MIN(dosname_len, efiname_len); k++) {
-				gpt_e[j+1].part_name[k] =
-					(u16)(pit->pte[i].name[k]);
-				printf("%c", gpt_e[j+1].part_name[k]);
-			}
-			printf("\n");
-			j++;
-		}
 	}
-#else
-	/* TEST SYSTEM */
-	start = offset;
-	offset = start + 768000;
-	printf("Start LBA : %d\t Size : %d\t\t partition name : System\n", start * 8, (offset - start) * 8);
 
-	gpt_e[1].part_start_lba = start;
-	gpt_e[1].part_end_lba = offset - 1;
+	/* partition type */
+	memcpy(gpt_e[0].part_type.b, &PARTITION_BASIC_DATA_GUID, 16);
+	name_len = sizeof(fat);
+	memset(&gpt_e[0].part_name, 0, sizeof(gpt_e[0].part_name));
+	for (j = 0; j < name_len; j++)
+		gpt_e[0].part_name[j] = (u16)fat[j];
 
-	str_disk_guid = strdup(FILE_SYSTEM_DATA);
+	for (i = 0, part_cnt = 1; i < pit->count; i++) {
+		/* partition start lba */
+		if (pit->pte[i].filesys == 0)
+			continue;
 
-	if (uuid_str_to_bin(str_disk_guid, gpt_e[1].part_guid.b, UUID_STR_FORMAT_STD))
-		return -1;
+		start = offset;
+		gpt_e[part_cnt].part_start_lba = start;
 
-	memcpy(gpt_e[1].part_type.b, &PARTITION_BASIC_DATA_GUID, 16);
-	efiname_len = sizeof(gpt_e[1].part_name)
-		/ sizeof(u16);
-	dosname_len = sizeof(fat1);
+		offset = start + (pit->pte[i].blknum / num_blk_size);
+		if (offset >= end_use_lba) {
+			printf("partition layout over disk size\n");
+			return -1;
+		}
 
-	memset(&gpt_e[1].part_name, 0, sizeof(gpt_e[1].part_name));
+		gpt_e[part_cnt].part_end_lba = offset - 1;
 
-	for (k = 0; k < MIN(dosname_len, efiname_len); k++)
-		gpt_e[1].part_name[k] = (u16)fat1[k];
+		printf("Start LBA : %d\t Size : %d\t\t partition name : ",
+				start * num_blk_size, (offset - start) * num_blk_size);
 
-	/* TEST USER */
-	start = offset;
-	offset = start + 14532083;
+		/* Unique guid */
+		str_disk_guid = strdup(FILE_SYSTEM_DATA);
+		ret = uuid_str_to_bin(str_disk_guid, gpt_e[part_cnt].part_guid.b, UUID_STR_FORMAT_STD);
+		free(str_disk_guid);
+		if (ret) {
+			printf("Unique guid set fail : %s\n", pit->pte[i].name);
+			return -1;
+		}
 
-	printf("Start LBA : %d\t Size : %d\t partition name : Userdata\n", start * 8, (offset - start) * 8);
-	gpt_e[2].part_start_lba = start;
-	gpt_e[2].part_end_lba = offset - 1;
-
-	str_disk_guid = strdup(FILE_SYSTEM_DATA);
-	if (uuid_str_to_bin(str_disk_guid, gpt_e[2].part_guid.b, UUID_STR_FORMAT_STD))
-		return -1;
-
-	memcpy(gpt_e[2].part_type.b, &PARTITION_BASIC_DATA_GUID, 16);
-	efiname_len = sizeof(gpt_e[2].part_name)
-		/ sizeof(u16);
-	dosname_len = sizeof(fat2);
-
-	memset(&gpt_e[2].part_name, 0, sizeof(gpt_e[2].part_name));
-
-	for (k = 0; k < MIN(dosname_len, efiname_len); k++)
-		gpt_e[2].part_name[k] = (u16)fat2[k];
-
-	/* TEST CACHE */
-	start = offset;
-	offset = start + 76800;
-	printf("Start LBA : %d\t Size : %d\t\t partition name : Cache\n", start * 8, (offset - start) * 8);
-	gpt_e[3].part_start_lba = start;
-	gpt_e[3].part_end_lba = offset - 1;
-
-	str_disk_guid = strdup(FILE_SYSTEM_DATA);
-	if (uuid_str_to_bin(str_disk_guid, gpt_e[3].part_guid.b, UUID_STR_FORMAT_STD))
-		return -1;
-
-	memcpy(gpt_e[3].part_type.b, &PARTITION_BASIC_DATA_GUID, 16);
-	efiname_len = sizeof(gpt_e[3].part_name)
-		/ sizeof(u16);
-	dosname_len = sizeof(fat3);
-
-	memset(&gpt_e[3].part_name, 0, sizeof(gpt_e[3].part_name));
-
-	for (k = 0; k < MIN(dosname_len, efiname_len); k++)
-		gpt_e[3].part_name[k] = (u16)fat3[k];
-
-	/* Modem TEST  */
-	start = offset;
-	offset = start + 25600;
-
-	printf("Start LBA : %d\t Size : %d\t\t partition name : Modem\n", start * 8, (offset - start) * 8);
-	gpt_e[4].part_start_lba = start;
-	gpt_e[4].part_end_lba = offset - 1;
-
-	str_disk_guid = strdup(FILE_SYSTEM_DATA);
-	if (uuid_str_to_bin(str_disk_guid, gpt_e[4].part_guid.b, UUID_STR_FORMAT_STD))
-		return -1;
-
-	memcpy(gpt_e[4].part_type.b, &PARTITION_BASIC_DATA_GUID, 16);
-	efiname_len = sizeof(gpt_e[4].part_name)
-		/ sizeof(u16);
-	dosname_len = sizeof(fat4);
-
-	memset(&gpt_e[4].part_name, 0, sizeof(gpt_e[4].part_name));
-
-	for (k = 0; k < MIN(dosname_len, efiname_len); k++)
-		gpt_e[4].part_name[k] = (u16)fat4[k];
-
-	/* TEST EFS */
-	start = offset;
-	offset = start + 5120;
-
-	printf("Start LBA : %d\t Size : %d\t\t partition name : efs\n", start * 8, (offset - start) * 8);
-	gpt_e[5].part_start_lba = start;
-	gpt_e[5].part_end_lba = offset - 1;
-
-	str_disk_guid = strdup(FILE_SYSTEM_DATA);
-	if (uuid_str_to_bin(str_disk_guid, gpt_e[5].part_guid.b, UUID_STR_FORMAT_STD))
-		return -1;
-
-	memcpy(gpt_e[5].part_type.b, &PARTITION_BASIC_DATA_GUID, 16);
-	efiname_len = sizeof(gpt_e[5].part_name)
-		/ sizeof(u16);
-	dosname_len = sizeof(fat5);
-
-	memset(&gpt_e[5].part_name, 0, sizeof(gpt_e[5].part_name));
-
-	for (k = 0; k < MIN(dosname_len, efiname_len); k++)
-		gpt_e[5].part_name[k] = (u16)fat5[k];
-
-	/* TEST PERSIST */
-	start = offset;
-	offset = start + 7680;
-
-	printf("Start LBA : %d\t Size : %d\t\t partition name : Persist\n", start * 8, (offset - start) * 8);
-	gpt_e[6].part_start_lba = start;
-	gpt_e[6].part_end_lba = offset - 1;
-
-	str_disk_guid = strdup(FILE_SYSTEM_DATA);
-	if (uuid_str_to_bin(str_disk_guid, gpt_e[6].part_guid.b, UUID_STR_FORMAT_STD))
-		return -1;
-
-	memcpy(gpt_e[6].part_type.b, &PARTITION_BASIC_DATA_GUID, 16);
-	efiname_len = sizeof(gpt_e[6].part_name)
-		/ sizeof(u16);
-	dosname_len = sizeof(fat6);
-
-	memset(&gpt_e[6].part_name, 0, sizeof(gpt_e[6].part_name));
-
-	for (k = 0; k < MIN(dosname_len, efiname_len); k++)
-		gpt_e[6].part_name[k] = (u16)fat6[k];
-
-	/* TEST VENDOR */
-	start = offset;
-	offset = start + 153600;
-
-	printf("Start LBA : %d\t Size : %d\t\t partition name : Vendor\n", start * 8, (offset - start) * 8);
-
-	gpt_e[7].part_start_lba = start;
-	gpt_e[7].part_end_lba = offset - 1;
-
-	str_disk_guid = strdup(FILE_SYSTEM_DATA);
-	if (uuid_str_to_bin(str_disk_guid, gpt_e[7].part_guid.b, UUID_STR_FORMAT_STD))
-		return -1;
-
-	memcpy(gpt_e[7].part_type.b, &PARTITION_BASIC_DATA_GUID, 16);
-	efiname_len = sizeof(gpt_e[7].part_name)
-		/ sizeof(u16);
-	dosname_len = sizeof(fat7);
-
-	memset(&gpt_e[7].part_name, 0, sizeof(gpt_e[7].part_name));
-
-	for (k = 0; k < MIN(dosname_len, efiname_len); k++)
-		gpt_e[7].part_name[k] = (u16)fat7[k];
-
+		/* partition type */
+		memcpy(gpt_e[part_cnt].part_type.b, &PARTITION_BASIC_DATA_GUID, 16);
+		name_len = sizeof(pit->pte[i].name);
+		memset(gpt_e[part_cnt].part_name, 0, sizeof(gpt_e[part_cnt].part_name));
+		for (j = 0; j < name_len; j++) {
+			gpt_e[part_cnt].part_name[j] = (u16)(pit->pte[i].name[j]);
+			printf("%c", gpt_e[part_cnt].part_name[j]);
+		}
+		printf("\n");
+		part_cnt++;
+	}
 	printf("==============================================================\n");
-	printf("Part table complete\n");
-#endif
+
 	return 0;
 }
 
@@ -324,153 +159,186 @@ static int write_gpt_table(bdev_t *dev, struct gpt_header *gpt_h,
 		struct gpt_part_table *gpt_e)
 {
 	int pte_blk_cnt;
+	int size = 0, ret;
 	u32 calc_crc32;
-	u64 val;
-	int err;
+	u32 start_blk;
+	u32 write_size;
 
 	/* Setup the Protective MBR */
-	err = set_protective_mbr(dev);
-	if (err)
-		goto err;
-	pte_blk_cnt = ((GPT_ENTRY_NUMBERS * sizeof(struct gpt_part_table) -1 ) /
-			(dev->block_size + 1)) * 8;
+	ret = set_protective_mbr(dev);
+	if (ret) {
+		printf("set_protective_mbr fail\n");
+		return -1;
+	}
 
-	/* Generate CRC for the Primary GPT Header */
+	pte_blk_cnt = ((GPT_ENTRY_NUMBERS * sizeof(struct gpt_part_table) - 1) /
+			(dev->block_size + 1)) * num_blk_size;
+
+	/* Generate CRC for the primary GPT header */
 	calc_crc32 = crc32(0, (const unsigned char *)gpt_e,
 		gpt_h->part_num_entry * gpt_h->part_size_entry);
-
 	gpt_h->part_table_crc = calc_crc32;
-
 	calc_crc32 = crc32(0, (const unsigned char *)gpt_h, gpt_h->head_sz);
 	gpt_h->head_crc = calc_crc32;
 
-	/* Write the First GPT to the block right after the Legacy MBR */
-
-	err = dev->new_write(dev, gpt_h , 8, 8);
-	if (err != 8) {
+	/* GPT header write */
+	start_blk = GPT_HEAD_LBA * num_blk_size;
+	write_size = num_blk_size * 1;
+	size = dev->new_write(dev, gpt_h, start_blk, write_size);
+	if (size != write_size) {
 		printf("GPT HEAD write fail\n");
-		goto err;
+		return -1;
 	}
 
-	err = dev->new_write(dev, gpt_e, 16, pte_blk_cnt);
-	if (err != pte_blk_cnt) {
+	/* GPT primary entry table write */
+	start_blk = GPT_TABLE_LBA * num_blk_size;
+	write_size = pte_blk_cnt;
+	size = dev->new_write(dev, gpt_e, start_blk, write_size);
+	if (size != write_size) {
 		printf("Partition Table write Fail\n");
-		goto err;
+		return -1;
 	}
 
-	/* recalculate the values for the Backup GPT Header */
-	val = 1;
+	/* Recalculate the values for the backup GPT header */
 	gpt_h->gpt_header = gpt_h->gpt_back_header;
-	gpt_h->gpt_back_header = val;
-	gpt_h->head_crc = 0;
-
+	gpt_h->gpt_back_header = GPT_HEAD_LBA;
 	calc_crc32 = crc32(0, (const unsigned char *)gpt_h, gpt_h->head_sz);
 	gpt_h->head_crc = calc_crc32;
 
-	err = dev->new_write(dev, gpt_e, (gpt_h->end_lba + 1) * 8, pte_blk_cnt);
-	if (err != pte_blk_cnt) {
+	/* Backup GPT primary entry table write */
+	start_blk = (gpt_h->end_lba + 1) * num_blk_size;
+	write_size = pte_blk_cnt;
+	size = dev->new_write(dev, gpt_e, start_blk, write_size);
+	if (size != write_size) {
 		printf("Back up partition table write Fail\n");
-		goto err;
+		return -1;
 	}
 
-	err = dev->new_write(dev, gpt_h, gpt_h->gpt_header * 8, 8);
-
-	if (err != 8) {
+	/* Backup GPT header write */
+	start_blk = gpt_h->gpt_header * num_blk_size;
+	write_size = num_blk_size * 1;
+	size = dev->new_write(dev, gpt_h, start_blk, write_size);
+	if (size != write_size) {
 		printf("Back up Gpt Head write fail\n");
-		goto err;
+		return -1;
 	}
 
 	printf("GPT successfully written to block device!\n");
+
 	return 0;
-err:
-	printf("** Can't write to device **\n");
-	return -1;
 }
-#if USE_PIT
+
 int gpt_create(struct pit_info *pit)
-#else
-int gpt_create(void)
-#endif
 {
-	bdev_t *dev;
-	dev = bio_open("scsi0");
 	struct gpt_header *gpt_h = NULL;
 	struct gpt_part_table *gpt_e = NULL;
-	int err = 0;
-
-	gpt_h = malloc(sizeof(struct gpt_header) * 8);
-
-	if (gpt_h == NULL) {
-		printf("%s: malloc failed!\n", __func__);
-		return -1;
-	}
-	memset(gpt_h, 0, sizeof(*gpt_h) * 8);
-
-	gpt_e = malloc(sizeof(struct gpt_part_table) * 128);
-
-	if (gpt_e == NULL) {
-		printf("%s: malloc failed!\n", __func__);
-		free(gpt_h);
-		return -1;
-	}
-	memset(gpt_e, 0, 4096 * 3);
-	err = set_gpt_header(dev, gpt_h, gpt_e);
-#if USE_PIT
-	err = set_partition_table(dev, gpt_h, gpt_e, pit);
-#else
-	err = set_partition_table(dev, gpt_h, gpt_e);
-#endif
-	err = write_gpt_table(dev, gpt_h, gpt_e);
-
-	free(gpt_h);
-	free(gpt_e);
-
-	bio_close(dev);
-	return err;
-}
-
-static int gpt_test(int argc, const cmd_args *argv)
-{
-	int err;
-#if USE_PIT
-	printf("Use PIT plz!, not create manual gpt.\n");
-#else
-	printf("COMMAND GPT TEST \n");
-	err = gpt_create();
-	if(err) {
-		printf("Create GPT Fail\n");
-		return -1;
-	}
-#endif
-	return 0;
-}
-
-static int gpt_dump(int argc, const cmd_args *argv)
-{
+	unsigned int boot_dev;
+	int ret = -1;
 	bdev_t *dev;
-	int rv;
-	unsigned char buf[4096] = {0,};
-	int i, block;
-	unsigned int offset = 0;
+
+	boot_dev = get_boot_device();
+	if (boot_dev == BOOT_UFS) {
+		dev = bio_open("scsi0");
+		num_blk_size = 8;
+	} else {
+		dev = bio_open("mmc0");
+		num_blk_size = 1;
+	}
+	if (!dev) {
+		printf("%s: fail to bio open\n", __func__);
+		return ret;
+	}
+
+	gpt_h = malloc(sizeof(struct gpt_header) * num_blk_size);
+	if (!gpt_h) {
+		printf("%s: gpt_h malloc failed!\n", __func__);
+		goto out;
+	}
+
+	memset(gpt_h, 0, sizeof(struct gpt_header) * num_blk_size);
+
+	gpt_e = malloc(sizeof(struct gpt_part_table) * GPT_ENTRY_NUMBERS);
+	if (!gpt_e) {
+		printf("%s: gpt_e malloc failed!\n", __func__);
+		goto entry_free;
+	}
+
+	memset(gpt_e, 0, sizeof(struct gpt_part_table) * GPT_ENTRY_NUMBERS);
+
+	ret = set_gpt_header(dev, gpt_h, gpt_e);
+	if (ret) {
+		printf("Set gpt header fail\n");
+		goto entry_free;
+	}
+
+	ret = set_partition_table(dev, gpt_h, gpt_e, pit);
+	if (ret) {
+		printf("Set partition table fail\n");
+		goto entry_free;
+	}
+
+	ret = write_gpt_table(dev, gpt_h, gpt_e);
+	if (ret) {
+		printf("gpt write fail\n");
+		goto entry_free;
+	}
+
+entry_free:
+	free(gpt_e);
+head_free:
+	free(gpt_h);
+out:
+	bio_close(dev);
+	return ret;
+}
+
+static void gpt_dump(int argc, const cmd_args *argv)
+{
+	unsigned char *buf;
+	unsigned int boot_dev, offset = 0;
+	int i, block, size;
+	bdev_t *dev;
+	u32 start_blk;
+	u32 read_size;
+
+	boot_dev = get_boot_device();
+	if (boot_dev == BOOT_UFS) {
+		dev = bio_open("scsi0");
+		num_blk_size = 8;
+	} else {
+		dev = bio_open("mmc0");
+		num_blk_size = 1;
+	}
+	if (!dev) {
+		printf("%s: fail to bio open\n", __func__);
+		return;
+	}
+
+	buf = malloc(dev->block_size);
+	if (!buf) {
+		printf("%s: alloc fail\n", __func__);
+		goto out;
+	}
+
+	memset(buf, 0, dev->block_size);
 
 	printf("partition Read\n");
+	printf("start block %d\n", block);
 
-	dev = bio_open("scsi0");
 	block = argv[1].u;
-
-	printf("start block %d \n", block);
-
-	rv = dev->new_read(dev, buf, block * 8, 8);
-
-	if(rv != 8)
-	{
-		printf("scsi device read fail.\n");
-		return -1;
+	num_blk_size = dev->block_size / MMC_BSIZE;
+	start_blk = block * num_blk_size;
+	read_size = num_blk_size * 1;
+	size = dev->new_read(dev, buf, start_blk, read_size);
+	if (size != read_size) {
+		printf("device read fail.\n");
+		goto free;
 	}
-	for (i = 1; i <= 4096; i++) {
+
+	for (i = 1; i <= dev->block_size; i++) {
 		printf("%02x ", buf[i-1]);
 		if (i % 16 == 0) {
-			printf("\tOffset %x \n",offset);
+			printf("\tOffset %x\n", offset);
 			offset += 0x10;
 		}
 		if (i % 512 == 0)
@@ -478,11 +346,12 @@ static int gpt_dump(int argc, const cmd_args *argv)
 	}
 	printf("\n");
 
+free:
+	free(buf);
+out:
 	bio_close(dev);
-	return 0;
 }
 
 STATIC_COMMAND_START
-STATIC_COMMAND("gpt_test", "gpt_test", &gpt_test)
 STATIC_COMMAND("gpt_dump", "start block", &gpt_dump)
 STATIC_COMMAND_END(gpt_test);
