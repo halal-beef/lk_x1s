@@ -75,8 +75,9 @@ static int set_partition_table(bdev_t *dev, struct gpt_header *gpt_h,
 	uint32_t start;
 	int i, j, part_cnt;
 	int ret = 0;
-	char *str_disk_guid;
+	char *unique_guid;
 	char fat[72] = "fat";
+	char part_number[2];
 	u32 name_len;
 	u32 fat_part_size;
 
@@ -88,7 +89,7 @@ static int set_partition_table(bdev_t *dev, struct gpt_header *gpt_h,
 	start = offset;
 	fat_part_size = FAT_PART_SIZE / num_blk_size;
 	offset = start + fat_part_size;
-	printf("Start LBA : %d\t\t Size : %d\t\t partition name : fat\n",
+	printf("Start LBA : %d\t\t Size : %d\t\t",
 			start * num_blk_size, (offset - start) * num_blk_size);
 
 	/* FAT Partition */
@@ -96,13 +97,20 @@ static int set_partition_table(bdev_t *dev, struct gpt_header *gpt_h,
 	gpt_e[0].part_end_lba = offset - 1;
 
 	/* Unique guid */
-	str_disk_guid = strdup(BASIC_DATA);
-	ret = uuid_str_to_bin(str_disk_guid, gpt_e[0].part_guid.b, UUID_STR_FORMAT_STD);
-	free(str_disk_guid);
+	unique_guid = strdup(EXYNOS_UNIQUE_GUID);
+	if (!unique_guid) {
+		printf("Unique GUID strdup fail\n");
+		goto out;
+	}
+	sprintf(part_number, "%02x", 0);
+	strcat(unique_guid, part_number);
+	ret = uuid_str_to_bin(unique_guid, gpt_e[0].part_guid.b, UUID_STR_FORMAT_STD);
 	if (ret) {
 		printf("Unique guid set fail : fat\n");
-		return -1;
+		goto free;
 	}
+	printf("Unique GUID : %s\t name : fat\n", unique_guid);
+	free(unique_guid);
 
 	/* partition type */
 	memcpy(gpt_e[0].part_type.b, &PARTITION_BASIC_DATA_GUID, 16);
@@ -122,22 +130,28 @@ static int set_partition_table(bdev_t *dev, struct gpt_header *gpt_h,
 		offset = start + (pit->pte[i].blknum / num_blk_size);
 		if (offset >= end_use_lba) {
 			printf("partition layout over disk size\n");
-			return -1;
+			goto out;
 		}
-
 		gpt_e[part_cnt].part_end_lba = offset - 1;
 
-		printf("Start LBA : %d\t Size : %d\t\t partition name : ",
-				start * num_blk_size, (offset - start) * num_blk_size);
+		printf("Start LBA : %d\t Size : %d\t\t", start * num_blk_size,
+				(offset - start) * num_blk_size);
 
 		/* Unique guid */
-		str_disk_guid = strdup(FILE_SYSTEM_DATA);
-		ret = uuid_str_to_bin(str_disk_guid, gpt_e[part_cnt].part_guid.b, UUID_STR_FORMAT_STD);
-		free(str_disk_guid);
+		unique_guid = strdup(EXYNOS_UNIQUE_GUID);
+		if (!unique_guid) {
+			printf("Unique GUID strdup fail\n");
+			goto out;
+		}
+		sprintf(part_number, "%02x", part_cnt + 1);
+		strcat(unique_guid, part_number);
+		ret = uuid_str_to_bin(unique_guid, gpt_e[part_cnt].part_guid.b, UUID_STR_FORMAT_STD);
 		if (ret) {
 			printf("Unique guid set fail : %s\n", pit->pte[i].name);
-			return -1;
+			goto free;
 		}
+		printf("Unique GUID : %s\t name : ", unique_guid);
+		free(unique_guid);
 
 		/* partition type */
 		memcpy(gpt_e[part_cnt].part_type.b, &PARTITION_BASIC_DATA_GUID, 16);
@@ -150,9 +164,14 @@ static int set_partition_table(bdev_t *dev, struct gpt_header *gpt_h,
 		printf("\n");
 		part_cnt++;
 	}
+
 	printf("==============================================================\n");
 
 	return 0;
+free:
+	free(unique_guid);
+out:
+	return -1;
 }
 
 static int write_gpt_table(bdev_t *dev, struct gpt_header *gpt_h,
