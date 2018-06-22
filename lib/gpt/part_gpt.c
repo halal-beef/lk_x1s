@@ -4,6 +4,7 @@
 #include <string.h>
 #include <part_gpt.h>
 #include <uuid.h>
+#include <ctype.h>
 #include <lib/console.h>
 #include <lib/cksum.h>
 #include <dev/boot.h>
@@ -370,6 +371,108 @@ free:
 out:
 	bio_close(dev);
 }
+
+static void print_efiname(struct gpt_part_table *gpt_e, char *buf)
+{
+	int i;
+	u8 c;
+
+	for (i = 0; i < PT_NAME_SZ; i++) {
+		c = gpt_e->part_name[i] & 0xff;
+		c = isprint(c) ? c : '.';
+		buf[i] = c;
+	}
+	buf[PT_NAME_SZ] = 0;
+}
+
+int get_unique_guid(char *pt_name, char *buf)
+{
+	struct gpt_header *gpt_h = NULL;
+	struct gpt_part_table *gpt_e = NULL;
+	unsigned char *uuid_bin;
+	unsigned int boot_dev;
+	char name_buf[PT_NAME_SZ + 1];
+	int i, size;
+	int ret = -1;
+	int pte_blk_cnt;
+	bdev_t *dev;
+	u32 num_blk_size;
+	u32 start_blk;
+	u32 read_size;
+
+	boot_dev = get_boot_device();
+	if (boot_dev == BOOT_UFS)
+		dev = bio_open("scsi0");
+	else
+		dev = bio_open("mmc0");
+	if (!dev) {
+		printf("%s: fail to bio open\n", __func__);
+		return -1;
+	}
+
+
+	if (strlen(pt_name) > PT_NAME_SZ) {
+		printf("Partition name is too long\n");
+		goto out;
+	}
+
+	num_blk_size = dev->block_size / MMC_BSIZE;
+	gpt_h = malloc(sizeof(struct gpt_header) * num_blk_size);
+	if (!gpt_h) {
+		printf("%s: malloc failed!\n", __func__);
+		goto out;
+	}
+
+	gpt_e = malloc(sizeof(struct gpt_part_table) * GPT_ENTRY_NUMBERS);
+	if (!gpt_e) {
+		printf("%s: malloc failed!\n", __func__);
+		goto head_free;
+	}
+
+	memset(gpt_h, 0, sizeof(struct gpt_header) * num_blk_size);
+	memset(gpt_e, 0, sizeof(struct gpt_part_table) * GPT_ENTRY_NUMBERS);
+
+	start_blk = GPT_HEAD_LBA * num_blk_size;
+	read_size = num_blk_size * 1;
+	size = dev->new_read(dev, gpt_h, start_blk, read_size);
+	if (size != read_size) {
+		printf("ERROR: Can't read GPT header\n");
+		goto entry_free;
+	}
+
+	pte_blk_cnt = ((GPT_ENTRY_NUMBERS * sizeof(struct gpt_part_table) - 1) /
+			(dev->block_size + 1)) * num_blk_size;
+	start_blk = GPT_TABLE_LBA * num_blk_size;
+	read_size = pte_blk_cnt;
+	size = dev->new_read(dev, gpt_e, start_blk, read_size);
+	if (size != read_size)	{
+		printf("ERROR: Can't read GPT primary partition table\n");
+		goto entry_free;
+	}
+
+	for (i = 0; i < gpt_h->part_num_entry; i++) {
+		memset(name_buf, 0, (PT_NAME_SZ + 1));
+
+		print_efiname(&gpt_e[i], name_buf);
+		if (!strncmp(name_buf, pt_name, strlen(pt_name))) {
+			uuid_bin = (unsigned char *)gpt_e[i].part_guid.b;
+			uuid_bin_to_str(uuid_bin, buf, UUID_STR_FORMAT_GUID);
+			ret = 0;
+			goto entry_free;
+		}
+	}
+
+	printf("Not find partition name %s\n", pt_name);
+
+entry_free:
+	free(gpt_e);
+head_free:
+	free(gpt_h);
+out:
+	bio_close(dev);
+	return ret;
+}
+
 
 STATIC_COMMAND_START
 STATIC_COMMAND("gpt_dump", "start block", &gpt_dump)

@@ -211,7 +211,7 @@ void uuid_bin_to_str(unsigned char *uuid_bin, char *uuid_str, int str_format)
 		char_order = guid_char_order;
 
 	for (i = 0; i < 16; i++) {
-		printf("%02x", uuid_bin[char_order[i]]);
+		sprintf(uuid_str, "%02x", uuid_bin[char_order[i]]);
 		uuid_str += 2;
 		switch (i) {
 		case 3:
