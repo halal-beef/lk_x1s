@@ -7,6 +7,7 @@
 #include <platform/smc.h>
 #include <platform/speedy.h>
 #include <platform/pmic_s2mpu09.h>
+#include <platform/fg_s2mu004.h>
 #include <platform/if_pmic_s2mu004.h>
 
 void speedy_gpio_init(void);
@@ -109,6 +110,7 @@ void platform_early_init(void)
 void platform_init(void)
 {
 	pmic_init();
+	fg_init_s2mu004();
 	check_charger_connect();
 	display_pmic_info_s2mpu09();
 
