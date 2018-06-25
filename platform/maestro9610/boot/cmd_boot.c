@@ -223,7 +223,7 @@ static void set_bootargs(void)
 {
 	bootargs_init();
 
-	update_val("console", "ttySAC0,115200");
+	/* update_val("console", "ttySAC0,115200"); */
 
 	bootargs_update();
 }
