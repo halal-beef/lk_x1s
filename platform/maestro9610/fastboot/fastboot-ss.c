@@ -13,6 +13,7 @@
 
 #include <debug.h>
 #include <string.h>
+#include <platform/chip_id.h>
 #include "fastboot.h"
 
 #define CONFIG_BOARD_NAME "CONFIG_BOARD_NAME"
@@ -379,6 +380,32 @@ int fboot_usb_int_bulkin(u64 buffer, u64 buffer_size)
 	return 1;
 }
 
+static void simple_hextostr(u32 hex, u8 *str)
+{
+	u8 i;
+
+	for (i = 0; i < 8; i++) {
+		if ((hex & 0xF) > 9)
+			*str++ = 'a' + (hex & 0xF) - 10;
+		else
+			*str++ = '0' + (hex & 0xF);
+
+		hex >>= 4;
+	}
+}
+
+static void set_serial_number(void)
+{
+	u8 tmp_serial_id[16];	/* string for chip id */
+	u8 i;
+
+	simple_hextostr(s5p_chip_id[1], tmp_serial_id+8);
+	simple_hextostr(s5p_chip_id[0], tmp_serial_id);
+
+	for (i = 0; i < FBOOT_CHIPID_SIZE; i++)
+		fboot_string_desc3[FBOOT_STRING_DESC3_SIZE-(i*2)-2] = tmp_serial_id[i];
+}
+
 /* Initizes the board specific fastboot
    Returns 0 on success
    Returns 1 on failure */
@@ -392,7 +419,7 @@ int fastboot_init(struct cmd_fastboot_interface *interface)
 
 	device_strings[DEVICE_STRING_MANUFACTURER_INDEX]  = "Samsung S.LSI";
 	device_strings[DEVICE_STRING_PRODUCT_INDEX]       = CONFIG_BOARD_NAME;
-	/* set_serial_number(); */
+	set_serial_number();
 	/* These are just made up */
 	device_strings[DEVICE_STRING_CONFIG_INDEX]        = "Android Fastboot";
 	device_strings[DEVICE_STRING_INTERFACE_INDEX]     = "Android Fastboot";

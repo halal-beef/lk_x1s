@@ -12,11 +12,18 @@
 void speedy_gpio_init(void);
 void display_gpio_init(void);
 
+unsigned int s5p_chip_id[4] = {0x0, 0x0, 0x0, 0x0};
 unsigned int charger_mode = 0;
 
 unsigned int get_charger_mode(void)
 {
 	return charger_mode;
+}
+
+static void read_chip_id(void)
+{
+	s5p_chip_id[0] = readl(EXYNOS9610_PRO_ID + CHIPID0_OFFSET);
+	s5p_chip_id[1] = readl(EXYNOS9610_PRO_ID + CHIPID1_OFFSET) & 0xFFFF;
 }
 
 static void load_secure_payload(void)
@@ -86,6 +93,8 @@ static int check_charger_connect(void)
 void platform_early_init(void)
 {
 	unsigned int rst_stat = readl(EXYNOS9610_POWER_RST_STAT);
+
+	read_chip_id();
 
 	speedy_gpio_init();
 	display_gpio_init();
