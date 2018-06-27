@@ -55,6 +55,9 @@ static uint arch_curr_cpu_num(void);
 #define DCACHE 2
 #define UCACHE (ICACHE|DCACHE)
 #ifndef ASSEMBLY
+void __arch_clean_and_invalidate_dcache_level(size_t level, unsigned int invalidate);
+void __arch_clean_and_invalidate_dcache_all(void);
+void arch_clean_and_invalidate_dcache_all(void);
 
 void arch_disable_cache(uint flags);
 void arch_enable_cache(uint flags);
