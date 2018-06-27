@@ -105,7 +105,8 @@ void unregister_print_callback(print_callback_t *cb)
 static ssize_t __debug_stdio_write(io_handle_t *io, const char *s, size_t len)
 {
 #ifdef CONFIG_RAMDUMP_MODE
-	char *last_buf = readl(CONFIG_RAMDUMP_LASTBUF);
+	u32 last_buf = readl(CONFIG_RAMDUMP_LASTBUF);
+
 	if ((last_buf <= CONFIG_RAMDUMP_BASE) ||
 			(last_buf >= (CONFIG_RAMDUMP_LOGBUF + CONFIG_RAMDUMP_LOGSZ)) ||
 			((CONFIG_RAMDUMP_LOGBUF + CONFIG_RAMDUMP_LOGSZ) < (last_buf + len)))
