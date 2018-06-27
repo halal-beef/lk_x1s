@@ -10,6 +10,7 @@
 
 #include <sys/types.h>
 #include <platform/smc.h>
+#include <platform/sfr.h>
 #include <dev/boot.h>
 
 u64 exynos_smc(u64 cmd, u64 arg1, u64 arg2, u64 arg3)
@@ -112,10 +113,10 @@ void set_secure_reg(u64 reg_val, u32 num)
 	exynos_smc(SMC_CMD_SET_SECURE_REG, reg_val, (u64)num, reg_val);
 }
 
-#if defined(CONFIG_RAMDUMP_GPR)
-void cpu_boot(u64 id, u64 cpu, u64 fn)
+#ifdef CONFIG_RAMDUMP_GPR
+u64 cpu_boot(u64 id, u64 cpu, u64 fn)
 {
-	exynos_smc(id, cpu, fn, 0);
+	return exynos_smc(id, cpu, fn, 0);
 }
 #endif
 
