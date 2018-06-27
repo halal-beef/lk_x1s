@@ -67,12 +67,13 @@
 #define IRAM_NS_BASE								(IRAM_BASE + 0x18000)
 #define BL_SYS_INFO								(IRAM_NS_BASE + 0x800)
 #define BL_SYS_INFO_DRAM_SIZE							(BL_SYS_INFO + 0x48)
+#define CONFIG_IRAM_STACK							(IRAM_NS_BASE + 0x1000)
 
 #define WARM_RESET								(1 << 28)
 #define LITTLE_WDT_RESET							(1 << 23)
 #define BIG_WDT_RESET								(1 << 24)
 #define PIN_RESET								(1 << 16)
-
+#define CONFIG_RAMDUMP_GPR
 #define CONFIG_RAMDUMP_MODE          	0xD
 #define CONFIG_RAMDUMP_OFFSET		(0x79000000)
 #define CONFIG_RAMDUMP_LOG_OFFSET	(0x10000)
