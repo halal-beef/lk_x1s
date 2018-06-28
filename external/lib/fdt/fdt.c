@@ -114,6 +114,8 @@ int fdt_check_header(const void *fdt)
 {
 	size_t hdrsize;
 
+	if (fdt == NULL)
+		return -FDT_ERR_BADMAGIC;
 	if (fdt_magic(fdt) != FDT_MAGIC)
 		return -FDT_ERR_BADMAGIC;
 	hdrsize = fdt_header_size(fdt);

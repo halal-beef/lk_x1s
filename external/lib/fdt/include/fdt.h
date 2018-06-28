@@ -89,8 +89,32 @@ struct fdt_property {
 	fdt32_t nameoff;
 	char data[0];
 };
+struct dt_table_header {
+	uint32_t magic;                 // DT_TABLE_MAGIC
+	uint32_t total_size;            // includes dt_table_header + all dt_table_entry
+					// and all dtb/dtbo
+	uint32_t header_size;           // sizeof(dt_table_header)
+
+	uint32_t dt_entry_size;         // sizeof(dt_table_entry)
+	uint32_t dt_entry_count;        // number of dt_table_entry
+	uint32_t dt_entries_offset;     // offset to the first dt_table_entry
+					// from head of dt_table_header
+	uint32_t page_size;             // flash page size we assume
+	uint32_t reserved[1];           // must zeros
+};
+
+struct dt_table_entry {
+	uint32_t dt_size;
+	uint32_t dt_offset;             // offset from head of dt_table_header
+
+	uint32_t id;                    // optional, must zero if unused
+	uint32_t rev;                   // optional, must zero if unused
+	uint32_t custom[4];             // optional, must zero if unused
+};
+
 
 #endif /* !__ASSEMBLY */
+#define DT_TABLE_MAGIC  0xd7b7ab1e
 
 #define FDT_MAGIC	0xd00dfeed	/* 4: version, 4: total size */
 #define FDT_TAGSIZE	sizeof(fdt32_t)
