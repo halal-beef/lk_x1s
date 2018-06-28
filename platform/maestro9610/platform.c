@@ -9,6 +9,7 @@
 #include <platform/pmic_s2mpu09.h>
 #include <platform/fg_s2mu004.h>
 #include <platform/if_pmic_s2mu004.h>
+#include <platform/tmu.h>
 
 void speedy_gpio_init(void);
 void display_gpio_init(void);
@@ -119,4 +120,7 @@ void platform_init(void)
 	ufs_init(2);
 	ufs_set_configuration_descriptor();
 	pit_init();
+
+	display_tmu_info();
+	display_trip_info();
 }
