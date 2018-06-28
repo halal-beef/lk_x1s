@@ -16,6 +16,8 @@ void display_gpio_init(void);
 
 unsigned int s5p_chip_id[4] = {0x0, 0x0, 0x0, 0x0};
 unsigned int charger_mode = 0;
+unsigned int board_id = 0;
+unsigned int board_rev = 0;
 
 unsigned int get_charger_mode(void)
 {
