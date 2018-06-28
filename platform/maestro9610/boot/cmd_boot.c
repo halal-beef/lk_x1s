@@ -25,7 +25,10 @@
 #include <platform/charger.h>
 #include <platform/ab_update.h>
 #include <platform/secure_boot.h>
+#include <platform/sizes.h>
+#include <platform/fastboot.h>
 #include <pit.h>
+#include <ufdt_overlay.h>
 
 /* Memory node */
 #define SIZE_2GB (0x80000000)
@@ -36,20 +39,97 @@
 #define KERNEL_BASE 0x80080000
 #define RAMDISK_BASE 0x84000000
 #define DT_BASE 0x8A000000
-#define DT_RESERVE_MEM 0x23000
+#define DTBO_BASE 0x8B000000
 #define ECT_BASE 0x90000000
 #define ECT_SIZE 0x32000
 #define BUFFER_SIZE 2048
 
 static char cmdline[AVB_CMD_MAX_SIZE];
 
+extern unsigned int board_id;
+extern unsigned int board_rev;
+
+struct fdt_header *fdt_dtb;
+struct dt_table_header *dtbo_table;
+
 unsigned long simple_strtoul(const char *cp,char **endp,unsigned int base);
 
-void resize_dt(void *base)
+void merge_dto_to_main_dtb(void)
 {
-	fdt_set_totalsize(base, DT_RESERVE_MEM);
+	void *fdto, *merged_fdt;
+	struct dt_table_entry *dt_entry;
+	u32 i;
+	int ret;
 
-	fdt_add_mem_rsv(base, (uint64_t)base, DT_RESERVE_MEM);
+	ret = fdt_check_header(fdt_dtb);
+	if (ret < 0) {
+		printf("DTBO: fdt_check_header(): %s\n", fdt_strerror(ret));
+		return;
+	}
+
+	if (fdt32_to_cpu(dtbo_table->magic) != DT_TABLE_MAGIC) {
+		printf("DTBO: dtbo.img: %s\n", fdt_strerror(-FDT_ERR_BADMAGIC));
+		return;
+	}
+	dt_entry = (struct dt_table_entry *)((unsigned long)dtbo_table
+			+ fdt32_to_cpu(dtbo_table->header_size));
+
+	for (i = 0; i < fdt32_to_cpu(dtbo_table->dt_entry_count); i++, dt_entry++) {
+		u32 id = fdt32_to_cpu(dt_entry->id);
+		u32 rev = fdt32_to_cpu(dt_entry->rev);
+
+		if ((id == board_id) && (rev == board_rev)) {
+			printf("DTBO: id: 0x%x, rev: 0x%x\n", id, rev);
+			break;
+		}
+	}
+
+	if (i == fdt32_to_cpu(dtbo_table->dt_entry_count)) {
+		printf("DTBO: Not found dtbo of board_rev 0x%x.\n", board_rev);
+		do_fastboot(0, 0);
+		return;
+	}
+
+	fdto = malloc(fdt32_to_cpu(dt_entry->dt_size));
+	memcpy(fdto, (unsigned int)dtbo_table + fdt32_to_cpu(dt_entry->dt_offset),
+			fdt32_to_cpu(dt_entry->dt_size));
+
+	ret = fdt_check_header(fdto);
+	if (ret < 0) {
+		printf("DTBO: overlay dtbo: %s", fdt_strerror(ret));
+		goto fdto_magic_err;
+	}
+
+	merged_fdt = ufdt_apply_overlay(fdt_dtb, fdt_totalsize(fdt_dtb),
+			fdto, fdt_totalsize(fdto));
+	if (!merged_fdt)
+		goto fdto_magic_err;
+
+	memcpy(fdt_dtb, merged_fdt, fdt_totalsize(merged_fdt));
+	printf("DTBO: Merge Complete (size:%d)!\n", fdt_totalsize(fdt_dtb));
+
+	free(merged_fdt);
+fdto_magic_err:
+	free(fdto);
+}
+
+int resize_dt(unsigned int sz)
+{
+	uint64_t size;
+	int ret = 0;
+
+	ret = fdt_check_header(fdt_dtb);
+	if (ret) {
+		printf("libfdt fdt_check_header(): %s\n", fdt_strerror(ret));
+		return ret;
+	}
+
+	size = fdt_totalsize(fdt_dtb) + sz;
+	/* Align for 4byte. */
+	size = ALIGN(size, 0x4);
+	fdt_set_totalsize(fdt_dtb, size);
+
+	return size;
 }
 
 int make_fdt_node(char *path, char *node)
@@ -57,20 +137,50 @@ int make_fdt_node(char *path, char *node)
 	int offset;
 	int ret;
 
-	offset = fdt_path_offset (DT_BASE, path);
+	ret = fdt_check_header(fdt_dtb);
+	if (ret) {
+		printf("libfdt fdt_check_header(): %s\n", fdt_strerror(ret));
+		return ret;
+	}
+
+	offset = fdt_path_offset(fdt_dtb, path);
 	if (offset < 0) {
-		printf ("libfdt fdt_path_offset() returned %s\n",
-			fdt_strerror(offset));
+		printf ("libfdt fdt_path_offset(): %s\n", fdt_strerror(offset));
 		return 1;
 	}
 
-	ret = fdt_add_subnode(DT_BASE, offset, node);
+	ret = fdt_add_subnode(fdt_dtb, offset, node);
 	if (ret < 0) {
-		printf ("libfdt fdt_add_subnode(): %s\n",
-			fdt_strerror(ret));
+		printf ("libfdt fdt_add_subnode(): %s\n", fdt_strerror(ret));
 		return 1;
 	}
 
+	return 0;
+}
+
+int get_fdt_val(char *path, char *property, char *retval)
+{
+	char *np;
+	int  offset;
+	int  len, ret = 0;
+
+	ret = fdt_check_header(fdt_dtb);
+	if (ret) {
+		printf("libfdt fdt_check_header(): %s\n", fdt_strerror(ret));
+		return 1;
+	}
+
+	offset = fdt_path_offset(fdt_dtb, path);
+	if (offset < 0) {
+		printf("libfdt fdt_path_offset(): %s\n", fdt_strerror(offset));
+		return 1;
+	}
+	np = fdt_getprop(fdt_dtb, offset, property, &len);
+	if (len <= 0) {
+		printf("libfdt fdt_getprop(): %s\n", fdt_strerror(len));
+		return 1;
+	}
+	memcpy(retval, np, len);
 	return 0;
 }
 
@@ -104,16 +214,21 @@ int set_fdt_val(char *path, char *property, char *value)
 		len += strlen(value) + 1;
 	}
 
-	offset = fdt_path_offset (DT_BASE, path);
+	ret = fdt_check_header(fdt_dtb);
+	if (ret) {
+		printf("libfdt fdt_check_header(): %s\n", fdt_strerror(ret));
+		return ret;
+	}
+
+	offset = fdt_path_offset(fdt_dtb, path);
 	if (offset < 0) {
-		printf ("libfdt fdt_path_offset() returned %s\n",
-		fdt_strerror(offset));
+		printf("libfdt fdt_path_offset(): %s\n", fdt_strerror(offset));
 		return 1;
 	}
 
-	ret = fdt_setprop(DT_BASE, offset, property, parsed_value, len);
+	ret = fdt_setprop(fdt_dtb, offset, property, parsed_value, len);
 	if (ret < 0) {
-		printf ("libfdt fdt_setprop(): %s\n", fdt_strerror(ret));
+		printf("libfdt fdt_setprop(): %s\n", fdt_strerror(ret));
 		return 1;
 	}
 
@@ -137,10 +252,17 @@ static void bootargs_init(void)
 	int len2;
 	const char *np;
 	int noff;
+	int ret;
 
-	noff = fdt_path_offset (DT_BASE, "/chosen");
+	ret = fdt_check_header(fdt_dtb);
+	if (ret) {
+		printf("libfdt fdt_check_header(): %s\n", fdt_strerror(ret));
+		return ret;
+	}
+
+	noff = fdt_path_offset(fdt_dtb, "/chosen");
 	if (noff >= 0) {
-		np = fdt_getprop(DT_BASE, noff, "bootargs", &len2);
+		np = fdt_getprop(fdt_dtb, noff, "bootargs", &len2);
 		if (len2 >= 0) {
 			memset(bootargs, 0, BUFFER_SIZE);
 			memcpy(bootargs, np, len2);
@@ -203,14 +325,12 @@ static void bootargs_update(void)
 
 	for (i = 0; i <= prop_cnt; i++) {
 		if (0 == strlen(prop[i].val)) {
-			sprintf(bootargs + cur, "%s",
-				prop[i].prop);
+			sprintf(bootargs + cur, "%s", prop[i].prop);
 			cur += strlen(prop[i].prop);
 			snprintf(bootargs + cur, 2, " ");
 			cur += 1;
 		} else {
-			sprintf(bootargs + cur, "%s=%s",
-				prop[i].prop, prop[i].val);
+			sprintf(bootargs + cur, "%s=%s", prop[i].prop, prop[i].val);
 			cur += strlen(prop[i].prop) + strlen(prop[i].val) + 1;
 			snprintf(bootargs + cur, 2, " ");
 			cur += 1;
@@ -347,9 +467,9 @@ static void configure_dtb(void)
 	printf("SEC_PGTBL_BASE[%#lx]\n", sec_pt_base);
 	printf("SEC_PGTBL_SIZE[%#x]\n", sec_pt_size);
 
-	/* merge_dto_to_main_dtb(); */
-
-	resize_dt(DT_BASE);
+	/* DT control code must write after this function call. */
+	merge_dto_to_main_dtb();
+	resize_dt(SZ_4K);
 
 	sprintf(str, "<0x%x>", ECT_BASE);
 	set_fdt_val("/ect", "parameter_address", str);
@@ -358,23 +478,21 @@ static void configure_dtb(void)
 	set_fdt_val("/ect", "parameter_size", str);
 
 	if (get_charger_mode()) {
-		noff = fdt_path_offset (DT_BASE, "/chosen");
-		np = fdt_getprop(DT_BASE, noff, "bootargs", &len);
+		noff = fdt_path_offset (fdt_dtb, "/chosen");
+		np = fdt_getprop(fdt_dtb, noff, "bootargs", &len);
 		snprintf(str, BUFFER_SIZE, "%s %s", np, "androidboot.mode=charger");
-		fdt_setprop(DT_BASE, noff, "bootargs", str,
-			strlen(str) + 1);
-
+		fdt_setprop(fdt_dtb, noff, "bootargs", str, strlen(str) + 1);
 		printf("Enter charger mode...");
 	}
 
 	/* Add booting slot */
-	noff = fdt_path_offset (DT_BASE, "/chosen");
-	np = fdt_getprop(DT_BASE, noff, "bootargs", &len);
+	noff = fdt_path_offset(fdt_dtb, "/chosen");
+	np = fdt_getprop(fdt_dtb, noff, "bootargs", &len);
 	if (ab_current_slot())
 		snprintf(str, BUFFER_SIZE, "%s %s", np, "androidboot.slot_suffix=_b");
 	else
 		snprintf(str, BUFFER_SIZE, "%s %s", np, "androidboot.slot_suffix=_a");
-	fdt_setprop(DT_BASE, noff, "bootargs", str, strlen(str) + 1);
+	fdt_setprop(fdt_dtb, noff, "bootargs", str, strlen(str) + 1);
 
 	/* Secure memories are carved-out in case of EVT1 */
 	/*
@@ -382,7 +500,6 @@ static void configure_dtb(void)
 	 */
 	add_dt_memory_node(DRAM_BASE,
 				sec_dram_base - DRAM_BASE);
-
 	/*
 	 * 2nd DRAM node
 	 */
@@ -402,15 +519,12 @@ static void configure_dtb(void)
 	 * 3rd DRAM node
 	 */
 	add_dt_memory_node(DRAM_BASE2, SIZE_2GB);
-	if (dram_size == 0x180000000) {
-		make_fdt_node("/", "memory@900000000");
-		set_fdt_val("/memory@900000000", "reg", "<0x9 0x0 0x80000000>");
-		set_fdt_val("/memory@900000000", "device_type", "memory");
-	}
+	if (dram_size == 0x180000000)
+		add_dt_memory_node(0x900000000, SIZE_2GB);
 
-	noff = fdt_path_offset (DT_BASE, "/reserved-memory/modem_if");
+	noff = fdt_path_offset(fdt_dtb, "/reserved-memory/modem_if");
 	if (noff >= 0) {
-		np = fdt_getprop(DT_BASE, noff, "reg", &len);
+		np = fdt_getprop(fdt_dtb, noff, "reg", &len);
 		if (len >= 0) {
 			memset(str, 0, BUFFER_SIZE);
 			memcpy(str, np, len);
@@ -418,8 +532,6 @@ static void configure_dtb(void)
 			boot_dev = get_boot_device();
 			if (boot_dev == BOOT_UFS)
 				name = "scsi0";
-			else
-				;
 
 			/* get modem partition info */
 			dev = bio_open(name);
@@ -438,6 +550,7 @@ static void configure_dtb(void)
 			        strlen(str) + 1);
 
 	/* set_bootargs(); */
+	resize_dt(0);
 }
 
 int cmd_scatter_load_boot(int argc, const cmd_args *argv);
@@ -471,6 +584,18 @@ int load_boot_images(void)
 		pit_access(ptn, PIT_OP_LOAD, (u64)DT_BASE, 0);
 	}
 
+	if (ab_current_slot())
+		ptn = pit_get_part_info("dtbo_b");
+	else
+		ptn = pit_get_part_info("dtbo_a");
+
+	if (ptn == 0) {
+		printf("Partition 'dtbo' does not exist\n");
+		return -1;
+	} else {
+		pit_access(ptn, PIT_OP_LOAD, (u64)DTBO_BASE, 0);
+	}
+
 	argv[1].u = BOOT_BASE;
 	argv[2].u = KERNEL_BASE;
 	argv[3].u = 0;
@@ -482,6 +607,9 @@ int load_boot_images(void)
 
 int cmd_boot(int argc, const cmd_args *argv)
 {
+	fdt_dtb = DT_BASE;
+	dtbo_table = DTBO_BASE;
+
 	if (!init_keystorage())
 		printf("keystorage: init done successfully.\n");
 	else
