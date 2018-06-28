@@ -177,6 +177,8 @@ void __dfd_dump_gpr(int cpu, u32 reg, u32 val);
 int dfd_get_core_num(void);
 void dfd_display_reboot_reason(void);
 void dfd_display_core_stat(void);
+u32 dfd_get_pmudbg_stat(u32 cpu);
+void dfd_print_pcval(int cpu);
 #endif
 #endif
 #endif

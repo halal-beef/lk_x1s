@@ -6,6 +6,7 @@
 #include <platform/delay.h>
 #include <platform/dfd.h>
 
+#define DEBUG_PRINT
 extern u64 cpu_boot(u64 id, u64 cpu, u64 fn);
 
 enum pt_reg {
@@ -20,7 +21,7 @@ void wfi(void)
 	asm volatile("wfi");
 }
 
-static void dfd_print_pcval(int nCpuId)
+void dfd_print_pcval(int nCpuId)
 {
 	u32 pc_reg;
 	u64 tgpr;
@@ -265,7 +266,7 @@ static const u32 dbg_base[NR_CPUS] = {
 	CPU7_DEBUG_BASE,
 };
 
-static u32 dfd_get_pmudbg_stat(u32 cpu)
+u32 dfd_get_pmudbg_stat(u32 cpu)
 {
 	u32 reg;
 
@@ -286,6 +287,7 @@ static void dfd_set_cache_flush_level(void)
 	for (val = 0; val < NR_CPUS; val++) {
 		ret1 = readl(core_stat[val]);
 		ret2 = readl(CONFIG_RAMDUMP_CORE_PANIC_STAT + (val * REG_OFFSET));
+		ret3 = dfd_get_pmudbg_stat(val);
 		if (ret2 == RAMDUMP_SIGN_PANIC || ((ret3 & PMUDBG_CPU_STAT_MASK) != 0x70000)) {
 			stat = (FLUSH_SKIP << 16) | ret1;
 		} else {
@@ -350,7 +352,7 @@ void dfd_secondary_dump_gpr(int cpu)
 		__dfd_dump_gpr(cpu, reg, val);
 
 	/* Get Cache Flush Level */
-	val = readl(CONFIG_RAMDUMP_GPR_POWER_STAT + (cpu * REG_OFFSET));
+	val = readl(CONFIG_RAMDUMP_GPR_POWER_STAT + (cpu * REG_OFFSET)) >> 16;
 	switch (val) {
 		case 0:
 			break;
@@ -470,11 +472,13 @@ void dfd_run_dump_gpr(void)
 			}
 			ret = dfd_wait_complete(1 << cpu);
 		}
-		dfd_print_pc_gpr_little(cpu);
-		if (!ret)
+		if (!ret) {
+			dfd_print_pc_gpr_little(cpu);
 			printf("Core %d: finished to dump GPR\n", cpu);
+		}
 	}
 
+	printf("dumpGPR for big cluster\n");
 	for (cpu = BIG_CORE_START; cpu <= BIG_CORE_LAST; cpu++) {
 		if (dfd_check_pre_stat(cpu))
 			continue;
