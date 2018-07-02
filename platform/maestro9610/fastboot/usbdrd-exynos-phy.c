@@ -117,9 +117,9 @@ static void exynos_usbdrd_fill_hstune(struct exynos_usbphy_info *info)
 
 	/* for HS */
 	hs_tune->tx_pre_emp_puls = 0x0;
-	hs_tune->tx_res		 = 0x2;
+	hs_tune->tx_res		 = 0x3;
 	hs_tune->tx_rise	 = 0x3;
-	hs_tune->tx_hsxv	 = 0x0;
+	hs_tune->tx_hsxv	 = 0x3;
 	hs_tune->tx_fsls	 = 0x3;
 	hs_tune->rx_sqrx	 = 0x7;
 	hs_tune->otg		 = 0x4;
@@ -128,8 +128,8 @@ static void exynos_usbdrd_fill_hstune(struct exynos_usbphy_info *info)
 	hs_tune->utmi_clk	 = USBPHY_UTMI_PHYCLOCK;
 
 	/* additional tuning for host */
-	hs_tune->tx_vref	 = 0x1;
-	hs_tune->tx_pre_emp	 = 0x0;
+	hs_tune->tx_vref	 = 0x7;
+	hs_tune->tx_pre_emp	 = 0x3;
 	hs_tune->compdis	 = 0x7;
 }
 
