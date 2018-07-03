@@ -46,23 +46,6 @@ struct scsi_command_meta {
 	u8 status;
 
 	scsi_device_t *sdev;
-
-// TODO:
-#if 0
-	//////////////////////////////////
-	/* for request sense */
-	    __attribute__ ((aligned(ARCH_DMA_MINALIGN)));
-	unsigned char target;	/* Target ID                             */
-	unsigned char *pdata;	/* pointer to data              */
-	unsigned char msgin[12];	/* Message in buffer    */
-	unsigned char sensecmdlen;	/* Sense command len    */
-	unsigned long sensedatalen;	/* Sense data len                       */
-	unsigned char sensecmd[6];	/* Sense command                        */
-	unsigned long contr_stat;	/* Controller Status    */
-	unsigned long trans_bytes;	/* tranfered bytes              */
-
-	unsigned int priv;
-#endif
 };
 
 typedef status_t (exec_t)(scm *);
