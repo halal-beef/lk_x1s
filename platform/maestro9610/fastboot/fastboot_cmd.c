@@ -410,6 +410,7 @@ static int rx_handler (const unsigned char *buffer, unsigned int buffer_size)
 				sprintf(response, "FAILpartition does not exist");
 				ret = 0;
 				fastboot_tx_status(response, strlen(response), FASTBOOT_TX_ASYNC);
+				return ret;
 			}
 
 			printf("erasing(formatting) '%s'\n", ptn->name);
