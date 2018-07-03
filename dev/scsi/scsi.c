@@ -50,8 +50,8 @@ scm g_scm;
 u8 g_buf[4096];
 
 /* Function declaration */
-static int scsi_format_unit(struct bdev *dev);
-int scsi_start_stop_unit();
+static status_t scsi_format_unit(struct bdev *dev);
+status_t scsi_start_stop_unit(struct bdev *dev);
 
 /* UFS user command definition */
 #if defined(WITH_LIB_CONSOLE)
@@ -62,6 +62,7 @@ static int cmd_scsi(int argc, const cmd_args *argv)
 {
 	int rc = 0;
 	bdev_t *dev;
+	status_t ret;
 
 	if (argc < 2) {
 notenoughargs:
@@ -79,7 +80,8 @@ usage:
 			return -1;
 		}
 
-		rc = scsi_format_unit(dev);
+		ret = scsi_format_unit(dev);
+		rc = (ret == NO_ERROR) ? 0 : -1;
 
 		bio_close(dev);
 	} else if (!strcmp(argv[1].str, "ssu")) {
@@ -91,7 +93,8 @@ usage:
 			return -1;
 		}
 
-		rc = scsi_start_stop_unit(dev);
+		ret = scsi_start_stop_unit(dev);
+		rc = (ret == NO_ERROR) ? 0 : -1;
 
 		bio_close(dev);
 	} else {
@@ -148,7 +151,7 @@ static status_t scsi_parse_status(u8 status)
 static status_t scsi_read_10(struct bdev *dev, void *buf, bnum_t block, uint count)
 {
 	scsi_device_t *sdev = (scsi_device_t *)dev->private;
-	status_t ret = 0;
+	status_t ret = NO_ERROR;
 
 	g_scm.sdev = sdev;
 	g_scm.buf = (u8 *)buf;
@@ -176,7 +179,7 @@ static uint scsi_write_10(struct bdev *dev, const void *buf,
 					bnum_t block, uint count)
 {
 	scsi_device_t *sdev = (scsi_device_t *)dev->private;
-	status_t ret = 0;
+	status_t ret = NO_ERROR;
 
 	g_scm.sdev = sdev;
 	g_scm.buf = (u8 *)buf;
@@ -204,7 +207,7 @@ static uint scsi_unmap(struct bdev *dev,
 					bnum_t block, uint count)
 {
 	scsi_device_t *sdev = (scsi_device_t *)dev->private;
-	status_t ret = 0;
+	status_t ret = NO_ERROR;
 
 	g_scm.sdev = sdev;
 	g_scm.buf = (u8 *)g_buf;
@@ -244,7 +247,7 @@ static uint scsi_unmap(struct bdev *dev,
 int scsi_start_stop_unit(struct bdev *dev)
 {
 	scsi_device_t *sdev = (scsi_device_t *)dev->private;
-	int ret = 0;
+	status_t ret = NO_ERROR;
 
 	g_scm.sdev = sdev;
 
@@ -268,7 +271,7 @@ int scsi_start_stop_unit(struct bdev *dev)
 static status_t scsi_inquiry(struct bdev *dev, void *buf)
 {
 	scsi_device_t *sdev = (scsi_device_t *)dev->private;
-	int ret = 0;
+	status_t ret = NO_ERROR;
 
 	g_scm.sdev = sdev;
 	g_scm.buf = (u8 *)buf;
@@ -295,7 +298,7 @@ static status_t scsi_inquiry(struct bdev *dev, void *buf)
 static int scsi_mode_sense(struct bdev *dev)
 {
 	scsi_device_t *sdev = (scsi_device_t *)dev->private;
-	int ret = 0;
+	status_t ret = NO_ERROR;
 
 	g_scm.sdev = sdev;
 
@@ -318,7 +321,7 @@ static int scsi_mode_sense(struct bdev *dev)
 static int scsi_read_capacity_10(struct bdev *dev, void *buf)
 {
 	scsi_device_t *sdev = (scsi_device_t *)dev->private;
-	int ret = 0;
+	status_t ret = NO_ERROR;
 
 	g_scm.sdev = sdev;
 	g_scm.buf = (u8 *)buf;
@@ -339,10 +342,10 @@ static int scsi_read_capacity_10(struct bdev *dev, void *buf)
 	return ret;
 }
 
-static int scsi_format_unit(struct bdev *dev)
+static status_t scsi_format_unit(struct bdev *dev)
 {
 	scsi_device_t *sdev = (scsi_device_t *)dev->private;
-	int ret = 0;
+	status_t ret = NO_ERROR;
 
 	g_scm.sdev = sdev;
 
@@ -364,7 +367,7 @@ static int scsi_format_unit(struct bdev *dev)
 static status_t scsi_secu_prot_in(struct bdev *dev, void *buf, bnum_t block, uint count)
 {
 	scsi_device_t *sdev = (scsi_device_t *)dev->private;
-	status_t ret = 0;
+	status_t ret = NO_ERROR;
 
 	g_scm.sdev = sdev;
 	g_scm.buf = (u8 *)buf;
@@ -392,7 +395,7 @@ static status_t scsi_secu_prot_in(struct bdev *dev, void *buf, bnum_t block, uin
 static status_t scsi_secu_prot_out(struct bdev *dev, void *buf, bnum_t block, uint count)
 {
 	scsi_device_t *sdev = (scsi_device_t *)dev->private;
-	status_t ret = 0;
+	status_t ret = NO_ERROR;
 
 	g_scm.sdev = sdev;
 	g_scm.buf = (u8 *)buf;
