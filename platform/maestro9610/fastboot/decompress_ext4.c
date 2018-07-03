@@ -74,8 +74,10 @@ int write_raw_chunk(char* data, unsigned int sector, unsigned int sector_size) {
 	boot_dev = get_boot_device();
 	if (boot_dev == BOOT_UFS)
 		str = "scsi0";
-	else
-		;
+	else {
+		printf("Boot device: 0x%x. Unsupported boot device!\n", boot_dev);
+		return;
+	}
 
 	dev = bio_open(str);
 
