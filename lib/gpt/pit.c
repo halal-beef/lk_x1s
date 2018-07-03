@@ -196,7 +196,7 @@ static int pit_access_emmc(struct pit_entry *ptn, int op, u64 addr, u32 size)
 	unsigned int len;
 
 	bdev_t *dev;
-	uint blks;
+	uint blks = 0;
 
 	len = strlen(pit_if_tokens[pit_if]);
 	memcpy(str, pit_if_tokens[pit_if], len);
@@ -294,7 +294,7 @@ static int pit_access_ufs(struct pit_entry *ptn, int op, u64 addr, u32 size)
 	unsigned int len;
 
 	bdev_t *dev;
-	uint blks;
+	uint blks = 0;
 
 	len = strlen(pit_if_tokens[pit_if]);
 	memcpy(str, pit_if_tokens[pit_if], len);
