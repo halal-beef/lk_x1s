@@ -106,6 +106,7 @@ FUNCTION(__arch_clean_and_invalidate_dcache_all)
 	lsr	x11, x10, #24
 	and	x11, x11, #0x7		/* x11 <- loc */
 	cbz	x11, finished		/* if loc is 0, exit */
+	mov	x15, x30
 	mov	x0, #0			/* start flush at cache level 0 */
 	/* x0  <- cache level */
 	/* x10 <- clidr_el1 */
@@ -129,11 +130,14 @@ skip:
 	msr	csselr_el1, x0		/* resotre csselr_el1 */
 	dsb	sy
 	isb
+	mov	x30, x15
 
 finished:
 	ret
 
 FUNCTION(arch_clean_and_invalidate_dcache_all)
+	mov	x16, x30
 	mov	x0, #0
 	bl	__arch_clean_and_invalidate_dcache_all
+	mov     x30, x16
 	ret
