@@ -1142,10 +1142,12 @@ static int send_cmd(struct ufs_host *ufs)
 
 static status_t ufs_parse_respnse(struct ufs_host *ufs)
 {
-	scm *pscm = ufs->scsi_cmd;
+	scm *pscm;
 
 	if (!ufs || !pscm)
 		return ERR_GENERIC;
+
+	pscm = ufs->scsi_cmd;
 
 	if (ufs->utrd_addr->dw[2]) {
 		dprintf(INFO, "SCSI cdb : %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x\n",
@@ -1263,7 +1265,7 @@ static int ufs_edit_config_desc(u32 lun, u32 enable, u32 bootlun, u32 writeprote
 	unsigned long alloc_unit_in_byte;
 	unsigned int enhanced_type_one_ratio;
 
-	if (!ufs || (lun > 7 && (lun & (0x1 << 7))))
+	if (!ufs || (lun > 7))
 		return 1;
 
 	ufs->lun = 0;
