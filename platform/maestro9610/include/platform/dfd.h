@@ -6,11 +6,6 @@
 #define NR_BIG_CPUS			(4)
 #define NR_LITTLE_CPUS			(4)
 
-#define LITTLE_CORE_START               (0)
-#define LITTLE_CORE_LAST                (3)
-#define BIG_CORE_START                  (4)
-#define BIG_CORE_LAST                   (7)
-
 #define EDPCSR_DUMP_EN			(1 << 0)
 
 #define DUMPGPR_EN			(0x1 << 0)

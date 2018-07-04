@@ -224,7 +224,7 @@ static int dfd_wait_complete(unsigned int core)
 		ret = readl(CONFIG_RAMDUMP_DUMP_GPR_WAIT);
 		if (ret & core)
 			return 0;
-		u_delay(100);
+		u_delay(1000);
 	} while(loop-- > 0);
 
 	printf("Failed to wait complete - ret:%x core:%x\n", ret, core);
@@ -280,7 +280,7 @@ u32 dfd_get_pmudbg_stat(u32 cpu)
 
 static void dfd_set_cache_flush_level(void)
 {
-	int val, stat, ret1, ret2, ret3;
+	u32 val, stat, ret1, ret2, ret3;
 	int little_on = -1, big_on = -1;
 
 	/* copy IRAM core stat to DRAM */
@@ -288,7 +288,7 @@ static void dfd_set_cache_flush_level(void)
 		ret1 = readl(core_stat[val]);
 		ret2 = readl(CONFIG_RAMDUMP_CORE_PANIC_STAT + (val * REG_OFFSET));
 		ret3 = dfd_get_pmudbg_stat(val);
-		if (ret2 == RAMDUMP_SIGN_PANIC || ((ret3 & PMUDBG_CPU_STAT_MASK) != 0x70000)) {
+		if ((ret2 == RAMDUMP_SIGN_PANIC) || ((ret3 & PMUDBG_CPU_STAT_MASK) != 0x70000)) {
 			stat = (FLUSH_SKIP << 16) | ret1;
 		} else {
 			stat = (FLUSH_LEVEL1 << 16) | ret1;
@@ -298,7 +298,7 @@ static void dfd_set_cache_flush_level(void)
 					big_on = val;
 		}
 		writel(stat, CONFIG_RAMDUMP_GPR_POWER_STAT + (val * REG_OFFSET));
-		printf("Core %d: Initial policy - Cache Flush Level %u\n", val, (int)(stat >> 16));
+		printf("Core %d: Initial policy - Cache Flush Level %u\n", val, (u32)(stat >> 16));
 
 		/* clear IRAM core stat to run next booting naturally */
 		if (val == 0)
@@ -321,13 +321,13 @@ static void dfd_set_cache_flush_level(void)
 	stat = readl(CONFIG_RAMDUMP_GPR_POWER_STAT + (little_on * REG_OFFSET));
 	stat = (stat & 0xFFFF) | val;
 	writel(stat, CONFIG_RAMDUMP_GPR_POWER_STAT + (little_on * REG_OFFSET));
-	printf("Core %d: Cache Flush Level changed => %u\n", little_on, (int)(stat >> 16));
+	printf("Core %d: Cache Flush Level changed => %u\n", little_on, (u32)(stat >> 16));
 
 	if (big_on >= 0) {
 		stat = readl(CONFIG_RAMDUMP_GPR_POWER_STAT + (big_on * REG_OFFSET));
 		stat = (stat & 0xFFFF) | (FLUSH_LEVEL3 << 16);
 		writel(stat, CONFIG_RAMDUMP_GPR_POWER_STAT + (big_on * REG_OFFSET));
-		printf("Core %d: Cache Flush Level changed => %u\n", big_on, (int)(stat >> 16));
+		printf("Core %d: Cache Flush Level changed => %u\n", big_on, (u32)(stat >> 16));
 	}
 }
 
@@ -354,22 +354,22 @@ void dfd_secondary_dump_gpr(int cpu)
 	/* Get Cache Flush Level */
 	val = readl(CONFIG_RAMDUMP_GPR_POWER_STAT + (cpu * REG_OFFSET)) >> 16;
 	switch (val) {
-		case 0:
-			break;
-		case 1:
-			/* FLUSH_LEVEL1 : L1, L2 cache flush (local cache flush) */
-			dfd_flush_dcache_level(val - 1, 0);
-			break;
-		case 2:
-			/* FLUSH_LEVEL2 : L3 cache flush (cluster cache flush) */
-			dfd_flush_dcache_level(val - 1, 0);
-			break;
-		case 3:
-			/* FLUSH_LEVEL3 : L1, L2, L3 cache flush (all cache flush) */
-			dfd_flush_dcache_all();
-			break;
-		default:
-			break;
+	case 0:
+		break;
+	case 1:
+		/* FLUSH_LEVEL1 : L1 cache flush (local cache flush) */
+		dfd_flush_dcache_level(val - 1, 0);
+		break;
+	case 2:
+		/* FLUSH_LEVEL2 : L2 cache flush (cluster cache flush) */
+		dfd_flush_dcache_level(val - 1, 0);
+		break;
+	case 3:
+		/* FLUSH_LEVEL3 : L1, L2 cache flush (all cache flush) */
+		dfd_flush_dcache_all();
+		break;
+	default:
+		break;
 	}
 	/* Write own bit to inform finishing dumpGPR */
 	val = readl(CONFIG_RAMDUMP_DUMP_GPR_WAIT);
