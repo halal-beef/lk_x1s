@@ -26,6 +26,7 @@
 #include <string.h>
 #include <sys/types.h>
 #include <platform/debug.h>
+#include <lib/font_display.h>
 
 #define DEFINE_STDIO_DESC(id)   \
     [(id)]  = {                 \
@@ -133,3 +134,4 @@ int _vprintf(const char *fmt, va_list ap)
 {
     return vfprintf(stdout, fmt, ap);
 }
+

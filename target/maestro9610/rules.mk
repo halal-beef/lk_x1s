@@ -7,6 +7,6 @@ MEMBASE := 0xFF000000
 MEMSIZE := 0x00F00000
 
 MODULE_SRCS += \
-	$(LOCAL_DIR)/target.c
+	$(LOCAL_DIR)/target.c \
 
 include make/module.mk
