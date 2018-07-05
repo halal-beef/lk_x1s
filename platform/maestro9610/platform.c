@@ -11,8 +11,18 @@
 #include <platform/if_pmic_s2mu004.h>
 #include <platform/tmu.h>
 
+#include <lib/font_display.h>
+#include <lib/logo_display.h>
+#include <target/dpu_config.h>
+#include <stdio.h>
+
 void speedy_gpio_init(void);
-void display_gpio_init(void);
+
+static void initialize_lcd_fb(void)
+{
+	memset(CONFIG_DISPLAY_LOGO_BASE_ADDRESS, 0, LCD_WIDTH * LCD_HEIGHT * 4);
+	memset(CONFIG_DISPLAY_FONT_BASE_ADDRESS, 0, LCD_WIDTH * LCD_HEIGHT * 4);
+}
 
 unsigned int s5p_chip_id[4] = {0x0, 0x0, 0x0, 0x0};
 unsigned int charger_mode = 0;
@@ -101,7 +111,6 @@ void platform_early_init(void)
 	read_chip_id();
 
 	speedy_gpio_init();
-	display_gpio_init();
 
 	set_first_boot_device_info();
 

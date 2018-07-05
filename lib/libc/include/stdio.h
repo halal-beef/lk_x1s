@@ -83,6 +83,7 @@ int snprintf(char *str, size_t len, const char *fmt, ...) __PRINTFLIKE(3, 4);
 int vsprintf(char *str, const char *fmt, va_list ap);
 int vsnprintf(char *str, size_t len, const char *fmt, va_list ap);
 
+int print_lcd(u32 font_color, u32 bg_color, const char *fmt, ...);
 
 __END_CDECLS
 
