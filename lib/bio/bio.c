@@ -308,6 +308,7 @@ static uint bio_new_read(struct bdev *dev, void *_buf, bnum_t _block, uint count
 	ssize_t byte_offset;
 	STACKBUF_DMA_ALIGN(temp, dev->block_size);
 	uint max_blkcnt = (dev->max_blkcnt_per_cmd) ? dev->max_blkcnt_per_cmd : 32;
+	uint p_cnt;
 
 
 	/* Not support for cache alignment */
@@ -325,7 +326,7 @@ static uint bio_new_read(struct bdev *dev, void *_buf, bnum_t _block, uint count
 	 * should use less and equal than the size
 	 * every time we issue a read command
 	 */
-	if ((block % native_block_size) != 0) {
+	if (((block % native_block_size) != 0) || count < native_block_size) {
 		/* Read one native block */
 		block = (block / native_block_size) * native_block_size;
 		if (dev->new_read_native(dev, temp, block / native_block_size, 1))
@@ -333,12 +334,13 @@ static uint bio_new_read(struct bdev *dev, void *_buf, bnum_t _block, uint count
 
 		/* Copy to original buffer */
 		byte_offset = (_block - block) * USER_BLOCK_SIZE;
-		byte_size = dev->block_size - byte_offset;
+		p_cnt = MIN(count, block + native_block_size - _block);
+		byte_size = p_cnt * USER_BLOCK_SIZE;
 		memcpy(buf, temp + byte_offset, byte_size);
 
-		block_read += _block - block;
+		block_read += p_cnt;
 		buf += byte_size;
-		block += native_block_size;
+		block += p_cnt;
 	}
 
 	/* Loop */
@@ -385,6 +387,7 @@ static uint bio_new_write(struct bdev *dev, const void *_buf, bnum_t _block, uin
 	ssize_t byte_offset;
 	STACKBUF_DMA_ALIGN(temp, dev->block_size);
 	uint max_blkcnt = (dev->max_blkcnt_per_cmd) ? dev->max_blkcnt_per_cmd : 32;
+	uint p_cnt;
 
 
 	/* Not support for cache alignment */
@@ -410,16 +413,17 @@ static uint bio_new_write(struct bdev *dev, const void *_buf, bnum_t _block, uin
 
 		/* Modity temporal buffer */
 		byte_offset = (_block - block) * USER_BLOCK_SIZE;
-		byte_size = dev->block_size - byte_offset;
+		p_cnt = MIN(count, block + native_block_size - _block);
+		byte_size = p_cnt * USER_BLOCK_SIZE;
 		memcpy(temp + byte_offset, buf, byte_size);
 
 		/* Write one native block */
 		if (dev->new_write_native(dev, temp, block / native_block_size, 1))
 			goto end;
 
-		block_written += _block - block;
+		block_written += p_cnt;
 		buf += byte_size;
-		block += native_block_size;
+		block += p_cnt;
 	}
 
 	/* Loop */
@@ -471,6 +475,7 @@ static uint bio_new_erase(struct bdev *dev, bnum_t _block, uint count)
 	ssize_t byte_offset;
 	STACKBUF_DMA_ALIGN(temp, dev->block_size);
 	/*uint max_blkcnt = (dev->max_blkcnt_per_cmd) ? dev->max_blkcnt_per_cmd : 32;*/
+	uint p_cnt;
 
 
 	/*
@@ -489,15 +494,16 @@ static uint bio_new_erase(struct bdev *dev, bnum_t _block, uint count)
 
 		/* Clear temporal buffer partially */
 		byte_offset = (_block - block) * USER_BLOCK_SIZE;
-		byte_size = dev->block_size - byte_offset;
+		p_cnt = MIN(count, block + native_block_size - _block);
+		byte_size = p_cnt * USER_BLOCK_SIZE;
 		memset(temp + byte_offset, 0, byte_size);
 
 		/* Write one native block */
 		if (dev->new_write_native(dev, temp, block / native_block_size, 1))
 			goto end;
 
-		block_erased += _block - block;
-		block += native_block_size;
+		block_erased += p_cnt;
+		block += p_cnt;
 	}
 
 #if 1
