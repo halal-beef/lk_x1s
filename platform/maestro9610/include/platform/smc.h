@@ -8,6 +8,11 @@
  * to third parties without the express written permission of Samsung Electronics.
  */
 
+#ifndef _SMC_H_
+#define _SMC_H_
+
+#include <sys/types.h>
+
 #define SMC_CMD_REG			(-101)
 
 #define SMC_CMD_LOAD_UBOOT		(-230)
@@ -234,3 +239,5 @@ u64 skip_ect(void);
 u64 set_tzasc_action(u32 val);
 u64 sdm_encrypt_secdram(void);
 u64 dumpgpr_flush_secdram(u32 cache_level, u32 core);
+
+#endif /* _SMC_H_ */
