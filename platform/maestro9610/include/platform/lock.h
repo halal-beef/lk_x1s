@@ -8,13 +8,12 @@
  * to third parties without the express written permission of Samsung Electronics.
  */
 
-#ifndef __ENVIRONMENT_H__
-#define __ENVIRONMENT_H__
+#ifndef __LOCK_H__
+#define __LOCK_H__
 
-typedef enum {
-	ENV_ID_RAMDISK_SIZE = 0x0,
-	ENV_ID_LOCKED = 0x1,		/* 0:unlocked, 1:locked */
-	ENV_ID_LOCKED_CRITICAL = 0x2,	/* 0:unlocked, 1:locked */
-} env_id_t;
+void lock(int state);
+int get_lock_state(void);
+void lock_critical(int state);
+int get_unlock_ability(void);
 
-#endif	/* __ENVIRONMENT_H__ */
+#endif	/* __LOCK_H__ */

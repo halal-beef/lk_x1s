@@ -20,6 +20,7 @@
 #include <pit.h>
 #include <platform/sfr.h>
 #include <platform/smc.h>
+#include <platform/lock.h>
 #include <platform/ab_update.h>
 #include <platform/environment.h>
 #include <platform/if_pmic_s2mu004.h>
@@ -433,6 +434,15 @@ static int rx_handler (const unsigned char *buffer, unsigned int buffer_size)
 		   Flash what was downloaded */
 		if (memcmp(cmdbuf, "flash:", 6) == 0)
 		{
+			int lock_state = get_lock_state();
+			printf("Lock state: %d\n", lock_state);
+			if(lock_state) {
+				ret = 0;
+				sprintf(response, "FAILDevice is locked");
+				fastboot_tx_status(response, strlen(response), FASTBOOT_TX_ASYNC);
+				return ret;
+			}
+
 			dprintf(ALWAYS, "flash\n");
 			if (download_bytes == 0)
 			{
@@ -507,12 +517,41 @@ static int rx_handler (const unsigned char *buffer, unsigned int buffer_size)
 				printf("Set slot 'b' active.\n");
 				ab_set_active(1);
 			} else {
-				sprintf(response, "FAILdata invalid size");
+				sprintf(response, "FAILinvalid slot");
 			}
 			ret = 0;
 			fastboot_tx_status(response, strlen(response), FASTBOOT_TX_ASYNC);
 		}
 
+		/* Lock/unlock device */
+		if (memcmp(cmdbuf, "flashing", 8) == 0)
+		{
+			sprintf(response,"OKAY");
+			if (!strcmp(cmdbuf + 9, "lock")) {
+				printf("Lock this device.\n");
+				lock(1);
+			} else if (!strcmp(cmdbuf + 9, "unlock")) {
+				if (get_unlock_ability()) {
+					printf("Unlock this device.\n");
+					lock(0);
+				} else {
+					sprintf(response, "FAILunlock_ability is 0");
+				}
+			} else if (!strcmp(cmdbuf + 9, "lock_critical")) {
+				printf("Lock critical partitions of this device.\n");
+				lock_critical(0);
+			} else if (!strcmp(cmdbuf + 9, "unlock_critical")) {
+				printf("Unlock critical partitions of this device.\n");
+				lock_critical(0);
+			} else if (!strcmp(cmdbuf + 9, "get_unlock_ability")) {
+				printf("Get unlock_ability.\n");
+				sprintf(response + 4, "%d", get_unlock_ability());
+			} else {
+				sprintf(response, "FAILunsupported command");
+			}
+			ret = 0;
+			fastboot_tx_status(response, strlen(response), FASTBOOT_TX_ASYNC);
+		}
 	} /* End of command */
 
 	return ret;

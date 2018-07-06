@@ -23,6 +23,7 @@ MODULE_SRCS += \
 	$(LOCAL_DIR)/pmic/fg_s2mu004.c \
 	$(LOCAL_DIR)/pmic/if_pmic_s2mu004.c \
 	$(LOCAL_DIR)/ab_update/ab_update.c \
+	$(LOCAL_DIR)/lock/lock.c \
 	$(LOCAL_DIR)/gpio_init.S \
 	$(LOCAL_DIR)/dfd.c \
 	$(LOCAL_DIR)/dfd_entry.S \
