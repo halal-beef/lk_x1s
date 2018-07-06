@@ -373,6 +373,17 @@ static int rx_handler (const unsigned char *buffer, unsigned int buffer_size)
 				if (slot >= 0)
 					sprintf(response + 4, "%d", ab_slot_retry_count(slot));
 			}
+			else if (!memcmp(cmdbuf + 7, "has-slot", strlen("has-slot")))
+			{
+				if (!strcmp(cmdbuf + 7 + strlen("has-slot:"), "boot") ||
+					!strcmp(cmdbuf + 7 + strlen("has-slot:"), "dtb") ||
+					!strcmp(cmdbuf + 7 + strlen("has-slot:"), "dtbo") ||
+					!strcmp(cmdbuf + 7 + strlen("has-slot:"), "system") ||
+					!strcmp(cmdbuf + 7 + strlen("has-slot:"), "vendor"))
+					sprintf(response + 4, "yes");
+				else
+					sprintf(response + 4, "no");
+			}
 			else
 			{
 			}
