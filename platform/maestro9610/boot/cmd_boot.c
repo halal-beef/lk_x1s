@@ -22,6 +22,7 @@
 #include <platform/sfr.h>
 #include <platform/ldfw.h>
 #include <platform/charger.h>
+#include <platform/ab_update.h>
 #include <pit.h>
 
 /* Memory node */
@@ -362,6 +363,15 @@ static void configure_dtb(void)
 		printf("Enter charger mode...");
 	}
 
+	/* Add booting slot */
+	noff = fdt_path_offset (DT_BASE, "/chosen");
+	np = fdt_getprop(DT_BASE, noff, "bootargs", &len);
+	if (ab_current_slot())
+		snprintf(str, BUFFER_SIZE, "%s %s", np, "androidboot.slot_suffix=_b");
+	else
+		snprintf(str, BUFFER_SIZE, "%s %s", np, "androidboot.slot_suffix=_a");
+	fdt_setprop(DT_BASE, noff, "bootargs", str, strlen(str) + 1);
+
 	/* Secure memories are carved-out in case of EVT1 */
 	/*
 	 * 1st DRAM node
@@ -426,7 +436,11 @@ int load_boot_images(void)
 	struct pit_entry *ptn;
 	cmd_args argv[5];
 
-	ptn = pit_get_part_info("boot_a");
+	if (ab_current_slot())
+		ptn = pit_get_part_info("boot_b");
+	else
+		ptn = pit_get_part_info("boot_a");
+
 	if (ptn == 0) {
 		printf("Partition 'kernel' does not exist\n");
 		return -1;
@@ -434,7 +448,11 @@ int load_boot_images(void)
 		pit_access(ptn, PIT_OP_LOAD, (u64)BOOT_BASE, 0);
 	}
 
-	ptn = pit_get_part_info("dtb");
+	if (ab_current_slot())
+		ptn = pit_get_part_info("dtb_b");
+	else
+		ptn = pit_get_part_info("dtb_a");
+
 	if (ptn == 0) {
 		printf("Partition 'dtb' does not exist\n");
 		return -1;
