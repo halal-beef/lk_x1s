@@ -18,6 +18,7 @@
 #include <lib/console.h>
 #include <part_gpt.h>
 #include <dev/boot.h>
+#include <dev/rpmb.h>
 #include <platform/smc.h>
 #include <platform/sfr.h>
 #include <platform/ldfw.h>
@@ -481,6 +482,9 @@ int cmd_boot(int argc, const cmd_args *argv)
 	} else {
 			printf("ldfw: init failed.\n");
 	}
+
+	rpmb_key_programming();
+	rpmb_load_boot_table();
 
 	load_boot_images();
 

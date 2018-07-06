@@ -11,6 +11,7 @@
 
 #include <debug.h>
 #include <platform/secure_boot.h>
+#include <dev/rpmb.h>
 
 static struct AvbOps ops;
 
@@ -69,7 +70,8 @@ static AvbIOResult exynos_read_rollback_index(AvbOps *ops,
 		uint64_t *out_rollback_index)
 {
 	AvbIOResult ret = AVB_IO_RESULT_OK;
-	//TODO
+
+	ret = rpmb_get_rollback_index(rollback_index_location, out_rollback_index);
 
 	return ret;
 }
@@ -79,7 +81,7 @@ static AvbIOResult exynos_write_rollback_index(AvbOps *ops,
 		uint64_t rollback_index)
 {
 	AvbIOResult ret = AVB_IO_RESULT_OK;
-	//TODO
+	ret = rpmb_set_rollback_index(rollback_index_location, rollback_index);
 
 	return ret;
 }
@@ -119,8 +121,39 @@ static AvbIOResult exynos_read_persistent_value(AvbOps *ops,
 		uint8_t *out_buffer,
 		size_t *out_num_bytes_read)
 {
-	AvbIOResult ret = AVB_IO_RESULT_OK;
-	//TODO
+	int ret;
+
+        if (!name) {
+                *out_num_bytes_read = 0;
+                return AVB_IO_RESULT_ERROR_NO_SUCH_VALUE;
+        }
+
+        if (buffer_size == 0) {
+                *out_num_bytes_read = 0;
+                return AVB_IO_RESULT_OK;
+        }
+
+        if (!out_buffer) {
+                *out_num_bytes_read = 0;
+                return AVB_IO_RESULT_ERROR_IO;
+        }
+
+        ret = rpmb_read_persistent_value(name, buffer_size, out_buffer, out_num_bytes_read);
+
+        if (!ret)
+                return AVB_IO_RESULT_OK;
+
+        switch (ret) {
+        case RV_RPMB_PERSIST_NAME_NOT_FOUND:
+                ret = AVB_IO_RESULT_ERROR_NO_SUCH_VALUE;
+                break;
+        case RV_RPMB_INVALID_PERSIST_DATA_SIZE:
+                ret = AVB_IO_RESULT_ERROR_INSUFFICIENT_SPACE;
+                break;
+        default:
+                ret = AVB_IO_RESULT_ERROR_IO;
+                break;
+        }
 
 	return ret;
 }
@@ -130,8 +163,31 @@ static AvbIOResult exynos_write_persistent_value(AvbOps *ops,
 		size_t value_size,
 		const uint8_t *value)
 {
-	AvbIOResult ret = AVB_IO_RESULT_OK;
-	//TODO
+	int ret;
+
+        if (!name)
+                return AVB_IO_RESULT_ERROR_NO_SUCH_VALUE;
+
+        if (value_size == 0)
+                return AVB_IO_RESULT_OK;
+
+        ret = rpmb_write_persistent_value(name, value_size, value);
+
+        if (!ret)
+                return AVB_IO_RESULT_OK;
+
+        switch (ret) {
+        case RV_RPMB_PERSIST_NAME_NOT_FOUND:
+        case RV_RPMB_INVALID_KEY_LEN:
+                ret = AVB_IO_RESULT_ERROR_NO_SUCH_VALUE;
+                break;
+        case RV_RPMB_INVALID_PERSIST_DATA_SIZE:
+                ret = AVB_IO_RESULT_ERROR_INSUFFICIENT_SPACE;
+                break;
+        default:
+                ret = AVB_IO_RESULT_ERROR_IO;
+                break;
+        }
 
 	return ret;
 }

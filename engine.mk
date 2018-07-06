@@ -152,6 +152,7 @@ include lib/bio/rules.mk
 include lib/gpt/rules.mk
 include lib/libavb/rules.mk
 include dev/scsi/rules.mk
+include dev/rpmb/rules.mk
 include dev/boot/rules.mk
 include external/lib/cksum/rules.mk
 include external/lib/fdt/rules.mk
