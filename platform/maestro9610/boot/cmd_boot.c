@@ -252,7 +252,6 @@ static void add_dt_memory_node(unsigned long base, unsigned int size)
 static void configure_dtb(void)
 {
 	char str[BUFFER_SIZE];
-	u32 rd_len = 0x7000;
 	u32 soc_ver = 0;
 	unsigned long sec_dram_base = 0;
 	unsigned int sec_dram_size = 0;
@@ -263,7 +262,6 @@ static void configure_dtb(void)
 	u64 dram_size = *(u64 *)BL_SYS_INFO_DRAM_SIZE;
 	unsigned long long start, count;
 	unsigned char pid;
-	u32 *env_buf;
 	struct pit_entry *ptn;
 	bdev_t *dev;
 	char *name;
@@ -271,12 +269,6 @@ static void configure_dtb(void)
 	int len;
 	const char *np;
 	int noff;
-
-	ptn = pit_get_part_info("env");
-	env_buf = memalign(0x1000, pit_get_length(ptn));
-	pit_access(ptn, PIT_OP_LOAD, (u64)env_buf, 0);
-	rd_len = *env_buf;
-	free(env_buf);
 
 	/* Get Secure DRAM information */
 	soc_ver = exynos_smc(SMC_CMD_GET_SOC_INFO, SOC_INFO_TYPE_VERSION, 0, 0);
@@ -350,18 +342,9 @@ static void configure_dtb(void)
 	printf("SEC_PGTBL_BASE[%#lx]\n", sec_pt_base);
 	printf("SEC_PGTBL_SIZE[%#x]\n", sec_pt_size);
 
-#ifdef CONFIG_SECURE_BOOT
-	rd_len -= SB_STAGE2_CONTEXT_LEN;
-#endif
 	/* merge_dto_to_main_dtb(); */
 
 	resize_dt(DT_BASE);
-
-	sprintf(str, "<0x%x>", RAMDISK_BASE);
-	set_fdt_val("/chosen", "linux,initrd-start", str);
-
-	sprintf(str, "<0x%x>", RAMDISK_BASE + rd_len);
-	set_fdt_val("/chosen", "linux,initrd-end", str);
 
 	sprintf(str, "<0x%x>", ECT_BASE);
 	set_fdt_val("/ect", "parameter_address", str);
@@ -441,22 +424,14 @@ int cmd_scatter_load_boot(int argc, const cmd_args *argv);
 int load_boot_images(void)
 {
 	struct pit_entry *ptn;
-	/* cmd_args argv[5]; */
+	cmd_args argv[5];
 
-	ptn = pit_get_part_info("kernel");
+	ptn = pit_get_part_info("boot_a");
 	if (ptn == 0) {
 		printf("Partition 'kernel' does not exist\n");
 		return -1;
 	} else {
-		pit_access(ptn, PIT_OP_LOAD, (u64)KERNEL_BASE, 0);
-	}
-
-	ptn = pit_get_part_info("ramdisk");
-	if (ptn == 0) {
-		printf("Partition 'ramdisk' does not exist\n");
-		return -1;
-	} else {
-		pit_access(ptn, PIT_OP_LOAD, (u64)RAMDISK_BASE, 0);
+		pit_access(ptn, PIT_OP_LOAD, (u64)BOOT_BASE, 0);
 	}
 
 	ptn = pit_get_part_info("dtb");
@@ -467,13 +442,11 @@ int load_boot_images(void)
 		pit_access(ptn, PIT_OP_LOAD, (u64)DT_BASE, 0);
 	}
 
-	/*
 	argv[1].u = BOOT_BASE;
 	argv[2].u = KERNEL_BASE;
-	argv[3].u = ROOTFS_BASE;
-	argv[4].u = DT_BASE;
+	argv[3].u = 0;
+	argv[4].u = 0;
 	cmd_scatter_load_boot(5, argv);
-	*/
 
 	return 0;
 }
