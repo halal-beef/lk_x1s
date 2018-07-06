@@ -20,6 +20,7 @@
 #include <pit.h>
 #include <platform/sfr.h>
 #include <platform/smc.h>
+#include <platform/environment.h>
 #include <platform/if_pmic_s2mu004.h>
 
 unsigned int download_size;
@@ -49,7 +50,7 @@ static void flash_using_pit(char *key, char *response,
 {
 	struct pit_entry *ptn;
 	unsigned long long length;
-	u32 *env_buf;
+	u32 *env_val;
 
 	/*
 	 * In case of flashing pit, this should be
@@ -86,10 +87,13 @@ static void flash_using_pit(char *key, char *response,
 
 	if (!strcmp(key, "ramdisk")) {
 		ptn = pit_get_part_info("env");
-		env_buf = memalign(0x1000, 0x1000);
-		*env_buf = size;
-		pit_access(ptn, PIT_OP_FLASH, (u64)env_buf, 0);
-		free(env_buf);
+		env_val = memalign(0x1000, pit_get_length(ptn));
+		pit_access(ptn, PIT_OP_LOAD, (u64)env_val, 0);
+
+		env_val[ENV_ID_RAMDISK_SIZE] = size;
+		pit_access(ptn, PIT_OP_FLASH, (u64)env_val, 0);
+
+		free(env_val);
 	}
 }
 
