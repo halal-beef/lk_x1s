@@ -22,6 +22,13 @@
 #define	SCSI_UNMAP_DATA_LEN	(SCSI_UNMAP_BLOCK_DESC_DATA_LEN	+ 6)
 
 /*
+ * RPMB Message Data Frame size
+ *
+ * Now we assumed that its case is only UFS, so the size is 512 bytes
+ */
+#define RPMB_MSG_DATA_SIZE	512
+
+/*
  * Argument 'p' should be char pointer
  */
 #define	set_dword_le(p, v)	\
@@ -514,7 +521,8 @@ status_t scsi_scan(scsi_device_t *sdev, u32 wlun, u32 dev_num, exec_t *func,
 			 * but now we pre-define them. If you access more than
 			 * its capacity, the acccess would fail.
 			 */
-			block_size = 4096;
+			block_size = !strcmp(name_s, "rpmb") ?
+						RPMB_MSG_DATA_SIZE: 4096;
 			block_count = 0xFFFFFFFF;
 		}
 
