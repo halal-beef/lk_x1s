@@ -20,6 +20,7 @@
 #include <pit.h>
 #include <platform/sfr.h>
 #include <platform/smc.h>
+#include <platform/ab_update.h>
 #include <platform/environment.h>
 #include <platform/if_pmic_s2mu004.h>
 
@@ -316,6 +317,62 @@ static int rx_handler (const unsigned char *buffer, unsigned int buffer_size)
 				if (ptn->filesys != FS_TYPE_NONE)
 					sprintf(response + 4, "0x%llx", pit_get_length(ptn));
 			}
+			else if (!strcmp(cmdbuf + 7, "slot-count"))
+			{
+				sprintf(response + 4, "2");
+			}
+			else if (!strcmp(cmdbuf + 7, "current-slot"))
+			{
+				if (ab_current_slot())
+					sprintf(response + 4, "_b");
+				else
+					sprintf(response + 4, "_a");
+			}
+			else if (!memcmp(cmdbuf + 7, "slot-successful", strlen("slot-successful")))
+			{
+				int slot = -1;
+				if (!strcmp(cmdbuf + 7 + strlen("slot-successful:"), "_a"))
+					slot = 0;
+				else if (!strcmp(cmdbuf + 7 + strlen("slot-successful:"), "_b"))
+					slot = 1;
+				else
+					sprintf(response, "FAILinvalid slot");
+				printf("slot: %d\n", slot);
+				if (slot >= 0) {
+					if (ab_slot_successful(slot))
+						sprintf(response + 4, "yes");
+					else
+						sprintf(response + 4, "no");
+				}
+			}
+			else if (!memcmp(cmdbuf + 7, "slot-unbootable", strlen("slot-unbootable")))
+			{
+				int slot = -1;
+				if (!strcmp(cmdbuf + 7 + strlen("slot-unbootable:"), "_a"))
+					slot = 0;
+				else if (!strcmp(cmdbuf + 7 + strlen("slot-unbootable:"), "_b"))
+					slot = 1;
+				else
+					sprintf(response, "FAILinvalid slot");
+				if (slot >= 0) {
+					if (ab_slot_unbootable(slot))
+						sprintf(response + 4, "yes");
+					else
+						sprintf(response + 4, "no");
+				}
+			}
+			else if (!memcmp(cmdbuf + 7, "slot-retry-count", strlen("slot-retry-count")))
+			{
+				int slot = -1;
+				if (!strcmp(cmdbuf + 7 + strlen("slot-retry-count:"), "_a"))
+					slot = 0;
+				else if (!strcmp(cmdbuf + 7 + strlen("slot-retry-count:"), "_b"))
+					slot = 1;
+				else
+					sprintf(response, "FAILinvalid slot");
+				if (slot >= 0)
+					sprintf(response + 4, "%d", ab_slot_retry_count(slot));
+			}
 			else
 			{
 			}
@@ -424,6 +481,27 @@ static int rx_handler (const unsigned char *buffer, unsigned int buffer_size)
 			ret = 0;
 			fastboot_tx_status(response, strlen(response), FASTBOOT_TX_SYNC);
 		}
+
+		/* set_active
+		   Set active slot. */
+		if (memcmp(cmdbuf, "set_active:", 11) == 0)
+		{
+			printf("set_active\n");
+
+			sprintf(response,"OKAY");
+			if (!strcmp(cmdbuf + 11, "a")) {
+				printf("Set slot 'a' active.\n");
+				ab_set_active(0);
+			} else if (!strcmp(cmdbuf + 11, "b")) {
+				printf("Set slot 'b' active.\n");
+				ab_set_active(1);
+			} else {
+				sprintf(response, "FAILdata invalid size");
+			}
+			ret = 0;
+			fastboot_tx_status(response, strlen(response), FASTBOOT_TX_ASYNC);
+		}
+
 	} /* End of command */
 
 	return ret;
