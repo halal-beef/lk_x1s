@@ -10,8 +10,19 @@
  */
 
 #include <debug.h>
+#include <stdlib.h>
+#include <string.h>
+#include <pit.h>
+#include <lib/bio.h>
+#include <dev/boot.h>
+#include <platform/lock.h>
 #include <platform/secure_boot.h>
 #include <dev/rpmb.h>
+
+int get_unique_guid(char *ptr_name, char *buf);
+
+#define CMD_STRING_MAX_SIZE 60
+#define AVB_PRELOAD_BASE 0xA0000000
 
 static struct AvbOps ops;
 
@@ -22,10 +33,84 @@ static AvbIOResult exynos_read_from_partition(AvbOps *ops,
 		void *buffer,
 		size_t *out_num_read)
 {
-	AvbIOResult ret = AVB_IO_RESULT_OK;
-	//TODO
+	AvbIOResult ret;
+	struct pit_entry *ptn;
+	bdev_t *dev;
+	char *name;
+	unsigned int boot_dev;
+	u32 blkstart;
+	u32 blknum;
+	char *tmp_buff;
+	char *p = (char *)buffer;
+	u32 tmp_num_read;
+	int64_t tmp_offset;
+	size_t tmp_num_bytes;
+	u32 i;
 
-	return ret;
+	boot_dev = get_boot_device();
+	if (boot_dev == BOOT_UFS)
+		name = "scsi0";
+	else {
+		printf("Boot device: 0x%x. Unsupported boot device!\n", boot_dev);
+		return AVB_IO_RESULT_ERROR_IO;
+	}
+
+	dev = bio_open(name);
+
+	ptn = pit_get_part_info(partition);
+	if (ptn == 0)
+		return AVB_IO_RESULT_ERROR_NO_SUCH_PARTITION;
+
+	tmp_buff = (char *)memalign(0x1000, PIT_SECTOR_SIZE);
+	if (tmp_buff == NULL)
+		return AVB_IO_RESULT_ERROR_OOM;
+
+	printf("First block\n");
+	/* First block */
+	tmp_num_bytes = num_bytes;
+	tmp_offset = offset;
+	tmp_num_read = ((PIT_SECTOR_SIZE - (tmp_offset % PIT_SECTOR_SIZE)) < tmp_num_bytes)
+					? (PIT_SECTOR_SIZE - (tmp_offset % PIT_SECTOR_SIZE)) : tmp_num_bytes;
+	blkstart = ptn->blkstart + (u32)(offset / PIT_SECTOR_SIZE);
+	dev->new_read(dev, tmp_buff, blkstart, 1);
+	memcpy((void *)p, (void *)(tmp_buff + (tmp_offset % PIT_SECTOR_SIZE)), tmp_num_read);
+	p += tmp_num_read;
+	tmp_offset += tmp_num_read;
+	blkstart += 1;
+	tmp_num_bytes -= tmp_num_read;
+
+	/* Middle blocks */
+	blknum = tmp_num_bytes / PIT_SECTOR_SIZE;
+	if (blknum) {
+		printf("Middle blocks\n");
+		for (i = 0; i < blknum; i++) {
+			dev->new_read(dev, tmp_buff, blkstart + i, 1);
+
+			memcpy((void *)p, (void *)tmp_buff, PIT_SECTOR_SIZE);
+			p += PIT_SECTOR_SIZE;
+		}
+		tmp_offset += (PIT_SECTOR_SIZE * i);
+		tmp_num_bytes -= (PIT_SECTOR_SIZE * i);
+		tmp_num_read = tmp_num_bytes;
+		blkstart += i;
+	}
+
+	/* Last block */
+	if (tmp_num_bytes) {
+		printf("Last block\n");
+		dev->new_read(dev, tmp_buff, blkstart, 1);
+		memcpy((void *)p, (void *)tmp_buff, tmp_num_read);
+	}
+
+	printf("free(tmp_buff)\n");
+	free(tmp_buff);
+
+	printf("*out_num_read = num_bytes\n");
+	*out_num_read = num_bytes;
+
+	bio_close(dev);
+
+	return AVB_IO_RESULT_OK;
 }
 
 static AvbIOResult exynos_get_preloaded_partition(AvbOps *ops,
@@ -34,10 +119,33 @@ static AvbIOResult exynos_get_preloaded_partition(AvbOps *ops,
 		uint8_t **out_pointer,
 		size_t *out_num_bytes_preloaded)
 {
-	AvbIOResult ret = AVB_IO_RESULT_OK;
-	//TODO
+	struct pit_entry *ptn;
+	bdev_t *dev;
+	char *name;
+	unsigned int boot_dev;
 
-	return ret;
+	boot_dev = get_boot_device();
+	if (boot_dev == BOOT_UFS)
+		name = "scsi0";
+	else {
+		printf("Boot device: 0x%x. Unsupported boot device!\n", boot_dev);
+		return AVB_IO_RESULT_ERROR_IO;
+	}
+
+	dev = bio_open(name);
+
+	ptn = pit_get_part_info(partition);
+	if (ptn == 0)
+		return AVB_IO_RESULT_ERROR_NO_SUCH_PARTITION;
+
+	dev->new_read(dev, (void *)AVB_PRELOAD_BASE, ptn->blkstart, ptn->blknum);
+
+	*out_pointer = (uint8_t *)AVB_PRELOAD_BASE;
+	*out_num_bytes_preloaded = num_bytes;
+
+	bio_close(dev);
+
+	return AVB_IO_RESULT_OK;
 }
 
 static AvbIOResult exynos_write_to_partition(AvbOps *ops,
@@ -89,7 +197,8 @@ static AvbIOResult exynos_write_rollback_index(AvbOps *ops,
 static AvbIOResult exynos_read_is_device_unlocked(AvbOps *ops, bool *out_is_unlocked)
 {
 	AvbIOResult ret = AVB_IO_RESULT_OK;
-	//TODO
+
+	*out_is_unlocked = (bool)get_lock_state();
 
 	return ret;
 }
@@ -99,8 +208,17 @@ static AvbIOResult exynos_get_unique_guid_for_partition(AvbOps *ops,
 		char *guid_buf,
 		size_t guid_buf_size)
 {
-	AvbIOResult ret = AVB_IO_RESULT_OK;
-	//TODO
+	AvbIOResult ret;
+	struct pit_entry *ptn;
+
+	ptn = pit_get_part_info(partition);
+	if (ptn == 0)
+		return AVB_IO_RESULT_ERROR_NO_SUCH_PARTITION;
+
+	if (get_unique_guid(partition, guid_buf))
+		ret = AVB_IO_RESULT_ERROR_IO;
+	else
+		ret = AVB_IO_RESULT_OK;
 
 	return ret;
 }
@@ -109,8 +227,16 @@ static AvbIOResult exynos_get_size_of_partition(AvbOps *ops,
 		const char *partition,
 		uint64_t *out_size_num_bytes)
 {
-	AvbIOResult ret = AVB_IO_RESULT_OK;
-	//TODO
+	AvbIOResult ret;
+	struct pit_entry *ptn;
+
+	ptn = pit_get_part_info(partition);
+	if (ptn) {
+		*out_size_num_bytes = pit_get_length(ptn);
+		ret = AVB_IO_RESULT_OK;
+	} else {
+		ret = AVB_IO_RESULT_ERROR_NO_SUCH_PARTITION;
+	}
 
 	return ret;
 }
