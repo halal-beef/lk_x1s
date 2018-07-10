@@ -53,4 +53,13 @@ uint32_t el3_sss_hash_final(
 	struct ace_hash_ctx *ctx,
 	uint8_t *hash);
 
+/******************************************************************************/
+/* Android verified boot */
+/******************************************************************************/
+void set_avbops(void);
+
+uint32_t avb_main(char *suffix);
+
+uint32_t get_ops_addr(struct AvbOps **ops_addr);
+
 #endif /* _SECURE_BOOT_H_ */

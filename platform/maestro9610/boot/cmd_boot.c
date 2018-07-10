@@ -24,6 +24,7 @@
 #include <platform/ldfw.h>
 #include <platform/charger.h>
 #include <platform/ab_update.h>
+#include <platform/secure_boot.h>
 #include <pit.h>
 
 /* Memory node */
@@ -489,6 +490,13 @@ int cmd_boot(int argc, const cmd_args *argv)
 	load_boot_images();
 
 	configure_dtb();
+
+#if defined(CONFIG_USE_AVB20)
+	if (ab_current_slot())
+		avb_main("_b");
+	else
+		avb_main("_a");
+#endif
 
 	/* notify EL3 Monitor end of bootloader */
 	exynos_smc(SMC_CMD_END_OF_BOOTLOADER, 0, 0, 0);
