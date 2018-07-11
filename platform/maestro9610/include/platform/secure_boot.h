@@ -14,6 +14,9 @@
 #define SHA512_DIGEST_LEN               (64)
 #define SHA512_BLOCK_LEN                (128)
 
+/* AVB variable */
+#define AVB_CMD_MAX_SIZE		(1024)
+
 /******************************************************************************/
 /* Secure Boot context used by EL3 */
 /******************************************************************************/
@@ -58,7 +61,7 @@ uint32_t el3_sss_hash_final(
 /******************************************************************************/
 void set_avbops(void);
 
-uint32_t avb_main(char *suffix);
+uint32_t avb_main(char *suffix, char *cmdline);
 
 uint32_t get_ops_addr(struct AvbOps **ops_addr);
 
