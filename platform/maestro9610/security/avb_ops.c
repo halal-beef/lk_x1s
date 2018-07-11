@@ -168,7 +168,7 @@ static AvbIOResult exynos_validate_vbmeta_public_key(AvbOps *ops,
 		bool *out_is_trusted)
 {
 	AvbIOResult ret = AVB_IO_RESULT_OK;
-	//TODO
+	*out_is_trusted = true;
 
 	return ret;
 }
