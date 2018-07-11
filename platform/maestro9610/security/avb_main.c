@@ -13,11 +13,13 @@
 #include <platform/secure_boot.h>
 #include <platform/sfr.h>
 #include <dev/rpmb.h>
+#include <string.h>
 
 #if defined(CONFIG_USE_AVB20)
-uint32_t avb_main(char *suffix)
+uint32_t avb_main(char *suffix, char *cmdline)
 {
-	uint32_t ret;
+	uint32_t ret = 0;
+	uint32_t i = 0;
 	struct AvbOps *ops;
 	const char *partition_arr[] = {"boot", NULL};
 	AvbSlotVerifyData* ctx_ptr;
@@ -38,6 +40,14 @@ uint32_t avb_main(char *suffix)
 	if (ret) {
 		printf("[AVB 2.0 ERR] RPMB hmac ret: 0x%X\n", ret);
 	}
+
+	i = 0;
+	while (ctx_ptr->cmdline[i++] != '\0');
+	memcpy(cmdline, ctx_ptr->cmdline, i);
+#if defined(CONFIG_AVB_DEBUG)
+	printf("i: %d\n", i);
+	printf("cmdline: %s\n", cmdline);
+#endif
 
 	return ret;
 }

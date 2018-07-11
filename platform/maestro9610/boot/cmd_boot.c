@@ -39,7 +39,9 @@
 #define DT_RESERVE_MEM 0x23000
 #define ECT_BASE 0x90000000
 #define ECT_SIZE 0x32000
-#define BUFFER_SIZE 1024
+#define BUFFER_SIZE 2048
+
+static char cmdline[AVB_CMD_MAX_SIZE];
 
 unsigned long simple_strtoul(const char *cp,char **endp,unsigned int base);
 
@@ -428,6 +430,13 @@ static void configure_dtb(void)
 		}
 	}
 
+	/* set AVB args */
+	noff = fdt_path_offset (DT_BASE, "/chosen");
+	np = fdt_getprop(DT_BASE, noff, "bootargs", &len);
+	snprintf(str, BUFFER_SIZE, "%s %s", np, cmdline);
+	fdt_setprop(DT_BASE, noff, "bootargs", str,
+			        strlen(str) + 1);
+
 	set_bootargs();
 }
 
@@ -489,14 +498,14 @@ int cmd_boot(int argc, const cmd_args *argv)
 
 	load_boot_images();
 
-	configure_dtb();
-
 #if defined(CONFIG_USE_AVB20)
 	if (ab_current_slot())
-		avb_main("_b");
+		avb_main("_b", cmdline);
 	else
-		avb_main("_a");
+		avb_main("_a", cmdline);
 #endif
+
+	configure_dtb();
 
 	/* notify EL3 Monitor end of bootloader */
 	exynos_smc(SMC_CMD_END_OF_BOOTLOADER, 0, 0, 0);
