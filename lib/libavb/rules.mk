@@ -22,6 +22,7 @@ MODULE_SRCS += \
 	$(LOCAL_DIR)/avb_rsa.c \
 	$(LOCAL_DIR)/avb_sha256.c \
 	$(LOCAL_DIR)/avb_sha512.c \
-	$(LOCAL_DIR)/avb_cmdline.c
+	$(LOCAL_DIR)/avb_cmdline.c \
+	$(LOCAL_DIR)/avb_exynos.c
 
 include make/module.mk
