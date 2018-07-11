@@ -22,6 +22,8 @@
  * SOFTWARE.
  */
 
+#include <platform/sfr.h>
+#include <platform/secure_boot.h>
 #include "avb_slot_verify.h"
 #include "avb_chain_partition_descriptor.h"
 #include "avb_cmdline.h"
@@ -298,6 +300,11 @@ static AvbSlotVerifyResult load_and_verify_hash_partition(
   size_t expected_digest_len = 0;
   uint8_t expected_digest_buf[AVB_SHA512_DIGEST_SIZE];
   const uint8_t* expected_digest = NULL;
+#if defined(CONFIG_AVB_HW_HASH)
+  struct ace_hash_ctx ctx;
+  uint8_t digest_buf[SHA256_DIGEST_LEN];
+  digest = (uint8_t *)&digest_buf;
+#endif
 
   if (!avb_hash_descriptor_validate_and_byteswap(
           (const AvbHashDescriptor*)descriptor, &hash_desc)) {
@@ -387,18 +394,38 @@ static AvbSlotVerifyResult load_and_verify_hash_partition(
   }
 
   if (avb_strcmp((const char*)hash_desc.hash_algorithm, "sha256") == 0) {
+#if defined(CONFIG_AVB_HW_HASH)
+    el3_sss_hash_init(ALG_SHA256, &ctx);
+    el3_sss_hash_update((uint32_t)(uint64_t)desc_salt,
+		    hash_desc.image_size + hash_desc.salt_len,
+		    hash_desc.salt_len, &ctx, 0);
+    el3_sss_hash_update((uint32_t)(uint64_t)image_buf,
+		    hash_desc.image_size, hash_desc.image_size, &ctx, 1);
+    el3_sss_hash_final(&ctx, digest);
+#else /* SW Hash */
     AvbSHA256Ctx sha256_ctx;
     avb_sha256_init(&sha256_ctx);
     avb_sha256_update(&sha256_ctx, desc_salt, hash_desc.salt_len);
     avb_sha256_update(&sha256_ctx, image_buf, hash_desc.image_size);
     digest = avb_sha256_final(&sha256_ctx);
+#endif
     digest_len = AVB_SHA256_DIGEST_SIZE;
   } else if (avb_strcmp((const char*)hash_desc.hash_algorithm, "sha512") == 0) {
+#if defined(CONFIG_AVB_HW_HASH)
+    el3_sss_hash_init(ALG_SHA512, &ctx);
+    el3_sss_hash_update((uint32_t)(uint64_t)desc_salt,
+		    hash_desc.image_size + hash_desc.salt_len,
+		    hash_desc.salt_len, &ctx, 0);
+    el3_sss_hash_update((uint32_t)(uint64_t)image_buf,
+		    hash_desc.image_size, hash_desc.image_size, &ctx, 1);
+    el3_sss_hash_final(&ctx, digest);
+#else /* SW Hash */
     AvbSHA512Ctx sha512_ctx;
     avb_sha512_init(&sha512_ctx);
     avb_sha512_update(&sha512_ctx, desc_salt, hash_desc.salt_len);
     avb_sha512_update(&sha512_ctx, image_buf, hash_desc.image_size);
     digest = avb_sha512_final(&sha512_ctx);
+#endif
     digest_len = AVB_SHA512_DIGEST_SIZE;
   } else {
     avb_errorv(part_name, ": Unsupported hash algorithm.\n", NULL);
