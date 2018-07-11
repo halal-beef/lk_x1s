@@ -105,5 +105,8 @@
 #define RAMDUMP_SIGN_FORCE_REBOOT       0xDAFE
 #define RAMDUMP_SIGN_SAFE_FAULT         0xFAFA
 
+/* AVB2.0 */
 #define CONFIG_USE_AVB20
+#define CONFIG_AVB_HW_HASH
+
 #endif	/* __EXYNOS9610_H__ */
