@@ -2,9 +2,7 @@ LOCAL_DIR := $(GET_LOCAL_DIR)
 
 MODULE := $(LOCAL_DIR)
 
-MODULE_DEPS += lib/gfx
-
 MODULE_SRCS += \
-	$(LOCAL_DIR)/font.c \
+	$(LOCAL_DIR)/exynos_font.c \
 
 include make/module.mk
