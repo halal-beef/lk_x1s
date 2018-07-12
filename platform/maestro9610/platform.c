@@ -143,9 +143,18 @@ void platform_init(void)
 	pit_init();
 
 #ifdef CONFIG_EXYNOS_BOOTLOADER_DISPLAY
+	/* If the display_drv_init function is not called before,
+	 * you must use the print_lcd function.
+	 */
+	print_lcd(FONT_RED, FONT_BLACK, "LK Display is enabled!");
 	display_drv_init();
 	show_boot_logo();
+	/* If the display_drv_init function is called,
+	 * you must use the print_lcd_update function.
+	 */
+	//print_lcd_update(FONT_BLUE, FONT_BLACK, "LK display is enabled!");
 #endif
+
 	display_tmu_info();
 	display_trip_info();
 }
