@@ -437,7 +437,7 @@ static void configure_dtb(void)
 	fdt_setprop(DT_BASE, noff, "bootargs", str,
 			        strlen(str) + 1);
 
-	set_bootargs();
+	/* set_bootargs(); */
 }
 
 int cmd_scatter_load_boot(int argc, const cmd_args *argv);
