@@ -18,16 +18,25 @@
 #if defined(CONFIG_USE_AVB20)
 uint32_t avb_main(char *suffix, char *cmdline)
 {
+	bool unlock;
 	uint32_t ret = 0;
 	uint32_t i = 0;
 	struct AvbOps *ops;
 	const char *partition_arr[] = {"boot", NULL};
 	AvbSlotVerifyData* ctx_ptr;
+	AvbSlotVerifyFlags asv_flag;
 
 	set_avbops();
 	get_ops_addr(&ops);
+	ops->read_is_device_unlocked(ops, &unlock);
+	if (unlock == 1) {
+		asv_flag = AVB_SLOT_VERIFY_FLAGS_ALLOW_VERIFICATION_ERROR;
+	} else {
+		asv_flag = AVB_SLOT_VERIFY_FLAGS_NONE;
+	}
+
 	ret = avb_slot_verify(ops, partition_arr, suffix,
-			AVB_SLOT_VERIFY_FLAGS_NONE,
+			asv_flag,
 			AVB_HASHTREE_ERROR_MODE_RESTART_AND_INVALIDATE,
 			&ctx_ptr);
 	if (ret) {
