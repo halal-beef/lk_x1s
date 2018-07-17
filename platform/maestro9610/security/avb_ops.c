@@ -334,7 +334,7 @@ static AvbIOResult exynos_read_is_device_unlocked(AvbOps *ops, bool *out_is_unlo
 {
 	AvbIOResult ret = AVB_IO_RESULT_OK;
 
-	*out_is_unlocked = (bool)get_lock_state();
+	*out_is_unlocked = (bool)!get_lock_state();
 
 	return ret;
 }
