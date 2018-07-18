@@ -18,12 +18,6 @@
 
 void speedy_gpio_init(void);
 
-static void initialize_lcd_fb(void)
-{
-	memset(CONFIG_DISPLAY_LOGO_BASE_ADDRESS, 0, LCD_WIDTH * LCD_HEIGHT * 4);
-	memset(CONFIG_DISPLAY_FONT_BASE_ADDRESS, 0, LCD_WIDTH * LCD_HEIGHT * 4);
-}
-
 unsigned int s5p_chip_id[4] = {0x0, 0x0, 0x0, 0x0};
 unsigned int charger_mode = 0;
 unsigned int board_id = 0;
@@ -104,6 +98,17 @@ static int check_charger_connect(void)
 	return 0;
 }
 
+#ifdef CONFIG_EXYNOS_BOOTLOADER_DISPLAY
+extern int display_drv_init(void);
+void display_panel_init(void);
+
+static void initialize_fbs(void)
+{
+	memset(CONFIG_DISPLAY_LOGO_BASE_ADDRESS, 0, LCD_WIDTH * LCD_HEIGHT * 4);
+	memset(CONFIG_DISPLAY_FONT_BASE_ADDRESS, 0, LCD_WIDTH * LCD_HEIGHT * 4);
+}
+#endif
+
 void platform_early_init(void)
 {
 	unsigned int rst_stat = readl(EXYNOS9610_POWER_RST_STAT);
@@ -111,7 +116,10 @@ void platform_early_init(void)
 	read_chip_id();
 
 	speedy_gpio_init();
-
+#ifdef CONFIG_EXYNOS_BOOTLOADER_DISPLAY
+	display_panel_init();
+	initialize_fbs();
+#endif
 	set_first_boot_device_info();
 
 	if (is_first_boot() && !(rst_stat & (WARM_RESET | LITTLE_WDT_RESET)))
@@ -132,6 +140,10 @@ void platform_init(void)
 	ufs_set_configuration_descriptor();
 	pit_init();
 
+#ifdef CONFIG_EXYNOS_BOOTLOADER_DISPLAY
+	display_drv_init();
+	show_boot_logo();
+#endif
 	display_tmu_info();
 	display_trip_info();
 }
