@@ -394,6 +394,8 @@ static void configure_dtb(void)
 	int len;
 	const char *np;
 	int noff;
+	struct AvbOps *ops;
+	bool unlock;
 
 	/* Get Secure DRAM information */
 	soc_ver = exynos_smc(SMC_CMD_GET_SOC_INFO, SOC_INFO_TYPE_VERSION, 0, 0);
@@ -543,11 +545,18 @@ static void configure_dtb(void)
 	}
 
 	/* set AVB args */
+	get_ops_addr(&ops);
+	ops->read_is_device_unlocked(ops, &unlock);
 	noff = fdt_path_offset (DT_BASE, "/chosen");
 	np = fdt_getprop(DT_BASE, noff, "bootargs", &len);
-	snprintf(str, BUFFER_SIZE, "%s %s", np, cmdline);
+	if (unlock)
+		snprintf(str, BUFFER_SIZE, "%s %s %s", np, cmdline, "androidboot.verifiedbootstate=orange");
+	else
+		snprintf(str, BUFFER_SIZE, "%s %s %s", np, cmdline, "androidboot.verifiedbootstate=green");
 	fdt_setprop(DT_BASE, noff, "bootargs", str,
 			        strlen(str) + 1);
+
+	printf("\nbootargs: %s\n", str);
 
 	/* set_bootargs(); */
 	resize_dt(0);
