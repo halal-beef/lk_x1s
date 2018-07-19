@@ -31,6 +31,9 @@ MODULE_SRCS += \
 	$(LOCAL_DIR)/dfd.c \
 	$(LOCAL_DIR)/dfd_entry.S \
 	$(LOCAL_DIR)/tmu.c \
+	$(LOCAL_DIR)/dpu_cal/decon_reg.c \
+	$(LOCAL_DIR)/dpu_cal/dpp_reg.c \
+	$(LOCAL_DIR)/dpu_cal/dsim_reg.c \
 
 MODULE_DEPS += \
     dev/interrupt/arm_gic \
