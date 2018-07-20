@@ -3,6 +3,8 @@
 #include <dev/ufs.h>
 #include <dev/boot.h>
 #include <pit.h>
+#include <dev/interrupt/arm_gic.h>
+#include <dev/timer/arm_generic.h>
 #include <platform/sfr.h>
 #include <platform/smc.h>
 #include <platform/speedy.h>
@@ -127,6 +129,10 @@ void platform_early_init(void)
 	if (is_first_boot() && !(rst_stat & (WARM_RESET | LITTLE_WDT_RESET)))
 		muic_sw_uart();
 	uart_test_function();
+
+	arm_gic_init();
+	writel(1 << 8, EXYNOS9610_MCT_G_TCON);
+	arm_generic_timer_init(30, 26000000);
 }
 
 void platform_init(void)
