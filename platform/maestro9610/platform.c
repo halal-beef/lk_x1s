@@ -17,6 +17,7 @@
 #include <stdio.h>
 
 void speedy_gpio_init(void);
+void xbootldo_gpio_init(void);
 
 unsigned int s5p_chip_id[4] = {0x0, 0x0, 0x0, 0x0};
 unsigned int charger_mode = 0;
@@ -116,6 +117,7 @@ void platform_early_init(void)
 	read_chip_id();
 
 	speedy_gpio_init();
+	xbootldo_gpio_init();
 #ifdef CONFIG_EXYNOS_BOOTLOADER_DISPLAY
 	display_panel_init();
 	initialize_fbs();
