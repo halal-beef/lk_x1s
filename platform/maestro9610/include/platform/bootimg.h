@@ -34,7 +34,7 @@ struct boot_img_hdr
 
     uint32_t tags_addr;    /* physical addr for kernel tags */
     uint32_t page_size;    /* flash page size we assume */
-    uint32_t unused;       /* reserved for future expansion: MUST be 0 */
+    uint32_t header_version;       /* reserved for future expansion: MUST be 0 */
 
     /* operating system version and security patch level; for
      * version "A.B.C" and patch level "Y-M-D":
@@ -52,6 +52,10 @@ struct boot_img_hdr
     /* Supplemental command line data; kept here to maintain
      * binary compatibility with older versions of mkbootimg */
     uint8_t extra_cmdline[BOOT_EXTRA_ARGS_SIZE];
+
+	unsigned recovery_dtbo_size;
+	unsigned long long recovery_dtbo_offset;
+	unsigned header_size;
 } __attribute__((packed));
 
 #endif /* _BOOT_IMAGE_H_ */
