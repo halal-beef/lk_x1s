@@ -1,3 +1,13 @@
+/*
+ * Copyright@ Samsung Electronics Co. LTD
+ *
+ * This software is proprietary of Samsung Electronics.
+ * No part of this software, either material or conceptual may be copied or distributed, transmitted,
+ * transcribed, stored in a retrieval system or translated into any human or computer language in any form by any means,
+ * electronic, mechanical, manual or otherwise, or disclosed
+ * to third parties without the express written permission of Samsung Electronics.
+ */
+
 #include <reg.h>
 #include "uart_simple.h"
 #include <dev/ufs.h>
@@ -129,6 +139,7 @@ void platform_early_init(void)
 	if (is_first_boot() && !(rst_stat & (WARM_RESET | LITTLE_WDT_RESET)))
 		muic_sw_uart();
 	uart_test_function();
+	printf("LK build date: %s, time: %s\n", __DATE__, __TIME__);
 
 	arm_gic_init();
 	writel(1 << 8, EXYNOS9610_MCT_G_TCON);
