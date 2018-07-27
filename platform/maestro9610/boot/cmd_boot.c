@@ -572,6 +572,10 @@ static void configure_dtb(void)
 			boot_dev = get_boot_device();
 			if (boot_dev == BOOT_UFS)
 				name = "scsi0";
+			else {
+				printf("Boot device: 0x%x. Unsupported boot device!\n", boot_dev);
+				return;
+			}
 
 			/* get modem partition info */
 			dev = bio_open(name);
