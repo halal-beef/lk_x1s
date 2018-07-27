@@ -16,11 +16,12 @@
 
 int cmd_scatter_load_boot(int argc, const cmd_args *argv)
 {
-	unsigned long boot_addr, kernel_addr, dtb_addr, ramdisk_addr;
+	unsigned long boot_addr, kernel_addr, dtb_addr, ramdisk_addr, recovery_dtbo_addr;
 	struct boot_img_hdr *b_hdr;
 	int kernel_offset;
 	int dtb_offset;
 	int ramdisk_offset;
+	int recovery_dtbo_offset;
 	char initrd_size[32];
 
 	if (argc != 5) goto usage;
@@ -29,6 +30,7 @@ int cmd_scatter_load_boot(int argc, const cmd_args *argv)
 	kernel_addr = argv[2].u;
 	ramdisk_addr = argv[3].u;
 	dtb_addr = argv[4].u;
+	recovery_dtbo_addr = argv[5].u;
 
 	b_hdr = (boot_img_hdr *)boot_addr;
 
@@ -36,10 +38,12 @@ int cmd_scatter_load_boot(int argc, const cmd_args *argv)
 	printf("kernel size: 0x%08x\n", b_hdr->kernel_size);
 	printf("ramdisk size: 0x%08x\n", b_hdr->ramdisk_size);
 	printf("DTB size: 0x%08x\n", b_hdr->second_size);
+	printf("recovery DTBO size: 0x%08x\n", b_hdr->recovery_dtbo_size);
 
 	kernel_offset = b_hdr->page_size;
 	ramdisk_offset = kernel_offset + ((b_hdr->kernel_size + b_hdr->page_size - 1) / b_hdr->page_size) * b_hdr->page_size;
 	dtb_offset = ramdisk_offset + ((b_hdr->ramdisk_size + b_hdr->page_size - 1) / b_hdr->page_size) * b_hdr->page_size;
+	recovery_dtbo_offset = dtb_offset + ((b_hdr->second_size + b_hdr->page_size - 1) / b_hdr->page_size) * b_hdr->page_size;
 
 	if (kernel_addr)
 		memcpy((void *)kernel_addr, (const void *)(boot_addr + kernel_offset), (size_t)b_hdr->kernel_size);
@@ -47,11 +51,13 @@ int cmd_scatter_load_boot(int argc, const cmd_args *argv)
 		memcpy((void *)ramdisk_addr, (const void *)(boot_addr + ramdisk_offset), (size_t)b_hdr->ramdisk_size);
 	if (dtb_addr)
 		memcpy((void *)dtb_addr, (const void *)(boot_addr + dtb_offset), (size_t)b_hdr->second_size);
+	if (recovery_dtbo_addr)
+		memcpy((void *)recovery_dtbo_addr, (const void *)(boot_addr + recovery_dtbo_offset), (size_t)b_hdr->recovery_dtbo_size);
 
 	return 0;
 
 usage:
-	printf("scatter_load_boot {boot/recovery addr} {kernel addr} {ramdisk addr} {dtb addr}\n");
+	printf("scatter_load_boot {boot/recovery addr} {kernel addr} {ramdisk addr} {dtb addr} {recovery dtbo addr}\n");
 	return -1;
 }
 
