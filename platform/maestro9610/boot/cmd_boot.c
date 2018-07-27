@@ -13,6 +13,7 @@
 #include <stdlib.h>
 #include <libfdt_env.h>
 #include <fdt.h>
+#include <reg.h>
 #include <libfdt.h>
 #include <lib/bio.h>
 #include <lib/console.h>
@@ -27,6 +28,7 @@
 #include <platform/secure_boot.h>
 #include <platform/sizes.h>
 #include <platform/fastboot.h>
+#include <platform/bootimg.h>
 #include <pit.h>
 #include <ufdt_overlay.h>
 
@@ -43,6 +45,8 @@
 #define ECT_BASE 0x90000000
 #define ECT_SIZE 0x32000
 #define BUFFER_SIZE 2048
+
+#define REBOOT_MODE_RECOVERY	0xFF
 
 static char cmdline[AVB_CMD_MAX_SIZE];
 
@@ -344,6 +348,31 @@ static void bootargs_update(void)
 	set_fdt_val("/chosen", "bootargs", bootargs);
 }
 
+static void remove_string_from_bootargs(char *str)
+{
+	char bootargs[BUFFER_SIZE];
+	const char *np;
+	int noff;
+	int bootargs_len;
+	int str_len;
+	int i;
+
+	noff = fdt_path_offset(fdt_dtb, "/chosen");
+	np = fdt_getprop(fdt_dtb, noff, "bootargs", &bootargs_len);
+
+	str_len = strlen(str);
+
+	for (i = 0; i < bootargs_len - str_len; i++)
+		if(!strncmp(str, (np + i), str_len))
+			break;
+
+	memset(bootargs, 0, BUFFER_SIZE);
+	memcpy(bootargs, np, i);
+	memcpy(bootargs + i, np + i + str_len, bootargs_len - i - str_len);
+
+	fdt_setprop(fdt_dtb, noff, "bootargs", bootargs, strlen(bootargs) + 1);
+}
+
 static void set_bootargs(void)
 {
 	bootargs_init();
@@ -396,6 +425,7 @@ static void configure_dtb(void)
 	int noff;
 	struct AvbOps *ops;
 	bool unlock;
+	struct boot_img_hdr *b_hdr = (boot_img_hdr *)BOOT_BASE;
 
 	/* Get Secure DRAM information */
 	soc_ver = exynos_smc(SMC_CMD_GET_SOC_INFO, SOC_INFO_TYPE_VERSION, 0, 0);
@@ -473,6 +503,14 @@ static void configure_dtb(void)
 	merge_dto_to_main_dtb();
 	resize_dt(SZ_4K);
 
+	if (readl(EXYNOS9610_POWER_SYSIP_DAT0) == REBOOT_MODE_RECOVERY) {
+		sprintf(str, "<0x%x>", RAMDISK_BASE);
+		set_fdt_val("/chosen", "linux,initrd-start", str);
+
+		sprintf(str, "<0x%x>", RAMDISK_BASE + b_hdr->ramdisk_size);
+		set_fdt_val("/chosen", "linux,initrd-end", str);
+	}
+
 	sprintf(str, "<0x%x>", ECT_BASE);
 	set_fdt_val("/ect", "parameter_address", str);
 
@@ -544,21 +582,35 @@ static void configure_dtb(void)
 		}
 	}
 
-	/* set AVB args */
-	get_ops_addr(&ops);
-	ops->read_is_device_unlocked(ops, &unlock);
-	noff = fdt_path_offset (DT_BASE, "/chosen");
-	np = fdt_getprop(DT_BASE, noff, "bootargs", &len);
-	if (unlock)
-		snprintf(str, BUFFER_SIZE, "%s %s %s", np, cmdline, "androidboot.verifiedbootstate=orange");
-	else
-		snprintf(str, BUFFER_SIZE, "%s %s %s", np, cmdline, "androidboot.verifiedbootstate=green");
-	fdt_setprop(DT_BASE, noff, "bootargs", str,
-			        strlen(str) + 1);
+	if (!(readl(EXYNOS9610_POWER_SYSIP_DAT0) == REBOOT_MODE_RECOVERY)) {
+		/* set AVB args */
+		get_ops_addr(&ops);
+		ops->read_is_device_unlocked(ops, &unlock);
+		noff = fdt_path_offset (DT_BASE, "/chosen");
+		np = fdt_getprop(DT_BASE, noff, "bootargs", &len);
+		if (unlock)
+			snprintf(str, BUFFER_SIZE, "%s %s %s", np, cmdline, "androidboot.verifiedbootstate=orange");
+		else
+			snprintf(str, BUFFER_SIZE, "%s %s %s", np, cmdline, "androidboot.verifiedbootstate=green");
+		fdt_setprop(DT_BASE, noff, "bootargs", str,
+						strlen(str) + 1);
+	}
 
-	printf("\nbootargs: %s\n", str);
+	if (readl(EXYNOS9610_POWER_SYSIP_DAT0) == REBOOT_MODE_RECOVERY) {
+		/* Set bootargs for recovery mode */
+		remove_string_from_bootargs("skip_initramfs ");
+		remove_string_from_bootargs("ro init=/init ");
 
-	/* set_bootargs(); */
+		noff = fdt_path_offset (fdt_dtb, "/chosen");
+		np = fdt_getprop(fdt_dtb, noff, "bootargs", &len);
+		snprintf(str, BUFFER_SIZE, "%s %s", np, "root=/dev/ram0");
+		fdt_setprop(fdt_dtb, noff, "bootargs", str, strlen(str) + 1);
+	}
+
+	noff = fdt_path_offset (fdt_dtb, "/chosen");
+	np = fdt_getprop(fdt_dtb, noff, "bootargs", &len);
+	printf("\nbootargs: %s\n", np);
+
 	resize_dt(0);
 }
 
@@ -581,34 +633,11 @@ int load_boot_images(void)
 		pit_access(ptn, PIT_OP_LOAD, (u64)BOOT_BASE, 0);
 	}
 
-	if (ab_current_slot())
-		ptn = pit_get_part_info("dtb_b");
-	else
-		ptn = pit_get_part_info("dtb_a");
-
-	if (ptn == 0) {
-		printf("Partition 'dtb' does not exist\n");
-		return -1;
-	} else {
-		pit_access(ptn, PIT_OP_LOAD, (u64)DT_BASE, 0);
-	}
-
-	if (ab_current_slot())
-		ptn = pit_get_part_info("dtbo_b");
-	else
-		ptn = pit_get_part_info("dtbo_a");
-
-	if (ptn == 0) {
-		printf("Partition 'dtbo' does not exist\n");
-		return -1;
-	} else {
-		pit_access(ptn, PIT_OP_LOAD, (u64)DTBO_BASE, 0);
-	}
-
 	argv[1].u = BOOT_BASE;
 	argv[2].u = KERNEL_BASE;
-	argv[3].u = 0;
-	argv[4].u = 0;
+	argv[3].u = RAMDISK_BASE;
+	argv[4].u = DT_BASE;
+	argv[5].u = DTBO_BASE;
 	cmd_scatter_load_boot(5, argv);
 
 	return 0;
@@ -644,6 +673,8 @@ int cmd_boot(int argc, const cmd_args *argv)
 
 	configure_dtb();
 
+	if (readl(EXYNOS9610_POWER_SYSIP_DAT0) == REBOOT_MODE_RECOVERY)
+		writel(0, EXYNOS9610_POWER_SYSIP_DAT0);
 	/* notify EL3 Monitor end of bootloader */
 	exynos_smc(SMC_CMD_END_OF_BOOTLOADER, 0, 0, 0);
 
