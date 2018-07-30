@@ -5,6 +5,7 @@
 #include <platform/smc.h>
 #include <platform/delay.h>
 #include <platform/dfd.h>
+#include <lib/font_display.h>
 
 #define DEBUG_PRINT
 extern u64 cpu_boot(u64 id, u64 cpu, u64 fn);
@@ -68,31 +69,31 @@ void dfd_display_reboot_reason(void)
 
 	ret = readl(CONFIG_RAMDUMP_REASON);
 	printf("reboot reason: ");
-	//print_lcd_update(FONT_WHITE, FONT_BLACK, "reboot reason: ");
+	print_lcd_update(FONT_WHITE, FONT_BLACK, "reboot reason: ");
 
 	switch (ret) {
 	case RAMDUMP_SIGN_PANIC:
 		printf("0x%x - Kernel PANIC\n", ret);
-		//print_lcd_update(FONT_YELLOW, FONT_RED, "0x%x - Kernel PANIC", ret);
+		print_lcd_update(FONT_YELLOW, FONT_RED, "0x%x - Kernel PANIC", ret);
 		dfd_display_panic_reason();
 		break;
 	case RAMDUMP_SIGN_NORMAL_REBOOT:
 		printf("0x%x - User Reboot(S/W Reboot)\n", ret);
-		//print_lcd_update(FONT_WHITE, FONT_BLACK, "0x%x - User Reboot(S/W Reboot)", ret);
+		print_lcd_update(FONT_WHITE, FONT_BLACK, "0x%x - User Reboot(S/W Reboot)", ret);
 		break;
 	case RAMDUMP_SIGN_FORCE_REBOOT:
 		printf("0x%x - Forced Reboot(S/W Reboot)\n", ret);
-		//print_lcd_update(FONT_WHITE, FONT_BLUE, "0x%x - Forced Reboot(S/W Reboot)", ret);
+		print_lcd_update(FONT_WHITE, FONT_BLUE, "0x%x - Forced Reboot(S/W Reboot)", ret);
 		break;
 	case RAMDUMP_SIGN_SAFE_FAULT:
 		printf("0x%x - Safe Kernel PANIC\n", ret);
-		//print_lcd_update(FONT_YELLOW, FONT_RED, "0x%x - Safe Kernel PANIC", ret);
+		print_lcd_update(FONT_YELLOW, FONT_RED, "0x%x - Safe Kernel PANIC", ret);
 		dfd_display_panic_reason();
 		break;
 	case RAMDUMP_SIGN_RESET:
 	default:
 		printf("0x%x - Power/Emergency Reset\n", ret);
-		//print_lcd_update(FONT_YELLOW, FONT_RED, "0x%x - Power/Emergency Reset", ret);
+		print_lcd_update(FONT_YELLOW, FONT_RED, "0x%x - Power/Emergency Reset", ret);
 		break;
 	}
 }
