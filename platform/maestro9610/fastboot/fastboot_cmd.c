@@ -16,6 +16,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <lib/console.h>
+#include <lib/font_display.h>
 #include "fastboot.h"
 #include <pit.h>
 #include <platform/sfr.h>
@@ -60,6 +61,7 @@ static void flash_using_pit(char *key, char *response,
 	 */
 	if (!strcmp(key, "pit")) {
 		pit_update(addr, size);
+		print_lcd_update(FONT_GREEN, FONT_BLACK, "partition 'pit' flashed");
 		sprintf(response, "OKAY");
 		return;
 	}
@@ -75,14 +77,15 @@ static void flash_using_pit(char *key, char *response,
 	} else {
 		if ((ptn->blknum != 0) && (download_bytes > length)) {
 			printf("flashing '%s' failed\n", ptn->name);
+			print_lcd_update(FONT_RED, FONT_BLACK, "flashing '%s' failed", ptn->name);
 			sprintf(response, "FAILfailed to too large image");
 		} else if (pit_access(ptn, PIT_OP_FLASH, (u64)addr, size)) {
 			printf("flashing '%s' failed\n", ptn->name);
-			//print_lcd_update(FONT_RED, FONT_BLACK, "flashing '%s' failed", ptn->name);
+			print_lcd_update(FONT_RED, FONT_BLACK, "flashing '%s' failed", ptn->name);
 			sprintf(response, "FAILfailed to flash partition");
 		} else {
 			printf("partition '%s' flashed\n\n", ptn->name);
-			//print_lcd_update(FONT_GREEN, FONT_BLACK, "partition '%s' flashed", ptn->name);
+			print_lcd_update(FONT_GREEN, FONT_BLACK, "partition '%s' flashed", ptn->name);
 			sprintf(response, "OKAY");
 		}
 	}
@@ -473,6 +476,7 @@ static int rx_handler (const unsigned char *buffer, unsigned int buffer_size)
 		if (memcmp(cmdbuf, "ramdump:", 8) == 0)
 		{
 			printf("\nGot ramdump command\n");
+			print_lcd_update(FONT_GREEN, FONT_BLACK, "Got ramdump command.");
 			is_ramdump = 1;
 			/* save the size */
 			download_size = (unsigned int)strtol(cmdbuf + 8, NULL, 16);
@@ -513,9 +517,11 @@ static int rx_handler (const unsigned char *buffer, unsigned int buffer_size)
 			sprintf(response,"OKAY");
 			if (!strcmp(cmdbuf + 11, "a")) {
 				printf("Set slot 'a' active.\n");
+				print_lcd_update(FONT_GREEN, FONT_BLACK, "Set slot 'a' active.");
 				ab_set_active(0);
 			} else if (!strcmp(cmdbuf + 11, "b")) {
 				printf("Set slot 'b' active.\n");
+				print_lcd_update(FONT_GREEN, FONT_BLACK, "Set slot 'b' active.");
 				ab_set_active(1);
 			} else {
 				sprintf(response, "FAILinvalid slot");
@@ -530,22 +536,27 @@ static int rx_handler (const unsigned char *buffer, unsigned int buffer_size)
 			sprintf(response,"OKAY");
 			if (!strcmp(cmdbuf + 9, "lock")) {
 				printf("Lock this device.\n");
+				print_lcd_update(FONT_GREEN, FONT_BLACK, "Lock this device.");
 				lock(1);
 			} else if (!strcmp(cmdbuf + 9, "unlock")) {
 				if (get_unlock_ability()) {
 					printf("Unlock this device.\n");
+					print_lcd_update(FONT_GREEN, FONT_BLACK, "Unlock this device.");
 					lock(0);
 				} else {
 					sprintf(response, "FAILunlock_ability is 0");
 				}
 			} else if (!strcmp(cmdbuf + 9, "lock_critical")) {
 				printf("Lock critical partitions of this device.\n");
+				print_lcd_update(FONT_GREEN, FONT_BLACK, "Lock critical partitions of this device.");
 				lock_critical(0);
 			} else if (!strcmp(cmdbuf + 9, "unlock_critical")) {
 				printf("Unlock critical partitions of this device.\n");
+				print_lcd_update(FONT_GREEN, FONT_BLACK, "Unlock critical partitions of this device.");
 				lock_critical(0);
 			} else if (!strcmp(cmdbuf + 9, "get_unlock_ability")) {
 				printf("Get unlock_ability.\n");
+				print_lcd_update(FONT_GREEN, FONT_BLACK, "Get unlock_ability.");
 				sprintf(response + 4, "%d", get_unlock_ability());
 			} else {
 				sprintf(response, "FAILunsupported command");
@@ -571,6 +582,7 @@ int do_fastboot(int argc, const cmd_args *argv)
 	int continue_from_disconnect = 0;
 
 	dprintf(ALWAYS, "This is do_fastboot\n");
+	print_lcd_update(FONT_GREEN, FONT_BLACK, "Entering fastboot mode.");
 
 	muic_sw_usb();
 
