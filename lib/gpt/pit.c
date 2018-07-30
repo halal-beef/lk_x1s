@@ -79,7 +79,7 @@ static char nul_buf[PIT_EMMC_ERASE_SIZE * PIT_SECTOR_SIZE];
  * Function declaration
  * ---------------------------------------------------------------------------
  */
-struct pit_entry *pit_get_part_info(char *name);
+struct pit_entry *pit_get_part_info(const char *name);
 
 /*
  * ---------------------------------------------------------------------------
@@ -241,7 +241,7 @@ static int pit_access_emmc(struct pit_entry *ptn, int op, u64 addr, u32 size)
 		blks = dev->new_write(dev, addr, blkstart, blknum);
 		break;
 	case PIT_OP_ERASE:	/* erase */
-		printf("[PIT(%s)] erase on eMMC..  ", ptn->name);
+		printf("[PIT(%s)] erase on eMMC..  \n", ptn->name);
 		/*
 		 * There is possible not to erase eMMC with an unit of block size.
 		 * In these casee, we need to do partial write.
@@ -249,7 +249,7 @@ static int pit_access_emmc(struct pit_entry *ptn, int op, u64 addr, u32 size)
 		ret = pit_erase_emmc(dev, blkstart, blknum);
 		break;
 	case PIT_OP_LOAD:	/* load */
-		printf("[PIT(%s)] load on eMMC..  ", ptn->name);
+		printf("[PIT(%s)] load on eMMC..  \n", ptn->name);
 		blks = dev->new_read(dev, addr, blkstart, blknum);
 		break;
 	default:
@@ -305,7 +305,7 @@ static int pit_access_ufs(struct pit_entry *ptn, int op, u64 addr, u32 size)
 
 	switch (op) {
 	case PIT_OP_FLASH:	/* flash */
-		printf("[PIT(%s)] flash on UFS..  ", ptn->name);
+		printf("[PIT(%s)] flash on UFS..  \n", ptn->name);
 
 		if (ptn->filesys == FS_TYPE_EXT4) {
 			if (!check_compress_ext4((char *)addr,
@@ -313,7 +313,7 @@ static int pit_access_ufs(struct pit_entry *ptn, int op, u64 addr, u32 size)
 				printf("Compressed ext4 image\n");
 				ret = write_compressed_ext4((char *)addr, blkstart);
 			} else {
-				printf("[PIT] %s flash failed on UFS", ptn->name);
+				printf("[PIT] %s flash failed on UFS\n", ptn->name);
 				return 1;
 			}
 
@@ -333,11 +333,11 @@ static int pit_access_ufs(struct pit_entry *ptn, int op, u64 addr, u32 size)
 		blks = dev->new_write(dev, addr, blkstart, blknum);
 		break;
 	case PIT_OP_ERASE:	/* erase */
-		printf("[PIT(%s)] erase on UFS..  ", ptn->name);
+		printf("[PIT(%s)] erase on UFS..  \n", ptn->name);
 		blks = dev->new_erase(dev, blkstart, blknum);
 		break;
 	case PIT_OP_LOAD:	/* load */
-		printf("[PIT(%s)] load on UFS..  ", ptn->name);
+		printf("[PIT(%s)] load on UFS..  \n", ptn->name);
 		blks = dev->new_read(dev, addr, blkstart, blknum);
 		break;
 	default:
@@ -820,7 +820,7 @@ err:
 	return 1;
 }
 
-struct pit_entry *pit_get_part_info(char *name)
+struct pit_entry *pit_get_part_info(const char *name)
 {
 	int i;
 	struct pit_entry *ptn;
