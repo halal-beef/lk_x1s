@@ -1,6 +1,7 @@
 #include <reg.h>
 #include <pit.h>
 #include <arch/ops.h>
+#include <lib/font_display.h>
 #include <platform/sfr.h>
 #include <platform/smc.h>
 #include <platform/delay.h>
@@ -22,7 +23,7 @@ void wfi(void)
 	asm volatile("wfi");
 }
 
-void dfd_print_pcval(int nCpuId)
+static void dfd_print_pcval(int nCpuId)
 {
 	u32 pc_reg;
 	u64 tgpr;
@@ -60,7 +61,7 @@ static void dfd_display_panic_reason(void)
 	}
 
 	printf("%s\n", (char *)CONFIG_RAMDUMP_PANIC_REASON);
-	//print_lcd_update(FONT_YELLOW, FONT_RED, "%s", CONFIG_RAMDUMP_PANIC_REASON);
+	print_lcd_update(FONT_YELLOW, FONT_RED, "%s", CONFIG_RAMDUMP_PANIC_REASON);
 }
 
 void dfd_display_reboot_reason(void)
@@ -169,7 +170,6 @@ void dfd_display_core_stat(void)
 			printf("\n");
 			break;
 		}
-		dfd_print_pcval(val);
 	}
 }
 
@@ -436,6 +436,9 @@ void dfd_run_dump_gpr(void)
 	u32 reg;
 	u32 need_cache_flush;
 	int ret = 0, i;
+
+	for (cpu = LITTLE_CORE_START; cpu <= BIG_CORE_LAST; cpu++)
+		dfd_print_pcval(cpu);
 
 	/* Check reset_sequencer_configuration register */
 	reg = readl(EXYNOS9610_POWER_RESET_SEQUENCER_CONFIGURATION);

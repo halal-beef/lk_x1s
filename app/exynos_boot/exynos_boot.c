@@ -42,11 +42,9 @@ static void exynos_boot_task(const struct app_descriptor *app, void *args)
 	}
 
 	dfd_display_reboot_reason();
-
+	dfd_display_core_stat();
 	if (!is_first_boot() || (rst_stat & (WARM_RESET | LITTLE_WDT_RESET | BIG_WDT_RESET)) ||
 		((readl(CONFIG_RAMDUMP_SCRATCH) == CONFIG_RAMDUMP_MODE) && get_charger_mode() == 0)) {
-		for (cpu = LITTLE_CORE_START; cpu <= BIG_CORE_LAST; cpu++)
-			dfd_print_pcval(cpu);
 		dfd_run_dump_gpr();
 		do_fastboot(0, 0);
 	} else {
