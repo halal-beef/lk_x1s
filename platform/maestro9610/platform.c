@@ -22,6 +22,7 @@
 #include <platform/fg_s2mu004.h>
 #include <platform/if_pmic_s2mu004.h>
 #include <platform/tmu.h>
+#include <platform/dfd.h>
 
 #include <lib/font_display.h>
 #include <lib/logo_display.h>
@@ -174,4 +175,5 @@ void platform_init(void)
 
 	display_tmu_info();
 	display_trip_info();
+	dfd_display_reboot_reason();
 }

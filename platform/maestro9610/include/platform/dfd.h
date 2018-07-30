@@ -1,7 +1,6 @@
 #ifndef _EXYNOS9610_DFD_H
 #define _EXYNOS9610_DFD_H
 
-
 #define NR_CPUS				(8)
 #define NR_BIG_CPUS			(4)
 #define NR_LITTLE_CPUS			(4)
@@ -163,17 +162,26 @@
 #define RESET_DISABLE_L2RESET		(1 << 16)
 
 #ifndef __ASSEMBLY__
-
 #ifdef CONFIG_RAMDUMP_GPR
 void dfd_run_dump_gpr(void);
 void dfd_set_dump_gpr(int en);
 u64 dfd_entry_dump_gpr(void);
 void __dfd_dump_gpr(int cpu, u32 reg, u32 val);
-int dfd_get_core_num(void);
 void dfd_display_reboot_reason(void);
 void dfd_display_core_stat(void);
 u32 dfd_get_pmudbg_stat(u32 cpu);
-void dfd_print_pcval(int cpu);
+void debug_snapshot_fdt_init(void);
+int debug_snapshot_getvar_item(const char *name, char *response);
+#else
+#define dfd_run_dump_gpr()			do { } while(0)
+#define dfd_set_dump_gpr(a)			do { } while(0)
+#define dfd_entry_dump_gpr()			do { } while(0)
+#define __dfd_dump_gpr(a, b, c)			do { } while(0)
+#define dfd_display_reboot_reason()		do { } while(0)
+#define dfd_display_core_stat()			do { } while(0)
+#define dfd_get_pmudbg_stat(a)			do { } while(0)
+#define debug_snapshot_fdt_init()		do { } while(0)
+#define debug_snapshot_getvar_item(a, b)	do { } while(0)
 #endif
-#endif
+#endif //__ASSEMBLY__
 #endif
