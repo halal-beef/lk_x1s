@@ -25,6 +25,7 @@
 #include <platform/ab_update.h>
 #include <platform/environment.h>
 #include <platform/if_pmic_s2mu004.h>
+#include <platform/dfd.h>
 
 unsigned int download_size;
 unsigned int download_bytes;
@@ -390,6 +391,7 @@ static int rx_handler (const unsigned char *buffer, unsigned int buffer_size)
 			}
 			else
 			{
+				debug_snapshot_getvar_item(cmdbuf + 7, response + 4);
 			}
 
 			ret = 0;

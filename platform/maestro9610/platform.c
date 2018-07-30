@@ -176,4 +176,5 @@ void platform_init(void)
 	display_tmu_info();
 	display_trip_info();
 	dfd_display_reboot_reason();
+	debug_snapshot_fdt_init();
 }
