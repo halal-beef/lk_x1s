@@ -116,4 +116,13 @@
 #define CONFIG_USE_AVB20
 #define CONFIG_AVB_HW_HASH
 
+#define BOOT_BASE			0x94000000
+#define KERNEL_BASE			0x80080000
+#define RAMDISK_BASE			0x84000000
+#define DT_BASE				0x8A000000
+#define DTBO_BASE			0x8B000000
+#define ECT_BASE			0x90000000
+#define ECT_SIZE			0x32000
+
+
 #endif	/* __EXYNOS9610_H__ */
