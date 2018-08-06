@@ -26,6 +26,7 @@
 #include <platform/environment.h>
 #include <platform/if_pmic_s2mu004.h>
 #include <platform/dfd.h>
+#include <dev/boot.h>
 
 unsigned int download_size;
 unsigned int download_bytes;
@@ -440,13 +441,15 @@ static int rx_handler (const unsigned char *buffer, unsigned int buffer_size)
 		   Flash what was downloaded */
 		if (memcmp(cmdbuf, "flash:", 6) == 0)
 		{
-			int lock_state = get_lock_state();
-			printf("Lock state: %d\n", lock_state);
-			if(lock_state) {
-				ret = 0;
-				sprintf(response, "FAILDevice is locked");
-				fastboot_tx_status(response, strlen(response), FASTBOOT_TX_ASYNC);
-				return ret;
+			if(is_first_boot()) {
+				int lock_state = get_lock_state();
+				printf("Lock state: %d\n", lock_state);
+				if(lock_state) {
+					ret = 0;
+					sprintf(response, "FAILDevice is locked");
+					fastboot_tx_status(response, strlen(response), FASTBOOT_TX_ASYNC);
+					return ret;
+				}
 			}
 
 			dprintf(ALWAYS, "flash\n");
