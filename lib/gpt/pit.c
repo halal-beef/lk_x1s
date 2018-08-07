@@ -156,7 +156,6 @@ static inline void pit_close_dev(void)		// TODO:
 
 static int pit_erase_emmc(bdev_t *dev, u32 blkstart, u32 blknum)
 {
-	char run_cmd[CMD_STRING_MAX_SIZE];
 	u32 lba = blkstart;
 	u32 blknum_t;
 
@@ -187,8 +186,6 @@ static int pit_erase_emmc(bdev_t *dev, u32 blkstart, u32 blknum)
 static int pit_access_emmc(struct pit_entry *ptn, int op, u64 addr, u32 size)
 {
 	int ret = 1;
-	char run_cmd[CMD_STRING_MAX_SIZE];
-	char ramdisk_size[32];
 	u64 bytestart = (u64)ptn->blkstart * PIT_SECTOR_SIZE;
 	u32 blkstart = (u32)(bytestart / PIT_SECTOR_SIZE);
 	u32 blknum = (u32)ptn->blknum;
@@ -238,7 +235,7 @@ static int pit_access_emmc(struct pit_entry *ptn, int op, u64 addr, u32 size)
 			*/
 		}
 #endif
-		blks = dev->new_write(dev, addr, blkstart, blknum);
+		blks = dev->new_write(dev, (void *)addr, blkstart, blknum);
 		break;
 	case PIT_OP_ERASE:	/* erase */
 		printf("[PIT(%s)] erase on eMMC..  \n", ptn->name);
@@ -250,7 +247,7 @@ static int pit_access_emmc(struct pit_entry *ptn, int op, u64 addr, u32 size)
 		break;
 	case PIT_OP_LOAD:	/* load */
 		printf("[PIT(%s)] load on eMMC..  \n", ptn->name);
-		blks = dev->new_read(dev, addr, blkstart, blknum);
+		blks = dev->new_read(dev, (void *)addr, blkstart, blknum);
 		break;
 	default:
 		printf("[PIT(%s)] Not supported op mode 0x%08x\n",
@@ -286,7 +283,6 @@ static int pit_access_emmc(struct pit_entry *ptn, int op, u64 addr, u32 size)
 static int pit_access_ufs(struct pit_entry *ptn, int op, u64 addr, u32 size)
 {
 	int ret = 1;
-	char ramdisk_size[32];
 	u64 bytestart = (u64)ptn->blkstart * PIT_SECTOR_SIZE;
 	u32 blkstart = (u32)(bytestart / PIT_SECTOR_SIZE);
 	u32 blknum = (u32)ptn->blknum;
@@ -330,7 +326,7 @@ static int pit_access_ufs(struct pit_entry *ptn, int op, u64 addr, u32 size)
 			*/
 		}
 #endif
-		blks = dev->new_write(dev, addr, blkstart, blknum);
+		blks = dev->new_write(dev, (void *)addr, blkstart, blknum);
 		break;
 	case PIT_OP_ERASE:	/* erase */
 		printf("[PIT(%s)] erase on UFS..  \n", ptn->name);
@@ -338,7 +334,7 @@ static int pit_access_ufs(struct pit_entry *ptn, int op, u64 addr, u32 size)
 		break;
 	case PIT_OP_LOAD:	/* load */
 		printf("[PIT(%s)] load on UFS..  \n", ptn->name);
-		blks = dev->new_read(dev, addr, blkstart, blknum);
+		blks = dev->new_read(dev, (void *)addr, blkstart, blknum);
 		break;
 	default:
 		break;
@@ -407,7 +403,7 @@ static int pit_check_info(struct pit_info *ppit, int *idx,
 						u32 lun,
 						u32 startlba)
 {
-	int i;
+	u32 i;
 	int ret = 1;
 	struct pit_entry *ptn;
 	u32 lba = startlba;
@@ -485,11 +481,11 @@ err:
 
 static int pit_check_info_gpt(struct pit_info *ppit, int *idx)
 {
-	int i;
+	u32 i;
 	int ret = 1;
 	struct pit_entry *ptn;
-	int remained_idx = 0xFFFFFFFF;
-	int last_idx;
+	u32 remained_idx = 0xFFFFFFFF;
+	u32 last_idx;
 	u32 total_size = 0;
 
 	u32 blknum;
@@ -684,7 +680,7 @@ err:
 void pit_show_info()
 {
 	struct pit_entry *ptn;
-	int i;
+	u32 i;
 	int is_filesys = 0;
 
 	if (pit_check_header(&pit))
@@ -723,7 +719,6 @@ void pit_show_info()
 
 int pit_update(void *buf, u32 size)
 {
-	void *buf1;
 	int pit_index = 0;
 	u32 lun;
 	struct pit_entry *ptn;
@@ -765,19 +760,19 @@ int pit_update(void *buf, u32 size)
 	 */
 
 	/* for non gpt entries of part 0 */
-	if (pit_check_info(&pit, &pit_index, 0, PIT_DISK_LOC))
+	if (pit_check_info(&pit, (int *)&pit_index, 0, PIT_DISK_LOC))
 		goto err;
 
 	/* for gpt entries of part 0 */
-	if (pit_check_info_gpt(&pit, &pit_index))
+	if (pit_check_info_gpt(&pit, (int *)&pit_index))
 		goto err;
 
 
 	/* for entries of others */
 	for (lun = 1; ; lun++) {
-		if (pit_check_info(&pit, &pit_index, lun, 0))
+		if (pit_check_info(&pit, (int *)&pit_index, lun, 0))
 			goto err;
-		if (pit.count == pit_index)
+		if (pit.count == (u32)pit_index)
 			break;
 	}
 
@@ -822,7 +817,7 @@ err:
 
 struct pit_entry *pit_get_part_info(const char *name)
 {
-	int i;
+	u32 i;
 	struct pit_entry *ptn;
 
 	if (pit_check_header(&pit))

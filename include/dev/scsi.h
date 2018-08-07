@@ -21,6 +21,9 @@
 typedef struct scsi_command_meta scm;
 typedef struct scsi_device_s scsi_device_t;
 
+typedef status_t (exec_t)(scm *);
+typedef scsi_device_t *(get_sdev_t)(void);
+
 struct scsi_device_s {
 	bdev_t dev;
 	u32 lun;
@@ -28,8 +31,8 @@ struct scsi_device_s {
 	char vendor[40+1+3];
 	char product[20+1+3];
 	char revision[8+1+3];
-	int (*exec)(scm *);
-	scsi_device_t* (*get_ssu_sdev)(void);
+	exec_t* exec;
+	get_sdev_t* get_ssu_sdev;
 };
 
 /*
@@ -47,8 +50,6 @@ struct scsi_command_meta {
 
 	scsi_device_t *sdev;
 };
-
-typedef status_t (exec_t)(scm *);
 
 enum scsi_opcode {
 	SCSI_OP_TEST_UNIT_READY		= 0x00,
@@ -69,5 +70,5 @@ enum scsi_opcode {
 status_t scsi_scan(scsi_device_t *sdev, u32 wlun, u32 dev_num, exec_t *func,
 				const char *name_s, bnum_t max_seg);
 status_t scsi_scan_ssu(scsi_device_t *sdev, u32 wlun,
-					exec_t *func, exec_t *func1);
+					exec_t *func, get_sdev_t *func1);
 #endif				/* _SCSI_H */

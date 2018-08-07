@@ -46,7 +46,6 @@ static int setufs_boot(u32 enable);
 	Now only one host supported
 */
 static struct ufs_host *_ufs[SCSI_MAX_INITIATOR] = { NULL, };
-static int _ufs_index = 0;
 static int _ufs_curr_host = 0;
 
 /* UFS user command definition */
@@ -292,7 +291,7 @@ static status_t ufs_map_sg(struct ufs_host *ufs)
 			ufs->cmd_desc_addr->prd_table[i].size =
 			    (u32) UFS_SG_BLOCK_SIZE - 1;
 			ufs->cmd_desc_addr->prd_table[i].base_addr =
-			    (u32)(((u64) (ufs->scsi_cmd->buf) + i * UFS_SG_BLOCK_SIZE) & ((1 << UFS_BIT_LEN_OF_DWORD) - 1));
+			    (u32)(((u64) (ufs->scsi_cmd->buf) + i * UFS_SG_BLOCK_SIZE) & (((u64)1 << UFS_BIT_LEN_OF_DWORD) - 1));
 			ufs->cmd_desc_addr->prd_table[i].upper_addr =
 			    (u32)(((u64) (ufs->scsi_cmd->buf) + i * UFS_SG_BLOCK_SIZE) >> UFS_BIT_LEN_OF_DWORD);
 			len -= UFS_SG_BLOCK_SIZE;
@@ -374,7 +373,7 @@ static void ufs_compose_upiu(struct ufs_host *ufs)
 	u32 function;
 	u32 opcode;
 	u32 descid;
-	u8 *p = ufs->cmd_desc_addr->command_upiu.header.tsf;
+	u8 *p = (u8 *)ufs->cmd_desc_addr->command_upiu.header.tsf;
 	//scm *pscm = (scm *) & tempscm;
 /*
 	command_type :
@@ -546,11 +545,9 @@ static int handle_ufs_int(struct ufs_host *ufs, int is_uic)
 		}
 	}
 
-	if (ret != UFS_IN_PROGRESS)
 #ifdef	SCSI_UFS_DEBUG
+	if (ret != UFS_IN_PROGRESS)
 		printf("UFS: INTERRUPT STATUS 0x%08x\n", intr_stat);
-#else
-		;
 #endif
 
 	return ret;
@@ -674,10 +671,8 @@ static void print_ufs_hci_data(struct ufs_host *ufs, int level)
 }
 static void print_ufs_upiu(int print_level)
 {
-	int i, len;
 	u32 level;
 	struct ufs_host *ufs = get_cur_ufs_host();
-	u64 prdt_addr;
 
 	if (!ufs)
 		return;
@@ -1231,9 +1226,10 @@ static status_t scsi_exec(scm * pscm)
  * command execution. This is registered in SCSI stack
  * when executing scsi_scan().
  */
-static scsi_device_t *scsi_get_ssu_sdev()
+
+static scsi_device_t *scsi_get_ssu_sdev(void)
 {
-	return &ufs_dev_ssu;
+	return (struct scsi_device_s *)&ufs_dev_ssu;
 }
 
 static void ufs_bootlun_enable(int enable)
@@ -1715,8 +1711,8 @@ static int ufs_pre_setup(struct ufs_host *ufs)
 	u32 reg;
 	int res = 0;
 
-	struct ufs_uic_cmd reset_cmd = {UIC_CMD_DME_RESET,};
-	struct ufs_uic_cmd enable_cmd = {UIC_CMD_DME_ENABLE,};
+	struct ufs_uic_cmd reset_cmd = {UIC_CMD_DME_RESET, 0, 0, 0};
+	struct ufs_uic_cmd enable_cmd = {UIC_CMD_DME_ENABLE, 0, 0, 0};
 
 	/* UFS_PHY_CONTROL : 1 = Isolation bypassed, PMU MPHY ON */
 	if ((readl(ufs->phy_iso_addr) & 0x1) == 0)
@@ -1772,14 +1768,14 @@ static int ufs_pre_setup(struct ufs_host *ufs)
 	memset(ufs->cmd_desc_addr, 0x00, UFS_NUTRS*sizeof(struct ufs_cmd_desc));
 	memset(ufs->utrd_addr, 0x00, UFS_NUTRS*sizeof(struct ufs_utrd));
 	memset(ufs->utmrd_addr, 0x00, UFS_NUTMRS*sizeof(struct ufs_utmrd));
-	ufs->utrd_addr->cmd_desc_addr_l = (u32)(ufs->cmd_desc_addr);
+	ufs->utrd_addr->cmd_desc_addr_l = (u64)(ufs->cmd_desc_addr);
 	ufs->utrd_addr->rsp_upiu_off = (u16)(offsetof(struct ufs_cmd_desc, response_upiu));
 	ufs->utrd_addr->rsp_upiu_len = (u16)(ALIGNED_UPIU_SIZE);
 
-	writel(ufs->utmrd_addr, (ufs->ioaddr + REG_UTP_TASK_REQ_LIST_BASE_L));
+	writel((u64)ufs->utmrd_addr, (ufs->ioaddr + REG_UTP_TASK_REQ_LIST_BASE_L));
 	writel(0, (ufs->ioaddr + REG_UTP_TASK_REQ_LIST_BASE_H));
 
-	writel(ufs->utrd_addr, (ufs->ioaddr + REG_UTP_TRANSFER_REQ_LIST_BASE_L));
+	writel((u64)ufs->utrd_addr, (ufs->ioaddr + REG_UTP_TRANSFER_REQ_LIST_BASE_L));
 	writel(0, (ufs->ioaddr + REG_UTP_TRANSFER_REQ_LIST_BASE_H));
 
 	// TODO: cport
@@ -1853,8 +1849,7 @@ out:
 
 static int ufs_link_startup(struct ufs_host *ufs)
 {
-	struct ufs_uic_cmd uic_cmd = { UIC_CMD_DME_LINK_STARTUP, };
-	int res = ERR_GENERIC;
+	struct ufs_uic_cmd uic_cmd = { UIC_CMD_DME_LINK_STARTUP, 0, 0, 0};
 	struct ufs_uic_cmd get_a_lane_cmd = { UIC_CMD_DME_GET, (0x1540 << 16), 0, 0 };
 	struct uic_pwr_mode *pmd = &ufs->pmd_cxt;
 
@@ -1928,7 +1923,7 @@ static int ufs_mem_init(struct ufs_host *ufs)
 			dprintf(INFO, "cmd_desc_addr memory alloc error!!!\n");
 			goto out;
 		}
-		if ((u32) (ufs->cmd_desc_addr) & 0xfff) {
+		if ((u64) (ufs->cmd_desc_addr) & 0xfff) {
 			dprintf(INFO, "allocated cmd_desc_addr memory align error!!!\n");
 			goto free_ucd_out;
 		}
@@ -1948,7 +1943,7 @@ static int ufs_mem_init(struct ufs_host *ufs)
 			dprintf(INFO, "utrd_addr memory alloc error!!!\n");
 			goto free_ucd_out;
 		}
-		if ((u32) (ufs->utrd_addr) & 0xfff) {
+		if ((u64) (ufs->utrd_addr) & 0xfff) {
 			dprintf(INFO, "allocated utrd_addr memory align error!!!\n");
 			goto free_utrd_out;
 		}
@@ -1962,7 +1957,7 @@ static int ufs_mem_init(struct ufs_host *ufs)
 			dprintf(INFO, "utmrd_addr memory alloc error!!!\n");
 			goto free_utrd_out;
 		}
-		if ((u32) (ufs->utmrd_addr) & 0xfff) {
+		if ((u64) (ufs->utmrd_addr) & 0xfff) {
 			dprintf(INFO, "allocated utmrd_addr memory align error!!!\n");
 			goto free_all_out;
 		}
@@ -1974,10 +1969,10 @@ static int ufs_mem_init(struct ufs_host *ufs)
 	ufs->utrd_addr->rsp_upiu_off = (u16)(offsetof(struct ufs_cmd_desc, response_upiu));
 	ufs->utrd_addr->rsp_upiu_len = (u16)(ALIGNED_UPIU_SIZE);
 
-	writel(ufs->utmrd_addr, (ufs->ioaddr + REG_UTP_TASK_REQ_LIST_BASE_L));
+	writel((u64)ufs->utmrd_addr, (ufs->ioaddr + REG_UTP_TASK_REQ_LIST_BASE_L));
 	writel(0, (ufs->ioaddr + REG_UTP_TASK_REQ_LIST_BASE_H));
 
-	writel(ufs->utrd_addr, (ufs->ioaddr + REG_UTP_TRANSFER_REQ_LIST_BASE_L));
+	writel((u64)ufs->utrd_addr, (ufs->ioaddr + REG_UTP_TRANSFER_REQ_LIST_BASE_L));
 	writel(0, (ufs->ioaddr + REG_UTP_TRANSFER_REQ_LIST_BASE_H));
 
 	ufs->utmrd_addr[0].dw[2] = (u32)(OCS_INVALID_COMMAND_STATUS);
@@ -2263,7 +2258,6 @@ int ufs_set_configuration_descriptor(void)
 
 	int retry_count = 3;
 	int retry = 0;
-	int res = 0;
 
 	while (ufs_check_config_desc() == 0) {
 		if (retry_count == retry) {
@@ -2349,7 +2343,7 @@ status_t ufs_init(int mode)
 
 		scsi_scan(ufs_dev[i], 0, SCSI_MAX_DEVICE, scsi_exec, NULL, 128);
 		scsi_scan(&ufs_dev_rpmb, 0x44, 0, scsi_exec, "rpmb", 128);
-		scsi_scan_ssu(&ufs_dev_ssu, 0x50, scsi_exec, scsi_get_ssu_sdev);
+		scsi_scan_ssu(&ufs_dev_ssu, 0x50, scsi_exec, (get_sdev_t *)scsi_get_ssu_sdev);
 	}
 
 out:
