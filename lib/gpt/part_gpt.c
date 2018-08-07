@@ -115,7 +115,7 @@ static int set_partition_table(bdev_t *dev, struct gpt_header *gpt_h,
 
 	/* partition type */
 	memcpy(gpt_e[0].part_type.b, &PARTITION_BASIC_DATA_GUID, 16);
-	name_len = sizeof(fat);
+	name_len = strlen(fat);
 	memset(&gpt_e[0].part_name, 0, sizeof(gpt_e[0].part_name));
 	for (j = 0; j < name_len; j++)
 		gpt_e[0].part_name[j] = (u16)fat[j];
@@ -343,9 +343,8 @@ static void gpt_dump(int argc, const cmd_args *argv)
 	memset(buf, 0, dev->block_size);
 
 	printf("partition Read\n");
-	printf("start block %d\n", block);
-
 	block = argv[1].u;
+	printf("start block %d\n", block);
 	num_blk_size = dev->block_size / MMC_BSIZE;
 	start_blk = block * num_blk_size;
 	read_size = num_blk_size * 1;
@@ -409,7 +408,6 @@ int get_unique_guid(char *pt_name, char *buf)
 		printf("%s: fail to bio open\n", __func__);
 		return -1;
 	}
-
 
 	if (strlen(pt_name) > PT_NAME_SZ) {
 		printf("Partition name is too long\n");
