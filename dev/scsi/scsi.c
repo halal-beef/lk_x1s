@@ -182,7 +182,7 @@ static status_t scsi_read_10(struct bdev *dev, void *buf, bnum_t block, uint cou
 	return ret;
 }
 
-static uint scsi_write_10(struct bdev *dev, const void *buf,
+static status_t scsi_write_10(struct bdev *dev, const void *buf,
 					bnum_t block, uint count)
 {
 	scsi_device_t *sdev = (scsi_device_t *)dev->private;
@@ -210,7 +210,7 @@ static uint scsi_write_10(struct bdev *dev, const void *buf,
 	return ret;
 }
 
-static uint scsi_unmap(struct bdev *dev,
+static status_t scsi_unmap(struct bdev *dev,
 					bnum_t block, uint count)
 {
 	scsi_device_t *sdev = (scsi_device_t *)dev->private;
@@ -399,7 +399,7 @@ static status_t scsi_secu_prot_in(struct bdev *dev, void *buf, bnum_t block, uin
 	return ret;
 }
 
-static status_t scsi_secu_prot_out(struct bdev *dev, void *buf, bnum_t block, uint count)
+static status_t scsi_secu_prot_out(struct bdev *dev, const void *buf, bnum_t block, uint count)
 {
 	scsi_device_t *sdev = (scsi_device_t *)dev->private;
 	status_t ret = NO_ERROR;
@@ -554,7 +554,7 @@ status_t scsi_scan(scsi_device_t *sdev, u32 wlun, u32 dev_num, exec_t *func,
 }
 
 status_t scsi_scan_ssu(scsi_device_t *sdev, u32 wlun,
-					exec_t *func, exec_t *func1)
+					exec_t *func, get_sdev_t *func1)
 {
 	status_t ret = NO_ERROR;
 	char name[16];
