@@ -15,6 +15,7 @@
 #include <pit.h>
 #include <dev/interrupt/arm_gic.h>
 #include <dev/timer/arm_generic.h>
+#include <platform/interrupts.h>
 #include <platform/sfr.h>
 #include <platform/smc.h>
 #include <platform/speedy.h>
@@ -27,6 +28,8 @@
 #include <lib/logo_display.h>
 #include <target/dpu_config.h>
 #include <stdio.h>
+
+#define ARCH_TIMER_IRQ		30
 
 void speedy_gpio_init(void);
 void xbootldo_gpio_init(void);
@@ -123,6 +126,11 @@ static void initialize_fbs(void)
 }
 #endif
 
+void arm_generic_timer_disable(void)
+{
+	mask_interrupt(ARCH_TIMER_IRQ);
+}
+
 void platform_early_init(void)
 {
 	unsigned int rst_stat = readl(EXYNOS9610_POWER_RST_STAT);
@@ -144,7 +152,7 @@ void platform_early_init(void)
 
 	arm_gic_init();
 	writel(1 << 8, EXYNOS9610_MCT_G_TCON);
-	arm_generic_timer_init(30, 26000000);
+	arm_generic_timer_init(ARCH_TIMER_IRQ, 26000000);
 }
 
 void platform_init(void)

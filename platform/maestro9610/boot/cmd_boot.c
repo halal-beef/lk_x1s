@@ -39,6 +39,8 @@
 
 #define REBOOT_MODE_RECOVERY	0xFF
 
+extern arm_generic_timer_disable(void);
+
 static char cmdline[AVB_CMD_MAX_SIZE];
 
 struct bootargs_prop {
@@ -461,6 +463,9 @@ int cmd_boot(int argc, const cmd_args *argv)
 		writel(0, EXYNOS9610_POWER_SYSIP_DAT0);
 	/* notify EL3 Monitor end of bootloader */
 	exynos_smc(SMC_CMD_END_OF_BOOTLOADER, 0, 0, 0);
+
+	/* before jumping to kernel. disble arch_timer */
+	arm_generic_timer_disable();
 
 	void (*kernel_entry)(int r0, int r1, int r2, int r3);
 
