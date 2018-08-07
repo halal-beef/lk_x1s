@@ -14,7 +14,7 @@ u32 num_blk_size;
 static int set_protective_mbr(bdev_t *dev)
 {
 	struct p_mbr_head *p_mbr = NULL;
-	int size;
+	u32 size;
 	u32 write_size;
 
 	p_mbr = malloc(sizeof(struct p_mbr_head) * num_blk_size);
@@ -74,12 +74,12 @@ static int set_partition_table(bdev_t *dev, struct gpt_header *gpt_h,
 	uint32_t offset = gpt_h->start_lba;
 	uint32_t end_use_lba = gpt_h->end_lba;
 	uint32_t start;
-	int i, j, part_cnt;
+	int part_cnt;
 	int ret = 0;
 	char *unique_guid;
 	char fat[72] = "fat";
 	char part_number[2];
-	u32 name_len;
+	u32 i, j, name_len;
 	u32 fat_part_size;
 
 	printf("Set up start for Partition Table\n");
@@ -179,10 +179,11 @@ static int write_gpt_table(bdev_t *dev, struct gpt_header *gpt_h,
 		struct gpt_part_table *gpt_e)
 {
 	int pte_blk_cnt;
-	int size = 0, ret;
+	int ret;
 	u32 calc_crc32;
 	u32 start_blk;
 	u32 write_size;
+	u32 size;
 
 	/* Setup the Protective MBR */
 	ret = set_protective_mbr(dev);
@@ -312,12 +313,13 @@ out:
 	return ret;
 }
 
-static void gpt_dump(int argc, const cmd_args *argv)
+static int gpt_dump(int argc, const cmd_args *argv)
 {
 	unsigned char *buf;
 	unsigned int boot_dev, offset = 0;
-	int i, block, size;
+	int block, err = -1;
 	bdev_t *dev;
+	u32 i, size;
 	u32 start_blk;
 	u32 read_size;
 
@@ -331,7 +333,7 @@ static void gpt_dump(int argc, const cmd_args *argv)
 	}
 	if (!dev) {
 		printf("%s: fail to bio open\n", __func__);
-		return;
+		return err;
 	}
 
 	buf = malloc(dev->block_size);
@@ -364,16 +366,19 @@ static void gpt_dump(int argc, const cmd_args *argv)
 			printf("\n");
 	}
 	printf("\n");
+	err = 0;
 
 free:
 	free(buf);
 out:
 	bio_close(dev);
+
+	return err;
 }
 
 static void print_efiname(struct gpt_part_table *gpt_e, char *buf)
 {
-	int i;
+	u32 i;
 	u8 c;
 
 	for (i = 0; i < PT_NAME_SZ; i++) {
@@ -391,13 +396,13 @@ int get_unique_guid(char *pt_name, char *buf)
 	unsigned char *uuid_bin;
 	unsigned int boot_dev;
 	char name_buf[PT_NAME_SZ + 1];
-	int i, size;
 	int ret = -1;
 	int pte_blk_cnt;
 	bdev_t *dev;
 	u32 num_blk_size;
 	u32 start_blk;
 	u32 read_size;
+	u32 size, i;
 
 	boot_dev = get_boot_device();
 	if (boot_dev == BOOT_UFS)
