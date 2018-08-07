@@ -12,9 +12,9 @@
 
 void merge_dto_to_main_dtb(void);
 int resize_dt(unsigned int sz);
-int make_fdt_node(char *path, char *node);
-int get_fdt_val(char *path, char *property, char *retval);
-int set_fdt_val(char *path, char *property, char *value);
+int make_fdt_node(const char *path, char *node);
+int get_fdt_val(const char *path, const char *property, char *retval);
+int set_fdt_val(const char *path, const char *property, const char *value);
 void add_dt_memory_node(unsigned long base, unsigned int size);
 
 extern struct fdt_header *fdt_dtb;
