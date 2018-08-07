@@ -42,7 +42,7 @@ static void dfd_print_pcval(int nCpuId)
 	tgpr = tgpr | readl(pc_reg);
 
 	printf("core %d: pcreg:0x%x = 0x%llx\n", nCpuId, pc_reg, tgpr);
-	printf("core %d: pcsr: 0x%x = 0x%llx\n", nCpuId, (u32)(&pcsr_src[nCpuId]), pcsr_src[nCpuId]);
+	printf("core %d: pcsr: 0x%llx = 0x%llx\n", nCpuId, (u64)(&pcsr_src[nCpuId]), pcsr_src[nCpuId]);
 }
 
 static void dfd_display_panic_reason(void)
@@ -281,8 +281,8 @@ u32 dfd_get_pmudbg_stat(u32 cpu)
 
 static void dfd_set_cache_flush_level(void)
 {
-	u32 val, stat, ret1, ret2, ret3;
-	int little_on = -1, big_on = -1;
+	u32 stat, ret1, ret2, ret3;
+	int little_on = -1, big_on = -1, val;
 
 	/* copy IRAM core stat to DRAM */
 	for (val = 0; val < NR_CPUS; val++) {

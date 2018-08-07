@@ -67,7 +67,7 @@ static int debug_snapshot_load_dt(void)
 		pit_access(ptn, PIT_OP_LOAD, (u64)DT_BASE, 0);
 	}
 
-	fdt_dtb = DT_BASE;
+	fdt_dtb = (struct fdt_header *)DT_BASE;
 
 
 	return 0;
@@ -76,21 +76,21 @@ static int debug_snapshot_load_dt(void)
 static int debug_snapshot_get_items_from_dt(void)
 {
 	char path[64];
-	char str[64];
+	u32 ret[8];
 	int i;
 
 	for (i = 0; i < ARRAY_SIZE(dss_items); i++) {
 		memset(path, 0, 64);
-		memset(str, 0, 64);
+		memset(ret, 0, 8 * sizeof(u32));
 		strncpy(path, DSS_RESERVE_PATH, sizeof(DSS_RESERVE_PATH));
 		strncat(path, "/", 1);
 		strncat(path, dss_items[i].name, strlen(dss_items[i].name));
 
-		if (!get_fdt_val(path, "reg", str)) {
-			dss_items[i].rmem.paddr = be32_to_cpu(((u32 *)str)[0]);
+		if (!get_fdt_val(path, "reg", (char *)ret)) {
+			dss_items[i].rmem.paddr = be32_to_cpu(ret[0]);
 			dss_items[i].rmem.paddr <<= 32UL;
-			dss_items[i].rmem.paddr |= be32_to_cpu(((u32 *)str)[1]);
-			dss_items[i].rmem.size = be32_to_cpu(((u32 *)str)[2]);
+			dss_items[i].rmem.paddr |= be32_to_cpu(ret[1]);
+			dss_items[i].rmem.size = be32_to_cpu(ret[2]);
 			dss_items[i].enabled = 1;
 		} else {
 			dss_items[i].enabled = 0;
@@ -106,11 +106,12 @@ static int debug_snapshot_get_items_from_dt(void)
 					dss_items[i].rmem.size);
 	}
 
-	if (!get_fdt_val(CP_RESERVE_PATH, "reg", str)) {
-		cp_rmem.paddr = be32_to_cpu(((u32 *)str)[0]);
+	memset(ret, 0, 8 * sizeof(u32));
+	if (!get_fdt_val(CP_RESERVE_PATH, "reg", (char *)ret)) {
+		cp_rmem.paddr = be32_to_cpu(ret[0]);
 		cp_rmem.paddr <<= 32UL;
-		cp_rmem.paddr |= be32_to_cpu(((u32 *)str)[1]);
-		cp_rmem.size = be32_to_cpu(((u32 *)str)[2]);
+		cp_rmem.paddr |= be32_to_cpu(ret[1]);
+		cp_rmem.size = be32_to_cpu(ret[2]);
 	}
 
 	return 0;
