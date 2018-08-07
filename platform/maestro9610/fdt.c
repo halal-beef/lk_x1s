@@ -63,7 +63,7 @@ void merge_dto_to_main_dtb(void)
 	}
 
 	fdto = malloc(fdt32_to_cpu(dt_entry->dt_size));
-	memcpy(fdto, (unsigned int)dtbo_table + fdt32_to_cpu(dt_entry->dt_offset),
+	memcpy((void *)fdto, (void *)((unsigned long)dtbo_table + fdt32_to_cpu(dt_entry->dt_offset)),
 			fdt32_to_cpu(dt_entry->dt_size));
 
 	ret = fdt_check_header(fdto);
@@ -104,7 +104,7 @@ int resize_dt(unsigned int sz)
 	return size;
 }
 
-int make_fdt_node(char *path, char *node)
+int make_fdt_node(const char *path, char *node)
 {
 	int offset;
 	int ret;
@@ -130,9 +130,9 @@ int make_fdt_node(char *path, char *node)
 	return 0;
 }
 
-int get_fdt_val(char *path, char *property, char *retval)
+int get_fdt_val(const char *path, const char *property, char *retval)
 {
-	char *np;
+	const char *np;
 	int  offset;
 	int  len, ret = 0;
 
@@ -156,14 +156,14 @@ int get_fdt_val(char *path, char *property, char *retval)
 	return 0;
 }
 
-int set_fdt_val(char *path, char *property, char *value)
+int set_fdt_val(const char *path, const char *property, const char *value)
 {
 	char parsed_value[BUFFER_SIZE];
 	int offset;
 	int len = 0;
 	int ret;
-	char *tp;
-	char *np;
+	const char *tp;
+	const char *np;
 	unsigned long tmp;
 	char *dp = parsed_value;
 
@@ -173,7 +173,7 @@ int set_fdt_val(char *path, char *property, char *value)
 		np++;
 		while (*np != '>') {
 			tp = np;
-			tmp = simple_strtoul(tp, &np, 0);
+			tmp = simple_strtoul(tp, (char **)&np, 0);
 			*(uint32_t *)dp = cpu_to_be32(tmp);
 			dp  += 4;
 			len += 4;
