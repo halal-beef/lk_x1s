@@ -160,6 +160,7 @@ include dev/dpu/rules.mk
 include external/lib/cksum/rules.mk
 include external/lib/fdt/rules.mk
 include external/lib/ufdt/rules.mk
+include dev/adc/rules.mk
 
 # recursively include any modules in the MODULE variable, leaving a trail of included
 # modules in the ALLMODULES list
