@@ -45,10 +45,10 @@ struct bootargs_prop {
 	char prop[64];
 	char val[64];
 };
-static struct bootargs_prop prop[32] = { 0, };
+static struct bootargs_prop prop[32] = { { {0, }, {0, } }, };
 static int prop_cnt = 0;
 
-static void bootargs_init(void)
+static int bootargs_init(void)
 {
 	u32 i = 0;
 	u32 len = 0;
@@ -95,10 +95,12 @@ static void bootargs_init(void)
 				prop[prop_cnt].prop[cur++] = bootargs[i];
 		}
 	}
+
+	return 0;
 }
 static char *get_bootargs_val(const char *name)
 {
-       u32 i = 0;
+       int i = 0;
 
        for (i = 0; i <= prop_cnt; i++) {
                if (strncmp(prop[i].prop, name, strlen(name)) == 0)
@@ -110,8 +112,7 @@ static char *get_bootargs_val(const char *name)
 
 static void update_val(const char *name, const char *val)
 {
-	u32 i = 0;
-	u32 cur = 0;
+	int i = 0;
 
 	for (i = 0; i <= prop_cnt; i++) {
 		if (strncmp(prop[i].prop, name, strlen(name)) == 0) {
@@ -150,7 +151,7 @@ static void bootargs_update(void)
 	set_fdt_val("/chosen", "bootargs", bootargs);
 }
 
-static void remove_string_from_bootargs(char *str)
+static void remove_string_from_bootargs(const char *str)
 {
 	char bootargs[BUFFER_SIZE];
 	const char *np;
@@ -371,14 +372,13 @@ static void configure_dtb(void)
 		/* set AVB args */
 		get_ops_addr(&ops);
 		ops->read_is_device_unlocked(ops, &unlock);
-		noff = fdt_path_offset (DT_BASE, "/chosen");
-		np = fdt_getprop(DT_BASE, noff, "bootargs", &len);
+		noff = fdt_path_offset (fdt_dtb, "/chosen");
+		np = fdt_getprop(fdt_dtb, noff, "bootargs", &len);
 		if (unlock)
 			snprintf(str, BUFFER_SIZE, "%s %s %s", np, cmdline, "androidboot.verifiedbootstate=orange");
 		else
 			snprintf(str, BUFFER_SIZE, "%s %s %s", np, cmdline, "androidboot.verifiedbootstate=green");
-		fdt_setprop(DT_BASE, noff, "bootargs", str,
-						strlen(str) + 1);
+		fdt_setprop(fdt_dtb, noff, "bootargs", str, strlen(str) + 1);
 	}
 
 	if (readl(EXYNOS9610_POWER_SYSIP_DAT0) == REBOOT_MODE_RECOVERY) {
@@ -404,7 +404,7 @@ int cmd_scatter_load_boot(int argc, const cmd_args *argv);
 int load_boot_images(void)
 {
 	struct pit_entry *ptn;
-	cmd_args argv[5];
+	cmd_args argv[6];
 
 	if (ab_current_slot())
 		ptn = pit_get_part_info("boot_b");
@@ -430,8 +430,8 @@ int load_boot_images(void)
 
 int cmd_boot(int argc, const cmd_args *argv)
 {
-	fdt_dtb = DT_BASE;
-	dtbo_table = DTBO_BASE;
+	fdt_dtb = (struct fdt_header *)DT_BASE;
+	dtbo_table = (struct dtbo_table *)DTBO_BASE;
 
 	if (!init_keystorage())
 		printf("keystorage: init done successfully.\n");
