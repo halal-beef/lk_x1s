@@ -202,7 +202,7 @@ static AvbSlotVerifyResult load_and_verify_hash_partition(
 #if defined(CONFIG_AVB_HW_HASH)
   struct ace_hash_ctx ctx;
   uint8_t digest_buf[SHA256_DIGEST_LEN];
-  digest = &digest_buf;
+  digest = (uint8_t *)&digest_buf;
 #endif
 
   if (!avb_hash_descriptor_validate_and_byteswap(
@@ -303,10 +303,11 @@ static AvbSlotVerifyResult load_and_verify_hash_partition(
   if (avb_strcmp((const char*)hash_desc.hash_algorithm, "sha256") == 0) {
 #if defined(CONFIG_AVB_HW_HASH)
     el3_sss_hash_init(ALG_SHA256, &ctx);
-    el3_sss_hash_update(desc_salt, hash_desc.image_size + hash_desc.salt_len,
-			hash_desc.salt_len, &ctx, 0);
-    el3_sss_hash_update(image_buf, hash_desc.image_size, hash_desc.image_size,
-			&ctx, 1);
+    el3_sss_hash_update((uint32_t)(uint64_t)desc_salt,
+		    hash_desc.image_size + hash_desc.salt_len,
+		    hash_desc.salt_len, &ctx, 0);
+    el3_sss_hash_update((uint32_t)(uint64_t)image_buf,
+		    hash_desc.image_size, hash_desc.image_size, &ctx, 1);
     el3_sss_hash_final(&ctx, digest);
 #else /* SW Hash */
     AvbSHA256Ctx sha256_ctx;
@@ -319,10 +320,11 @@ static AvbSlotVerifyResult load_and_verify_hash_partition(
   } else if (avb_strcmp((const char*)hash_desc.hash_algorithm, "sha512") == 0) {
 #if defined(CONFIG_AVB_HW_HASH)
     el3_sss_hash_init(ALG_SHA512, &ctx);
-    el3_sss_hash_update(desc_salt, hash_desc.image_size + hash_desc.salt_len,
-			hash_desc.salt_len, &ctx, 0);
-    el3_sss_hash_update(image_buf, hash_desc.image_size, hash_desc.image_size,
-			&ctx, 1);
+    el3_sss_hash_update((uint32_t)(uint64_t)desc_salt,
+		    hash_desc.image_size + hash_desc.salt_len,
+		    hash_desc.salt_len, &ctx, 0);
+    el3_sss_hash_update((uint32_t)(uint64_t)image_buf,
+		    hash_desc.image_size, hash_desc.image_size, &ctx, 1);
     el3_sss_hash_final(&ctx, digest);
 #else /* SW Hash */
     AvbSHA512Ctx sha512_ctx;
