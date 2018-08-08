@@ -25,7 +25,8 @@ uint32_t el3_sss_hash_init(
 	info_hash.kindofhash = alg;
 	memset(ctx, 0, sizeof(struct ace_hash_ctx));
 
-	return exynos_smc(SMC_CMD_HASH, &info_hash, ctx, SHA_INIT);
+	return exynos_smc(SMC_CMD_HASH, (uint64_t)&info_hash,
+			(uint64_t)ctx, SHA_INIT);
 }
 
 uint32_t el3_sss_hash_update(
@@ -42,11 +43,11 @@ uint32_t el3_sss_hash_update(
 	info_hash.unit_size = unit_size;
 
 	if (done_flag)
-		return exynos_smc(SMC_CMD_HASH, &info_hash,
-				ctx, SHA_UPDATE_REMAIN_SIZE);
+		return exynos_smc(SMC_CMD_HASH, (uint64_t)&info_hash,
+				(uint64_t)ctx, SHA_UPDATE_REMAIN_SIZE);
 	else
-		return exynos_smc(SMC_CMD_HASH, &info_hash,
-				ctx, SHA_UPDATE_UNIT_SIZE);
+		return exynos_smc(SMC_CMD_HASH, (uint64_t)&info_hash,
+				(uint64_t)ctx, SHA_UPDATE_UNIT_SIZE);
 }
 
 uint32_t el3_sss_hash_final(
@@ -55,9 +56,10 @@ uint32_t el3_sss_hash_final(
 {
 	HASH_INFO info_hash;
 
-	info_hash.result_hash = (uint32_t)hash;
+	info_hash.result_hash = (uint32_t)(uint64_t)hash;
 
-	return exynos_smc(SMC_CMD_HASH, &info_hash, ctx, SHA_FINAL);
+	return exynos_smc(SMC_CMD_HASH, (uint64_t)&info_hash,
+			(uint64_t)ctx, SHA_FINAL);
 }
 
 uint32_t el3_sss_hash_digest(
@@ -69,9 +71,9 @@ uint32_t el3_sss_hash_digest(
 	HASH_INFO info_hash;
 
 	info_hash.hash_addr = addr;
-	info_hash.result_hash = (uint32_t)hash;
+	info_hash.result_hash = (uint32_t)(uint64_t)hash;
 	info_hash.total_size = size;
 	info_hash.kindofhash = alg;
 
-	return exynos_smc(SMC_CMD_HASH, &info_hash, 0, SHA_DIGEST);
+	return exynos_smc(SMC_CMD_HASH, (uint64_t)&info_hash, 0, SHA_DIGEST);
 }
