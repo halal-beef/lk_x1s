@@ -31,9 +31,9 @@
 
 #undef USBD3_DBG
 #ifdef USBD3_DBG
-#define dprintf(ALWAYS, fmt, args...)	DBG_USBD3("[%s:%d] " fmt, __FUNCTION__, __LINE__, ##args)
+#define DBG_USBD3(fmt, ...) DBG_USBD3(fmt, args...)
 #else
-#define dprintf(ALWAYS, fmt, args...) do { } while (0)
+#define DBG_USBD3(fmt, ...) do { } while (0)
 #endif
 
 #define Assert(value) value ? : printf("[%s:%d] Assert(%d) \n", __func__, __LINE__, value)
@@ -223,10 +223,10 @@ int exynos_got_header = 0;
 int exynos_receive_done = 0;
 
 extern ulong virt_to_phy_exynos5210(ulong addr);
-static u32 exynos_usb_malloc(u32 uSize, u32 uAlign);
-static void exynos_usb_free(u32 uAddr);
+static u64 exynos_usb_malloc(u32 uSize, u32 uAlign);
+static void exynos_usb_free(u64 uAddr);
 static void exynos_usb_fill_trb(usbdev3_trb_ptr_t pTrb, u64 uBufAddr, u32 uLen, u32 uTrbCtrl, u32 uHwo);
-static int exynos_usb_start_ep_xfer(USBDEV3_EP_DIR_e eEpDir, u8 ucEpNum, u32 uTrbAddr, u32 uStrmidSofn, u32 *uTri);
+static int exynos_usb_start_ep_xfer(USBDEV3_EP_DIR_e eEpDir, u8 ucEpNum, u64 uTrbAddr, u32 uStrmidSofn, u32 *uTri);
 
 extern u32 EXYNOS_USBD_DETECT_IRQ(void)
 {
@@ -312,7 +312,7 @@ int pll_enable(void *pllcon_base)
 
 extern void exynos_usb_phy_on(void)
 {
-	dprintf(ALWAYS, "This is %s \n", __func__);
+	DBG_USBD3("This is %s \n", __func__);
 	writel(0x10003, USB2_PHY_CONTROL);
 }
 
@@ -375,13 +375,13 @@ static void exynos_usb_crport_config(void)
 	exynos_phy_crport_ctrl(0x12, 0xA000);
 }
 
-static u32 exynos_usb_malloc(u32 uSize, u32 uAlign)
+static u64 exynos_usb_malloc(u32 uSize, u32 uAlign)
 {
 	u64 uAddr, uTemp1, uTemp2, uTemp3;
 	u64 uAddr_aligned;
 	u64 uAllocHwMem_AlignConstraint = 64;
 
-	dprintf(ALWAYS, "This is %s \n", __func__);
+	DBG_USBD3("This is %s \n", __func__);
 
 	/* get the GCD(Great Common Divider) */
 	uTemp2 = uAlign;
@@ -403,29 +403,30 @@ static u32 exynos_usb_malloc(u32 uSize, u32 uAlign)
 	uAddr_aligned = uAddr + (uAlign - uTemp2);
 	*(u32 *)(uAddr_aligned-4) = uAddr;
 
-	dprintf(ALWAYS, "exynos_usb_malloc:Addr=0x%08x[0x%08x], Size=%d, Align=%d\n\n", uAddr, uAddr_aligned, uSize, uAlign);
+	DBG_USBD3("exynos_usb_malloc:Addr=0x%08x[0x%08x], Size=%d, Align=%d\n\n", uAddr, uAddr_aligned, uSize, uAlign);
 
 	return uAddr_aligned;
 }
 
-static void exynos_usb_free(u32 uAddr)
+static void exynos_usb_free(u64 uAddr)
 {
-	u32 uFree_addr;
+	u64 uFree_addr = 0;
 	if (uAddr != 0)
 	{
 		uFree_addr = *(u32 *)(uAddr - 4);
-		free((u8 *)uFree_addr);
+		free((void *)uFree_addr);
 	}
-	dprintf(ALWAYS, "\n\nexynos_usb_free:0x%08x[0x%8x]\n\n", uAddr, uFree_addr);
+
+	DBG_USBD3("\n\nexynos_usb_free:0x%08x[0x%8x]\n\n", uAddr, uFree_addr);
 }
 
 static void exynos_usb_print_ep0_pkt(u8 *pt, u8 count)
 {
 	int i;
-	dprintf(ALWAYS, "[DBG:");
+	DBG_USBD3("[DBG:");
 	for(i=0;i<count;i++)
-		dprintf(ALWAYS, "%x,", pt[i]);
-	dprintf(ALWAYS, "]\n");
+		DBG_USBD3("%x,", pt[i]);
+	DBG_USBD3("]\n");
 }
 
 static void exynos_usb_set_descriptor_tlb(void)
@@ -637,7 +638,7 @@ static int exynos_usb_wait_ep_cmd_complete(USBDEV3_EP_DIR_e eEpDir, u8 ucEpNum, 
 
 		if (!(usbdev3_depcmd.b.cmd_active))
 		{
-			dprintf(ALWAYS, "Complete: D%cEPCMD(%d)=0x%08x\n",
+			DBG_USBD3("Complete: D%cEPCMD(%d)=0x%08x\n",
 				(eEpDir==USBDEV3_EP_DIR_IN)? 'I' : 'O', ucEpNum, usbdev3_depcmd.data);
 			return 1;
 		}
@@ -646,7 +647,7 @@ static int exynos_usb_wait_ep_cmd_complete(USBDEV3_EP_DIR_e eEpDir, u8 ucEpNum, 
 		uSec--;
 	} while (uSec > 0);
 
-	dprintf(ALWAYS, "TimeOver: D%cEPCMD(%d)=0x%08x\n",
+	DBG_USBD3("TimeOver: D%cEPCMD(%d)=0x%08x\n",
 		(eEpDir==USBDEV3_EP_DIR_IN)? 'I' : 'O', ucEpNum, usbdev3_depcmd.data);
 	return 0;
 }
@@ -850,7 +851,7 @@ static void exynos_usb_runstop_device(u8 ucSet)
 	writel(usbdev3_dctl.data, rDCTL);
 }
 
-static int exynos_usb_start_ep_xfer(USBDEV3_EP_DIR_e eEpDir, u8 ucEpNum, u32 uTrbAddr, u32 uStrmidSofn, u32 *uTri)
+static int exynos_usb_start_ep_xfer(USBDEV3_EP_DIR_e eEpDir, u8 ucEpNum, u64 uTrbAddr, u32 uStrmidSofn, u32 *uTri)
 {
 	usbdev3_depcmd_t usbdev3_depcmd;
 	u32 uEpCmdAddr = (eEpDir==USBDEV3_EP_DIR_IN)? rDIEPCMD(ucEpNum) : rDOEPCMD(ucEpNum);
@@ -934,7 +935,7 @@ static int exynos_usb_init_core(USBDEV3_SPEED_e eSpeed)
 	usbdev3_gevntsiz_t usbdev3_gevntsiz;
 	usbdev3_dcfg_t usbdev3_dcfg;
 	usbdev3_devten_t usbdev3_devten;
-	usbdev3_gfladj_t usbdev3_gfladj;
+	/* usbdev3_gfladj_t usbdev3_gfladj; */
 
 	// . to soft-reset core
 	//-----------------
@@ -971,7 +972,7 @@ static int exynos_usb_init_core(USBDEV3_SPEED_e eSpeed)
 	// . to check IP version
 	//-------------------
 	uData = readl(rGSNPSID);
-	dprintf(ALWAYS, "IP version is %1x.%03x\n", (uData&0xf000)>>12, (uData&0x0fff));
+	dprintf(ALWAYS, "USB IP version is %1x.%03x\n", (uData&0xf000)>>12, (uData&0x0fff));
 
 	// . to set usb 2.0 phy-related configuration parmeters
 	//---------------------------------------------
@@ -1000,7 +1001,7 @@ static int exynos_usb_init_core(USBDEV3_SPEED_e eSpeed)
 	//-------------------------------------
 	writel(0, rGEVNTADR_HI0);
 	oUsbDev3.m_CurrentEventPosition = 0;
-	writel(virt_to_phys((u64)oUsbDev3.m_pEventBuffer), rGEVNTADR_LO0);
+	writel(virt_to_phys((void *)oUsbDev3.m_pEventBuffer), rGEVNTADR_LO0);
 	usbdev3_gevntsiz.data = 0;
 	usbdev3_gevntsiz.b.event_siz = 4*USBDEV3_EVENT_BUFFER_COUNT;
 	usbdev3_gevntsiz.b.event_int_mask = 0;
@@ -1047,7 +1048,7 @@ static int exynos_usb_init_core(USBDEV3_SPEED_e eSpeed)
 	//----------------
 	if (!exynos_usb_activate_ep0())
 	{
-		dprintf(ALWAYS, "Activate Ep0 Fail\n");
+		DBG_USBD3("Activate Ep0 Fail\n");
 		return -1;
 	}
 
@@ -1055,7 +1056,7 @@ static int exynos_usb_init_core(USBDEV3_SPEED_e eSpeed)
 	//----------------------------------
 	if (!exynos_usb_start_ep0_setup_rx())
 	{
-		dprintf(ALWAYS, "Start Ep0 Setup Rx Fail\n");
+		DBG_USBD3("Start Ep0 Setup Rx Fail\n");
 		return -1;
 	}
 
@@ -1224,17 +1225,17 @@ static void exynos_usb_handle_connect_done_int(void)
 	switch(eSpeed) {
 		case USBDEV3_SPEED_SUPER :
 			exynos_usb_set_maxpktsizes(USBDEV3_SPEED_SUPER);
-			dprintf(ALWAYS, "(Enumerated Speed : Super)\n");
+			DBG_USBD3("(Enumerated Speed : Super)\n");
 			break;
 
 		case USBDEV3_SPEED_HIGH :
 			exynos_usb_set_maxpktsizes(USBDEV3_SPEED_HIGH);
-			dprintf(ALWAYS, "(Enumerated Speed : High)\n");
+			DBG_USBD3("(Enumerated Speed : High)\n");
 			break;
 
 		case USBDEV3_SPEED_FULL :
 			exynos_usb_set_maxpktsizes(USBDEV3_SPEED_FULL);
-			dprintf(ALWAYS, "(Enumerated Speed : Full)\n");
+			DBG_USBD3("(Enumerated Speed : Full)\n");
 			break;
 
 		default :
@@ -1279,54 +1280,54 @@ static void exynos_usb_handle_dev_event(usbdev3_devt_t uDevEvent)
 	switch (uDevEvent.b.evt_type)
 	{
 		case DEVT_DISCONN:
-			dprintf(ALWAYS, "Disconnect\n");
+			DBG_USBD3("Disconnect\n");
 			exynos_usb_handle_disconnect_int();
 			break;
 
 		case DEVT_USBRESET:
-			dprintf(ALWAYS, "USB Reset\n");
+			DBG_USBD3("USB Reset\n");
 			exynos_usb_handle_reset_int();
 			break;
 
 		case DEVT_CONNDONE:
-			dprintf(ALWAYS, "Connect Done\n");
+			DBG_USBD3("Connect Done\n");
 			exynos_usb_handle_connect_done_int();
 			break;
 
 		case DEVT_WKUP:
-			dprintf(ALWAYS, "Wakeup\n");
+			DBG_USBD3("Wakeup\n");
 			//USBDEV3_HandleWakeupDetectedInt();
 			break;
 
 		case DEVT_ULST_CHNG:
-			dprintf(ALWAYS, "Link Status Change\n");
+			DBG_USBD3("Link Status Change\n");
 			//USBDEV3_HandleLinkStatusChange();
 			break;
 
 		case DEVT_EOPF:
-			dprintf(ALWAYS, "End of Periodic Frame\n");
+			DBG_USBD3("End of Periodic Frame\n");
 			//USBDEV3_HandleEndPeriodicFrameInt();
 			break;
 
 		case DEVT_SOF:
-			dprintf(ALWAYS, "Start of Frame\n");
+			DBG_USBD3("Start of Frame\n");
 			//USBDEV3_HandleSofInt();
 			break;
 
 		case DEVT_ERRATICERR:
-			dprintf(ALWAYS, "Erratic Error\n");
+			DBG_USBD3("Erratic Error\n");
 			break;
 
 		case DEVT_CMD_CMPL:
-			dprintf(ALWAYS, "Command Complete\n");
+			DBG_USBD3("Command Complete\n");
 			break;
 
 		case DEVT_OVERFLOW:
-			dprintf(ALWAYS, "Overflow\n");
+			DBG_USBD3("Overflow\n");
 			break;
 
 		default:
-			dprintf(ALWAYS, "Unknown event!\n");
+			DBG_USBD3("Unknown event!\n");
 	}
 
 }
@@ -1351,7 +1352,7 @@ static void exynos_usb_handle_ep0_in_xfer_complete(void)
 
 		// khs. this routine is abnormal case, and handling for this case is not prepared.
 		default :
-			dprintf(ALWAYS, "\nError : [EP0-InXferComplete]Not Supported @%d\n", oUsbDev3.m_uEp0State);
+			DBG_USBD3("\nError : [EP0-InXferComplete]Not Supported @%d\n", oUsbDev3.m_uEp0State);
 			break;
 	}
 }
@@ -1365,7 +1366,7 @@ static void exynos_usb_handle_ep_in_xfer_complete(void)
 	exynos_usb_free((u64)g_pBulkInTrbArray_Base);
 
 	oUsbDev3.m_pUpPt += oUsbDev3.m_uUploadSize;
-	dprintf(ALWAYS, "DMA IN : Transfer Complete\n");
+	DBG_USBD3("DMA IN : Transfer Complete\n");
 	if (oUsbDev3.m_uUploadSize > 0) {
 		exynos_receive_done = 1;
 		printf("Upload Done!! Upload Address: 0x%x, Upload Filesize:0x%x\n",
@@ -1441,7 +1442,7 @@ static int exynos_usb_start_ep0_out_xfer(u32 pBufAddr, u32 uLen)
 static void exynos_usb_setup_in_status_phase(void)
 {
 
-	dprintf(ALWAYS, "Setup EP0 IN ZLP\n");
+	DBG_USBD3("Setup EP0 IN ZLP\n");
 
 	oUsbDev3.m_uEp0State = EP0_STATE_IN_STATUS_PHASE;
 
@@ -1450,7 +1451,7 @@ static void exynos_usb_setup_in_status_phase(void)
 
 static void exynos_usb_setup_out_status_phase(void)
 {
-	dprintf(ALWAYS, "Setup EP0 OUT ZLP\n");
+	DBG_USBD3("Setup EP0 OUT ZLP\n");
 
 	oUsbDev3.m_uEp0State = EP0_STATE_OUT_STATUS_PHASE;
 
@@ -1467,7 +1468,7 @@ static void exynos_usb_handle_ep0_in_xfer_not_ready(void)
 
 		// khs. this routine is abnormal case, and handling for this case is not prepared.
 		default :
-			dprintf(ALWAYS, "\nError : [EP0-InXferNotReady]Not Supported @%d\n", oUsbDev3.m_uEp0State);
+			DBG_USBD3("\nError : [EP0-InXferNotReady]Not Supported @%d\n", oUsbDev3.m_uEp0State);
 			break;
 	}
 }
@@ -1476,11 +1477,11 @@ static void exynos_usb_handle_ep_in_event(usbdev3_depevt_t uEpInEvent)
 {
 	u32 uEpNum = uEpInEvent.b.ep_num/2;		// 1,3,5,7,...
 
-	dprintf(ALWAYS, "[EP%d] IN State = 0x%x Type = 0x%x[%x]\n", uEpNum, oUsbDev3.m_uEp0State, uEpInEvent.b.evt_type, uEpInEvent.data);
+	DBG_USBD3("[EP%d] IN State = 0x%x Type = 0x%x[%x]\n", uEpNum, oUsbDev3.m_uEp0State, uEpInEvent.b.evt_type, uEpInEvent.data);
 	switch (uEpInEvent.b.evt_type)
 	{
 		case DEPEVT_EVT_XFER_CMPL:
-			dprintf(ALWAYS, "[EP%d] IN xfer complete @%d\n", uEpNum, oUsbDev3.m_uEp0State);
+			DBG_USBD3("[EP%d] IN xfer complete @%d\n", uEpNum, oUsbDev3.m_uEp0State);
 			if (uEpNum == 0)
 				exynos_usb_handle_ep0_in_xfer_complete();
 			else if (uEpNum == BULK_IN_EP) {
@@ -1494,35 +1495,35 @@ static void exynos_usb_handle_ep_in_event(usbdev3_depevt_t uEpInEvent)
 			break;
 
 		case DEPEVT_EVT_XFER_IN_PROG:
-			dprintf(ALWAYS, "[EP%d] IN xfer in progress @%d\n", uEpNum, oUsbDev3.m_uEp0State);
+			DBG_USBD3("[EP%d] IN xfer in progress @%d\n", uEpNum, oUsbDev3.m_uEp0State);
 			break;
 
 		case DEPEVT_EVT_XFER_NRDY:
-			dprintf(ALWAYS, "[EP%d] IN xfer not ready @%d\n", uEpNum, oUsbDev3.m_uEp0State);
+			DBG_USBD3("[EP%d] IN xfer not ready @%d\n", uEpNum, oUsbDev3.m_uEp0State);
 			if (uEpNum == 0)
 				exynos_usb_handle_ep0_in_xfer_not_ready();
 			break;
 
 		case DEPEVT_EVT_FIFOXRUN:
-			dprintf(ALWAYS, "[EP%d] IN FIFO Underrun Error @%d\n", uEpNum, oUsbDev3.m_uEp0State);
+			DBG_USBD3("[EP%d] IN FIFO Underrun Error @%d\n", uEpNum, oUsbDev3.m_uEp0State);
 			break;
 
 		case DEPEVT_EVT_STRM_EVT:
-			dprintf(ALWAYS, "[EP%d] IN Stream Event @%d\n", uEpNum, oUsbDev3.m_uEp0State);
+			DBG_USBD3("[EP%d] IN Stream Event @%d\n", uEpNum, oUsbDev3.m_uEp0State);
 			break;
 
 		case DEPEVT_EVT_EPCMD_CMPL:
-			dprintf(ALWAYS, "[EP%d] IN Command Complete @%d\n", uEpNum, oUsbDev3.m_uEp0State);
+			DBG_USBD3("[EP%d] IN Command Complete @%d\n", uEpNum, oUsbDev3.m_uEp0State);
 			break;
 
 		default:
-			dprintf(ALWAYS, "Unknown event!\n");
+			DBG_USBD3("Unknown event!\n");
 	}
 }
 
-static int exynos_transfer_packetsize()
+static int exynos_transfer_packetsize(void)
 {
-	USBDEV3_SPEED_e eSpeed = oUsbDev3.m_eSpeed;
+	/* USBDEV3_SPEED_e eSpeed = oUsbDev3.m_eSpeed; */
 	int pkt_size;
 
 	if (oUsbDev3.m_eSpeed == USBDEV3_SPEED_SUPER)
@@ -1537,7 +1538,7 @@ static int exynos_transfer_packetsize()
 
 int exynos_extend_trb_buf(void)
 {
-	exynos_usb_free(g_ucTempDownBuf);
+	exynos_usb_free((u64)g_ucTempDownBuf);
 	g_ucTempDownBuf = (unsigned char *)CFG_FASTBOOT_TRANSFER_BUFFER;
 
 	oUsbDev3.m_uBulkEPMaxPktSize = HOST_TRANSFER_SIZE;
@@ -1619,15 +1620,15 @@ void exynos_usb_handle_setup(void)
 			break;
 
 		case CLASS_TYPE:
-			dprintf(ALWAYS, "Class Type Request is not supported yet\n");
+			DBG_USBD3("Class Type Request is not supported yet\n");
 			return;
 
 		case VENDOR_TYPE:
-			dprintf(ALWAYS, "Vendor Type Request is not supported yet\n");
+			DBG_USBD3("Vendor Type Request is not supported yet\n");
 			return;
 
 		default:
-			dprintf(ALWAYS, "0x%02x Type Request is not supported yet\n", oUsbDev3.m_oDeviceRequest.bmRequestType & 0x60);
+			DBG_USBD3("0x%02x Type Request is not supported yet\n", oUsbDev3.m_oDeviceRequest.bmRequestType & 0x60);
 			return;
 	}
 
@@ -1657,17 +1658,17 @@ void exynos_usb_handle_setup(void)
 			usbdev3_dcfg.b.dev_addr = oUsbDev3.m_oDeviceRequest.wValue_L;
 			writel(usbdev3_dcfg.data, rDCFG);
 
-			dprintf(ALWAYS, "\n MCU >> Set Address : %d \n", usbdev3_dcfg.b.dev_addr);
+			DBG_USBD3("\n MCU >> Set Address : %d \n", usbdev3_dcfg.b.dev_addr);
 
 			oUsbDev3.m_eUsbDev3State = USBDEV3_STATE_ADDRESSED;
 			break;
 
 		case STANDARD_SET_DESCRIPTOR:
-			dprintf(ALWAYS, "\n MCU >> Set Descriptor \n");
+			DBG_USBD3("\n MCU >> Set Descriptor \n");
 			break;
 
 		case STANDARD_SET_CONFIGURATION:
-			dprintf(ALWAYS, "\n MCU >> Set Configuration \n");
+			DBG_USBD3("\n MCU >> Set Configuration \n");
 			if (oUsbDev3.m_eSpeed == USBDEV3_SPEED_SUPER)
 				printf("Super speed enumeration success\n");
 			g_usConfig = oUsbDev3.m_oDeviceRequest.wValue_L; // Configuration value in configuration descriptor
@@ -1694,7 +1695,7 @@ void exynos_usb_handle_setup(void)
 				case DEVICE_DESCRIPTOR:
 					oUsbDev3.m_uDeviceRequestLength = (u32)((oUsbDev3.m_oDeviceRequest.wLength_H << 8) |
 						oUsbDev3.m_oDeviceRequest.wLength_L);
-					dprintf(ALWAYS, "\n MCU >> Get Device Descriptor = 0x%x \n",oUsbDev3.m_uDeviceRequestLength);
+					DBG_USBD3("\n MCU >> Get Device Descriptor = 0x%x \n",oUsbDev3.m_uDeviceRequestLength);
 
 					if (oUsbDev3.m_uDeviceRequestLength<=DEVICE_DESC_SIZE)
 					{
@@ -1709,7 +1710,7 @@ void exynos_usb_handle_setup(void)
 				case CONFIGURATION_DESCRIPTOR:
 					oUsbDev3.m_uDeviceRequestLength = (u32)((oUsbDev3.m_oDeviceRequest.wLength_H << 8) |
 						oUsbDev3.m_oDeviceRequest.wLength_L);
-					dprintf(ALWAYS, "\n MCU >> Get Configuration Descriptor = 0x%x \n",oUsbDev3.m_uDeviceRequestLength);
+					DBG_USBD3("\n MCU >> Get Configuration Descriptor = 0x%x \n",oUsbDev3.m_uDeviceRequestLength);
 
 					if (oUsbDev3.m_uDeviceRequestLength > CONFIG_DESC_SIZE){
 					// === GET_DESCRIPTOR:CONFIGURATION+INTERFACE+ENDPOINT0+ENDPOINT1 ===
@@ -1739,7 +1740,7 @@ void exynos_usb_handle_setup(void)
 					break;
 
 				case STRING_DESCRIPTOR :
-					dprintf(ALWAYS, "\n MCU >> Get String Descriptor \n");
+					DBG_USBD3("\n MCU >> Get String Descriptor \n");
 					if (is_fastboot) {
 						string_desc1 = fboot_string_desc1;
 						string_desc2 = fboot_string_desc2;
@@ -1778,7 +1779,7 @@ void exynos_usb_handle_setup(void)
 					break;
 
 				case ENDPOINT_DESCRIPTOR:
-					dprintf(ALWAYS, "\n MCU >> Get Endpoint Descriptor \n");
+					DBG_USBD3("\n MCU >> Get Endpoint Descriptor \n");
 					switch(oUsbDev3.m_oDeviceRequest.wValue_L&0xf)
 					{
 						case 0:
@@ -1801,7 +1802,7 @@ void exynos_usb_handle_setup(void)
 				case DEVICE_QUALIFIER:	// only supported in over 2.0
 					oUsbDev3.m_uDeviceRequestLength = (u32)((oUsbDev3.m_oDeviceRequest.wLength_H << 8) |
 						oUsbDev3.m_oDeviceRequest.wLength_L);
-					dprintf(ALWAYS, "\n MCU >> Get Device Qualifier Descriptor = 0x%x \n",oUsbDev3.m_uDeviceRequestLength);
+					DBG_USBD3("\n MCU >> Get Device Qualifier Descriptor = 0x%x \n",oUsbDev3.m_uDeviceRequestLength);
 
 					if(oUsbDev3.m_uDeviceRequestLength<=10)
 					{
@@ -1814,7 +1815,7 @@ void exynos_usb_handle_setup(void)
 					break;
 
 				case OTHER_SPEED_CONFIGURATION :
-					dprintf(ALWAYS, ("\n MCU >> Get OTHER_SPEED_CONFIGURATION \n"));
+					DBG_USBD3(("\n MCU >> Get OTHER_SPEED_CONFIGURATION \n"));
 					oUsbDev3.m_uDeviceRequestLength = (u32)((oUsbDev3.m_oDeviceRequest.wLength_H << 8) |
 						oUsbDev3.m_oDeviceRequest.wLength_L);
 
@@ -1842,8 +1843,8 @@ void exynos_usb_handle_setup(void)
 					}
 					else	// super
 					{
-						dprintf(ALWAYS, "\n %s(line %d)\n", __FILE__, __LINE__);
-						dprintf(ALWAYS, "Error : Not implemented yet\n");
+						DBG_USBD3("\n %s(line %d)\n", __FILE__, __LINE__);
+						DBG_USBD3("Error : Not implemented yet\n");
 					}
 
 					break;
@@ -1857,7 +1858,7 @@ void exynos_usb_handle_setup(void)
 			break;
 
 		case STANDARD_CLEAR_FEATURE:
-			dprintf(ALWAYS, "\n MCU >> Clear Feature \n");
+			DBG_USBD3("\n MCU >> Clear Feature \n");
 			switch (oUsbDev3.m_oDeviceRequest.bmRequestType)
 			{
 				case DEVICE_RECIPIENT:
@@ -1885,7 +1886,7 @@ void exynos_usb_handle_setup(void)
 			break;
 
 		case STANDARD_SET_FEATURE:
-			dprintf(ALWAYS, "\n MCU >> Set Feature \n");
+			DBG_USBD3("\n MCU >> Set Feature \n");
 			switch (oUsbDev3.m_oDeviceRequest.bmRequestType)
 			{
 				case DEVICE_RECIPIENT:
@@ -1923,8 +1924,8 @@ void exynos_usb_handle_setup(void)
 				case TEST_MODE:
 					if ((0 != oUsbDev3.m_oDeviceRequest.wIndex_L ) ||(0 != oUsbDev3.m_oDeviceRequest.bmRequestType))
 					{
-						dprintf(ALWAYS, "\n %s(line %d)\n", __FILE__, __LINE__);
-						dprintf(ALWAYS, "Error : Wrong Request Parameter\n");
+						DBG_USBD3("\n %s(line %d)\n", __FILE__, __LINE__);
+						DBG_USBD3("Error : Wrong Request Parameter\n");
 						break;
 					}
 
@@ -1935,7 +1936,7 @@ void exynos_usb_handle_setup(void)
 						case TEST_J:
 							//Set Test J
 							exynos_usb_start_ep0_in_xfer((u64)NULL, 0);
-							dprintf(ALWAYS, "Test_J\n");
+							DBG_USBD3("Test_J\n");
 							usbdev3_dctl.data = readl(rDCTL);
 							usbdev3_dctl.b.test_ctrl = (u32)DCTL_TEST_J_MODE;
 							writel(usbdev3_dctl.data, rDCTL);
@@ -1944,7 +1945,7 @@ void exynos_usb_handle_setup(void)
 						case TEST_K:
 							//Set Test K
 							exynos_usb_start_ep0_in_xfer((u64)NULL, 0);
-							dprintf(ALWAYS, "Test_K\n");
+							DBG_USBD3("Test_K\n");
 							usbdev3_dctl.data = readl(rDCTL);
 							usbdev3_dctl.b.test_ctrl = (u32)DCTL_TEST_K_MODE;
 							writel(usbdev3_dctl.data, rDCTL);
@@ -1953,7 +1954,7 @@ void exynos_usb_handle_setup(void)
 						case TEST_SE0_NAK:
 							//Set Test SE0_NAK
 							exynos_usb_start_ep0_in_xfer((u64)NULL, 0);
-							dprintf(ALWAYS, "Test_SE0_NAK\n");
+							DBG_USBD3("Test_SE0_NAK\n");
 							usbdev3_dctl.data = readl(rDCTL);
 							usbdev3_dctl.b.test_ctrl = (u32)DCTL_TEST_SE0_NAK_MODE;
 							writel(usbdev3_dctl.data, rDCTL);
@@ -1966,7 +1967,7 @@ void exynos_usb_handle_setup(void)
 							// khs. Is this routine necessary?
 							//exynos_usb_start_ep0_in_xfer((u32)TestPkt, TEST_PKT_SIZE);
 
-							dprintf(ALWAYS, "Test_Packet\n");
+							DBG_USBD3("Test_Packet\n");
 							usbdev3_dctl.data = readl(rDCTL);
 							usbdev3_dctl.b.test_ctrl = (u32)DCTL_TEST_PACKET_MODE;
 							writel(usbdev3_dctl.data, rDCTL);
@@ -1975,7 +1976,7 @@ void exynos_usb_handle_setup(void)
 						case TEST_FORCE_ENABLE:
 							//Set Test Force Enable
 							exynos_usb_start_ep0_in_xfer((u64)NULL, 0);
-							dprintf(ALWAYS, "Test_Force_Enable\n");
+							DBG_USBD3("Test_Force_Enable\n");
 							usbdev3_dctl.data = readl(rDCTL);
 							usbdev3_dctl.b.test_ctrl = (u32)DCTL_TEST_FORCE_ENABLE;
 							writel(usbdev3_dctl.data, rDCTL);
@@ -2034,16 +2035,16 @@ void exynos_usb_handle_setup(void)
 			oUsbDev3.m_bReq_Set_sel= 1;
 			/* For SET_SEL */
 			exynos_usb_start_ep0_out_xfer((u64)&set_sel, oUsbDev3.m_uControlEPMaxPktSize);
-			dprintf(ALWAYS, "Standard Req : SET SEL\n");
+			DBG_USBD3("Standard Req : SET SEL\n");
 			break;
 
 		case STANDARD_ISOCH_DELY:
-			dprintf(ALWAYS, "Standard Req : ISOCH Delay\n");
+			DBG_USBD3("Standard Req : ISOCH Delay\n");
 			break;
 
 		default:
-			dprintf(ALWAYS, "\n %s(line %d)\n", __FILE__, __LINE__);
-			dprintf(ALWAYS, "Error : This Request(%d) is not implemented yet\n", oUsbDev3.m_oDeviceRequest.bRequest);
+			DBG_USBD3("\n %s(line %d)\n", __FILE__, __LINE__);
+			DBG_USBD3("Error : This Request(%d) is not implemented yet\n", oUsbDev3.m_oDeviceRequest.bRequest);
 			break;
 	}
 }
@@ -2072,7 +2073,7 @@ static void exynos_usb_handle_ep0_out_xfer_complete(void)
 
 		// khs. this routine is abnormal case, and handling for this case is not prepared.
 		default :
-			dprintf(ALWAYS, "\nError : [EP0-OutXferComplete]Not Supported @%d\n", oUsbDev3.m_uEp0State);
+			DBG_USBD3("\nError : [EP0-OutXferComplete]Not Supported @%d\n", oUsbDev3.m_uEp0State);
 			break;
 	}
 
@@ -2121,15 +2122,15 @@ static void exynos_usb_handle_ep_out_xfer_complete(void)
 					(*((u8 *)(g_ucTempDownBuf+6))<<16)+
 					(*((u8 *)(g_ucTempDownBuf+7))<<24);
 
-				exynos_usb_free((u32)g_ucTempDownBuf);
+				exynos_usb_free((u64)g_ucTempDownBuf);
 
-				oUsbDev3.m_pUpPt=(u8 *)oUsbDev3.m_uUploadAddr;
+				oUsbDev3.m_pUpPt=(u8 *)((u64)oUsbDev3.m_uUploadAddr);
 
-				dprintf(ALWAYS, "UploadAddress : 0x%x, UploadSize: %d\n", oUsbDev3.m_uUploadAddr, oUsbDev3.m_uUploadSize);
+				DBG_USBD3("UploadAddress : 0x%x, UploadSize: %d\n", oUsbDev3.m_uUploadAddr, oUsbDev3.m_uUploadSize);
 
 				if (oUsbDev3.m_uUploadSize>0)
 				{
-					dprintf(ALWAYS, "Dma Start for IN PKT \n");
+					DBG_USBD3("Dma Start for IN PKT \n");
 
 					// buffer_size of TRB should be
 					usCapTrbBufSiz = TRB_BUF_SIZ_LIMIT/oUsbDev3.m_uBulkEPMaxPktSize*oUsbDev3.m_uBulkEPMaxPktSize;
@@ -2208,9 +2209,9 @@ static void exynos_usb_handle_ep_out_xfer_complete(void)
 				oUsbDev3.m_uDownloadAddress = exynos_usbd_dn_addr;		// Request usb down Addr
 			}
 
-			oUsbDev3.m_pDownPt=(u8 *)oUsbDev3.m_uDownloadAddress;
+			oUsbDev3.m_pDownPt=(u8 *)((u64)oUsbDev3.m_uDownloadAddress);
 
-			dprintf(ALWAYS, "downloadAddress : 0x%x, downloadFileSize: %d\n", oUsbDev3.m_uDownloadAddress, oUsbDev3.m_uDownloadFileSize);
+			DBG_USBD3("downloadAddress : 0x%x, downloadFileSize: %d\n", oUsbDev3.m_uDownloadAddress, oUsbDev3.m_uDownloadFileSize);
 
 			memcpy((void *)oUsbDev3.m_pDownPt, (void *)(g_ucTempDownBuf+8), usRxCnt-8);
 
@@ -2280,7 +2281,7 @@ static void exynos_usb_handle_ep_out_xfer_complete(void)
 
 				exynos_receive_done = 1;
 
-				dprintf(ALWAYS, "DMA OUT : Transfer Complete\n");
+				DBG_USBD3("DMA OUT : Transfer Complete\n");
 			}
 		}
 	}
@@ -2308,7 +2309,7 @@ static void exynos_usb_handle_ep0_out_xfer_not_ready(void)
 			break;
 		// khs. this routine is abnormal case, and handling for this case is not prepared.
 		default :
-			dprintf(ALWAYS, "\nError : [EP0-OutXferNotReady]Not Supported @%d\n", oUsbDev3.m_uEp0State);
+			DBG_USBD3("\nError : [EP0-OutXferNotReady]Not Supported @%d\n", oUsbDev3.m_uEp0State);
 			break;
 	}
 }
@@ -2317,11 +2318,11 @@ static void exynos_usb_handle_ep_out_event(usbdev3_depevt_t uEpOutEvent)
 {
 	u32 uEpNum = uEpOutEvent.b.ep_num/2;	// 0,2,4,6,...
 
-	dprintf(ALWAYS, "[EP%d] Out State = 0x%x Type = 0x%x[0x%x]\n", uEpNum, oUsbDev3.m_uEp0State, uEpOutEvent.b.evt_type, uEpOutEvent.data);
+	DBG_USBD3("[EP%d] Out State = 0x%x Type = 0x%x[0x%x]\n", uEpNum, oUsbDev3.m_uEp0State, uEpOutEvent.b.evt_type, uEpOutEvent.data);
 	switch (uEpOutEvent.b.evt_type)
 	{
 		case DEPEVT_EVT_XFER_CMPL:
-			dprintf(ALWAYS, "[EP%d] OUT xfer complete @%d\n", uEpNum, oUsbDev3.m_uEp0State);
+			DBG_USBD3("[EP%d] OUT xfer complete @%d\n", uEpNum, oUsbDev3.m_uEp0State);
 			if (uEpNum == 0)
 				exynos_usb_handle_ep0_out_xfer_complete();
 			else if (uEpNum == BULK_OUT_EP) {
@@ -2334,31 +2335,30 @@ static void exynos_usb_handle_ep_out_event(usbdev3_depevt_t uEpOutEvent)
 			break;
 
 		case DEPEVT_EVT_XFER_IN_PROG:
-			dprintf(ALWAYS, "[EP%d] OUT xfer in progress @%d\n", uEpNum, oUsbDev3.m_uEp0State);
+			DBG_USBD3("[EP%d] OUT xfer in progress @%d\n", uEpNum, oUsbDev3.m_uEp0State);
 			break;
 
 		case DEPEVT_EVT_XFER_NRDY:
-			dprintf(ALWAYS, "[EP%d] OUT xfer not ready @%d\n", uEpNum, oUsbDev3.m_uEp0State);
+			DBG_USBD3("[EP%d] OUT xfer not ready @%d\n", uEpNum, oUsbDev3.m_uEp0State);
 			if (uEpNum == 0)
 				exynos_usb_handle_ep0_out_xfer_not_ready();
-			else
-				;//
+
 			break;
 
 		case DEPEVT_EVT_FIFOXRUN:
-			dprintf(ALWAYS, "[EP%d] OUT FIFO Overrun Error @%d\n", uEpNum, oUsbDev3.m_uEp0State);
+			DBG_USBD3("[EP%d] OUT FIFO Overrun Error @%d\n", uEpNum, oUsbDev3.m_uEp0State);
 			break;
 
 		case DEPEVT_EVT_STRM_EVT:
-			dprintf(ALWAYS, "[EP%d] OUT Stream Event @%d\n", uEpNum, oUsbDev3.m_uEp0State);
+			DBG_USBD3("[EP%d] OUT Stream Event @%d\n", uEpNum, oUsbDev3.m_uEp0State);
 			break;
 
 		case DEPEVT_EVT_EPCMD_CMPL:
-			dprintf(ALWAYS, "[EP%d] OUT Command Complete @%d\n", uEpNum, oUsbDev3.m_uEp0State);
+			DBG_USBD3("[EP%d] OUT Command Complete @%d\n", uEpNum, oUsbDev3.m_uEp0State);
 			break;
 
 		default:
-			dprintf(ALWAYS, "Unknown event!\n");
+			DBG_USBD3("Unknown event!\n");
 	}
 
 }
@@ -2380,7 +2380,7 @@ static void exynos_usb_handle_event(void)
 	}
 	else
 	{
-		dprintf(ALWAYS, "## Event Count is %d ##\n", uEventCount);
+		DBG_USBD3("## Event Count is %d ##\n", uEventCount);
 	}
 
 	while((uEventCount--> 0) && (uLoop < USBDEV3_EVENT_BUFFER_COUNT))
@@ -2399,11 +2399,11 @@ static void exynos_usb_handle_event(void)
 		// core update event buffer whenever event occurs
 		if (uEventBufferCopied == 0)
 		{
-			dprintf(ALWAYS, "## Null Event!##\n");
+			DBG_USBD3("## Null Event!##\n");
 		}
 		else		// event buffer contains event information
 		{
-			dprintf(ALWAYS, "\nLoop%d: Content of %dth Event Buffer is 0x%08x\n", uLoop, oUsbDev3.m_CurrentEventPosition, uEventBufferCopied);
+			DBG_USBD3("\nLoop%d: Content of %dth Event Buffer is 0x%08x\n", uLoop, oUsbDev3.m_CurrentEventPosition, uEventBufferCopied);
 
 			// Device-Specific Event
 			if (uEventBufferCopied & 0x1)
@@ -2416,7 +2416,7 @@ static void exynos_usb_handle_event(void)
 
 				if (usbdev3_devt.b.dev_specific != 0)
 				{
-					dprintf(ALWAYS, "Other Core Event\n");
+					DBG_USBD3("Other Core Event\n");
 				}
 
 				exynos_usb_handle_dev_event(usbdev3_devt);
@@ -2432,12 +2432,12 @@ static void exynos_usb_handle_event(void)
 
 				if (uEpNum & 1)
 				{
-					dprintf(ALWAYS, "IN Endpoint%d Event Occurred\n", (uEpNum/2));
+					DBG_USBD3("IN Endpoint%d Event Occurred\n", (uEpNum/2));
 					exynos_usb_handle_ep_in_event(usbdev3_depevt);
 				}
 				else
 				{
-					dprintf(ALWAYS, "OUT Endpoint%d Event Occurred\n", (uEpNum/2));
+					DBG_USBD3("OUT Endpoint%d Event Occurred\n", (uEpNum/2));
 					exynos_usb_handle_ep_out_event(usbdev3_depevt);
 				}
 			}
@@ -2447,9 +2447,8 @@ static void exynos_usb_handle_event(void)
 
 extern int exynos_usb_wait_cable_insert(void)
 {
-	u32 tmp1, tmp2;
-	char ch;
 	int ret = -1;
+
 	if(oUsbDev3.m_cable != CONNECTED) {
 		oUsbDev3.m_cable = CONNECTED;
 		ret = 0;
@@ -2579,7 +2578,7 @@ int exynos_usbctl_init(void)
 	//------------------------------
 	if (exynos_usb_init_core(eSpeed))
 	{
-		dprintf(ALWAYS, "Exynos USB3 Core Init Fail\n");
+		DBG_USBD3("Exynos USB3 Core Init Fail\n");
 		return 0;
 	}
 

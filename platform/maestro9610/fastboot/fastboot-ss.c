@@ -43,9 +43,14 @@
 #define OK	0
 #define ERROR	-1
 
-extern void exynos_usb_phy_on();
-extern int exynos_usb_wait_cable_insert();
-extern int exynos_udc_int_hndlr();
+static char manufacturer_name[] = "Samsung S.LSI";
+static char product_name[] = "CONFIG_BOARD_NAME";
+static char config_name[] =  "Android Fasstboot";
+static char interface_name[] = "Android Fastboot";
+
+extern void exynos_usb_phy_on(void);
+extern int exynos_usb_wait_cable_insert(void);
+extern int exynos_udc_int_hndlr(void);
 
 /* Note: The start address must be double word aligned */
 char* reply_msg;
@@ -111,10 +116,10 @@ int  fboot_usb_int_hndlr(void)
 */
 int fastboot_poll(void)
 {
-	dprintf(ALWAYS, "DEBUG: %s is called.\n", __FUNCTION__);
 	/* No activity */
 	int ret = FASTBOOT_INACTIVE;
 
+	/* dprintf(ALWAYS, "DEBUG: %s is called.\n", __FUNCTION__); */
 	if (!exynos_usb_wait_cable_insert() && !is_fastboot) {
 		exynos_usbctl_init();
 		exynos_usbc_activate();
@@ -164,8 +169,7 @@ int fboot_usb_handle_ep_out_xfer_complete(void)
 	/* Pass this up to the interface's handler */
 	if (fastboot_interface && fastboot_interface->rx_handler) {
 		/* Call rx_handler at common/cmd_fastboot.c */
-		if (!fastboot_interface->rx_handler(g_ucTempDownBuf, usRxCnt))
-			; /* OK */
+		fastboot_interface->rx_handler(g_ucTempDownBuf, usRxCnt);
 	}
 
 	/* Set TRB for 1st Bulk Out Packet */
@@ -417,12 +421,12 @@ int fastboot_init(struct cmd_fastboot_interface *interface)
 	/* usbd init */
 	fboot_usbctl_init();
 
-	device_strings[DEVICE_STRING_MANUFACTURER_INDEX]  = "Samsung S.LSI";
-	device_strings[DEVICE_STRING_PRODUCT_INDEX]       = CONFIG_BOARD_NAME;
+	device_strings[DEVICE_STRING_MANUFACTURER_INDEX]  = manufacturer_name;
+	device_strings[DEVICE_STRING_PRODUCT_INDEX]       = product_name;
 	set_serial_number();
 	/* These are just made up */
-	device_strings[DEVICE_STRING_CONFIG_INDEX]        = "Android Fastboot";
-	device_strings[DEVICE_STRING_INTERFACE_INDEX]     = "Android Fastboot";
+	device_strings[DEVICE_STRING_CONFIG_INDEX]        = config_name;
+	device_strings[DEVICE_STRING_INTERFACE_INDEX]     = interface_name;
 
 	/* The interface structure */
 	fastboot_interface = interface;
