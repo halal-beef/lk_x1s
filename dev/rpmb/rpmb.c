@@ -45,6 +45,9 @@
 #define PERSIST_DATA_LEN        128
 #define PERSIST_DATA_CNT        ((RPMB_BLOCK_SIZE * PERSIST_DATA_BLOCK_CNT) / PERSIST_DATA_LEN)
 
+#define INT2VOIDP(x)            (void *)(uintptr_t)(x)
+#define INT2U8P(x)              (u8 *)(uintptr_t)(x)
+
 struct boot_header {
 	u32     magic;
 	u32     ri_block_base;
@@ -400,7 +403,7 @@ static int emmc_rpmb_commands(int dev_num, struct rpmb_packet *packet)
 {
 	u8	*buf = NULL, *hmac = NULL, key[32];
 	int	ret = 0, i;
-	u32	addr, start_blk, blk_cnt, w_counter;
+	u32	addr, start_blk, blk_cnt;
 	uint8_t output_data[HMAC_SIZE];
 
 	switch (packet->request)
@@ -487,7 +490,6 @@ static int emmc_rpmb_commands(int dev_num, struct rpmb_packet *packet)
 			addr = *(u32 *)(packet->data);
 			blk_cnt = packet->count;
 			start_blk = packet->address;
-			w_counter = packet->write_counter;
 			buf = malloc(512*blk_cnt);
 			if (buf == NULL) {
 				dprintf(INFO, "Memoery allocation failed\n");
@@ -634,16 +636,16 @@ static void ufs_upiu_report(struct rpmb_packet *packet, int sp_in_out)
 
 static int ufs_rpmb_commands(int dev_num, struct rpmb_packet *packet)
 {
-	u8 *buf, *hmac;
+	u8 *buf = NULL;
+	u8 *hmac = NULL;
 	u32 i;
 	int result = -1;
-	u32 addr, start_blk, blk_cnt, w_counter;
+	u32 addr, start_blk, blk_cnt;
+	u32 *addrp = NULL;
 	uint8_t output_data[HMAC_SIZE];
 	uint32_t ret = RV_SUCCESS;
 	ssize_t cnt;
 	bdev_t *dev;
-	/* RPMB LUN number */
-	dev_num = 0xC4;
 
 	switch (packet->request) {
 	case 1:
@@ -799,15 +801,15 @@ static int ufs_rpmb_commands(int dev_num, struct rpmb_packet *packet)
 
 	case 3:
 		/* Authenticated data write request */
-		addr = *(u32 *) (packet->data);
+		addrp = (u32 *)packet->data;
+		addr = *addrp;
 		blk_cnt = packet->count;
 		start_blk = packet->address;
-		w_counter = packet->write_counter;
 		buf = malloc(RPMB_SIZE * blk_cnt);
 		hmac = malloc(HMAC_CALC_SIZE * blk_cnt);
 
 		dprintf(INFO, "Authenticated data write quest (Data only)\n");
-		dump_packet((u8 *) addr, DATA_SIZE * blk_cnt);
+		dump_packet( INT2U8P(addr), DATA_SIZE * blk_cnt);
 
 		dprintf(INFO, "Authenticated data write quest (Swapped)\n");
 		dprintf(INFO, "HMAC calculatation\n");
@@ -816,7 +818,7 @@ static int ufs_rpmb_commands(int dev_num, struct rpmb_packet *packet)
 		/* Write Data reordering */
 		for (i = 0; i < blk_cnt; i++) {
 			/* Copy to packet data from buffer */
-			memcpy(packet->data, (void *)(addr + (i * DATA_SIZE)), DATA_SIZE);
+			memcpy(packet->data, INT2VOIDP(addr + (i * DATA_SIZE)), DATA_SIZE);
 
 			/* Swap Copy to buffer from packet */
 			swap_packet((u8 *) packet, (u8 *) (buf + (i * RPMB_SIZE)));
@@ -920,7 +922,8 @@ static int ufs_rpmb_commands(int dev_num, struct rpmb_packet *packet)
 
 	case 4:
 		/* Authenticated data read request */
-		addr = *(u32 *) (packet->data);
+		addrp = (u32 *)(packet->data);
+		addr = *addrp;
 		blk_cnt = packet->count;
 		start_blk = packet->address;
 
@@ -984,7 +987,7 @@ static int ufs_rpmb_commands(int dev_num, struct rpmb_packet *packet)
 		/* Read Data reordering */
 		for (i = 0; i < blk_cnt; i++) {
 			swap_packet((u8 *) (buf + (i * RPMB_SIZE)), (u8 *) packet);
-			memcpy((void *)(addr + (i * DATA_SIZE)), packet->data, DATA_SIZE);
+			memcpy(INT2VOIDP(addr + (i * DATA_SIZE)), packet->data, DATA_SIZE);
 		}
 
 		if (ret != RV_SUCCESS)
@@ -1026,15 +1029,16 @@ static int ufs_rpmb_commands(int dev_num, struct rpmb_packet *packet)
 	}
 
 out:
-	free(buf);
+	if (buf != NULL)
+		free(buf);
 	return ret;
 }
 #endif
 int do_rpmb(int argc, const cmd_args *argv)
 {
 	int i;
-	char *cmd;
 	ulong addr;
+	u32 *addrp = NULL;
 	uint rw;
 	int ret, start_blk, block_num, w_counter;
 	uint8_t rpmb_key[RPMB_KEY_LEN];
@@ -1046,11 +1050,10 @@ int do_rpmb(int argc, const cmd_args *argv)
 	if (!mmc && argv[1].str[0]!='t') goto usage;
 #endif
 
-	cmd = argv[1].str;
-	switch (cmd[0]) {
+	switch (argv[1].str[0]) {
 #ifdef USE_MMC0
 	case 'c':
-		ret = emmc_rpmb_close(mmc);
+		ret = emmc_rpmb_close(mmc);;
 		if (ret == 0) dprintf(INFO, "RPMB partition CLOSE Success.!!\n");
 		else dprintf(INFO, "RPMB partition CLOSE Failed.!!\n");
 		return 1;
@@ -1071,9 +1074,8 @@ int do_rpmb(int argc, const cmd_args *argv)
 	}
 
 	memset((void *)&packet, 0, 512);
-	cmd = argv[3].str;
 
-	switch (cmd[0]) {
+	switch (argv[3].str[0]) {
 	case 'b':
 		if (argc == 7) {
 			addr = argv[6].u;
@@ -1114,11 +1116,13 @@ int do_rpmb(int argc, const cmd_args *argv)
 #else
 			packet.count = block_num;
 #endif
-			*((u32 *) (packet.data) + 1) = block_num;
+			addrp = (u32 *)(packet.data) + 1;
+			*addrp = block_num;
 			for (i = 0; i < 16; i++)
 				packet.nonce[i] = i;
 		}
-		*(u32 *) (packet.data) = addr;
+		addrp = (u32 *)(packet.data);
+		*addrp = addr;
 		packet.address = start_blk;
 #ifdef USE_MMC0
 		emmc_rpmb_commands(dev_num, &packet);
@@ -1193,8 +1197,7 @@ int do_rpmb(int argc, const cmd_args *argv)
 
 void rpmb_key_programming(void)
 {
-	//char *argv[7] = {NULL, NULL, NULL, NULL, NULL, NULL, NULL};
-	cmd_args argv[7] = {NULL, NULL, NULL, NULL, NULL, NULL, NULL};
+	cmd_args argv[7];
 	int ret;
 
 	/* Read write counter */
@@ -1260,7 +1263,7 @@ static int rpmb_get_nonce(char *output_data)
 
 	memset(nonce, 0, NONCE_SIZE);
 
-	random_ctx.output = nonce;
+	random_ctx.output = (u64)nonce;
 	random_ctx.len = NONCE_SIZE;
 
 	do {
@@ -1298,6 +1301,8 @@ static int rpmb_read_block(int addr, int blkcnt, u8 *buf)
 	int block;
 	int i;
 	int ret;
+	uint64_t temp;
+	uint32_t *addrp = NULL;
 	struct rpmb_packet packet;
 
 	for(block = 0 ; block < blkcnt ; block++) {
@@ -1318,7 +1323,9 @@ static int rpmb_read_block(int addr, int blkcnt, u8 *buf)
 		}
 #endif
 
-		*(uint32_t *)(packet.data) = (uint32_t)(buf + (RPMB_BLOCK_SIZE * block));
+		temp = (uint64_t)buf;
+		addrp = (uint32_t *)(packet.data);
+		*addrp = (uint32_t)(temp + (RPMB_BLOCK_SIZE * block));
 
 		packet.address = addr++;
 
@@ -1339,346 +1346,350 @@ static int rpmb_read_block(int addr, int blkcnt, u8 *buf)
 
 static int rpmb_write_block(int addr, int blkcnt, u8 *buf)
 {
-        int block;
-        int i;
-        int ret;
-        uint32_t wc;
-        struct rpmb_packet packet;
+	int block;
+	int i;
+	int ret;
+	uint64_t temp;
+	uint32_t *addrp;
+	uint32_t wc;
+	struct rpmb_packet packet;
 
-        memset((void *)&packet, 0, 512);
-        for (i = 0 ; i < 16 ; i++)
-                packet.nonce[i] = i;
+	memset((void *)&packet, 0, 512);
+	for (i = 0 ; i < 16 ; i++)
+		packet.nonce[i] = i;
 
-        packet.request = 0x02; // Read Write Counter
+	packet.request = 0x02; // Read Write Counter
 #ifdef USE_MMC0
-        ret = emmc_rpmb_commands(0, &packet);
+	ret = emmc_rpmb_commands(0, &packet);
 #else
-        ret = ufs_rpmb_commands(0, &packet);
+	ret = ufs_rpmb_commands(0, &packet);
 #endif
-        if (ret != RV_SUCCESS) {
-                printf("RPMB : fail to read write coutner !!!\n");
-                return ret;
-        }
+	if (ret != RV_SUCCESS) {
+		printf("RPMB : fail to read write coutner !!!\n");
+		return ret;
+	}
 
-        wc = packet.write_counter;
+	wc = packet.write_counter;
 
-        for (block = 0 ; block < blkcnt ; block++) {
-                memset((void *)&packet, 0, 512);
+	for (block = 0 ; block < blkcnt ; block++) {
+		memset((void *)&packet, 0, 512);
 
-                packet.request = 0x03; // Write
-                packet.count = 1;
-                packet.write_counter = wc++;
+		packet.request = 0x03; // Write
+		packet.count = 1;
+		packet.write_counter = wc++;
 
-                *(uint32_t *)(packet.data) = (uint32_t)(buf + (RPMB_BLOCK_SIZE * block));
-                packet.address = addr++;
+		temp = (uint64_t)buf;
+		addrp = (uint32_t *)(packet.data);
+		*addrp = (uint32_t)(temp + (RPMB_BLOCK_SIZE * block));
+		packet.address = addr++;
 
 #ifdef USE_MMC0
-                ret = emmc_rpmb_commands(0, &packet);
+		ret = emmc_rpmb_commands(0, &packet);
 #else
-                ret = ufs_rpmb_commands(0, &packet);
+		ret = ufs_rpmb_commands(0, &packet);
 #endif
 
-                if (ret != RV_SUCCESS) {
-                        printf("RPMB: write block (%d) fail !!!\n", packet.address);
-                        return ret;
-                }
+		if (ret != RV_SUCCESS) {
+			printf("RPMB: write block (%d) fail !!!\n", packet.address);
+			return ret;
+		}
 
-        }
+	}
 
-        return RV_SUCCESS;
+	return RV_SUCCESS;
 }
 
 static int rpmb_init_table(void)
 {
-        int i;
-        int ret;
-        u8 buf[RPMB_BLOCK_SIZE];
-        u32 addr, addr_base;
-        struct boot_header *header;
+	int i;
+	int ret;
+	u8 buf[RPMB_BLOCK_SIZE];
+	u32 addr, addr_base;
+	struct boot_header *header;
 
-        memset((void *)buf, 0, RPMB_BLOCK_SIZE);
+	memset((void *)buf, 0, RPMB_BLOCK_SIZE);
 
-        header = (struct boot_header*)buf;
-        header->magic = BOOT_MAGIC;
-        header->ri_block_base = BOOT_RI_TABLE_BLOCK;
-        header->ri_block_cnt = BOOT_RI_TABLE_BLOCK_CNT;
+	header = (struct boot_header*)buf;
+	header->magic = BOOT_MAGIC;
+	header->ri_block_base = BOOT_RI_TABLE_BLOCK;
+	header->ri_block_cnt = BOOT_RI_TABLE_BLOCK_CNT;
 	header->persist_block_base = PERSIST_DATA_BLOCK;
 	header->persist_block_cnt =  PERSIST_DATA_BLOCK_CNT;
 
-        addr_base = RPMB_BLOCK_PER_PARTITION * (BOOT_RI_PARTITION - 1);
+	addr_base = RPMB_BLOCK_PER_PARTITION * (BOOT_RI_PARTITION - 1);
 
-        ret = rpmb_write_block(addr_base, 1, buf);
+	ret = rpmb_write_block(addr_base, 1, buf);
 
-        if (ret) {
-                printf("RPMB : Header block write error!!!\n");
-                return ret;
-        }
+	if (ret) {
+		printf("RPMB : Header block write error!!!\n");
+		return ret;
+	}
 
-        memcpy((void *)&bootHeader, buf, sizeof(struct boot_header));
+	memcpy((void *)&bootHeader, buf, sizeof(struct boot_header));
 
-        memset((void *)buf, 0, RPMB_BLOCK_SIZE);
+	memset((void *)buf, 0, RPMB_BLOCK_SIZE);
 
-        addr = addr_base + BOOT_RI_TABLE_BLOCK;
-        for (i = 0 ; i < BOOT_RI_TABLE_BLOCK_CNT ; i++) {
-                addr = addr + i;
-                ret = rpmb_write_block(addr, 1, buf);
-                if (ret) {
-                        printf("RPMB : Rollback Index #%d init fail!!!\n", i+1);
-                        return ret;
-                }
+	addr = addr_base + BOOT_RI_TABLE_BLOCK;
+	for (i = 0 ; i < BOOT_RI_TABLE_BLOCK_CNT ; i++) {
+		addr = addr + i;
+		ret = rpmb_write_block(addr, 1, buf);
+		if (ret) {
+			printf("RPMB : Rollback Index #%d init fail!!!\n", i+1);
+			return ret;
+		}
 
-        }
+	}
 
-        addr = addr_base + PERSIST_DATA_BLOCK;
-        for (i = 0 ; i < PERSIST_DATA_BLOCK_CNT ; i++) {
-                addr = addr + i;
-                ret = rpmb_write_block(addr, 1, buf);
-                if (ret) {
-                        printf("RPMB : Persistent Data Block #%d init fail!!!\n", i+1);
-                        return ret;
-                }
+	addr = addr_base + PERSIST_DATA_BLOCK;
+	for (i = 0 ; i < PERSIST_DATA_BLOCK_CNT ; i++) {
+		addr = addr + i;
+		ret = rpmb_write_block(addr, 1, buf);
+		if (ret) {
+			printf("RPMB : Persistent Data Block #%d init fail!!!\n", i+1);
+			return ret;
+		}
 
-        }
+	}
 
-        return RV_SUCCESS;
+	return RV_SUCCESS;
 }
 
 static int rpmb_ri_check_magic(void)
 {
-        int ret;
-        u8 buf[RPMB_BLOCK_SIZE];
-        uint32_t  addr;
-        struct boot_header *header;
+	int ret;
+	u8 buf[RPMB_BLOCK_SIZE];
+	uint32_t  addr;
+	struct boot_header *header;
 
-        addr = RPMB_BLOCK_PER_PARTITION * (BOOT_RI_PARTITION - 1);
+	addr = RPMB_BLOCK_PER_PARTITION * (BOOT_RI_PARTITION - 1);
 
-        ret = rpmb_read_block(addr, 1, buf);
+	ret = rpmb_read_block(addr, 1, buf);
 
-        if (ret) {
-                printf("RPMB Header block read error\n");
-                return ret;
-        }
+	if (ret) {
+		printf("RPMB Header block read error\n");
+		return ret;
+	}
 
-        header = (struct boot_header *)buf;
+	header = (struct boot_header *)buf;
 
-        if (header->magic != BOOT_MAGIC) {
-                ret = rpmb_init_table();
-                if (ret) {
-                        printf("RPMB : table init fail\n");
-                        return ret;
-                }
-        } else {
-                memcpy((void *)&bootHeader, header, sizeof(struct boot_header));
-        }
+	if (header->magic != BOOT_MAGIC) {
+		ret = rpmb_init_table();
+		if (ret) {
+			printf("RPMB : table init fail\n");
+			return ret;
+		}
+	} else {
+		memcpy((void *)&bootHeader, header, sizeof(struct boot_header));
+	}
 
-        table_init_state = 1;
-        return RV_SUCCESS;
+	table_init_state = 1;
+	return RV_SUCCESS;
 }
 
 static void rpmb_display_rollback_index(void)
 {
-        int i;
-        u8 *buf;
+	u32 i;
+	u8 *buf;
 
-        buf = (u8 *)rollbackIndex;
+	buf = (u8 *)rollbackIndex;
 
-        for (i = 1 ; i <= (bootHeader.ri_block_cnt * RPMB_BLOCK_SIZE) ; i++) {
-                printf("%02X ", buf[i-1]);
-                if (i % 16 == 0) printf("\n");
-                if (i % RPMB_BLOCK_SIZE == 0) printf("\n");
-        }
-        printf("\n");
+	for (i = 1 ; i <= (bootHeader.ri_block_cnt * RPMB_BLOCK_SIZE) ; i++) {
+		printf("%02X ", buf[i-1]);
+		if (i % 16 == 0) printf("\n");
+		if (i % RPMB_BLOCK_SIZE == 0) printf("\n");
+	}
+	printf("\n");
 }
 
 static void rpmb_display_persistent_data(void)
 {
-        int i, j;
+	int i, j;
 
-        for (i = 0 ; i < PERSIST_DATA_CNT ; i++) {
-                if (persistentData[i].len != 0) {
-                        printf("KEY%d : %s\n", i, persistentData[i].key);
-                        printf("VAL%d : ", i);
-                        for (j = 1 ; j <= PERSIST_VALUE_LEN ; j++) {
-                                printf("%02X ", persistentData[i].value[j-1]);
-                                if (j % 16 == 0)
-                                        printf("\n       ");
-                        }
-                        printf("\n");
-                }
-        }
-        printf("\n");
+	for (i = 0 ; i < PERSIST_DATA_CNT ; i++) {
+		if (persistentData[i].len != 0) {
+			printf("KEY%d : %s\n", i, persistentData[i].key);
+			printf("VAL%d : ", i);
+			for (j = 1 ; j <= PERSIST_VALUE_LEN ; j++) {
+				printf("%02X ", persistentData[i].value[j-1]);
+				if (j % 16 == 0)
+					printf("\n       ");
+			}
+			printf("\n");
+		}
+	}
+	printf("\n");
 }
 
 static int rpmb_update_table_block(uint32_t block, u8 *buf)
 {
-        int ret;
-        u32 addr;
+	int ret;
+	u32 addr;
 
-        // Check If rollback index table is initilaized
-        if (!table_init_state)
-                return RV_RPMB_RI_TABLE_NOT_INITIALIZED;
+	// Check If rollback index table is initilaized
+	if (!table_init_state)
+		return RV_RPMB_RI_TABLE_NOT_INITIALIZED;
 
-        addr = RPMB_BLOCK_PER_PARTITION * (BOOT_RI_PARTITION - 1);
-        addr = addr + block;
+	addr = RPMB_BLOCK_PER_PARTITION * (BOOT_RI_PARTITION - 1);
+	addr = addr + block;
 
-        ret = rpmb_write_block(addr, 1, buf);
+	ret = rpmb_write_block(addr, 1, buf);
 
-        if (ret) {
-                printf("RPMB: Update block #%d fail\n", addr);
-                return ret;
-        }
+	if (ret) {
+		printf("RPMB: Update block #%d fail\n", addr);
+		return ret;
+	}
 
-        return RV_SUCCESS;
+	return RV_SUCCESS;
 }
 
 static int rpmb_load_rollback_index(void)
 {
-        int i;
-        int ret;
-        u32 addr;
-        u8 *buf;
+	int i;
+	int ret;
+	u32 addr;
+	u8 *buf;
 
-        addr = RPMB_BLOCK_PER_PARTITION * (BOOT_RI_PARTITION - 1);
-        addr = addr + BOOT_RI_TABLE_BLOCK;
+	addr = RPMB_BLOCK_PER_PARTITION * (BOOT_RI_PARTITION - 1);
+	addr = addr + BOOT_RI_TABLE_BLOCK;
 
-        for (i = 0 ; i < BOOT_RI_TABLE_BLOCK_CNT ; i++) {
-                buf = (u8 *)&rollbackIndex[(RPMB_BLOCK_SIZE / sizeof(uint64_t)) * i];
+	for (i = 0 ; i < BOOT_RI_TABLE_BLOCK_CNT ; i++) {
+		buf = (u8 *)&rollbackIndex[(RPMB_BLOCK_SIZE / sizeof(uint64_t)) * i];
 
-                ret = rpmb_read_block(addr + i, 1, buf);
-                if (ret) {
-                        printf("RPMB:RI blk #%d rd err\n", i + 1);
-                        table_init_state = 0;
-                        return ret;
-                }
-        }
+		ret = rpmb_read_block(addr + i, 1, buf);
+		if (ret) {
+			printf("RPMB:RI blk #%d rd err\n", i + 1);
+			table_init_state = 0;
+			return ret;
+		}
+	}
 
-        rpmb_display_rollback_index();
-        return RV_SUCCESS;
+	rpmb_display_rollback_index();
+	return RV_SUCCESS;
 }
 
 static int rpmb_load_persistent_data(void)
 {
-        int i;
-        int ret, data_len;
-        u32 addr;
-        u8 *buf;
+	int i;
+	int ret;
+	u32 addr;
+	u8 *buf;
 
-        addr = RPMB_BLOCK_PER_PARTITION * (BOOT_RI_PARTITION - 1);
-        addr = addr + PERSIST_DATA_BLOCK;
+	addr = RPMB_BLOCK_PER_PARTITION * (BOOT_RI_PARTITION - 1);
+	addr = addr + PERSIST_DATA_BLOCK;
 
-        for (i = 0 ; i < PERSIST_DATA_BLOCK_CNT ; i++) {
-                buf = (u8 *)&persistentData[(RPMB_BLOCK_SIZE / PERSIST_DATA_LEN) * i];
+	for (i = 0 ; i < PERSIST_DATA_BLOCK_CNT ; i++) {
+		buf = (u8 *)&persistentData[(RPMB_BLOCK_SIZE / PERSIST_DATA_LEN) * i];
 
-                ret = rpmb_read_block(addr + i, 1, buf);
-                if (ret) {
-                        printf("RPMB:Perst blk #%d rd err\n", i + 1);
-                        table_init_state = 0;
-                        return ret;
-                }
-        }
+		ret = rpmb_read_block(addr + i, 1, buf);
+		if (ret) {
+			printf("RPMB:Perst blk #%d rd err\n", i + 1);
+			table_init_state = 0;
+			return ret;
+		}
+	}
 
-        rpmb_display_persistent_data();
-        return RV_SUCCESS;
+	rpmb_display_persistent_data();
+	return RV_SUCCESS;
 }
 
 int rpmb_load_boot_table(void)
 {
-        int ret;
+	int ret;
 
-        ret = rpmb_ri_check_magic();
+	ret = rpmb_ri_check_magic();
 
-        if (ret) {
-                printf("RPMB : RI check magic fail\n");
-                table_init_state = 0;
-                return ret;
-        }
+	if (ret) {
+		printf("RPMB : RI check magic fail\n");
+		table_init_state = 0;
+		return ret;
+	}
 
-        ret = rpmb_load_rollback_index();
-        if (ret) {
-                printf("RPMB : RI table load fail\n");
-                table_init_state = 0;
-                return ret;
-        }
+	ret = rpmb_load_rollback_index();
+	if (ret) {
+		printf("RPMB : RI table load fail\n");
+		table_init_state = 0;
+		return ret;
+	}
 
-        ret = rpmb_load_persistent_data();
-        if (ret) {
-                printf("RPMB : Perst data load fail\n");
-                table_init_state = 0;
-                return ret;
-        }
+	ret = rpmb_load_persistent_data();
+	if (ret) {
+		printf("RPMB : Perst data load fail\n");
+		table_init_state = 0;
+		return ret;
+	}
 
-        return RV_SUCCESS;
+	return RV_SUCCESS;
 }
 
 int rpmb_get_rollback_index(size_t loc, uint64_t *rollback_index)
 {
-        if (!rollback_index)
-                return RV_RPMB_PARAM_NULL_POINTER;
+	if (!rollback_index)
+		return RV_RPMB_PARAM_NULL_POINTER;
 
-        if (loc >= BOOT_RI_TABLE_SIZE)
-                return RV_RPMB_INVALID_ROLLBACK_INDEX;
+	if (loc >= BOOT_RI_TABLE_SIZE)
+		return RV_RPMB_INVALID_ROLLBACK_INDEX;
 
-        if (table_init_state == 0) {
-                printf("RPMB: table not initialized\n");
-                return RV_RPMB_RI_TABLE_NOT_INITIALIZED;
-        }
+	if (table_init_state == 0) {
+		printf("RPMB: table not initialized\n");
+		return RV_RPMB_RI_TABLE_NOT_INITIALIZED;
+	}
 
-        *rollback_index = rollbackIndex[loc];
+	*rollback_index = rollbackIndex[loc];
 
-        return RV_SUCCESS;
+	return RV_SUCCESS;
 }
 
 int rpmb_set_rollback_index(size_t loc, uint64_t rollback_index)
 {
-        uint32_t block;
-        int ret;
-        u8 *buf;
+	uint32_t block;
+	int ret;
+	u8 *buf;
 
-        if (loc >= BOOT_RI_TABLE_SIZE)
-                return RV_RPMB_INVALID_ROLLBACK_INDEX;
+	if (loc >= BOOT_RI_TABLE_SIZE)
+		return RV_RPMB_INVALID_ROLLBACK_INDEX;
 
-        if (table_init_state == 0)
-                return RV_RPMB_RI_TABLE_NOT_INITIALIZED;
+	if (table_init_state == 0)
+		return RV_RPMB_RI_TABLE_NOT_INITIALIZED;
 
-        rollbackIndex[loc] = rollback_index;
+	rollbackIndex[loc] = rollback_index;
 
 
-        block = (uint32_t)(loc / (RPMB_BLOCK_SIZE / sizeof(uint64_t)));
+	block = (uint32_t)(loc / (RPMB_BLOCK_SIZE / sizeof(uint64_t)));
 
-        buf = (u8 *)rollbackIndex + (RPMB_BLOCK_SIZE * block);
+	buf = (u8 *)rollbackIndex + (RPMB_BLOCK_SIZE * block);
 
-        ret = rpmb_update_table_block(BOOT_RI_TABLE_BLOCK + block, buf);
+	ret = rpmb_update_table_block(BOOT_RI_TABLE_BLOCK + block, buf);
 
-        if (ret) {
-                printf("RPMB: set RI #%d fail\n", loc);
-                return ret;
-        }
+	if (ret) {
+		printf("RPMB: set RI #%zd fail\n", loc);
+		return ret;
+	}
 
-        return RV_SUCCESS;
+	return RV_SUCCESS;
 }
 
 static int rpmb_search_persistent_key(const char *name)
 {
-        int i;
+	int i;
 
-        for (i = 0 ; i < PERSIST_DATA_CNT ; i++) {
-                if (strcmp(name, (char *)persistentData[i].key) == 0)
-                        return i;
-        }
+	for (i = 0 ; i < PERSIST_DATA_CNT ; i++) {
+		if (strcmp(name, (char *)persistentData[i].key) == 0)
+			return i;
+	}
 
-        return -1;
+	return -1;
 }
 
 static int rpmb_get_empty_persistent_data(void)
 {
-        int i;
+	int i;
 
-        for (i = 0 ; i < PERSIST_DATA_CNT ; i++) {
-                if (persistentData[i].key[0] == '\0')
-                        return i;
-        }
+	for (i = 0 ; i < PERSIST_DATA_CNT ; i++) {
+		if (persistentData[i].key[0] == '\0')
+			return i;
+	}
 
-        return -1;
+	return -1;
 }
 
 int rpmb_read_persistent_value(const char *name,
@@ -1686,90 +1697,90 @@ int rpmb_read_persistent_value(const char *name,
                 uint8_t *out_buffer,
                 size_t *out_num_bytes_read)
 {
-        int index;
+	int index;
 
-        if (!name)
-                return RV_RPMB_PARAM_NULL_POINTER;
+	if (!name)
+		return RV_RPMB_PARAM_NULL_POINTER;
 
-        if (buffer_size > PERSIST_VALUE_LEN)
-                return RV_RPMB_INVALID_PARAM;
+	if (buffer_size > PERSIST_VALUE_LEN)
+		return RV_RPMB_INVALID_PARAM;
 
-        if (!out_buffer)
-                return RV_RPMB_PARAM_NULL_POINTER;
+	if (!out_buffer)
+		return RV_RPMB_PARAM_NULL_POINTER;
 
-        if (!out_num_bytes_read)
-                return RV_RPMB_PARAM_NULL_POINTER;
+	if (!out_num_bytes_read)
+		return RV_RPMB_PARAM_NULL_POINTER;
 
-        index = rpmb_search_persistent_key(name);
+	index = rpmb_search_persistent_key(name);
 
-        if (index < 0) {
-                out_num_bytes_read = 0;
-                return RV_RPMB_PERSIST_NAME_NOT_FOUND;
-        }
+	if (index < 0) {
+		out_num_bytes_read = 0;
+		return RV_RPMB_PERSIST_NAME_NOT_FOUND;
+	}
 
-        if (buffer_size < persistentData[index].len) {
-                *out_num_bytes_read = persistentData[index].len;
-                return RV_RPMB_INVALID_PERSIST_DATA_SIZE;
-        }
+	if (buffer_size < persistentData[index].len) {
+		*out_num_bytes_read = persistentData[index].len;
+		return RV_RPMB_INVALID_PERSIST_DATA_SIZE;
+	}
 
-        *out_num_bytes_read = persistentData[index].len;
+	*out_num_bytes_read = persistentData[index].len;
 
-        memcpy((void *)out_buffer, persistentData[index].value,
-                        persistentData[index].len);
+	memcpy((void *)out_buffer, persistentData[index].value,
+			persistentData[index].len);
 
-        return RV_SUCCESS;
+	return RV_SUCCESS;
 }
 
 int rpmb_write_persistent_value(const char *name,
                 size_t value_size,
                 const uint8_t *value)
 {
-        int index;
-        int ret;
-        u32 block;
-        u8 *buf;
+	int index;
+	int ret;
+	u32 block;
+	u8 *buf;
 
-        if (!table_init_state)
-                return RV_RPMB_RI_TABLE_NOT_INITIALIZED;
+	if (!table_init_state)
+		return RV_RPMB_RI_TABLE_NOT_INITIALIZED;
 
-        if (!name)
-                return RV_RPMB_PARAM_NULL_POINTER;
+	if (!name)
+		return RV_RPMB_PARAM_NULL_POINTER;
 
-        if (!value)
-                return RV_RPMB_PARAM_NULL_POINTER;
+	if (!value)
+		return RV_RPMB_PARAM_NULL_POINTER;
 
-        if (!value_size)
-                return RV_RPMB_INVALID_PARAM;
+	if (!value_size)
+		return RV_RPMB_INVALID_PARAM;
 
-        index = rpmb_search_persistent_key(name);
+	index = rpmb_search_persistent_key(name);
 
-        if (index < 0)
-                index = rpmb_get_empty_persistent_data();
+	if (index < 0)
+		index = rpmb_get_empty_persistent_data();
 
-        if (index < 0)
-                return RV_RPMB_PERSIST_NAME_NOT_FOUND;
+	if (index < 0)
+		return RV_RPMB_PERSIST_NAME_NOT_FOUND;
 
-        if (strlen(name) >= PERSIST_KEY_LEN)
-                return RV_RPMB_INVALID_KEY_LEN;
+	if (strlen(name) >= PERSIST_KEY_LEN)
+		return RV_RPMB_INVALID_KEY_LEN;
 
-        if (value_size > PERSIST_VALUE_LEN)
-                return RV_RPMB_INVALID_PERSIST_DATA_SIZE;
+	if (value_size > PERSIST_VALUE_LEN)
+		return RV_RPMB_INVALID_PERSIST_DATA_SIZE;
 
-        strncpy((char *)persistentData[index].key, (char *)name, PERSIST_KEY_LEN - 1);
-        persistentData[index].len = value_size;
-        memcpy((void *)persistentData[index].value, value, value_size);
+	strncpy((char *)persistentData[index].key, (char *)name, PERSIST_KEY_LEN - 1);
+	persistentData[index].len = value_size;
+	memcpy((void *)persistentData[index].value, value, value_size);
 
 
-        block = index / (RPMB_BLOCK_SIZE / PERSIST_DATA_LEN);
-        buf = (u8 *)persistentData + (RPMB_BLOCK_SIZE * block);
+	block = index / (RPMB_BLOCK_SIZE / PERSIST_DATA_LEN);
+	buf = (u8 *)persistentData + (RPMB_BLOCK_SIZE * block);
 
-        ret = rpmb_update_table_block(PERSIST_DATA_BLOCK + block, buf);
+	ret = rpmb_update_table_block(PERSIST_DATA_BLOCK + block, buf);
 
-        if (ret) {
-                printf("RPMB: Perst data blk(%d) update fail\n", block);
-                return ret;
-        }
+	if (ret) {
+		printf("RPMB: Perst data blk(%d) update fail\n", block);
+		return ret;
+	}
 
-        return RV_SUCCESS;
+	return RV_SUCCESS;
 }
 
