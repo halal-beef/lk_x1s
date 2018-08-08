@@ -20,7 +20,7 @@ void display_tmu_info(void)
 	unsigned int tmu_probe_num = EXYNOS9610_TMU_TOP_PROBE;
 	unsigned int ps_hold_control;
 
-	unsigned int trim, ctrl, con1, avgc, offset, shift;
+	unsigned int trim, ctrl, con1, avgc, offset;
 	unsigned int is_2point_calib;
 	unsigned int t_buf_vref_sel;
 	unsigned int t_buf_slope_sel;
