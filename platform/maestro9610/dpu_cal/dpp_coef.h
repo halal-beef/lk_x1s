@@ -305,4 +305,4 @@ const u16 csc_3x3_t[4][3][3] = {
 	/* CSC_ID = 2 : Add if necessary */
 };
 
-#endif DPP_COEF_H_
+#endif /* DPP_COEF_H_ */

@@ -198,9 +198,9 @@ struct dsim_resources {
 	int lcd_power[2];
 	int lcd_reset;
 	int irq;
-	size_t regs;
-	size_t ss_regs;
-	size_t phy_regs;
+	u32 regs;
+	u32 ss_regs;
+	u32 phy_regs;
 };
 
 struct dsim_device {
@@ -219,7 +219,7 @@ struct dsim_device {
 	int total_underrun_cnt;
 
 	struct dphy_timing_value timing;
-	size_t reg_base;
+	u32 reg_base;
 	enum board_gpio_type board_type;
 	struct exynos_display_config *config_ops;
 };

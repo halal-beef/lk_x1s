@@ -1089,7 +1089,7 @@ int dpp_reg_set_format(u32 id, struct dpp_params_info *p)
 
 void dpp_reg_set_buf_addr(u32 id, struct dpp_params_info *p)
 {
-	dpp_dbg("dpp id : %d, y : %llu, cb : %llu, cr : %llu\n", id,
+	dpp_dbg("dpp id : %d, y : %u, cb : %u, cr : %u\n", id,
 			p->addr[0], p->addr[1], p->addr[2]);
 
 	/* For AFBC stream, BASE_ADDR_C must be same with BASE_ADDR_Y */

@@ -34,7 +34,6 @@
 int dsim_log_level = 6;
 
 struct dsim_device *dsim0_for_decon;
-EXPORT_SYMBOL(dsim0_for_decon);
 
 static int dsim_get_interrupt_src(struct dsim_device *dsim, u32 reg_id, unsigned int timeout)
 {
@@ -50,7 +49,7 @@ static int dsim_get_interrupt_src(struct dsim_device *dsim, u32 reg_id, unsigned
 	} while (timeout);
 
 	if (!timeout) {
-		dsim_err("timeout!! wait for DSIM interrupt (0x%lx)\n", reg);
+		dsim_err("timeout!! wait for DSIM interrupt (0x%x)\n", reg);
 		return -EBUSY;
 	}
 
@@ -188,7 +187,8 @@ int dsim_write_data(struct dsim_device *dsim, u32 id, unsigned long d0, u32 d1)
 int dsim_read_data(struct dsim_device *dsim, u32 id, u32 addr, u32 cnt, u8 *buf)
 {
 	u32 rx_fifo, rx_size = 0;
-	int i, j, ret = 0;
+	u32 i, j;
+	int ret = 0;
 	u32 rx_fifo_depth = DSIM_RX_FIFO_MAX_DEPTH;
 
 	if (dsim->state != DSIM_STATE_ON) {
@@ -207,7 +207,7 @@ int dsim_read_data(struct dsim_device *dsim, u32 id, u32 addr, u32 cnt, u8 *buf)
 
 	if (dsim_get_interrupt_src(dsim, DSIM_INTSRC_RX_DATA_DONE,
 				MIPI_CMD_TIMEOUT) < 0) {
-		dsim_err("MIPI DSIM (id=%d) read Timeout! 0x%lX\n",
+		dsim_err("MIPI DSIM (id=%d) read Timeout! 0x%X\n",
 				id, addr);
 		return -ETIMEDOUT;
 	}
@@ -312,7 +312,7 @@ static int dsim_set_panel_power(struct dsim_device *dsim, u32 on)
 
 static int dsim_get_data_lanes(struct dsim_device *dsim)
 {
-	int i;
+	unsigned int i;
 
 	if (dsim->data_lane_cnt > MAX_DSIM_DATALANE_CNT) {
 		dsim_err("%d data lane couldn't be supported\n",
@@ -353,7 +353,7 @@ void dpu_sysreg_set_dphy(u32 id, u32 sysreg)
 	writel(val, sysreg + DISP_DPU_MIPI_PHY_CON);
 }
 
-void dpu_sysreg_dphy_reset(void __iomem *sysreg, u32 dsim_id, u32 rst)
+void dpu_sysreg_dphy_reset(u32 sysreg, u32 dsim_id, u32 rst)
 {
 	u32 old = readl(sysreg + DISP_DPU_MIPI_PHY_CON);
 	u32 val = rst ? ~0 : 0;
@@ -367,7 +367,6 @@ static int dsim_enable(struct dsim_device *dsim)
 {
 	struct dsim_clks clks = {0};
 	int ret = 0;
-	enum dsim_state state = dsim->state;
 
 	if (dsim->state == DSIM_STATE_ON)
 		return 0;
@@ -420,7 +419,6 @@ static int dsim_enable(struct dsim_device *dsim)
 int dsim_probe(u32 dev_id)
 {
 	int ret = 0;
-	struct dsim_clks clks = {0};
 	struct dsim_device *dsim = NULL;
 
 	dsim = calloc(1, sizeof(struct dsim_device));
@@ -470,10 +468,11 @@ int dsim_probe(u32 dev_id)
 
 	return 0;
 
+err:
+	dsim_err("dsim probe failed.\n");
 err_dt:
 	free(dsim);
 	dsim_err("dsim probe failed.\n");
-err:
-	dsim_err("dsim probe failed.\n");
+
 	return ret;
 }

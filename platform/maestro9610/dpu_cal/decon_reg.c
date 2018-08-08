@@ -444,18 +444,18 @@ void decon_reg_config_data_path_size(u32 id,
 	u32 width, u32 height, u32 overlap_w,
 	struct decon_dsc *p, struct decon_param *param)
 {
-	u32 dual_dsc = 0;
-	u32 dual_dsi = 0;
-	u32 dsim_if0 = 1;
-	u32 dsim_if1 = 0;
+	//u32 dual_dsc = 0;
+	//u32 dual_dsi = 0;
+	//u32 dsim_if0 = 1;
+	//u32 dsim_if1 = 0;
 	u32 width_f;
 	u32 sw, ds_en;
 
-	dual_dsc = decon_reg_get_data_path_cfg(id, PATH_CON_ID_DUAL_DSC);
-	dsim_if0 = decon_reg_get_data_path_cfg(id, PATH_CON_ID_DSIM_IF0);
-	dsim_if1 = decon_reg_get_data_path_cfg(id, PATH_CON_ID_DSIM_IF1);
-	if (dsim_if0 && dsim_if1)
-		dual_dsi = 1;
+	//dual_dsc = decon_reg_get_data_path_cfg(id, PATH_CON_ID_DUAL_DSC);
+	//dsim_if0 = decon_reg_get_data_path_cfg(id, PATH_CON_ID_DSIM_IF0);
+	//dsim_if1 = decon_reg_get_data_path_cfg(id, PATH_CON_ID_DSIM_IF1);
+	//if (dsim_if0 && dsim_if1)
+	//	dual_dsi = 1;
 
 /* TBD */
 #if 0
@@ -1110,8 +1110,10 @@ void dsc_calc_pps_info(struct decon_lcd *lcd_info, u32 dscc_en,
 	u32 slice_width_byte_unit, comp_slice_width_byte_unit;
 	u32 comp_slice_width_pixel_unit;
 	u32 overlap_w = 0;
-	u32 dsc_enc0_w = 0, dsc_enc0_h;
-	u32 dsc_enc1_w = 0, dsc_enc1_h;
+	u32 dsc_enc0_w = 0;
+	//u32 dsc_enc0_h = 0;
+	u32 dsc_enc1_w = 0;
+	//u32 dsc_enc1_h = 0;
 	u32 i, j;
 
 	width = lcd_info->xres;
@@ -1178,17 +1180,17 @@ void dsc_calc_pps_info(struct decon_lcd *lcd_info, u32 dscc_en,
 
 	if (i == 0 && j == 0) {
 		dsc_enc0_w = comp_slice_width_pixel_unit;
-		dsc_enc0_h = pic_height;
+		//dsc_enc0_h = pic_height;
 		if (dscc_en) {
 			dsc_enc1_w = comp_slice_width_pixel_unit;
-			dsc_enc1_h = pic_height;
+			//dsc_enc1_h = pic_height;
 		}
 	} else if (i == 0 && j != 0) {
 		dsc_enc0_w = comp_slice_width_pixel_unit + 1;
-		dsc_enc0_h = pic_height;
+		//dsc_enc0_h = pic_height;
 		if (dscc_en) {
 			dsc_enc1_w = comp_slice_width_pixel_unit + 1;
-			dsc_enc1_h = pic_height;
+			//dsc_enc1_h = pic_height;
 		}
 	} else if (i != 0) {
 		while (1) {
@@ -1198,10 +1200,10 @@ void dsc_calc_pps_info(struct decon_lcd *lcd_info, u32 dscc_en,
 				break;
 		}
 		dsc_enc0_w = comp_slice_width_pixel_unit;
-		dsc_enc0_h = pic_height;
+		//dsc_enc0_h = pic_height;
 		if (dscc_en) {
 			dsc_enc1_w = comp_slice_width_pixel_unit;
-			dsc_enc1_h = pic_height;
+			//dsc_enc1_h = pic_height;
 		}
 	}
 

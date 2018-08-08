@@ -27,7 +27,7 @@
 #include <dev/dpu/lcd_ctrl.h>
 #include <target/dpu_config.h>
 
-static u32 x_pos = 0;
+//static u32 x_pos = 0;
 static u32 y_pos = 0;
 #define MAX_NUM_CHAR_PER_LINE		(LCD_WIDTH / (FONT_X + 1))
 #define ALPHANUMERIC_OFFSET		32
@@ -43,7 +43,7 @@ static int fill_fb_one_char(u32 *fb_buf, u32 x_pos, u32 fb_width, char ascii,
 	u32 *fb_ptr;
 
 	/* From Null(0x00) to '~'(0x7E) */
-	if (ascii < 32 | ascii > 126)
+	if (ascii < 32 || ascii > 126)
 		return -1;
 
 	offset = LENGTH_OF_A_CHAR_ARRAY * (ascii - ALPHANUMERIC_OFFSET);
@@ -86,7 +86,7 @@ static int fill_fb_one_char(u32 *fb_buf, u32 x_pos, u32 fb_width, char ascii,
 
 static void initialize_font_fb(void)
 {
-	memset(CONFIG_DISPLAY_FONT_BASE_ADDRESS, 0, LCD_WIDTH * LCD_HEIGHT * 4);
+	memset((void *)CONFIG_DISPLAY_FONT_BASE_ADDRESS, 0, LCD_WIDTH * LCD_HEIGHT * 4);
 }
 
 /* Fill one line of the frame buffer with characters */
@@ -106,7 +106,7 @@ static int _fill_fb_string(u32 *fb_buf, u32 x_pos, u8 *str,
 	if (y_pos > lcd_info->yres) {
 		/* Rolling fb, y_pos and fb address reinit */
 		y_pos = 0;
-		fb_buf = CONFIG_DISPLAY_FONT_BASE_ADDRESS;
+		fb_buf = (u32 *)CONFIG_DISPLAY_FONT_BASE_ADDRESS;
 		initialize_font_fb();
 	}
 
@@ -151,14 +151,14 @@ int fill_fb_string(u32 *fb_buf, u32 x_pos, u8 *str, u32 font_color, u32 bg_color
 #if defined(CONFIG_EXYNOS_BOOTLOADER_DISPLAY) && defined(CONFIG_DISPLAY_DRAWFONT)
 #define PRINT_BUF_SIZE 384
 #define TOP_MARGIN	40
-extern u32 *win_fb0;
+extern u32 win_fb0;
 extern void decon_string_update(void);
 
 int print_lcd(u32 font_color, u32 bg_color, const char *fmt, ...)
 {
 	va_list args;
 	char printbuffer[PRINT_BUF_SIZE];
-
+	u64 ptr = win_fb0;
 	va_start(args, fmt);
 
 	/* For this to work, printbuffer must be larger than
@@ -167,7 +167,7 @@ int print_lcd(u32 font_color, u32 bg_color, const char *fmt, ...)
 	vsnprintf(printbuffer, sizeof(printbuffer), fmt, args);
 	va_end(args);
 
-	if (fill_fb_string(win_fb0, TOP_MARGIN,
+	if (fill_fb_string((u32 *)ptr, TOP_MARGIN,
 				(u8 *)printbuffer, font_color, bg_color)) {
 		printf("failed to print on lcd\n");
 		return -1;
@@ -180,7 +180,7 @@ int print_lcd_update(u32 font_color, u32 bg_color, const char *fmt, ...)
 {
 	va_list args;
 	char printbuffer[PRINT_BUF_SIZE];
-
+	u64 ptr = win_fb0;
 	va_start(args, fmt);
 
 	/* For this to work, printbuffer must be larger than
@@ -189,7 +189,7 @@ int print_lcd_update(u32 font_color, u32 bg_color, const char *fmt, ...)
 	vsnprintf(printbuffer, sizeof(printbuffer), fmt, args);
 	va_end(args);
 
-	if (fill_fb_string(win_fb0, TOP_MARGIN,
+	if (fill_fb_string((u32 *)ptr, TOP_MARGIN,
 				(u8 *)printbuffer, font_color, bg_color)) {
 		printf("failed to print on lcd\n");
 		return -1;

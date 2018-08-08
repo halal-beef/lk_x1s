@@ -46,8 +46,6 @@ extern struct decon_device *decon0_drvdata;
 extern struct dsim_device *dsim0_for_decon;
 extern int decon_log_level;
 
-#define VSYNC_TIMEOUT_MSEC	70
-
 #define DECON_MODULE_NAME	"exynos-decon"
 #define MAX_NAME_SIZE		32
 #define MAX_PLANE_CNT		3
@@ -431,7 +429,7 @@ struct decon_param {
 	struct decon_mode_info psr;
 	struct decon_lcd *lcd_info;
 	u32 nr_windows;
-	size_t disp_ss_regs;
+	u32 disp_ss_regs;
 };
 
 struct decon_window_regs {
@@ -583,7 +581,7 @@ struct decon_dt_info {
 
 struct decon_device {
 	int	id;
-	size_t sys_regs;
+	u32 sys_regs;
 	enum decon_state state;
 	struct decon_dt_info *dt;
 	//struct decon_dt_info dt;
@@ -652,17 +650,13 @@ static inline void dsc_write_mask(u32 dsc_id, u32 reg_id, u32 val, u32 mask)
 	dsc_write(dsc_id, reg_id, val);
 }
 
-static inline u32 sysreg_read(u32 id, u32 reg_id)
+inline u32 sysreg_read(u32 id, u32 reg_id)
 {
-	struct decon_device *decon = get_decon_drvdata(id);
-
 	return readl(DPU_SYSREG_BASE_ADDR + reg_id);
 }
 
-static inline void sysreg_write(u32 id, u32 reg_id, u32 val)
+inline void sysreg_write(u32 id, u32 reg_id, u32 val)
 {
-	struct decon_device *decon = get_decon_drvdata(id);
-
 	writel(val, DPU_SYSREG_BASE_ADDR + reg_id);
 }
 

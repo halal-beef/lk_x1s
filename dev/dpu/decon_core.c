@@ -32,11 +32,10 @@
 
 int decon_log_level = 6;
 struct decon_device *decon0_drvdata;
-EXPORT_SYMBOL(decon0_drvdata);
 extern struct dsim_device *dsim0_for_decon;
 
-unsigned int *win_fb0 = CONFIG_DISPLAY_FONT_BASE_ADDRESS;
-unsigned int *win_fb1 = CONFIG_DISPLAY_LOGO_BASE_ADDRESS;
+unsigned int win_fb0 = CONFIG_DISPLAY_FONT_BASE_ADDRESS;
+unsigned int win_fb1 = CONFIG_DISPLAY_LOGO_BASE_ADDRESS;
 
 /* ---------- CHECK FUNCTIONS ----------- */
 void decon_to_psr_info(struct decon_device *decon, struct decon_mode_info *psr)
@@ -120,7 +119,7 @@ void decon_show_buffer(struct decon_device *decon,
 {
 	struct decon_window_regs win_regs = {0};
 	struct decon_mode_info psr = {0};
-	struct decon_param p = {0};
+	struct decon_param p;
 
 	/* stop smmu before proceeding for buffer rendering */
 	/* TODO : make sysmmu ctrl to dpu io ctrl */
@@ -197,7 +196,7 @@ void decon_show_color_map(struct decon_device *decon,
 	decon_info("KMS ::::: color map!!!\n");
 	struct decon_window_regs win_regs = {0};
 	struct decon_mode_info psr = {0};
-	struct decon_param p = {0};
+	struct decon_param p;
 
 	decon_to_init_param(decon, &p);
 	decon_reg_init(decon->id, decon->dt->out_idx, &p);
