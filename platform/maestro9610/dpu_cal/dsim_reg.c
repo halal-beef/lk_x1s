@@ -1093,7 +1093,7 @@ void dsim_reg_get_num_of_slice(u32 id, u32 *num_of_slice)
 
 void dsim_reg_set_multi_slice(u32 id, struct decon_lcd *lcd_info)
 {
-	u32 multi_slice, val;
+	u32 multi_slice = 0, val;
 
 	/* if multi-slice(2~4 slices) DSC compression is used in video mode
 	 * MULTI_SLICE_PACKET configuration must be matched
@@ -1636,7 +1636,7 @@ static int dsim_reg_get_dphy_timing(u32 hs_clk, u32 esc_clk,
 		struct dphy_timing_value *t)
 {
 #if 1
-	int val;
+	u32 val;
 
 	val  = (dphy_timing[0][0] - hs_clk) / 10;
 
@@ -1886,7 +1886,7 @@ int dsim_reg_set_clocks(u32 id, struct dsim_clks *clks,
 	struct dsim_pll_param pll;
 	struct dphy_timing_value t;
 	int ret = 0;
-	u32 hsmode = 0;
+	//u32 hsmode = 0;
 
 	if (en) {
 		/*
@@ -1927,8 +1927,8 @@ int dsim_reg_set_clocks(u32 id, struct dsim_clks *clks,
 		dsim_dbg("escape clock divider is 0x%x\n", esc_div);
 		dsim_dbg("escape clock is %u MHz\n", clks->esc_clk);
 
-		if (clks->hs_clk < 1500)
-			hsmode = 1;
+		//if (clks->hs_clk < 1500)
+		//	hsmode = 1;
 
 		dsim_reg_set_esc_clk_prescaler(id, 1, esc_div);
 #if 1

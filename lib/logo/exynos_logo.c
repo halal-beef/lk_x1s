@@ -34,7 +34,7 @@ int decon_resize_align(unsigned int xsize, unsigned int ysize);
 int show_boot_logo(void)
 {
 #ifdef CONFIG_PIT
-	unsigned char *file = (unsigned int *)(CONFIG_DISPLAY_TEMP_BASE_ADDRESS);
+	unsigned char *file = (unsigned char *)(CONFIG_DISPLAY_TEMP_BASE_ADDRESS);
 	unsigned int *fb = (unsigned int *)(CONFIG_DISPLAY_LOGO_BASE_ADDRESS);
 	struct pit_entry *ptn = pit_get_part_info("logo");
 
@@ -85,7 +85,7 @@ int show_boot_logo(void)
 		}
 		aligned_read_size = (((img_width * img_height * 3 + BMP_HEADER_SIZE) / 1024) + 1) * 1024;
 
-		file = (unsigned int *)(CONFIG_DISPLAY_TEMP_BASE_ADDRESS);
+		file = (unsigned char *)(CONFIG_DISPLAY_TEMP_BASE_ADDRESS);
 		pit_access(ptn, PIT_OP_LOAD, (u64)file, aligned_read_size);
 
 		file+=BMP_HEADER_SIZE;

@@ -198,9 +198,9 @@ enum dpp_reg_area {
 
 struct dpp_resources {
 	struct clk *gate;
-	void __iomem *regs;
-	void __iomem *dma_regs;
-	void __iomem *dma_com_regs;
+	u32 regs;
+	u32 dma_regs;
+	u32 dma_com_regs;
 	int irq;
 	int dma_irq;
 };
@@ -227,7 +227,7 @@ struct dpp_params_info {
 	int v_ratio;
 };
 
-extern struct dpp_device *dpp_drvdata[2];
+extern struct dpp_device *dpp_drvdata[6];
 
 static inline struct dpp_device *get_dpp_drvdata(u32 id)
 {
@@ -335,6 +335,7 @@ static inline void dma_write_mask(u32 id, u32 reg_id, u32 val, u32 mask)
 static inline void dpp_select_format(struct dpp_device *dpp,
 			struct dpp_img_format *vi, struct dpp_params_info *p)
 {
+#if 0
 	struct decon_win_config *config = dpp->config;
 
 	vi->vgr = is_vgr(dpp);
@@ -346,6 +347,7 @@ static inline void dpp_select_format(struct dpp_device *dpp,
 	vi->yuv = is_yuv(config);
 	vi->yuv422 = is_yuv422(config);
 	vi->yuv420 = is_yuv420(config);
+#endif
 }
 
 int dpp_probe(unsigned int id, unsigned long addr);

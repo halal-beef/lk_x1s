@@ -28,12 +28,10 @@
 int dpp_log_level = 5;
 
 struct dpp_device *dpp_drvdata[NUM_OF_DPP];
-EXPORT_SYMBOL(dpp_drvdata);
 
 static void dpp_get_params(struct dpp_device *dpp, struct dpp_params_info *p,  unsigned long addr)
 {
 	struct decon_lcd *lcd_info = decon_get_lcd_info();
-	struct decon_win_config *config = dpp->config;
 
 	p->src.x = 0;
 	p->src.y = 0;
@@ -76,7 +74,6 @@ static void dpp_get_params(struct dpp_device *dpp, struct dpp_params_info *p,  u
  */
 static int dpp_check_limitation(struct dpp_device *dpp, struct dpp_params_info *p)
 {
-	int ret;
 	struct dpp_img_format vi;
 
 	dpp_select_format(dpp, &vi, p);
@@ -126,8 +123,6 @@ static void dpp_parse_dt(unsigned int id, struct dpp_device *dpp)
 
 static int dpp_init_resources(struct dpp_device *dpp)
 {
-	int ret;
-
 	dpp_info("dpp(%d) init resources.\n", dpp->id);
 
 	if (dpp->id == IDMA_G0)

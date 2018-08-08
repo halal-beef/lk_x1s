@@ -70,7 +70,7 @@ static struct decon_dt_info decon_dt = {
 
 
 /* TODO : divide platform info and target info */
-#define NUM_OF_DPP	2
+#define NUM_OF_DPP	6
 #define LOGO_DPP	0
 #define FONT_DPP	1
 #define DFT_DSIM	0

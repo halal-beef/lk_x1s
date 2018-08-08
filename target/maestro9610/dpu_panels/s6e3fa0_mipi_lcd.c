@@ -28,16 +28,6 @@
 #define MIN_BRIGHTNESS 0
 #define DEFAULT_BRIGHTNESS 0
 
-static int s6e3fa0_get_brightness(struct backlight_device *bd)
-{
-	return 0;
-}
-
-static int s6e3fa0_set_brightness(struct backlight_device *bd)
-{
-	return 1;
-}
-
 static int s6e3fa0_probe(struct dsim_device *dsim)
 {
 	return 1;

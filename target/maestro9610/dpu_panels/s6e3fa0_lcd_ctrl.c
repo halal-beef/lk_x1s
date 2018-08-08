@@ -62,10 +62,7 @@ struct decon_lcd s6e3fa0_lcd_info = {
 	/* Mhz */
 	.hs_clk = 1100,
 	.esc_clk = 20,
-
-	.dphy_pms.p = 4,
-	.dphy_pms.m = 677,
-	.dphy_pms.s = 2,
+	.dphy_pms = {6, 677, 2, 0}, /* pmsk */
 	.vt_compensation = 39,	/* for underrun detect at video mode */
 #else
 	.mode = DECON_MIPI_COMMAND_MODE,
