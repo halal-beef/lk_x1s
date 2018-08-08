@@ -61,7 +61,7 @@ uint32_t el3_sss_hash_final(
 /******************************************************************************/
 void set_avbops(void);
 
-uint32_t avb_main(char *suffix, char *cmdline);
+uint32_t avb_main(const char *suffix, char *cmdline);
 
 uint32_t get_ops_addr(struct AvbOps **ops_addr);
 

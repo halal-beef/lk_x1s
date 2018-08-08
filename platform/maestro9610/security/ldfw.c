@@ -115,7 +115,7 @@ int init_keystorage(void)
 	}
 
 	ret = load_keystorage(addr, size);
-	if (ret == -1)
+	if (ret == 0xFFFFFFFF)
 		printf("keystorage: It is dump_gpr state. It does not load keystorage.\n");
 	else if (ret == 0)
 		printf("keystorage: It is successfully loaded.\n");

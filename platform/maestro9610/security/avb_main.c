@@ -16,7 +16,7 @@
 #include <string.h>
 
 #if defined(CONFIG_USE_AVB20)
-uint32_t avb_main(char *suffix, char *cmdline)
+uint32_t avb_main(const char *suffix, char *cmdline)
 {
 	bool unlock;
 	uint32_t ret = 0;
