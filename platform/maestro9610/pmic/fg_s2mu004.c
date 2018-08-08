@@ -13,6 +13,30 @@
 #include <platform/delay.h>
 #include <platform/fg_s2mu004.h>
 
+#define GPP0BASE	(0x139b0000)
+#define GPP0CON		*(volatile unsigned int *)(GPP0BASE + 0x0)
+#define GPP0DAT		*(volatile unsigned int *)(GPP0BASE + 0x4)
+#define GPP0PUD		*(volatile unsigned int *)(GPP0BASE + 0x8)
+
+/* SDA: GPP0_0, SCL: GPP0_1 */
+#define GPIO_DAT_S2MU004	GPP0DAT
+#define GPIO_DAT_SHIFT		(0)
+#define GPIO_PUD_S2MU004	GPP0PUD &= ~(0xff << (GPIO_DAT_SHIFT*4))
+
+#define IIC_S2MU004_FG_ESCL_Hi	GPP0DAT |= (0x1 << (GPIO_DAT_SHIFT+1))
+#define IIC_S2MU004_FG_ESCL_Lo	GPP0DAT &= ~(0x1 << (GPIO_DAT_SHIFT+1))
+#define IIC_S2MU004_FG_ESDA_Hi	GPP0DAT |= (0x1 << GPIO_DAT_SHIFT)
+#define IIC_S2MU004_FG_ESDA_Lo	GPP0DAT &= ~(0x1 << GPIO_DAT_SHIFT)
+
+#define IIC_S2MU004_FG_ESCL_INP	GPP0CON &= ~(0xf << ((GPIO_DAT_SHIFT+1)*4))
+#define IIC_S2MU004_FG_ESCL_OUTP	GPP0CON = (GPP0CON & ~(0xf << ((GPIO_DAT_SHIFT+1)*4))) \
+					| (0x1 << ((GPIO_DAT_SHIFT+1)*4))
+#define IIC_S2MU004_FG_ESDA_INP	GPP0CON &= ~(0xf << (GPIO_DAT_SHIFT*4))
+#define IIC_S2MU004_FG_ESDA_OUTP	GPP0CON = (GPP0CON & ~(0xf << (GPIO_DAT_SHIFT*4))) \
+					 | (0x1 << (GPIO_DAT_SHIFT*4))
+
+#define DELAY		100
+
 #define min(a, b) (a) < (b) ? a : b
 
 	/* 0x92 ~ 0xe9: BAT_PARAM */
@@ -687,7 +711,7 @@ static void WA_0_issue_at_init1(int target_ocv)
 void fg_init_s2mu004(void)
 {
 	u8 por_state;
-	int avg_current = 0, avg_vbat = 0, vbat = 0, curr = 0,rsoc = 0;
+	int avg_current = 0, avg_vbat = 0, rsoc = 0;
 	int target_soc = 0, ocv_pwroff = 0;
 	u8 data_ver, temp;
 
@@ -727,8 +751,8 @@ void fg_init_s2mu004(void)
 	/* work-around for soc error */
 	avg_current = s2mu004_get_avgcurrent();
 	avg_vbat = s2mu004_get_avgvbat();
-	vbat = fuel_gauge_read_vcell();
-	curr = s2mu004_get_current();
+	fuel_gauge_read_vcell();
+	s2mu004_get_current();
 	rsoc = fuel_gauge_read_soc();
 
 	ocv_pwroff = avg_vbat - avg_current * 15 / 100;

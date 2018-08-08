@@ -11,30 +11,6 @@
 #ifndef __IF_PMIC_S2MU004_H__
 #define __IF_PMIC_S2MU004_H__
 
-#define GPP0BASE	(0x139b0000)
-#define GPP0CON		*(volatile unsigned int *)(GPP0BASE + 0x0)
-#define GPP0DAT		*(volatile unsigned int *)(GPP0BASE + 0x4)
-#define GPP0PUD		*(volatile unsigned int *)(GPP0BASE + 0x8)
-
-/* SDA: GPP0_2, SCL: GPP0_3 */
-#define GPIO_DAT_S2MU004	GPP0DAT
-#define GPIO_DAT_SHIFT		(2)
-#define GPIO_PUD_S2MU004	GPP0PUD &= ~(0xff << (GPIO_DAT_SHIFT*4))
-
-#define IIC_S2MU004_ESCL_Hi	GPP0DAT |= (0x1 << (GPIO_DAT_SHIFT+1))
-#define IIC_S2MU004_ESCL_Lo	GPP0DAT &= ~(0x1 << (GPIO_DAT_SHIFT+1))
-#define IIC_S2MU004_ESDA_Hi	GPP0DAT |= (0x1 << GPIO_DAT_SHIFT)
-#define IIC_S2MU004_ESDA_Lo	GPP0DAT &= ~(0x1 << GPIO_DAT_SHIFT)
-
-#define IIC_S2MU004_ESCL_INP	GPP0CON &= ~(0xf << ((GPIO_DAT_SHIFT+1)*4))
-#define IIC_S2MU004_ESCL_OUTP	GPP0CON = (GPP0CON & ~(0xf << ((GPIO_DAT_SHIFT+1)*4))) \
-					| (0x1 << ((GPIO_DAT_SHIFT+1)*4))
-#define IIC_S2MU004_ESDA_INP	GPP0CON &= ~(0xf << (GPIO_DAT_SHIFT*4))
-#define IIC_S2MU004_ESDA_OUTP	GPP0CON = (GPP0CON & ~(0xf << (GPIO_DAT_SHIFT*4))) \
-					| (0x1 << (GPIO_DAT_SHIFT*4))
-
-#define DELAY		100
-
 /* S2MU004 slave address */
 #define S2MU004_W_ADDR	0x7A
 #define S2MU004_R_ADDR	0x7B

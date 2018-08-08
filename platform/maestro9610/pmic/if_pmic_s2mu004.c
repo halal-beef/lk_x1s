@@ -12,6 +12,30 @@
 #include <sys/types.h>
 #include <platform/if_pmic_s2mu004.h>
 
+#define GPP0BASE	(0x139b0000)
+#define GPP0CON		*(volatile unsigned int *)(GPP0BASE + 0x0)
+#define GPP0DAT		*(volatile unsigned int *)(GPP0BASE + 0x4)
+#define GPP0PUD		*(volatile unsigned int *)(GPP0BASE + 0x8)
+
+/* SDA: GPP0_2, SCL: GPP0_3 */
+#define GPIO_DAT_S2MU004	GPP0DAT
+#define GPIO_DAT_SHIFT		(2)
+#define GPIO_PUD_S2MU004	GPP0PUD &= ~(0xff << (GPIO_DAT_SHIFT*4))
+
+#define IIC_S2MU004_ESCL_Hi	GPP0DAT |= (0x1 << (GPIO_DAT_SHIFT+1))
+#define IIC_S2MU004_ESCL_Lo	GPP0DAT &= ~(0x1 << (GPIO_DAT_SHIFT+1))
+#define IIC_S2MU004_ESDA_Hi	GPP0DAT |= (0x1 << GPIO_DAT_SHIFT)
+#define IIC_S2MU004_ESDA_Lo	GPP0DAT &= ~(0x1 << GPIO_DAT_SHIFT)
+
+#define IIC_S2MU004_ESCL_INP	GPP0CON &= ~(0xf << ((GPIO_DAT_SHIFT+1)*4))
+#define IIC_S2MU004_ESCL_OUTP	GPP0CON = (GPP0CON & ~(0xf << ((GPIO_DAT_SHIFT+1)*4))) \
+					| (0x1 << ((GPIO_DAT_SHIFT+1)*4))
+#define IIC_S2MU004_ESDA_INP	GPP0CON &= ~(0xf << (GPIO_DAT_SHIFT*4))
+#define IIC_S2MU004_ESDA_OUTP	GPP0CON = (GPP0CON & ~(0xf << (GPIO_DAT_SHIFT*4))) \
+					| (0x1 << (GPIO_DAT_SHIFT*4))
+
+#define DELAY		100
+
 u8 is_factory_mode;
 
 static void Delay(void)
@@ -361,7 +385,7 @@ int check_factory_mode(void)
 #endif
 void set_charger_current(int set_current)
 {
-	u8 temp = 0, chg_curr = 0;
+	u8 chg_curr = 0;
 	IIC_S2MU004_ERead(S2MU004_R_ADDR, S2MU004_CHG_CTRL9, &chg_curr);
 	chg_curr &= ~0x7F;
 
@@ -397,7 +421,7 @@ void set_charger_current(int set_current)
 /* set input current limit */
 void set_input_current(int set_current)
 {
-	u8 temp = 0, in_curr = 0;
+	u8 in_curr = 0;
 
 	IIC_S2MU004_ERead(S2MU004_R_ADDR, S2MU004_CHG_CTRL2, &in_curr);
 	in_curr &= ~0x7F;
@@ -509,11 +533,11 @@ void muic_sw_usb (void)
 
 	IIC_S2MU004_ESetport();
 	IIC_S2MU004_ERead(S2MU004_R_ADDR, S2MU004_MUIC_CTRL1, &reg);
-	reg &= ~0x1 << 2;
+	reg &= ~(0x1 << 2);
 	IIC_S2MU004_EWrite(S2MU004_W_ADDR, S2MU004_MUIC_CTRL1, reg);
 	IIC_S2MU004_ERead(S2MU004_R_ADDR, S2MU004_MANUAL_SW_CTRL, &reg);
-	reg &= ~0x7 << 2;
-	reg &= ~0x7 << 5;
+	reg &= ~(0x7 << 2);
+	reg &= ~(0x7 << 5);
 	reg |= 0x1 << 2;
 	reg |= 0x1 << 5;
 	IIC_S2MU004_EWrite(S2MU004_W_ADDR, S2MU004_MANUAL_SW_CTRL, reg);
@@ -525,11 +549,11 @@ void muic_sw_uart (void)
 
 	IIC_S2MU004_ESetport();
 	IIC_S2MU004_ERead(S2MU004_R_ADDR, S2MU004_MUIC_CTRL1, &reg);
-	reg &= ~0x1 << 2;
+	reg &= ~(0x1 << 2);
 	IIC_S2MU004_EWrite(S2MU004_W_ADDR, S2MU004_MUIC_CTRL1, reg);
 	IIC_S2MU004_ERead(S2MU004_R_ADDR, S2MU004_MANUAL_SW_CTRL, &reg);
-	reg &= ~0x7 << 2;
-	reg &= ~0x7 << 5;
+	reg &= ~(0x7 << 2);
+	reg &= ~(0x7 << 5);
 	reg |= 0x2 << 2;
 	reg |= 0x2 << 5;
 	IIC_S2MU004_EWrite(S2MU004_W_ADDR, S2MU004_MANUAL_SW_CTRL, reg);
