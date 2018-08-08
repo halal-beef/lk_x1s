@@ -157,7 +157,7 @@ static void exynos_usb_get_phy_info(struct exynos_usbphy_info *info)
 {
 	struct exynos_usbphy_info *phyinfo = info;
 
-	phyinfo->regs_base = USB_PHY_CONTROL_BASE;
+	phyinfo->regs_base = (void *)USB_PHY_CONTROL_BASE;
 
 	phyinfo->version = EXYNOS_USBCON_VER_01_0_1;
 	phyinfo->use_io_for_ovc = true;
