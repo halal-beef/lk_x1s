@@ -185,7 +185,7 @@ usage:
         if (argc < 4) goto notenoughargs;
 
         int request = argv[3].u;
-        int arg = (argc == 5) ? argv[4].u : 0;
+        long arg = (argc == 5) ? argv[4].u : 0;
 
         bdev_t *dev = bio_open(argv[2].str);
         if (!dev) {
