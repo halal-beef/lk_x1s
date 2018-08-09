@@ -22,7 +22,6 @@ int cmd_scatter_load_boot(int argc, const cmd_args *argv)
 	int dtb_offset;
 	int ramdisk_offset;
 	int recovery_dtbo_offset;
-	char initrd_size[32];
 
 	if (argc != 5) goto usage;
 

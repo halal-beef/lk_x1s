@@ -196,11 +196,9 @@ static void configure_dtb(void)
 	unsigned int sec_pt_size = 0;
 	unsigned long sec_pt_end = 0;
 	u64 dram_size = *(u64 *)BL_SYS_INFO_DRAM_SIZE;
-	unsigned long long start, count;
-	unsigned char pid;
 	struct pit_entry *ptn;
 	bdev_t *dev;
-	char *name;
+	const char *name;
 	unsigned int boot_dev;
 	int len;
 	const char *np;
@@ -216,7 +214,7 @@ static void configure_dtb(void)
 						SOC_INFO_TYPE_SEC_DRAM_BASE,
 						0,
 						0);
-		if (sec_dram_base == ERROR_INVALID_TYPE) {
+		if (sec_dram_base == (unsigned long)ERROR_INVALID_TYPE) {
 			printf("get secure memory base addr error!!\n");
 			while (1);
 		}
@@ -225,12 +223,12 @@ static void configure_dtb(void)
 							SOC_INFO_TYPE_SEC_DRAM_SIZE,
 							0,
 							0);
-		if (sec_dram_size == ERROR_INVALID_TYPE) {
+		if (sec_dram_size == (unsigned int)ERROR_INVALID_TYPE) {
 			printf("get secure memory size error!!\n");
 			while (1);
 		}
 	} else {
-		printf("[ERROR] el3_mon is old version. (0x%lx)\n", soc_ver);
+		printf("[ERROR] el3_mon is old version. (0x%x)\n", soc_ver);
 		while (1);
 	}
 
@@ -250,7 +248,7 @@ static void configure_dtb(void)
 	} else if (sec_pt_base == ERROR_DRM_FW_INVALID_PARAM) {
 		printf("[SEC_PGTBL_BASE] Do not support SMC for SMC_DRM_GET_SOC_INFO\n");
 		sec_pt_base = 0;
-	} else if (sec_pt_base == ERROR_NO_DRM_FW_INITIALIZED) {
+	} else if (sec_pt_base == (unsigned long)ERROR_NO_DRM_FW_INITIALIZED) {
 		printf("[SEC_PGTBL_BASE] DRM LDFW is not initialized\n");
 		sec_pt_base = 0;
 	} else if (sec_pt_base & MASK_1MB) {
@@ -268,7 +266,7 @@ static void configure_dtb(void)
 	} else if (sec_pt_size == ERROR_DRM_FW_INVALID_PARAM) {
 		printf("[SEC_PGTBL_SIZE] Do not support SMC for SMC_DRM_GET_SOC_INFO\n");
 		sec_pt_size = 0;
-	} else if (sec_pt_size == ERROR_NO_DRM_FW_INITIALIZED) {
+	} else if (sec_pt_size == (unsigned int)ERROR_NO_DRM_FW_INITIALIZED) {
 		printf("[SEC_PGTBL_SIZE] DRM LDFW is not initialized\n");
 		sec_pt_size = 0;
 	} else if (sec_pt_base & MASK_1MB) {
@@ -363,7 +361,7 @@ static void configure_dtb(void)
 			dev = bio_open(name);
 			ptn = pit_get_part_info("modem");
 			/* load modem header */
-			dev->new_read(dev, be32_to_cpu(((const u32 *)str)[1]), ptn->blkstart, 16);
+			dev->new_read(dev, (void *)(u64)be32_to_cpu(((const u32 *)str)[1]), ptn->blkstart, 16);
 			bio_close(dev);
 		}
 	}
@@ -431,7 +429,7 @@ int load_boot_images(void)
 int cmd_boot(int argc, const cmd_args *argv)
 {
 	fdt_dtb = (struct fdt_header *)DT_BASE;
-	dtbo_table = (struct dtbo_table *)DTBO_BASE;
+	dtbo_table = (struct dt_table_header *)DTBO_BASE;
 
 	if (!init_keystorage())
 		printf("keystorage: init done successfully.\n");

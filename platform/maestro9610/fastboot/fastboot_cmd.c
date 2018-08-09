@@ -109,9 +109,9 @@ static void start_ramdump(void *buf)
 	struct fastboot_ramdump_hdr *hdr = buf;
 	static uint32_t ramdump_cnt = 0;
 
-	printf("\nramdump start address is [0x%llx]\n", hdr->base);
-	printf("ramdump size is [0x%llx]\n", hdr->size);
-	printf("version is [0x%llx]\n", hdr->version);
+	printf("\nramdump start address is [0x%lx]\n", hdr->base);
+	printf("ramdump size is [0x%lx]\n", hdr->size);
+	printf("version is [0x%lx]\n", hdr->version);
 
 	if (hdr->version != 2) {
 		printf("you are using wrong version of fastboot!!!\n");
@@ -406,9 +406,6 @@ static int rx_handler (const unsigned char *buffer, unsigned int buffer_size)
 		{
 			char *key = (char *)cmdbuf + 6;
 			struct pit_entry *ptn = pit_get_part_info(key);
-			char run_cmd[80];
-			char if_name[16] = "mmc";
-			int device=0;
 			int status = 1;
 
 			if (strcmp(key, "pit") && ptn == 0)
@@ -596,7 +593,7 @@ int do_fastboot(int argc, const cmd_args *argv)
 
 		if(!fastboot_init(&interface))
 		{
-			int poll_status, board_poll_status;
+			int poll_status;
 			dprintf(ALWAYS, "fastboot_init success!!\n");
 			while (1) {
 				poll_status = fastboot_poll();
