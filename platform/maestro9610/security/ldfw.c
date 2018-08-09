@@ -51,7 +51,16 @@ int load_parition(u64 addr, u64 ch)
 {
 	int OmPin = readl(EXYNOS9610_POWER_INFORM3);
 	int ret;
-	struct pit_entry *ptn = pit_get_part_info("ldfw");
+	struct pit_entry *ptn;
+
+	if (ch == LDFW_PART) {
+		ptn = pit_get_part_info("ldfw");
+	} else if (ch == KEYSTORAGE_PART) {
+		ptn = pit_get_part_info("keystorage");
+	} else {
+		printf("Invalid ch\n");
+		return -1;
+	}
 
 	if (ch >= MAX_CH_NUM) {
 		printf("invalid channel loading\n");
@@ -76,11 +85,6 @@ int load_parition(u64 addr, u64 ch)
 		return -1;
 	}
 
-	if (ch == LDFW_PART)
-		LDFW_INFO("ldfw: read whole ldfw partition from the storage\n");
-	else if (ch == KEYSTORAGE_PART)
-		printf("read whole keystorage partition from the storage\n");
-
 	if (ptn)
 		ret = !pit_access(ptn, PIT_OP_LOAD, addr, 0);
 	else
@@ -91,6 +95,11 @@ int load_parition(u64 addr, u64 ch)
 			LDFW_ERR("ldfw: there is no ldfw partition\n");
 		else if (ch == KEYSTORAGE_PART)
 			printf("keystorage: there is no keystorage partition\n");
+	} else {
+		if (ch == LDFW_PART)
+			LDFW_INFO("ldfw: read whole ldfw partition from the storage\n");
+		else if (ch == KEYSTORAGE_PART)
+			printf("read whole keystorage partition from the storage\n");
 	}
 
 	return ret == 1 ? 0:-1;
