@@ -27,8 +27,8 @@ void lock(int state)
 	  they may encounter problems with unofficial images.
 	  After acknowledging, a factory data reset should be
 	  done to prevent unauthorized data access. */
-	if ((env_val[ENV_ID_LOCKED] == 1) && (state == 0))
-		;
+	if ((env_val[ENV_ID_LOCKED] == 1) && (state == 0)) {
+	}
 
 	env_val[ENV_ID_LOCKED] = state;
 	pit_access(ptn, PIT_OP_FLASH, (u64)env_val, 0);
@@ -64,8 +64,8 @@ void lock_critical(int state)
 
 	/* Transitioning from locked to unlocked state should
 	  require a physical interaction with the device. */
-	if ((env_val[ENV_ID_LOCKED_CRITICAL] == 1) && (state == 0))
-		;
+	if ((env_val[ENV_ID_LOCKED_CRITICAL] == 1) && (state == 0)) {
+	}
 
 	env_val[ENV_ID_LOCKED_CRITICAL] = state;
 	pit_access(ptn, PIT_OP_FLASH, (u64)env_val, 0);

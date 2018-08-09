@@ -19,7 +19,6 @@
 #include <platform/smc.h>
 #include <platform/speedy.h>
 #include <platform/pmic_s2mpu09.h>
-#include <platform/fg_s2mu004.h>
 #include <platform/if_pmic_s2mu004.h>
 #include <platform/tmu.h>
 #include <platform/dfd.h>
@@ -31,6 +30,7 @@
 
 void speedy_gpio_init(void);
 void xbootldo_gpio_init(void);
+void fg_init_s2mu004(void);
 
 unsigned int s5p_chip_id[4] = {0x0, 0x0, 0x0, 0x0};
 unsigned int charger_mode = 0;
@@ -73,7 +73,7 @@ static void load_secure_payload(void)
 					 * 0xFEED0002 : Signature check fail
 					 * 0xFEED0020 : Anti-rollback check fail
 					 */
-					printf("Fail to load Secure Payload!! [ret = 0x%X]\n", ret);
+					printf("Fail to load Secure Payload!! [ret = 0x%lX]\n", ret);
 				else
 					printf("Secure Payload is loaded successfully!\n");
 			}

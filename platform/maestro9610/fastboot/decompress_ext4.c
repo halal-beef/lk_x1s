@@ -67,7 +67,7 @@ int write_raw_chunk(char* data, unsigned int sector, unsigned int sector_size) {
 	unsigned char *tmp_align;
 	bdev_t *dev;
 	unsigned int boot_dev;
-	char *str;
+	const char *str;
 	unsigned int blks;
 	int ret;
 
@@ -76,15 +76,15 @@ int write_raw_chunk(char* data, unsigned int sector, unsigned int sector_size) {
 		str = "scsi0";
 	else {
 		printf("Boot device: 0x%x. Unsupported boot device!\n", boot_dev);
-		return;
+		return 0;
 	}
 
 	dev = bio_open(str);
 
 	if (((unsigned long)data % 8) != 0) {
-		tmp_align = (char *)CFG_FASTBOOT_MMC_BUFFER;
+		tmp_align = (unsigned char *)CFG_FASTBOOT_MMC_BUFFER;
 		memcpy((unsigned char *)tmp_align, (unsigned char *)data, sector_size * 512);
-		data = tmp_align;
+		data = (char *)tmp_align;
 	}
 
 	ext4_printf("write raw data in %d size %d \n", sector, sector_size);
