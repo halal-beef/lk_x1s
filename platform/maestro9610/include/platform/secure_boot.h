@@ -6,6 +6,9 @@
 /******************************************************************************/
 /* Definition value */
 /******************************************************************************/
+/* SMC ID */
+#define SMC_CM_SECURE_BOOT		(0x101D)
+
 /* secure boot crypto variable */
 #define SHA1_DIGEST_LEN                 (20)
 #define SHA1_BLOCK_LEN                  (64)
@@ -14,8 +17,23 @@
 #define SHA512_DIGEST_LEN               (64)
 #define SHA512_BLOCK_LEN                (128)
 
+/* keystorage variable */
+#define SB_MAX_PUBKEY_LEN		(1056)
+
 /* AVB variable */
 #define AVB_CMD_MAX_SIZE		(1024)
+
+/******************************************************************************/
+/* Cache operation */
+/******************************************************************************/
+#define CACHE_WRITEBACK_SHIFT_6		(6)
+#define CACHE_WRITEBACK_SHIFT_7		(7)
+
+#define CACHE_WRITEBACK_GRANULE_64	(1 << CACHE_WRITEBACK_SHIFT_6)
+#define CACHE_WRITEBACK_GRANULE_128	(1 << CACHE_WRITEBACK_SHIFT_7)
+
+#define FLUSH_DCACHE_RANGE(addr, length)
+#define INV_DCACHE_RANGE(addr, length)
 
 /******************************************************************************/
 /* Secure Boot context used by EL3 */
@@ -55,6 +73,12 @@ uint32_t el3_sss_hash_update(
 uint32_t el3_sss_hash_final(
 	struct ace_hash_ctx *ctx,
 	uint8_t *hash);
+
+/******************************************************************************/
+/* Secure Boot context used by LDFW */
+/******************************************************************************/
+/* define secure boot commands */
+#define SB_GET_AVB_KEY			(16)
 
 /******************************************************************************/
 /* Android verified boot */

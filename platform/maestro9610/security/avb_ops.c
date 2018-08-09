@@ -17,6 +17,7 @@
 #include <dev/boot.h>
 #include <platform/lock.h>
 #include <platform/secure_boot.h>
+#include <platform/smc.h>
 #include <dev/rpmb.h>
 
 int get_unique_guid(char *ptr_name, char *buf);
@@ -167,7 +168,19 @@ static AvbIOResult exynos_validate_vbmeta_public_key(AvbOps *ops,
 		bool *out_is_trusted)
 {
 	AvbIOResult ret = AVB_IO_RESULT_OK;
-	//TODO
+	uint8_t buf[SB_MAX_PUBKEY_LEN] __attribute__((__aligned__(CACHE_WRITEBACK_GRANULE_128)));
+
+	ret = exynos_smc((SMC_AARCH64_PREFIX | SMC_CM_SECURE_BOOT), SB_GET_AVB_KEY,
+			(uint64_t)buf, public_key_length);
+	if (ret) {
+		printf("[AVB 2.0 ERR] Fail to read AVB pubkey [ret: 0x%X]\n", ret);
+		return ret;
+	}
+
+	INV_DCACHE_RANGE(buf, public_key_length)
+	*out_is_trusted = !memcmp(buf, public_key_data, public_key_length);
+	if (*out_is_trusted == false)
+		printf("[AVB 2.0 ERR] AVB pubkey is not matched with vbmeta\n");
 
 	return ret;
 }
