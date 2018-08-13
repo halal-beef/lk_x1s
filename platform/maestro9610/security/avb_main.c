@@ -16,43 +16,56 @@
 #include <string.h>
 
 #if defined(CONFIG_USE_AVB20)
-uint32_t avb_main(const char *suffix, char *cmdline)
+uint32_t avb_main(const char *suffix, char *cmdline, char *verifiedbootstate)
 {
 	bool unlock;
 	uint32_t ret = 0;
 	uint32_t i = 0;
 	struct AvbOps *ops;
 	const char *partition_arr[] = {"boot", NULL};
-	AvbSlotVerifyData* ctx_ptr;
-	AvbSlotVerifyFlags asv_flag;
+	char color[AVB_COLOR_MAX_SIZE];
+	AvbSlotVerifyData *ctx_ptr = NULL;
 
 	set_avbops();
 	get_ops_addr(&ops);
 	ops->read_is_device_unlocked(ops, &unlock);
-	if (unlock == 1) {
-		asv_flag = AVB_SLOT_VERIFY_FLAGS_ALLOW_VERIFICATION_ERROR;
-	} else {
-		asv_flag = AVB_SLOT_VERIFY_FLAGS_NONE;
-	}
 
+	/* slot verify */
 	ret = avb_slot_verify(ops, partition_arr, suffix,
-			asv_flag,
+			AVB_SLOT_VERIFY_FLAGS_ALLOW_VERIFICATION_ERROR,
 			AVB_HASHTREE_ERROR_MODE_RESTART_AND_INVALIDATE,
 			&ctx_ptr);
-	if (ret) {
-		printf("[AVB 2.0 ERR] authentication fail\n");
+	/* get color */
+	if (unlock) {
+		strncpy(color, "orange", AVB_COLOR_MAX_SIZE);
 	} else {
-		printf("[AVB 2.0] authentication success\n");
+		if (ret == AVB_SLOT_VERIFY_RESULT_ERROR_PUBLIC_KEY_REJECTED) {
+			strncpy(color, "yellow", AVB_COLOR_MAX_SIZE);
+		} else if (ret) {
+			strncpy(color, "red", AVB_COLOR_MAX_SIZE);
+		} else {
+			strncpy(color, "green", AVB_COLOR_MAX_SIZE);
+		}
 	}
+	if (ret) {
+		printf("[AVB 2.0 ERR] authentication fail [ret: 0x%X] (%s)\n", ret, color);
+	} else {
+		printf("[AVB 2.0] authentication success (%s)\n", color);
+	}
+	strcat(verifiedbootstate, color);
 
+	/* block RPMB */
 	ret = block_RPMB_hmac();
 	if (ret) {
 		printf("[AVB 2.0 ERR] RPMB hmac ret: 0x%X\n", ret);
 	}
 
-	i = 0;
-	while (ctx_ptr->cmdline[i++] != '\0');
-	memcpy(cmdline, ctx_ptr->cmdline, i);
+	/* set cmdline */
+	if (ctx_ptr != NULL) {
+		i = 0;
+		while (ctx_ptr->cmdline[i++] != '\0');
+		memcpy(cmdline, ctx_ptr->cmdline, i);
+	}
 #if defined(CONFIG_AVB_DEBUG)
 	printf("i: %d\n", i);
 	printf("cmdline: %s\n", cmdline);
