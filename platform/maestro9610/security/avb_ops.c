@@ -25,6 +25,7 @@ int get_unique_guid(char *ptr_name, char *buf);
 #define CMD_STRING_MAX_SIZE 60
 #define AVB_PRELOAD_BASE 0xA0000000
 
+static uint32_t avbkey_is_trusted;
 static struct AvbOps ops;
 
 static AvbIOResult exynos_read_from_partition(AvbOps *ops,
@@ -173,15 +174,20 @@ static AvbIOResult exynos_validate_vbmeta_public_key(AvbOps *ops,
 	ret = exynos_smc((SMC_AARCH64_PREFIX | SMC_CM_SECURE_BOOT), SB_GET_AVB_KEY,
 			(uint64_t)buf, public_key_length);
 	if (ret) {
+		*out_is_trusted = false;
 		printf("[AVB 2.0 ERR] Fail to read AVB pubkey [ret: 0x%X]\n", ret);
-		return ret;
+		goto out;
 	}
 
 	INV_DCACHE_RANGE(buf, public_key_length)
 	*out_is_trusted = !memcmp(buf, public_key_data, public_key_length);
-	if (*out_is_trusted == false)
+	if (*out_is_trusted == false) {
 		printf("[AVB 2.0 ERR] AVB pubkey is not matched with vbmeta\n");
+		goto out;
+	}
 
+out:
+	avbkey_is_trusted = *out_is_trusted;
 	return ret;
 }
 
@@ -354,4 +360,9 @@ uint32_t get_ops_addr(struct AvbOps **ops_addr)
 	*ops_addr = &ops;
 
 	return 0;
+}
+
+uint32_t get_avbkey_trust(void)
+{
+	return avbkey_is_trusted;
 }

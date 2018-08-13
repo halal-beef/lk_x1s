@@ -22,6 +22,12 @@
 
 /* AVB variable */
 #define AVB_CMD_MAX_SIZE		(1024)
+/*
+ * "androidboot.verifiedbootstate=" is 30
+ * AVB_VBS_MAX_SIZE - AVB_COLOR_MAX_SIZE = 30
+ */
+#define AVB_VBS_MAX_SIZE		(40)
+#define AVB_COLOR_MAX_SIZE		(10)
 
 /******************************************************************************/
 /* Cache operation */
@@ -85,8 +91,10 @@ uint32_t el3_sss_hash_final(
 /******************************************************************************/
 void set_avbops(void);
 
-uint32_t avb_main(const char *suffix, char *cmdline);
+uint32_t avb_main(const char *suffix, char *cmdline, char *verifiedbootstate);
 
 uint32_t get_ops_addr(struct AvbOps **ops_addr);
+
+uint32_t get_avbkey_trust(void);
 
 #endif /* _SECURE_BOOT_H_ */

@@ -42,6 +42,7 @@
 void arm_generic_timer_disable(void);
 
 static char cmdline[AVB_CMD_MAX_SIZE];
+static char verifiedbootstate[AVB_VBS_MAX_SIZE]="androidboot.verifiedbootstate=";
 
 struct bootargs_prop {
 	char prop[64];
@@ -374,10 +375,7 @@ static void configure_dtb(void)
 		ops->read_is_device_unlocked(ops, &unlock);
 		noff = fdt_path_offset (fdt_dtb, "/chosen");
 		np = fdt_getprop(fdt_dtb, noff, "bootargs", &len);
-		if (unlock)
-			snprintf(str, BUFFER_SIZE, "%s %s %s", np, cmdline, "androidboot.verifiedbootstate=orange");
-		else
-			snprintf(str, BUFFER_SIZE, "%s %s %s", np, cmdline, "androidboot.verifiedbootstate=green");
+		snprintf(str, BUFFER_SIZE, "%s %s %s", np, cmdline, verifiedbootstate);
 		fdt_setprop(fdt_dtb, noff, "bootargs", str, strlen(str) + 1);
 	}
 
@@ -451,11 +449,10 @@ int cmd_boot(int argc, const cmd_args *argv)
 
 #if defined(CONFIG_USE_AVB20)
 	if (ab_current_slot())
-		avb_main("_b", cmdline);
+		avb_main("_b", cmdline, verifiedbootstate);
 	else
-		avb_main("_a", cmdline);
+		avb_main("_a", cmdline, verifiedbootstate);
 #endif
-
 
 	configure_dtb();
 
