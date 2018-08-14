@@ -80,6 +80,10 @@ uint32_t el3_sss_hash_final(
 	struct ace_hash_ctx *ctx,
 	uint8_t *hash);
 
+uint32_t el3_verify_signature_using_image(
+	uint64_t signed_img_ptr,
+	uint64_t signed_img_len);
+
 /******************************************************************************/
 /* Secure Boot context used by LDFW */
 /******************************************************************************/

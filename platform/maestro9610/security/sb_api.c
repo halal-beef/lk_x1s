@@ -77,3 +77,20 @@ uint32_t el3_sss_hash_digest(
 
 	return exynos_smc(SMC_CMD_HASH, (uint64_t)&info_hash, 0, SHA_DIGEST);
 }
+
+uint32_t el3_verify_signature_using_image(
+	uint64_t signed_img_ptr,
+	uint64_t signed_img_len)
+{
+	CHECK_IMAGE_INFO check_info_image;
+
+	check_info_image.context = 0x0;
+	check_info_image.data = signed_img_ptr;
+	check_info_image.dataLen = signed_img_len - SB_MAX_SIGN_LEN;
+	check_info_image.signature = signed_img_ptr + signed_img_len -
+		SB_MAX_SIGN_LEN;
+	check_info_image.signatureLen = SB_MAX_SIGN_LEN;
+
+	return exynos_smc(SMC_CMD_CHECK_SIGNATURE, 0,
+			(uint64_t)&check_info_image, 0);
+}
