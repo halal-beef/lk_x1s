@@ -59,6 +59,10 @@ uint32_t avb_main(const char *suffix, char *cmdline, char *verifiedbootstate)
 	printf(buf);
 	avb_print_lcd(buf);
 
+	/* AVB color policy */
+	if (!strncmp(color, "red", AVB_COLOR_MAX_SIZE))
+		__asm__ volatile("b	.");
+
 	/* block RPMB */
 	ret = block_RPMB_hmac();
 	if (ret) {
