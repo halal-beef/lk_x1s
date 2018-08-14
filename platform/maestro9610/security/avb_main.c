@@ -15,6 +15,8 @@
 #include <dev/rpmb.h>
 #include <string.h>
 
+void avb_print_lcd(const char *str);
+
 #if defined(CONFIG_USE_AVB20)
 uint32_t avb_main(const char *suffix, char *cmdline, char *verifiedbootstate)
 {
@@ -23,6 +25,7 @@ uint32_t avb_main(const char *suffix, char *cmdline, char *verifiedbootstate)
 	uint32_t i = 0;
 	struct AvbOps *ops;
 	const char *partition_arr[] = {"boot", "dtbo", NULL};
+	char buf[100];
 	char color[AVB_COLOR_MAX_SIZE];
 	AvbSlotVerifyData *ctx_ptr = NULL;
 
@@ -48,11 +51,13 @@ uint32_t avb_main(const char *suffix, char *cmdline, char *verifiedbootstate)
 		}
 	}
 	if (ret) {
-		printf("[AVB 2.0 ERR] authentication fail [ret: 0x%X] (%s)\n", ret, color);
+		snprintf(buf, 100, "[AVB 2.0 ERR] authentication fail [ret: 0x%X] (%s)\n", ret, color);
 	} else {
-		printf("[AVB 2.0] authentication success (%s)\n", color);
+		snprintf(buf, 100, "[AVB 2.0] authentication success (%s)\n", color);
 	}
 	strcat(verifiedbootstate, color);
+	printf(buf);
+	avb_print_lcd(buf);
 
 	/* block RPMB */
 	ret = block_RPMB_hmac();

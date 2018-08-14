@@ -541,3 +541,8 @@ void reset_prepare_board(void)
 	dfd_set_dump_gpr(0);
 	dfd_set_big_cluster_rstcon();
 }
+
+void avb_print_lcd(const char *str)
+{
+	print_lcd_update(FONT_WHITE, FONT_BLACK, str);
+}
