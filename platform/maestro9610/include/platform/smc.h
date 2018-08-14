@@ -93,7 +93,7 @@
 #define ERROR_DRM_FW_INVALID_PARAM	(3)
 #define ERROR_NO_DRM_FW_INITIALIZED	(-1)
 
-#define UFS_TZSW_POS (2296 / 8)
+#define UFS_TZSW_POS (5336 / 8)
 
 enum soc_info_type {
 	SOC_INFO_TYPE_VERSION = 0,
