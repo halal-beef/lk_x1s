@@ -20,13 +20,13 @@
 #include <platform/smc.h>
 #include <dev/rpmb.h>
 
-int get_unique_guid(char *ptr_name, char *buf);
-
 #define CMD_STRING_MAX_SIZE 60
 #define AVB_PRELOAD_BASE 0xA0000000
 
 static uint32_t avbkey_is_trusted;
 static struct AvbOps ops;
+
+int get_unique_guid(char *ptr_name, char *buf);
 
 static AvbIOResult exynos_read_from_partition(AvbOps *ops,
 		const char *partition,
