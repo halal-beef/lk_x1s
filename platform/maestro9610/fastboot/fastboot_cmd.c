@@ -547,6 +547,9 @@ int do_fastboot(int argc, const cmd_args *argv)
 	dprintf(ALWAYS, "This is do_fastboot\n");
 	print_lcd_update(FONT_GREEN, FONT_BLACK, "Entering fastboot mode.");
 
+	/* display all entries */
+	pit_show_info();
+
 	muic_sw_usb();
 
 	do {
