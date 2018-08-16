@@ -39,7 +39,7 @@
 
 #define REBOOT_MODE_RECOVERY	0xFF
 
-extern arm_generic_timer_disable(void);
+void arm_generic_timer_disable(void);
 
 static char cmdline[AVB_CMD_MAX_SIZE];
 
