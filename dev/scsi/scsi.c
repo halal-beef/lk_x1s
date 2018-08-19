@@ -11,7 +11,7 @@
  */
 
 #include <dev/scsi.h>
-
+#include <lib/font_display.h>
 
 #define	SCSI_UNMAP_DESC_LEN	16
 
@@ -505,6 +505,9 @@ status_t scsi_scan(scsi_device_t *sdev, u32 wlun, u32 dev_num, exec_t *func,
 
 		/* Get max LBA and block size */
 		if (wlun == 0) {
+#ifdef CONFIG_EXYNOS_BOOTLOADER_DISPLAY
+			u32 capacity = 0;
+#endif
 			ret = scsi_read_capacity_10(&sdev->dev, g_buf);
 			if (ret < 0) {
 				printf("[SCSI] READ CAPACITY 10 failed: %d\n",
@@ -514,6 +517,19 @@ status_t scsi_scan(scsi_device_t *sdev, u32 wlun, u32 dev_num, exec_t *func,
 
 			block_size = get_dword_le(&g_buf[4]);
 			block_count = get_dword_le(&g_buf[0]);
+
+#ifdef CONFIG_EXYNOS_BOOTLOADER_DISPLAY
+			capacity = ((block_size * (block_count + 1)) / 1024 / 1024);
+
+			if (capacity > 1024) {
+				capacity /= 1024;
+				print_lcd_update(FONT_WHITE, FONT_BLACK, "[UFS] LU%u\t%s\t%s\t%s\t%s\t%3d GB",
+						sdev->lun, name, sdev->vendor, sdev->product, sdev->revision, capacity);
+			} else {
+				print_lcd_update(FONT_WHITE, FONT_BLACK, "[UFS] LU%u\t%s\t%s\t%s\t%s\t%3d MB",
+						sdev->lun, name, sdev->vendor, sdev->product, sdev->revision, capacity);
+			}
+#endif
 		} else {
 			/*
 			 * This is for RPMB W-LUN. Origially it's block size
