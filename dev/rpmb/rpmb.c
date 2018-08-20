@@ -757,6 +757,7 @@ static int ufs_rpmb_commands(int dev_num, struct rpmb_packet *packet)
 		dev = bio_open("scsirpmb");
 		if (dev == NULL) {
 			dprintf(INFO, "bio open fail\n");
+			free(hmac);
 			ret = -1;
 			goto out;
 		}
@@ -767,6 +768,7 @@ static int ufs_rpmb_commands(int dev_num, struct rpmb_packet *packet)
 		if (cnt == 0) {
 			dprintf(INFO, "Write counter read request fail !!!\n");
 			bio_close(dev);
+			free(hmac);
 			ret = -1;
 			goto out;
 		}
@@ -780,6 +782,7 @@ static int ufs_rpmb_commands(int dev_num, struct rpmb_packet *packet)
 		if (cnt == 0) {
 			dprintf(INFO, "Write counter read fail !!!\n");
 			bio_close(dev);
+			free(hmac);
 			ret = -1;
 			goto out;
 		}
@@ -796,6 +799,7 @@ static int ufs_rpmb_commands(int dev_num, struct rpmb_packet *packet)
 		dump_packet(packet->Key_MAC, HMAC_SIZE);
 
 		ufs_upiu_report(packet, SECU_PROT_IN);
+		free(hmac);
 		bio_close(dev);
 		break;
 
@@ -856,6 +860,7 @@ static int ufs_rpmb_commands(int dev_num, struct rpmb_packet *packet)
 		dev = bio_open("scsirpmb");
 		if (dev == NULL) {
 			dprintf(INFO, "bio open fail\n");
+			free(hmac);
 			ret = -1;
 			goto out;
 		}
@@ -866,6 +871,7 @@ static int ufs_rpmb_commands(int dev_num, struct rpmb_packet *packet)
 		if (cnt == 0) {
 			dprintf(INFO, "RPMB: Write fail !!!\n");
 			bio_close(dev);
+			free(hmac);
 			ret = -1;
 			goto out;
 		}
@@ -888,6 +894,7 @@ static int ufs_rpmb_commands(int dev_num, struct rpmb_packet *packet)
 		if (cnt == 0) {
 			dprintf(INFO, "RPMB: Request read result fail !!!\n");
 			bio_close(dev);
+			free(hmac);
 			ret = -1;
 			goto out;
 		}
@@ -901,6 +908,7 @@ static int ufs_rpmb_commands(int dev_num, struct rpmb_packet *packet)
 		if (cnt == 0) {
 			dprintf(INFO, "RPMB: Read result fail !!!\n");
 			bio_close(dev);
+			free(hmac);
 			ret = -1;
 			goto out;
 		}
@@ -940,6 +948,7 @@ static int ufs_rpmb_commands(int dev_num, struct rpmb_packet *packet)
 		dev = bio_open("scsirpmb");
 		if (dev == NULL) {
 			dprintf(INFO, "bio open fail\n");
+			free(hmac);
 			ret = -1;
 			goto out;
 		}
@@ -950,6 +959,7 @@ static int ufs_rpmb_commands(int dev_num, struct rpmb_packet *packet)
 		if (cnt == 0) {
 			dprintf(INFO, "RPMB: Request read data fail !!!\n");
 			bio_close(dev);
+			free(hmac);
 			ret = -1;
 			goto out;
 		}
@@ -964,6 +974,7 @@ static int ufs_rpmb_commands(int dev_num, struct rpmb_packet *packet)
 		if (cnt == 0) {
 			dprintf(INFO, "RPMB: Read data fail !!!\n");
 			bio_close(dev);
+			free(hmac);
 			ret = -1;
 			goto out;
 		}
