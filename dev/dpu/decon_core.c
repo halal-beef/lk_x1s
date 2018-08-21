@@ -290,8 +290,8 @@ void decon_string_update(void)
 {
 	struct decon_device *decon = decon0_drvdata;
 	struct dsim_device *dsim = dsim0_for_decon;
-
-	if (!WINMAP && (decon->state == DECON_STATE_ON))
+	if (decon != NULL && dsim != NULL && !WINMAP
+		&& decon->state == DECON_STATE_ON)
 		decon_show_buffer_update(decon, dsim, LUT_COLOR_1);
 }
 

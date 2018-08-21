@@ -85,4 +85,11 @@ enum {
 	MIPI_DSI_RX_DCS_SHORT_READ_RESPONSE_2BYTE	= 0x22,
 };
 
+/* MIPI DCS commands */
+enum {
+	MIPI_DCS_NOP					= 0x00,
+	MIPI_DCS_SOFT_RESET				= 0x01,
+	MIPI_DCS_GET_DISPLAY_ID				= 0x04,
+};
+
 #endif /* __MIPI_DSI_CMD_H__ */

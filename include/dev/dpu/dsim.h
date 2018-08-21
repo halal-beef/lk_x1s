@@ -212,6 +212,7 @@ struct dsim_device {
 	u32 data_lane_cnt;
 
 	struct dsim_lcd_driver *panel_ops;
+	struct lcd_driver *cm_panel_ops;
 	struct decon_lcd *lcd_info;
 	//struct decon_lcd lcd_info;
 
@@ -231,8 +232,23 @@ struct dsim_device {
  * mipi-dsi driver seeks lcd panel registered through name field
  * and calls these callback functions in appropriate time.
  */
+struct lcd_driver {
+#define NUM_OF_VERIFIED_PANEL	4
+	u32 panel_ids[NUM_OF_VERIFIED_PANEL];	/* unique ID for each panel */
+	u32 id;					/* read ID */
+
+	/* fill panel id to panel_ids arrary from panel driver each */
+	int	(*fill_id)(struct dsim_device *dsim);
+	/* read ddi's id(panel_ids[]) for matching expected id */
+	int	(*read_id)(struct dsim_device *dsim);
+	/* return panel_ops of matched panel driver */
+	struct dsim_lcd_driver *(*get_panel_info)(struct dsim_device *dsim);
+};
+
 
 struct dsim_lcd_driver {
+	int	(*get_id)(struct dsim_device *dsim);
+	struct decon_lcd *(*get_lcd_info)(void);
 	int	(*probe)(struct dsim_device *dsim);
 	int	(*suspend)(struct dsim_device *dsim);
 	int	(*displayon)(struct dsim_device *dsim);

@@ -26,6 +26,7 @@
 #include "exynos_font.h"
 #include <dev/dpu/lcd_ctrl.h>
 #include <target/dpu_config.h>
+#include <target/lcd_module.h>
 
 //static u32 x_pos = 0;
 static u32 y_pos = 0;
@@ -96,7 +97,7 @@ static int _fill_fb_string(u32 *fb_buf, u32 x_pos, u8 *str,
 	int i = 0;
 	int cnt = 0;
 	char ch = 0;
-	struct decon_lcd *lcd_info = decon_get_lcd_info();
+	struct decon_lcd *lcd_info = common_get_lcd_info();
 
 	if (lgth > MAX_NUM_CHAR_PER_LINE)
 		cnt = MAX_NUM_CHAR_PER_LINE;

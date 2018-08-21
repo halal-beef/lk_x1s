@@ -19,21 +19,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#ifndef __LCD_MODULE_H__
+#define __LCD_MODULE_H__
 
-#ifndef __LCD_CTRL_H__
-#define __LCD_CTRL_H__
+#include <dev/dpu/dsim.h>
 
-#include <dev/dpu/decon_lcd.h>
+int cm_fill_id(struct dsim_device *dsim);
+int cm_read_id(struct dsim_device *dsim);
+struct dsim_lcd_driver *cm_get_panel_info(struct dsim_device *dsim);
+struct lcd_driver *get_lcd_drv_ops(void);
+struct decon_lcd *common_get_lcd_info(void);
 
-#define ARRAY_SIZE(x) (sizeof(x) / sizeof((x)[0]))
-
-void s6e3fa0_lcd_init(unsigned int id, struct decon_lcd *lcd);
-void s6e3fa0_lcd_enable_exynos(unsigned int id);
-void s6e3fa0_lcd_disable_exynos(unsigned int id);
-int s6e3fa0_lcd_gamma_ctrl(unsigned int id, unsigned int backlightlevel);
-int s6e3fa0_lcd_gamma_update(int id);
-
-struct decon_lcd *decon_get_lcd_info(void);
-struct dsim_lcd_driver *decon_get_panel_info(void);
-
-#endif /* __LCD_CTRL_H__ */
+#endif /*__LCD_MODULE_H__ */
