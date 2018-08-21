@@ -247,6 +247,8 @@ void platform_early_init(void)
 
 void platform_init(void)
 {
+	u32 ret = 0;
+
 	pmic_init();
 	fg_init_s2mu004();
 	check_charger_connect();
@@ -259,9 +261,10 @@ void platform_init(void)
 	 * you must use the print_lcd function.
 	 */
 	print_lcd(FONT_RED, FONT_BLACK, "LK Display is enabled!");
-	display_drv_init();
-	if (is_first_boot())
+	ret = display_drv_init();
+	if (ret == 0 && is_first_boot())
 		show_boot_logo();
+
 	/* If the display_drv_init function is called,
 	 * you must use the print_lcd_update function.
 	 */

@@ -28,6 +28,19 @@
 #define MIN_BRIGHTNESS 0
 #define DEFAULT_BRIGHTNESS 0
 
+extern struct decon_lcd s6e3fa0_lcd_info;
+
+static int s6e3fa0_get_id(struct dsim_device *dsim)
+{
+	return 0xff244040; /* s6e3fa0 */
+}
+
+static struct decon_lcd *s6e3fa0_get_lcd_info(void)
+{
+	dsim_info("%s\n", __func__);
+	return &s6e3fa0_lcd_info;
+}
+
 static int s6e3fa0_probe(struct dsim_device *dsim)
 {
 	return 1;
@@ -35,8 +48,8 @@ static int s6e3fa0_probe(struct dsim_device *dsim)
 
 static int s6e3fa0_displayon(struct dsim_device *dsim)
 {
-	lcd_init(dsim->id, dsim->lcd_info);
-	lcd_enable_exynos(dsim->id);
+	s6e3fa0_lcd_init(dsim->id, dsim->lcd_info);
+	s6e3fa0_lcd_enable_exynos(dsim->id);
 	return 1;
 }
 
@@ -51,13 +64,17 @@ static int s6e3fa0_resume(struct dsim_device *dsim)
 }
 
 struct dsim_lcd_driver s6e3fa0_mipi_lcd_driver = {
+	.get_id		= s6e3fa0_get_id,
+	.get_lcd_info	= s6e3fa0_get_lcd_info,
 	.probe		= s6e3fa0_probe,
 	.displayon	= s6e3fa0_displayon,
 	.suspend	= s6e3fa0_suspend,
 	.resume		= s6e3fa0_resume,
 };
 
+#if 0
 struct dsim_lcd_driver *decon_get_panel_info(void)
 {
 	return &s6e3fa0_mipi_lcd_driver;
 }
+#endif

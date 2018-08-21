@@ -28,6 +28,7 @@
 #include <dev/dpu/decon.h>
 #include <dev/dpu/lcd_ctrl.h>
 #include <target/dpu_config.h>
+#include <target/lcd_module.h>
 
 #define MIPI_CMD_TIMEOUT 50
 
@@ -363,6 +364,28 @@ void dpu_sysreg_dphy_reset(u32 sysreg, u32 dsim_id, u32 rst)
 	writel(val, sysreg + DISP_DPU_MIPI_PHY_CON);
 }
 
+static int dsim_disable(struct dsim_device *dsim)
+{
+	int ret = 0;
+
+	if (dsim->state == DSIM_STATE_OFF)
+		return 0;
+
+	//call_panel_ops(dsim, suspend, dsim);
+
+	dsim_reg_stop(dsim->id, dsim->data_lane);
+
+	/* DPHY power off */
+	dsim_d_phy_onoff(dsim, 0);
+
+	/* Panel power off */
+	dsim_set_panel_power(dsim, 0);
+
+	dsim->state = DSIM_STATE_OFF;
+
+	return ret;
+}
+
 static int dsim_enable(struct dsim_device *dsim)
 {
 	struct dsim_clks clks = {0};
@@ -416,6 +439,24 @@ static int dsim_enable(struct dsim_device *dsim)
 	return ret;
 }
 
+struct decon_lcd *decon_get_lcd_info(void)
+{
+	struct dsim_device *dsim;
+	if (dsim0_for_decon)
+		dsim = dsim0_for_decon;
+	else {
+		dsim_err("Fail to get dsim\n");
+		return NULL;
+	}
+
+	if (!dsim->panel_ops) {
+		dsim_err("Fail to get dsim panel_ops\n");
+		return NULL;
+	}
+
+	return dsim->panel_ops->get_lcd_info();
+}
+
 int dsim_probe(u32 dev_id)
 {
 	int ret = 0;
@@ -432,10 +473,15 @@ int dsim_probe(u32 dev_id)
 	dsim->config_ops = get_exynos_display_config();
 
 	dsim->id = dev_id;
-
+	if (!dsim->id)
+		dsim0_for_decon = dsim;
+	else {
+		ret = -ENXIO;
+		goto err;
+	}
 	dsim_get_gpios(dsim);
 
-	dsim->lcd_info = decon_get_lcd_info();
+	dsim->lcd_info = common_get_lcd_info();
 
 	dsim->data_lane_cnt = dsim->lcd_info->data_lane;
 	dsim_info("using data lane count(%d)\n", dsim->data_lane_cnt);
@@ -444,24 +490,38 @@ int dsim_probe(u32 dev_id)
 
 	if (!dev_id)
 		dsim->res.regs = DSIM0_BASE_ADDR;
-	else
+	else {
+		ret = -ENXIO;
 		goto err;
-
-	dsim->panel_ops = decon_get_panel_info();
+	}
 
 	ret = dsim_get_data_lanes(dsim);
-	if (ret)
+	if (ret) {
+		ret = -EIO;
 		goto err_dt;
+	}
 
 	dsim->state = DSIM_STATE_INIT;
 	dsim_enable(dsim);
-
-	call_panel_ops(dsim, probe, dsim);
-
-	if (!dsim->id)
-		dsim0_for_decon = dsim;
-	else
+	dsim->cm_panel_ops = get_lcd_drv_ops();
+	if (!dsim->cm_panel_ops) {
+		dsim_err("dsim fail to get common panel operation\n");
+		ret = -EINVAL;
 		goto err;
+	}
+	dsim->cm_panel_ops->fill_id(dsim);
+
+	dsim->panel_ops = dsim->cm_panel_ops->get_panel_info(dsim);
+	if (!dsim->panel_ops) {
+		dsim_err("dsim fail to get panel operation\n");
+		ret = -EFAULT;
+		goto err;
+	}
+	dsim_disable(dsim);
+
+	dsim->lcd_info = decon_get_lcd_info();
+	dsim_enable(dsim);
+	call_panel_ops(dsim, probe, dsim);
 
 	dsim_info("dsim%d driver(%s mode) has been probed.\n", dsim->id,
 		dsim->lcd_info->mode == DECON_MIPI_COMMAND_MODE ? "cmd" : "video");
@@ -469,7 +529,7 @@ int dsim_probe(u32 dev_id)
 	return 0;
 
 err:
-	dsim_err("dsim probe failed.\n");
+	dsim_err("dsim has error.\n");
 err_dt:
 	free(dsim);
 	dsim_err("dsim probe failed.\n");

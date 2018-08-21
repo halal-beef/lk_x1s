@@ -99,13 +99,14 @@ struct decon_lcd s6e3fa0_lcd_info = {
 	.data_lane = 4,
 };
 
+#if 0
 struct decon_lcd *decon_get_lcd_info(void)
 {
 	return &s6e3fa0_lcd_info;
 }
+#endif
 
-
-void lcd_init(unsigned int id, struct decon_lcd *lcd)
+void s6e3fa0_lcd_init(unsigned int id, struct decon_lcd *lcd)
 {
 	if (dsim_wr_data(id, MIPI_DSI_DCS_LONG_WRITE,
 				(unsigned long)SEQ_TEST_KEY_ON_F0,
@@ -187,19 +188,19 @@ void lcd_init(unsigned int id, struct decon_lcd *lcd)
 	}
 }
 
-void lcd_enable_exynos(unsigned int id)
+void s6e3fa0_lcd_enable_exynos(unsigned int id)
 {
 	if (dsim_wr_data(id, MIPI_DSI_DCS_SHORT_WRITE,
 			SEQ_DISPLAY_ON[0], 0) < 0)
 		dsim_err("fail to send SEQ_DISPLAY_ON command.\n");
 }
 
-void lcd_disable(int id)
+void s6e3fa0_lcd_disable(int id)
 {
 	/* This function needs to implement */
 }
 
-int lcd_gamma_ctrl(unsigned int id, unsigned int backlightlevel)
+int s6e3fa0_lcd_gamma_ctrl(unsigned int id, unsigned int backlightlevel)
 {
 	int ret;
 
@@ -212,7 +213,7 @@ int lcd_gamma_ctrl(unsigned int id, unsigned int backlightlevel)
 	return ret;
 }
 
-int lcd_gamma_update(int id)
+int s6e3fa0_lcd_gamma_update(int id)
 {
 	int ret;
 
