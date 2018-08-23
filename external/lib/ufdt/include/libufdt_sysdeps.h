@@ -29,7 +29,7 @@
 #include <string.h>
 #include <limits.h>
 #include <stdbool.h>
-#include <uuid.h>
+#include <guid.h>
 
 #ifdef DTO_ENABLE_DEBUG
 /* Print functions, used for diagnostics.
