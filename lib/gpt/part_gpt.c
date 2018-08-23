@@ -1,9 +1,19 @@
+/*
+ * Copyright@ Samsung Electronics Co. LTD
+ *
+ * This software is proprietary of Samsung Electronics.
+ * No part of this software, either material or conceptual may be copied or distributed, transmitted,
+ * transcribed, stored in a retrieval system or translated into any human or computer language in any form by any means,
+ * electronic, mechanical, manual or otherwise, or disclosed
+ * to third parties without the express written permission of Samsung Electronics.
+ */
+
 #include <reg.h>
 #include <stdlib.h>
 #include <malloc.h>
 #include <string.h>
 #include <part_gpt.h>
-#include <uuid.h>
+#include <guid.h>
 #include <ctype.h>
 #include <lib/console.h>
 #include <lib/cksum.h>
@@ -60,7 +70,7 @@ static int set_gpt_header(bdev_t *dev, struct gpt_header *gpt_h,
 	gpt_h->part_table_crc = 0;
 
 	str_disk_guid = strdup(UUID_DISK);
-	if (uuid_str_to_bin(str_disk_guid, gpt_h->guid, UUID_STR_FORMAT_GUID)) {
+	if (uid_str_to_bin(str_disk_guid, gpt_h->guid, UID_STR_GUID)) {
 		printf("disk guid set fail\n");
 		return -1;
 	}
@@ -105,7 +115,7 @@ static int set_partition_table(bdev_t *dev, struct gpt_header *gpt_h,
 	}
 	sprintf(part_number, "%02x", 0);
 	strcat(unique_guid, part_number);
-	ret = uuid_str_to_bin(unique_guid, gpt_e[0].part_guid.b, UUID_STR_FORMAT_STD);
+	ret = uid_str_to_bin(unique_guid, gpt_e[0].part_guid.b, UID_STR_STD);
 	if (ret) {
 		printf("Unique guid set fail : fat\n");
 		goto free;
@@ -146,7 +156,7 @@ static int set_partition_table(bdev_t *dev, struct gpt_header *gpt_h,
 		}
 		sprintf(part_number, "%02x", part_cnt + 1);
 		strcat(unique_guid, part_number);
-		ret = uuid_str_to_bin(unique_guid, gpt_e[part_cnt].part_guid.b, UUID_STR_FORMAT_STD);
+		ret = uid_str_to_bin(unique_guid, gpt_e[part_cnt].part_guid.b, UID_STR_STD);
 		if (ret) {
 			printf("Unique guid set fail : %s\n", pit->pte[i].name);
 			goto free;
@@ -459,7 +469,7 @@ int get_unique_guid(char *pt_name, char *buf)
 		print_efiname(&gpt_e[i], name_buf);
 		if (!strncmp(name_buf, pt_name, strlen(pt_name))) {
 			uuid_bin = (unsigned char *)gpt_e[i].part_guid.b;
-			uuid_bin_to_str(uuid_bin, buf, UUID_STR_FORMAT_GUID);
+			uid_bin_to_str(uuid_bin, buf, UID_STR_GUID);
 			ret = 0;
 			goto entry_free;
 		}
