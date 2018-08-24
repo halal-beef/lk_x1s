@@ -18,6 +18,7 @@
 #include <lib/sysparam.h>
 #include <dev/boot.h>
 #include <platform/decompress_ext4.h>
+#include <platform/secure_boot.h>
 
 // TODO:
 /*
@@ -36,6 +37,7 @@
 #define PIT_FAT_MB_SIZE			200	/* 200MB */
 #define PIT_FAT_SIZE			\
 		(PIT_FAT_MB_SIZE * 1024 * 1024 / PIT_SECTOR_SIZE)
+#define PIT_SIGNITURE_SIZE		1024
 
 #define CMD_STRING_MAX_SIZE		60
 
@@ -697,7 +699,7 @@ void pit_init(void)
 
 	printf("[PIT] pit init start...\n");
 
-	pit_buf = malloc(PIT_SIZE_LIMIT);
+	pit_buf = malloc(PIT_SIZE_LIMIT + PIT_SIGNITURE_SIZE);
 	if (!pit_buf) {
 		printf("[PIT] pit_buf not allocated !!\n");
 		goto err;
@@ -716,6 +718,16 @@ void pit_init(void)
 	/* Load pit data */
 	pit_load_pit(pit_buf);
 	LOAD_PIT(&pit, pit_buf);
+
+	/*
+	ret = el3_verify_signature_using_image((uint64_t)pit_buf,
+			sizeof(struct pit_info) + PIT_SIGNITURE_SIZE);
+	if (ret) {
+		printf("[SB ERR] pit signature check fail [ret: 0x%X]\n", ret);
+	} else {
+		printf("pit signature check success\n");
+	}
+	*/
 
 	/* Calculation Start LBA */
 	pit_lba_cumulation();
