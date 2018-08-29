@@ -21,6 +21,7 @@ MODULE_SRCS += \
 	$(LOCAL_DIR)/security/avb_ops.c \
 	$(LOCAL_DIR)/security/avb_main.c \
 	$(LOCAL_DIR)/security/sb_api.c \
+	$(LOCAL_DIR)/security/otp_v20.c \
 	$(LOCAL_DIR)/speedy/speedy.c \
 	$(LOCAL_DIR)/pmic/pmic_s2mpu09.c \
 	$(LOCAL_DIR)/pmic/fg_s2mu004.c \
