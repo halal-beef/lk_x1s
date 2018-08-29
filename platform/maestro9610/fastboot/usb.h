@@ -1,15 +1,12 @@
 /*
- * (C) Copyright 2011 Samsung Electronics Co. Ltd
+ * Copyright@ Samsung Electronics Co. LTD
  *
- * See file CREDITS for list of people who contributed to this
- * project.
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 2 as
- * published by the Free Software Foundation.
- *
+ * This software is proprietary of Samsung Electronics.
+ * No part of this software, either material or conceptual may be copied or distributed, transmitted,
+ * transcribed, stored in a retrieval system or translated into any human or computer language in any form by any means,
+ * electronic, mechanical, manual or otherwise, or disclosed
+ * to third parties without the express written permission of Samsung Electronics.
  */
-
 
 #ifndef _EXYNOS_USB_H
 #define _EXYNOS_USB_H
