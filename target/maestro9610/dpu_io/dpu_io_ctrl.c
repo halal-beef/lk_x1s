@@ -29,6 +29,7 @@
 void display_te_init(void);
 void display_panel_reset(void);
 void display_panel_release(void);
+void display_panel_power(void);
 /*
  * ########## Machine dependency ##########
  */
@@ -98,12 +99,11 @@ static void set_gpio_lcd_reset(enum board_gpio_type gpio_type)
 /* Configure and set a GPIO for LCD_POWER_ON */
 static void set_gpio_lcd_power(enum board_gpio_type gpio_type)
 {
-#if 0
 	/* Enable Power */
-	/* TODO */
+	printf("%s: +\n", __func__);
 	display_panel_power();
+	printf("%s: -\n", __func__);
 	mdelay(10);
-#endif
 }
 
 struct exynos_display_config display_config = {
