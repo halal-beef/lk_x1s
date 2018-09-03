@@ -38,6 +38,7 @@
 #define BUFFER_SIZE 2048
 
 #define REBOOT_MODE_RECOVERY	0xFF
+#define REBOOT_MODE_FACTORY	0xFD
 
 void arm_generic_timer_disable(void);
 
@@ -292,6 +293,12 @@ static void configure_dtb(void)
 
 		sprintf(str, "<0x%x>", RAMDISK_BASE + b_hdr->ramdisk_size);
 		set_fdt_val("/chosen", "linux,initrd-end", str);
+	} else if (readl(EXYNOS9610_POWER_SYSIP_DAT0) == REBOOT_MODE_FACTORY) {
+		noff = fdt_path_offset (fdt_dtb, "/chosen");
+		np = fdt_getprop(fdt_dtb, noff, "bootargs", &len);
+		snprintf(str, BUFFER_SIZE, "%s %s", np, "androidboot.mode=factory");
+		fdt_setprop(fdt_dtb, noff, "bootargs", str, strlen(str) + 1);
+		printf("Enter factory mode...");
 	}
 
 	sprintf(str, "<0x%x>", ECT_BASE);
@@ -456,7 +463,7 @@ int cmd_boot(int argc, const cmd_args *argv)
 
 	configure_dtb();
 
-	if (readl(EXYNOS9610_POWER_SYSIP_DAT0) == REBOOT_MODE_RECOVERY)
+	if (readl(EXYNOS9610_POWER_SYSIP_DAT0) == REBOOT_MODE_RECOVERY || readl(EXYNOS9610_POWER_SYSIP_DAT0) == REBOOT_MODE_FACTORY)
 		writel(0, EXYNOS9610_POWER_SYSIP_DAT0);
 	/* notify EL3 Monitor end of bootloader */
 	exynos_smc(SMC_CMD_END_OF_BOOTLOADER, 0, 0, 0);
