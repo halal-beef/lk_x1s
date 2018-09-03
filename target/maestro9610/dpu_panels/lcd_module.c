@@ -101,11 +101,11 @@ struct decon_lcd *common_get_lcd_info(void)
 }
 
 extern struct dsim_lcd_driver s6e3fa0_mipi_lcd_driver;
-//extern struct dsim_lcd_driver s6e3hf4_mipi_lcd_driver;
+extern struct dsim_lcd_driver nt36672a_mipi_lcd_driver;
 
 struct dsim_lcd_driver *panel_list[NUM_OF_VERIFIED_PANEL] = {
 	&s6e3fa0_mipi_lcd_driver,
-//	&s6e3hf4_mipi_lcd_driver,
+	&nt36672a_mipi_lcd_driver,
 };
 
 /* fill panel id to panel_ids arrary from panel driver each */

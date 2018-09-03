@@ -118,3 +118,16 @@ display_panel_release:
 
 	ret
 
+	.global display_panel_power
+display_panel_power:
+	/* defined (CONFIG_MACH_MAESTRO9610) */
+	/* TODO : Enable GPG3_1, If this GPIO is enabled at ERD b'd, */
+	/* camera flash is enabled at LK */
+	/* Set LCD_BIAS_ENP (GPG3_1) to Output */
+
+	/* Set LCD_BIAS_ENN (GPG3_0) to Output */
+
+	/* Set LCD_BL_EN (GPG2_1) to Output */
+
+	ret
+
