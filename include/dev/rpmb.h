@@ -120,6 +120,8 @@ int rpmb_read_persistent_value(const char *name,
 int rpmb_write_persistent_value(const char *name,
 		size_t value_size,
 		const uint8_t *value);
+int rpmb_get_lock_state(uint32_t *state);
+int rpmb_set_lock_state(uint32_t state);
 
 /* Parameter */
 #define HMAC_SIZE	32

@@ -51,16 +51,16 @@ struct boot_header {
 	u32     magic;
 	u32     ri_block_base;
 	u32     ri_block_cnt;
-	u32     persist_block_base;
-	u32     persist_block_cnt;
 };
 
 struct persist_data {
-        u8      key[PERSIST_KEY_LEN];
-        u32     len;
-        u8      resv[128-PERSIST_KEY_LEN-PERSIST_VALUE_LEN-4];
-        u8      value[PERSIST_VALUE_LEN];
+	u8      key[PERSIST_KEY_LEN];
+	u32     len;
+	u8      resv[128-PERSIST_KEY_LEN-PERSIST_VALUE_LEN-4];
+	u8      value[PERSIST_VALUE_LEN];
 };
+
+#define HEADER_SIZE (12)
 
 #ifdef USE_MMC0
 int emmc_rpmb_open(struct mmc *mmc);
@@ -70,6 +70,13 @@ int emmc_rpmb_write(int dev_num, int start_blk, int blk_num, const void*src);
 int emmc_rpmb_setblockcounter(int dev_num, u32 flag, u32 count);
 #endif
 
+struct header_block {
+	struct boot_header header;
+	char reserved[RPMB_BLOCK_SIZE - (HEADER_SIZE + 4)];
+	uint32_t lock;
+};
+
+static uint32_t lock_state;
 uint64_t rollbackIndex[BOOT_RI_TABLE_SIZE];
 uint32_t table_init_state;
 struct boot_header bootHeader;
@@ -1416,6 +1423,7 @@ static int rpmb_init_table(void)
 	u8 buf[RPMB_BLOCK_SIZE];
 	u32 addr, addr_base;
 	struct boot_header *header;
+	struct header_block *hblock;
 
 	memset((void *)buf, 0, RPMB_BLOCK_SIZE);
 
@@ -1423,8 +1431,10 @@ static int rpmb_init_table(void)
 	header->magic = BOOT_MAGIC;
 	header->ri_block_base = BOOT_RI_TABLE_BLOCK;
 	header->ri_block_cnt = BOOT_RI_TABLE_BLOCK_CNT;
-	header->persist_block_base = PERSIST_DATA_BLOCK;
-	header->persist_block_cnt =  PERSIST_DATA_BLOCK_CNT;
+
+	hblock  = (struct header_block *)buf;
+	hblock->lock = 1;
+	lock_state = 1;
 
 	addr_base = RPMB_BLOCK_PER_PARTITION * (BOOT_RI_PARTITION - 1);
 
@@ -1470,6 +1480,7 @@ static int rpmb_ri_check_magic(void)
 	u8 buf[RPMB_BLOCK_SIZE];
 	uint32_t  addr;
 	struct boot_header *header;
+	struct header_block *hblock;
 
 	addr = RPMB_BLOCK_PER_PARTITION * (BOOT_RI_PARTITION - 1);
 
@@ -1481,6 +1492,7 @@ static int rpmb_ri_check_magic(void)
 	}
 
 	header = (struct boot_header *)buf;
+	hblock = (struct header_block *)buf;
 
 	if (header->magic != BOOT_MAGIC) {
 		ret = rpmb_init_table();
@@ -1490,6 +1502,7 @@ static int rpmb_ri_check_magic(void)
 		}
 	} else {
 		memcpy((void *)&bootHeader, header, sizeof(struct boot_header));
+		lock_state = hblock->lock;
 	}
 
 	table_init_state = 1;
@@ -1794,3 +1807,42 @@ int rpmb_write_persistent_value(const char *name,
 	return RV_SUCCESS;
 }
 
+int rpmb_get_lock_state(uint32_t *state)
+{
+	// Check If rollback index table is initilaized
+	if (!table_init_state)
+		return RV_RPMB_RI_TABLE_NOT_INITIALIZED;
+
+	*state = lock_state;
+
+	return RV_SUCCESS;
+}
+
+int rpmb_set_lock_state(uint32_t state)
+{
+	int ret;
+	u8 buf[RPMB_BLOCK_SIZE];
+	struct boot_header *header;
+	struct header_block *hblock;
+
+	if (state != 0)
+		state = 1;
+
+	header = (struct boot_header *)buf;
+	hblock = (struct header_block *)buf;
+
+
+	memcpy((void *)header, (void *)&bootHeader, sizeof(struct boot_header));
+
+	lock_state = state;
+	hblock->lock = state;
+
+	ret = rpmb_update_table_block(0, buf);
+
+	if (ret) {
+		printf("RPMB : Set LOCK state (%d) fail\n", state);
+		return ret;
+	}
+
+	return RV_SUCCESS;
+}
