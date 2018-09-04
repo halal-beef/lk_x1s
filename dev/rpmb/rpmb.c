@@ -300,6 +300,29 @@ uint32_t block_RPMB_hmac(void)
 	return ret;
 }
 
+uint32_t set_RPMB_provision(uint64_t state)
+{
+	uint64_t r0 = 0;
+	uint64_t r1 = 0;
+	uint64_t r2 = 0;
+	uint64_t r3 = 0;
+	uint32_t ret = RV_SUCCESS;
+
+	r0 = SMC_AARCH64_PREFIX | SMC_SRPMB_PROVISIONED;
+	r1 = state == 0?0:1;
+
+	ret = cm_smc(&r0, &r1, &r2, &r3);
+
+	if (ret != RV_SUCCESS) {
+		printf("RPMB: failed to set provision state: 0x%X\n", ret);
+		return ret;
+	}
+#ifdef CM_DEBUG
+	printf("RPMB: successfully set provision state\n");
+#endif
+	return ret;
+}
+
 /* example function to test check above functions work correctly */
 int do_rpmb_test(int argc, char *argv[])
 {
@@ -1237,10 +1260,14 @@ void rpmb_key_programming(void)
 		argv[3].str = "key";
 		ret = do_rpmb(7, argv);
 		if (ret < 0) {
+			set_RPMB_provision(0);
 			dprintf(INFO, "RPMB: ERR: key programming fail: 0x%x\n", ret);
-			while(1);
+		}
+		else{
+			set_RPMB_provision(1);
 		}
 	} else {
+		set_RPMB_provision(1);
 		dprintf(INFO, "RPMB: key already programmed\n");
 	}
 
