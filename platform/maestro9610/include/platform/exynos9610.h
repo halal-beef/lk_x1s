@@ -75,6 +75,8 @@
 #define BL_SYS_INFO								(IRAM_NS_BASE + 0x800)
 #define BL_SYS_INFO_DRAM_SIZE							(BL_SYS_INFO + 0x48)
 #define CONFIG_IRAM_STACK							(IRAM_NS_BASE + 0x1000)
+#define DRAM_INFO								(IRAM_BASE + 0x2C000)
+#define DRAM_SIZE_INFO								(IRAM_BASE + 0x18848)
 
 #define WARM_RESET								(1 << 28)
 #define LITTLE_WDT_RESET							(1 << 23)
