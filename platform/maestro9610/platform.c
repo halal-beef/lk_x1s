@@ -39,6 +39,8 @@ unsigned int s5p_chip_id[4] = {0x0, 0x0, 0x0, 0x0};
 unsigned int charger_mode = 0;
 unsigned int board_id = 0;
 unsigned int board_rev = 0;
+unsigned int dram_info[24] = {0, 0, 0, 0};
+unsigned long long dram_size_info = 0;
 
 unsigned int get_charger_mode(void)
 {
@@ -49,6 +51,89 @@ static void read_chip_id(void)
 {
 	s5p_chip_id[0] = readl(EXYNOS9610_PRO_ID + CHIPID0_OFFSET);
 	s5p_chip_id[1] = readl(EXYNOS9610_PRO_ID + CHIPID1_OFFSET) & 0xFFFF;
+}
+
+static void read_dram_info(void)
+{
+	char type[16];
+	char rank_num[20];
+	char manufacturer[20];
+	unsigned int M5 = 0, M6 = 0, M7 = 0, M8 = 0;
+	unsigned int tmp = 0;
+
+	printf("%s %d\n", __func__, __LINE__);
+	/* 1. Type */
+	dram_info[0] = readl(DRAM_INFO);
+	tmp = dram_info[0] & 0xF;
+	printf("%s %d\n", __func__, __LINE__);
+
+	switch (tmp) {
+	case 0x0:
+		strcpy(type, "LPDDR4");
+		break;
+	case 0x2:
+		strcpy(type, "LPDDR4X");
+		break;
+	default:
+		printf("Type None!\n");
+	}
+
+	printf("%s %d\n", __func__, __LINE__);
+	/* 2. rank_num */
+	dram_info[0] = readl(DRAM_INFO);
+	tmp = (dram_info[0] >> 4) & 0xF;
+
+	printf("%s %d\n", __func__, __LINE__);
+	switch (tmp) {
+	case 0x0:
+		strcpy(rank_num, "1RANK");
+		break;
+	case 0x3:
+		strcpy(rank_num, "2RANK");
+		break;
+	default:
+		printf("Rank_num None!\n");
+	}
+
+	printf("%s %d\n", __func__, __LINE__);
+	/* 3. manufacturer */
+	dram_info[0] = readl(DRAM_INFO);
+	tmp = (dram_info[0] >> 8) & 0xFF;
+	M5 = tmp;
+
+	printf("%s %d\n", __func__, __LINE__);
+	switch (tmp) {
+	case 0x01:
+		strcpy(manufacturer, "Samsung");
+		break;
+	case 0x06:
+		strcpy(manufacturer, "SK hynix");
+		break;
+	case 0xFF:
+		strcpy(manufacturer, "Micron");
+		break;
+	default:
+		printf("Manufacturer None!\n");
+	}
+
+	printf("%s %d\n", __func__, __LINE__);
+	dram_info[1] = readl(DRAM_INFO + 0x4);
+	dram_info[2] = readl(DRAM_SIZE_INFO);
+	dram_info[3] = readl(DRAM_SIZE_INFO + 0x4);
+	dram_size_info |= (unsigned long long)(dram_info[2]);
+	dram_size_info |= (unsigned long long)(dram_info[3]) << 32;
+	/* Set to GB */
+	dram_size_info = dram_size_info / 1024 / 1024 / 1024;
+
+	M6 = dram_info[1] & 0xFF;
+	M7 = (dram_info[1] >> 8) & 0xFF;
+	M8 = (dram_info[0] & 0x3) | (((dram_info[0] >> 20) & 0xF) << 2) | ((dram_info[0]  >> 16 & 0x3) << 6);
+
+#ifdef CONFIG_EXYNOS_BOOTLOADER_DISPLAY
+	print_lcd(FONT_WHITE, FONT_BLACK, "DRAM %lu GB %s %s %s M5=0x%02x M6=0x%02x M7=0x%02x M8=0x%02x",
+		dram_size_info,	type, rank_num, manufacturer,
+		M5, M6, M7, M8);
+#endif
 }
 
 static void load_secure_payload(void)
@@ -177,6 +262,7 @@ void platform_init(void)
 	 */
 	//print_lcd_update(FONT_BLUE, FONT_BLACK, "LK display is enabled!");
 #endif
+	read_dram_info();
 	ufs_init(2);
 	ufs_set_configuration_descriptor();
 	pit_init();
