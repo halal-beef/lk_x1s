@@ -41,6 +41,7 @@
 #define REBOOT_MODE_RECOVERY	0xFF
 #define REBOOT_MODE_FACTORY	0xFD
 
+void configure_ddi_id(void);
 void arm_generic_timer_disable(void);
 
 static char cmdline[AVB_CMD_MAX_SIZE];
@@ -469,6 +470,7 @@ int cmd_boot(int argc, const cmd_args *argv)
 #endif
 
 	configure_dtb();
+	configure_ddi_id();
 
 	if (readl(EXYNOS9610_POWER_SYSIP_DAT0) == REBOOT_MODE_RECOVERY || readl(EXYNOS9610_POWER_SYSIP_DAT0) == REBOOT_MODE_FACTORY)
 		writel(0, EXYNOS9610_POWER_SYSIP_DAT0);
