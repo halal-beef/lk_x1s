@@ -12,6 +12,7 @@
 #include "uart_simple.h"
 #include <dev/ufs.h>
 #include <dev/boot.h>
+#include <dev/rpmb.h>
 #include <pit.h>
 #include <dev/interrupt/arm_gic.h>
 #include <dev/timer/arm_generic.h>
@@ -23,6 +24,7 @@
 #include <platform/if_pmic_s2mu004.h>
 #include <platform/tmu.h>
 #include <platform/dfd.h>
+#include <platform/ldfw.h>
 
 #include <lib/font_display.h>
 #include <lib/logo_display.h>
@@ -41,6 +43,7 @@ unsigned int board_id = 0;
 unsigned int board_rev = 0;
 unsigned int dram_info[24] = {0, 0, 0, 0};
 unsigned long long dram_size_info = 0;
+unsigned int secure_os_loaded = 0;
 
 unsigned int get_charger_mode(void)
 {
@@ -162,8 +165,10 @@ static void load_secure_payload(void)
 					 * 0xFEED0020 : Anti-rollback check fail
 					 */
 					printf("Fail to load Secure Payload!! [ret = 0x%lX]\n", ret);
-				else
+				else {
 					printf("Secure Payload is loaded successfully!\n");
+					secure_os_loaded = 1;
+				}
 			}
 
 			/*
@@ -272,4 +277,20 @@ void platform_init(void)
 	dfd_display_reboot_reason();
 	if (is_first_boot())
 		debug_snapshot_fdt_init();
+
+	if (secure_os_loaded == 1) {
+		if (!init_keystorage())
+			printf("keystorage: init done successfully.\n");
+		else
+			printf("keystorage: init failed.\n");
+
+		if (!init_ldfws()) {
+			printf("ldfw: init done successfully.\n");
+		} else {
+			printf("ldfw: init failed.\n");
+		}
+
+		rpmb_key_programming();
+		rpmb_load_boot_table();
+	}
 }
