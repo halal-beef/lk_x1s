@@ -27,6 +27,7 @@
 #include <platform/if_pmic_s2mu004.h>
 #include <platform/dfd.h>
 #include <dev/boot.h>
+#include <dev/rpmb.h>
 
 #define FB_RESPONSE_BUFFER_SIZE 128
 
@@ -275,7 +276,8 @@ int fb_do_flash(const char *cmd_buffer)
 	char *response = (char *)(((unsigned long)buf + 8) & ~0x07);
 
 	if(is_first_boot()) {
-		int lock_state = get_lock_state();
+		uint32_t lock_state;
+		rpmb_get_lock_state(&lock_state);
 		printf("Lock state: %d\n", lock_state);
 		if(lock_state) {
 			sprintf(response, "FAILDevice is locked");
@@ -303,7 +305,11 @@ int fb_do_reboot(const char *cmd_buffer)
 	sprintf(response,"OKAY");
 	fastboot_tx_status(response, strlen(response), FASTBOOT_TX_SYNC);
 
-	writel(0, CONFIG_RAMDUMP_SCRATCH);
+	if(!memcmp(cmd_buffer, "reboot-bootloader", strlen("reboot-bootloader")))
+		writel(CONFIG_RAMDUMP_MODE, CONFIG_RAMDUMP_SCRATCH);
+	else
+		writel(0, CONFIG_RAMDUMP_SCRATCH);
+
 	writel(0x1, EXYNOS9610_SWRESET);
 
 	return 0;
@@ -422,12 +428,14 @@ int fb_do_flashing(const char *cmd_buffer)
 	if (!strcmp(cmd_buffer + 9, "lock")) {
 		printf("Lock this device.\n");
 		print_lcd_update(FONT_GREEN, FONT_BLACK, "Lock this device.");
-		lock(1);
+		if(rpmb_set_lock_state(1))
+			sprintf(response, "FAILRPBM error: failed to change lock state on RPMB");
 	} else if (!strcmp(cmd_buffer + 9, "unlock")) {
 		if (get_unlock_ability()) {
 			printf("Unlock this device.\n");
 			print_lcd_update(FONT_GREEN, FONT_BLACK, "Unlock this device.");
-			lock(0);
+			if(rpmb_set_lock_state(0))
+				sprintf(response, "FAILRPBM error: failed to change lock state on RPMB");
 		} else {
 			sprintf(response, "FAILunlock_ability is 0");
 		}

@@ -438,20 +438,6 @@ int cmd_boot(int argc, const cmd_args *argv)
 	fdt_dtb = (struct fdt_header *)DT_BASE;
 	dtbo_table = (struct dt_table_header *)DTBO_BASE;
 
-	if (!init_keystorage())
-		printf("keystorage: init done successfully.\n");
-	else
-		printf("keystorage: init failed.\n");
-
-	if (!init_ldfws()) {
-			printf("ldfw: init done successfully.\n");
-	} else {
-			printf("ldfw: init failed.\n");
-	}
-
-	rpmb_key_programming();
-	rpmb_load_boot_table();
-
 	load_boot_images();
 
 #if defined(CONFIG_USE_AVB20)
