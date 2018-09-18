@@ -1,0 +1,164 @@
+manifest_format=1.3
+
+# Note that for ABE, these parameters are not used
+# Component data for gmp
+gmp_url=http://snapshots.linaro.org/components/toolchain/infrastructure/
+gmp_filespec=gmp-6.0.0a.tar.xz
+gmp_md5sum=5a874d7aea7b007d942ab60af08df3ad
+gmp_configure="--enable-cxx --enable-fft"
+gmp_staticlink="yes"
+
+# Component data for mpfr
+mpfr_url=http://snapshots.linaro.org/components/toolchain/infrastructure/
+mpfr_filespec=mpfr-3.1.3.tar.xz
+mpfr_md5sum=6969398cd2fbc56a6af570b5273c56a9
+mpfr_configure="--with-gmp=${local_builds}/destdir/${host}"
+mpfr_staticlink="yes"
+
+# Component data for mpc
+mpc_url=http://snapshots.linaro.org/components/toolchain/infrastructure/
+mpc_filespec=mpc-1.0.3.tar.gz
+mpc_md5sum=d6a1d5f8ddea3abd2cc3e98f58352d26
+mpc_configure="--with-gmp=${local_builds}/destdir/${host} --with-mpfr=${local_builds}/destdir/${host}"
+mpc_staticlink="yes"
+
+# Component data for linux
+linux_url=http://snapshots.linaro.org/components/toolchain/infrastructure/
+linux_filespec=linux-linaro-4.0-rc4-2015.03.tar.xz
+linux_md5sum=4dbc94f8c7d0adddef67d0826715139b
+linux_staticlink="yes"
+
+# Component data for dejagnu
+dejagnu_url=http://git.linaro.org/git/toolchain
+dejagnu_branch=linaro-local/stable
+dejagnu_revision=9c19d3d7473ef731b74f3a48fcce5a168bf701ec
+dejagnu_filespec=dejagnu.git
+dejagnu_staticlink="yes"
+
+# Component data for binutils
+binutils_url=http://git.linaro.org/git/toolchain
+binutils_branch=linaro_binutils-2_24-branch
+binutils_revision=13e81dd207f47c0a6ac5a837d7e7d5910b265e86
+binutils_filespec=binutils-gdb.git
+binutils_configure="--enable-lto --enable-plugins --disable-werror CPPFLAGS=-UFORTIFY_SOURCE --with-pkgversion=Linaro_Binutils-2017.01 --disable-gdb --disable-sim --disable-libdecnumber --disable-readline --with-sysroot=${sysroots}"
+binutils_staticlink="yes"
+
+# Component data for gcc
+gcc_url=http://dev-01.tcwglab/~tcwg-buildslave/releases/sources/4.9-2017.01
+gcc_filespec=gcc-linaro-4.9-2017.01.tar.xz
+gcc_makeflags="MAKEINFOFLAGS=--force"
+gcc_md5sum=d6857360eb7522d30a831308b15d255e
+gcc_configure=
+gcc_staticlink="no"
+gcc_stage1_flags="--with-mpc=${local_builds}/destdir/${host} --with-mpfr=${local_builds}/destdir/${host} --with-gmp=${local_builds}/destdir/${host} --with-gnu-as --with-gnu-ld --disable-libmudflap --enable-lto --enable-objc-gc --enable-shared --without-included-gettext --enable-nls --disable-sjlj-exceptions --enable-gnu-unique-object --enable-linker-build-id --disable-libstdcxx-pch --enable-c99 --enable-clocale=gnu --enable-libstdcxx-debug --enable-long-long --with-cloog=no --with-ppl=no --with-isl=no --disable-multilib --enable-fix-cortex-a53-835769 --enable-fix-cortex-a53-843419 --with-arch=armv8-a --enable-threads=posix --enable-multiarch --enable-libstdcxx-time=yes --disable-libssp --disable-libquadmath --disable-threads --without-headers --with-newlib --disable-libmudflap --disable-bootstrap --disable-decimal-float --disable-libgomp --disable-libatomic --disable-libsanitizer --disable-plugins --disable-libitm --enable-languages=c --with-sysroot=${local_builds}/sysroot-aarch64-linux-gnu --disable-shared --with-glibc-version=2.18"
+gcc_stage2_flags="--with-mpc=${local_builds}/destdir/${host} --with-mpfr=${local_builds}/destdir/${host} --with-gmp=${local_builds}/destdir/${host} --with-gnu-as --with-gnu-ld --disable-libmudflap --enable-lto --enable-objc-gc --enable-shared --without-included-gettext --enable-nls --disable-sjlj-exceptions --enable-gnu-unique-object --enable-linker-build-id --disable-libstdcxx-pch --enable-c99 --enable-clocale=gnu --enable-libstdcxx-debug --enable-long-long --with-cloog=no --with-ppl=no --with-isl=no --disable-multilib --enable-fix-cortex-a53-835769 --enable-fix-cortex-a53-843419 --with-arch=armv8-a --enable-threads=posix --enable-multiarch --enable-libstdcxx-time=yes --with-build-sysroot=${sysroots} --with-sysroot=${local_builds}/destdir/${host}/aarch64-linux-gnu/libc --enable-checking=release --disable-bootstrap --enable-languages=c,c++,fortran,lto"
+
+# Component data for eglibc
+eglibc_url=http://git.linaro.org/git/toolchain
+eglibc_branch=linaro_eglibc-2_19
+eglibc_revision=ab302c9d26707876d053f17d39d8aa6ef951e3e0
+eglibc_filespec=eglibc.git
+eglibc_makeflags="PARALLELMFLAGS=-j32"
+eglibc_configure="--enable-obsolete-rpc --disable-profile --without-gd --without-cvs --enable-obsolete-rpc --enable-add-ons=nptl,ports --disable-build-nscd --with-headers=${sysroots}/usr/include libc_cv_forced_unwind=yes libc_cv_c_cleanup=yes libc_cv_ctors_header=yes --enable-multi-arch --enable-profile --without-selinux --enable-kernel=2.6.31"
+
+# Component data for gdb
+gdb_url=http://git.linaro.org/git/toolchain
+gdb_branch=gdb-7.10-branch
+gdb_revision=718b36fead887693158396b948d7f409b987c053
+gdb_filespec=binutils-gdb.git
+gdb_configure="--with-gnu-ld --enable-plugins --enable-tui --with-pkgversion=Linaro_GDB-2017.01 --disable-gas --disable-binutils --disable-ld --disable-gold --disable-gprof --with-python=yes"
+gdb_staticlink="yes"
+
+# Component data for gdbserver
+gdbserver_url=http://git.linaro.org/git/toolchain
+gdbserver_branch=gdb-7.10-branch
+gdbserver_revision=718b36fead887693158396b948d7f409b987c053
+gdbserver_filespec=binutils-gdb.git
+gdbserver_configure="LDFLAGS=-static CFLAGS=--sysroot=${sysroots} CXXFLAGS=--sysroot=${sysroots}"
+gdbserver_staticlink="yes"
+
+
+clibrary=eglibc
+target=aarch64-linux-gnu
+manifestid=867bd93d28415e0bdeff90aa04ec8514a11d39f1
+
+ ##############################################################################
+ # Everything below this line is only for informational purposes for developers
+ ##############################################################################
+
+# Build machine data
+build: linux
+host: x86_64-unknown-linux-gnu
+kernel: 4.4.0-45-generic
+hostname: docker-trusty-amd64-tcwg
+distribution: trusty
+host_gcc: gcc version 4.8.4 (Ubuntu 4.8.4-2ubuntu1~14.04.3) 
+
+# These aren't used in the repeat build. just a sanity check for developers
+build directory: /home/tcwg-buildslave/workspace/tcwg-make-release/label/docker-trusty-amd64-tcwg-build/target/aarch64-linux-gnu/_build/builds
+sysroot directory: /home/tcwg-buildslave/workspace/tcwg-make-release/label/docker-trusty-amd64-tcwg-build/target/aarch64-linux-gnu/_build/sysroots/aarch64-linux-gnu
+snapshots directory: /home/tcwg-buildslave/workspace/tcwg-make-release/label/docker-trusty-amd64-tcwg-build/target/aarch64-linux-gnu/snapshots
+git reference directory: /home/tcwg-buildslave/snapshots-ref
+
+abe_url=https://git-us.linaro.org/toolchain
+abe_branch=branch=
+abe_revision=ac106abb85424def5e6cb382d0375d2d1fdd1f6b
+abe_filespec=abe.git
+abe_configure="--with-local-snapshots=${local_snapshots} --with-git-reference-dir=/home/tcwg-buildslave/snapshots-ref"
+
+--------------------- binutils ----------------------
+commit 13e81dd207f47c0a6ac5a837d7e7d5910b265e86
+Author: Jiong Wang <jiong.wang@arm.com>
+Date:   Tue Jan 13 11:36:54 2015 +0000
+
+    [AArch64] Fix function pointer variable with -Bsymbolic-functions
+    
+    bfd/ChangeLog
+    
+    ld/testsuite/ChangeLog
+    
+    2015-01-13 Thomas Preud'homme <thomas.preudhomme@arm.com>
+    
+        * ld-aarch64/aarch64-elf.exp: Added relocs-257-symbolic-func test.
+    
+    Conflicts:
+    	bfd/ChangeLog
+    	ld/testsuite/ChangeLog
+
+--------------------- eglibc ----------------------
+commit ab302c9d26707876d053f17d39d8aa6ef951e3e0
+Author: Carlos O'Donell <carlos@systemhalted.org>
+Date:   Fri Mar 18 15:00:37 2016 -0300
+
+    CVE-2015-7547: getaddrinfo() stack-based buffer overflow (Bug 18665).
+    
+    * A stack-based buffer overflow was found in libresolv when invoked from
+      libnss_dns, allowing specially crafted DNS responses to seize control
+      of execution flow in the DNS client.  The buffer overflow occurs in
+      the functions send_dg (send datagram) and send_vc (send TCP) for the
+      NSS module libnss_dns.so.2 when calling getaddrinfo with AF_UNSPEC
+      family.  The use of AF_UNSPEC triggers the low-level resolver code to
+      send out two parallel queries for A and AAAA.  A mismanagement of the
+      buffers used for those queries could result in the response of a query
+      writing beyond the alloca allocated buffer created by
+      _nss_dns_gethostbyname4_r.  Buffer management is simplified to remove
+      the overflow.  Thanks to the Google Security Team and Red Hat for
+      reporting the security impact of this issue, and Robert Holiday of
+      Ciena for reporting the related bug 18665. (CVE-2015-7547)
+    
+    See also:
+    https://sourceware.org/ml/libc-alpha/2016-02/msg00416.html
+    https://sourceware.org/ml/libc-alpha/2016-02/msg00418.html
+
+--------------------- abe ----------------------
+commit ac106abb85424def5e6cb382d0375d2d1fdd1f6b
+Author: Maxim Kuvyrkov <maxim.kuvyrkov@linaro.org>
+Date:   Wed Jan 18 14:59:20 2017 +0000
+
+    Convert --parallel option into --enable/--disable parallel
+    
+    With the --parallel option it is impossible to disable parallel
+    builds, which are the default.
+    
+    Change-Id: I53de51dc0d26daf023e6ea1bdf493f3975ec1a64
+
