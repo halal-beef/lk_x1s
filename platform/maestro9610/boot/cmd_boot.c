@@ -29,6 +29,7 @@
 #include <platform/fastboot.h>
 #include <platform/bootimg.h>
 #include <platform/fdt.h>
+#include <platform/chip_id.h>
 #include <pit.h>
 
 /* Memory node */
@@ -189,6 +190,25 @@ static void set_bootargs(void)
 	bootargs_update();
 }
 
+static void set_usb_serialno(void)
+{
+	char str[BUFFER_SIZE];
+	const char *np;
+	int len;
+	int noff;
+	unsigned long tmp_serial_id = 0;
+
+	tmp_serial_id = ((unsigned long)s5p_chip_id[1] << 32) | (s5p_chip_id[0]);
+
+	printf("Set USB serial number in bootargs.(%016lx)\n", tmp_serial_id);
+
+	noff = fdt_path_offset (fdt_dtb, "/chosen");
+	np = fdt_getprop(fdt_dtb, noff, "bootargs", &len);
+	snprintf(str, BUFFER_SIZE, "%s androidboot.serialno=%016lx",
+						np, tmp_serial_id);
+	fdt_setprop(fdt_dtb, noff, "bootargs", str, strlen(str) + 1);
+}
+
 static void configure_dtb(void)
 {
 	char str[BUFFER_SIZE];
@@ -286,6 +306,7 @@ static void configure_dtb(void)
 	/* DT control code must write after this function call. */
 	merge_dto_to_main_dtb();
 	resize_dt(SZ_4K);
+	set_usb_serialno();
 
 	if (readl(EXYNOS9610_POWER_SYSIP_DAT0) == REBOOT_MODE_RECOVERY) {
 		sprintf(str, "<0x%x>", RAMDISK_BASE);
