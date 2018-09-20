@@ -127,6 +127,19 @@ display_panel_power:
 
 	/* Set LCD_BIAS_ENN (GPG3_0) to Output */
 
+	/* Set LCD_LDO_1V8_EN (GPG3_4) to Output */
+	ldr             x0, =EXYNOS9610_GPG3CON
+	ldr             w1, [x0]
+	bic             w1, w1, #(0xF << 16)
+	orr             w1, w1, #(0x1 << 16)
+	str             w1, [x0]
+
+	ldr             x0, =EXYNOS9610_GPG3DAT
+	ldr             w1, [x0]
+	bic             w1, w1, #(0x1 << 4)
+	orr             w1, w1, #(0x1 << 4)
+	str             w1, [x0]
+
 	/* Set LCD_BL_EN (GPG2_1) to Output */
 
 	ret
