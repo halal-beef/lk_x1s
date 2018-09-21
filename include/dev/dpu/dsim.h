@@ -31,7 +31,6 @@
 
 #include <dev/dpu/decon_lcd.h>
 #include <dev/dpu/mipi_dsi_cmd.h>
-#include <platform/exynos9610.h>
 #include <platform/display_sfr.h>
 #include <platform/dpu_cal/regs-dsim.h>
 #include <target/dpu_io_ctrl.h>
