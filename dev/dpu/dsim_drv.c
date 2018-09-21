@@ -22,6 +22,7 @@
 
 #include <malloc.h>
 #include <platform/delay.h>
+#include <platform/sfr.h>
 
 #include <dev/dpu/dsim.h>
 #include <dev/dpu/decon.h>
@@ -441,7 +442,7 @@ int dsim_probe(u32 dev_id)
 	dsim->data_lane_cnt = dsim->lcd_info->data_lane;
 	dsim_info("using data lane count(%d)\n", dsim->data_lane_cnt);
 
-	dsim->res.ss_regs = EXYNOS9610_SYSREG_DPU;
+	dsim->res.ss_regs = EXYNOS_SYSREG_DPU;
 
 	if (!dev_id)
 		dsim->res.regs = DSIM0_BASE_ADDR;

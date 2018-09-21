@@ -21,7 +21,6 @@
  */
 
 #include <malloc.h>
-#include <platform/exynos9610.h>
 #include <dev/dpu/decon.h>
 #include <target/dpu_config.h>
 

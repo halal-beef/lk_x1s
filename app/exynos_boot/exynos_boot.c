@@ -22,7 +22,7 @@ int cmd_boot(int argc, const cmd_args *argv);
 
 static void exynos_boot_task(const struct app_descriptor *app, void *args)
 {
-	unsigned int rst_stat = readl(EXYNOS9610_POWER_RST_STAT);
+	unsigned int rst_stat = readl(EXYNOS_POWER_RST_STAT);
 	int cpu;
 
 	printf("RST_STAT: 0x%x\n", rst_stat);

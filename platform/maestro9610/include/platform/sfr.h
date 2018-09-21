@@ -13,4 +13,7 @@
 
 #include "exynos9610.h"
 
+#define EXYNOS_SYSREG_DPU									EXYNOS9610_SYSREG_DPU
+#define EXYNOS_POWER_RST_STAT								EXYNOS9610_POWER_RST_STAT
+
 #endif	/* __SFR_H__ */
