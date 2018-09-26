@@ -94,16 +94,8 @@ usage:
 	} else if (!strcmp(argv[1].str, "ssu")) {
 		if (argc > 3) goto notenoughargs;
 
-		dev = bio_open("scsissu");
-		if (!dev) {
-			printf("error opening block device\n");
-			return -1;
-		}
-
-		ret = scsi_start_stop_unit(dev);
+		ret = scsi_do_ssu();
 		rc = (ret == NO_ERROR) ? 0 : -1;
-
-		bio_close(dev);
 	} else {
 		printf("unrecognized subcommand\n");
 		goto usage;
@@ -594,6 +586,24 @@ status_t scsi_scan_ssu(scsi_device_t *sdev, u32 wlun,
 				BIO_FLAGS_NONE);
 		bio_register_device(&sdev->dev);
 	}
+
+	return ret;
+}
+
+status_t scsi_do_ssu()
+{
+	bdev_t *dev;
+	status_t ret;
+
+	dev = bio_open("scsissu");
+	if (!dev) {
+		printf("error opening block device\n");
+		return ERR_GENERIC;
+	}
+
+	ret = scsi_start_stop_unit(dev);
+
+	bio_close(dev);
 
 	return ret;
 }
