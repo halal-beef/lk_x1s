@@ -15,6 +15,7 @@
 #include <reg.h>
 #include <string.h>
 #include <stdlib.h>
+#include <err.h>
 #include <lib/console.h>
 #include <lib/font_display.h>
 #include "fastboot.h"
@@ -28,6 +29,7 @@
 #include <platform/dfd.h>
 #include <dev/boot.h>
 #include <dev/rpmb.h>
+#include <dev/scsi.h>
 
 #define FB_RESPONSE_BUFFER_SIZE 128
 
@@ -301,6 +303,20 @@ int fb_do_reboot(const char *cmd_buffer)
 {
 	char buf[FB_RESPONSE_BUFFER_SIZE];
 	char *response = (char *)(((unsigned long)buf + 8) & ~0x07);
+	bdev_t *dev;
+	status_t ret;
+
+	/* Send SSU to UFS */
+	dev = bio_open("scsissu");
+	if (!dev) {
+		printf("error opening block device\n");
+	}
+
+	ret = scsi_start_stop_unit(dev);
+	if (ret != NO_ERROR)
+		printf("scsi ssu error!\n");
+
+	bio_close(dev);
 
 	sprintf(response,"OKAY");
 	fastboot_tx_status(response, strlen(response), FASTBOOT_TX_SYNC);

@@ -71,4 +71,5 @@ status_t scsi_scan(scsi_device_t *sdev, u32 wlun, u32 dev_num, exec_t *func,
 				const char *name_s, bnum_t max_seg);
 status_t scsi_scan_ssu(scsi_device_t *sdev, u32 wlun,
 					exec_t *func, get_sdev_t *func1);
+int scsi_start_stop_unit(struct bdev *dev);
 #endif				/* _SCSI_H */
