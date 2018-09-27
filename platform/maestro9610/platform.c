@@ -256,6 +256,10 @@ void platform_init(void)
 
 	load_secure_payload();
 
+	ufs_init(2);
+	ufs_set_configuration_descriptor();
+	pit_init();
+
 #ifdef CONFIG_EXYNOS_BOOTLOADER_DISPLAY
 	/* If the display_drv_init function is not called before,
 	 * you must use the print_lcd function.
@@ -271,9 +275,6 @@ void platform_init(void)
 	//print_lcd_update(FONT_BLUE, FONT_BLACK, "LK display is enabled!");
 #endif
 	read_dram_info();
-	ufs_init(2);
-	ufs_set_configuration_descriptor();
-	pit_init();
 
 	display_tmu_info();
 	display_trip_info();
