@@ -13,6 +13,8 @@
 #include <reg.h>
 #include <malloc.h>
 #include <platform/delay.h>
+#include <platform/interrupts.h>
+#include <lib/font_display.h>
 #include "usb.h"
 #include "usbd3-ss.h"
 
@@ -204,16 +206,20 @@ u8 g_bIsBulkInXferDone = 0;
 
 unsigned int exynos_usbd_dn_addr = 0;
 unsigned int exynos_usbd_dn_cnt = 0;
-int is_fastboot = 0;
+/* Use only fastboot(not DNW) */
+int is_fastboot = 1;
 int DNW;
 int exynos_got_header = 0;
 int exynos_receive_done = 0;
+int usb_cable_state = 0;
 
+int exynos_udc_int_hndlr(void);
 extern ulong virt_to_phy_exynos5210(ulong addr);
 static u64 exynos_usb_malloc(u32 uSize, u32 uAlign);
 static void exynos_usb_free(u64 uAddr);
 static void exynos_usb_fill_trb(usbdev3_trb_ptr_t pTrb, u64 uBufAddr, u32 uLen, u32 uTrbCtrl, u32 uHwo);
 static int exynos_usb_start_ep_xfer(USBDEV3_EP_DIR_e eEpDir, u8 ucEpNum, u64 uTrbAddr, u32 uStrmidSofn, u32 *uTri);
+static void exynos_usb_handle_event(void);
 
 extern u32 EXYNOS_USBD_DETECT_IRQ(void)
 {
@@ -296,6 +302,15 @@ int pll_enable(void *pllcon_base)
 		return -1;
 }
 #endif
+
+#define USB_INT_NUM	(186 + 32)
+
+static enum handler_return usb_interrupt(void *arg)
+{
+	exynos_udc_int_hndlr();
+
+	return INT_NO_RESCHEDULE;
+}
 
 extern void exynos_usb_phy_on(void)
 {
@@ -1024,7 +1039,7 @@ static int exynos_usb_init_core(USBDEV3_SPEED_e eSpeed)
 	usbdev3_devten.b.disconn_evt_en = 1;
 	usbdev3_devten.b.usb_reset_en = 1;
 	usbdev3_devten.b.conn_done_en = 1;
-	//usbdev3_devten.b.usb_lnk_sts_chng_en = 1;
+	usbdev3_devten.b.usb_lnk_sts_chng_en = 1;
 		//usbdev3_devten.b.wake_up_en = 1;
 		//usbdev3_devten.b.errtic_err_en = 1;
 		//usbdev3_devten.b.cmd_cmplt_en = 1;
@@ -1196,15 +1211,15 @@ static void exynos_usb_handle_connect_done_int(void)
 	//-------------------------
 	if (eSpeed == USBDEV3_SPEED_SUPER)
 	{
-		usbdev3_gusb2phycfg.data = readl(rGUSB2PHYCFG);
-		usbdev3_gusb2phycfg.b.suspend_usb2_phy = 1;
-		writel(usbdev3_gusb2phycfg.data, rGUSB2PHYCFG);
-	}
-	else
-	{
 		usbdev3_gusb3pipectl.data = readl(rGUSB3PIPECTL);
 		usbdev3_gusb3pipectl.b.suspend_usb3_ss_phy = 1;
 		writel(usbdev3_gusb3pipectl.data, rGUSB3PIPECTL);
+	}
+	else
+	{
+		usbdev3_gusb2phycfg.data = readl(rGUSB2PHYCFG);
+		usbdev3_gusb2phycfg.b.suspend_usb2_phy = 1;
+		writel(usbdev3_gusb2phycfg.data, rGUSB2PHYCFG);
 	}
 
 	// . Set Max Packet Size based on enumerated speed
@@ -1288,6 +1303,17 @@ static void exynos_usb_handle_dev_event(usbdev3_devt_t uDevEvent)
 
 		case DEVT_ULST_CHNG:
 			DBG_USBD3("Link Status Change\n");
+			if (uDevEvent.b.evt_info == 0x0 &&
+				usb_cable_state != uDevEvent.b.evt_info) {
+				print_lcd_update(FONT_GREEN, FONT_BLACK,
+						"USB cable connected...");
+				usb_cable_state = uDevEvent.b.evt_info;
+			} else if (uDevEvent.b.evt_info == 0x3 &&
+				usb_cable_state != uDevEvent.b.evt_info) {
+				print_lcd_update(FONT_YELLOW, FONT_RED,
+						"USB cable disconnected...");
+				usb_cable_state = uDevEvent.b.evt_info;
+			}
 			//USBDEV3_HandleLinkStatusChange();
 			break;
 
@@ -2450,6 +2476,11 @@ extern int exynos_usb_wait_cable_insert(void)
 int exynos_usbc_activate (void)
 {
 	exynos_usb_runstop_device(1);
+
+	printf("Enable USB Interrupt!\n");
+        register_int_handler(USB_INT_NUM, &usb_interrupt, NULL);
+	unmask_interrupt(USB_INT_NUM);
+
 	return 0;
 }
 
@@ -2462,6 +2493,7 @@ int exynos_usb_stop( void )
 
 	exynoy_usb_phy_off();
 	oUsbDev3.m_cable = UNCHECKED;
+	mask_interrupt(USB_INT_NUM);
 
 	return 0;
 }
@@ -2560,7 +2592,7 @@ int exynos_usbctl_init(void)
 	writel(usbdev3_gctl.data, rGCTL);
 
 	g_uCntOfDescOutComplete = 0;
-	is_fastboot = 0;
+	/* is_fastboot = 0; */
 	// . to initialize usb device controller
 	//------------------------------
 	if (exynos_usb_init_core(eSpeed))

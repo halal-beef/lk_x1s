@@ -16,6 +16,9 @@
 #include <string.h>
 #include <platform/chip_id.h>
 #include "fastboot.h"
+#ifdef USE_WAIT_EVENT
+#include <kernel/event.h>
+#endif
 
 #define CONFIG_BOARD_NAME "CONFIG_BOARD_NAME"
 /* String 0 is the language id */
@@ -57,6 +60,9 @@ extern int exynos_udc_int_hndlr(void);
 char* reply_msg;
 unsigned int transfer_size;
 u32 fboot_response_flag=0;
+#ifdef USE_WAIT_EVENT
+event_t completion;
+#endif
 
 static char *device_strings[DEVICE_STRING_MAX_INDEX+1];
 static struct cmd_fastboot_interface *fastboot_interface = NULL;
@@ -121,12 +127,15 @@ int fastboot_poll(void)
 	int ret = FASTBOOT_INACTIVE;
 
 	/* dprintf(ALWAYS, "DEBUG: %s is called.\n", __FUNCTION__); */
-	if (!exynos_usb_wait_cable_insert() && !is_fastboot) {
+	if (!exynos_usb_wait_cable_insert()) {
 		exynos_usbctl_init();
 		exynos_usbc_activate();
+#ifdef USE_WAIT_EVENT
+		event_init(&completion, false, EVENT_FLAG_AUTOUNSIGNAL);
+#endif
 		is_fastboot = 1;
 	}
-
+#if 0 /* For Polling Mode */
 	/* A disconnect happended, this signals that the cable
 	   has been disconnected, return immediately */
 	if (!FBOOT_USBD_IS_CONNECTED()) {
@@ -138,6 +147,7 @@ int fastboot_poll(void)
 			ret = FASTBOOT_ERROR;
 		FBOOT_USBD_CLEAR_IRQ();
 	}
+#endif
 
 	return ret;
 }
@@ -146,6 +156,9 @@ void fboot_usb_handle_ep_in_xfer_complete(void)
 	if (fboot_response_flag) {
 		exynos_usb_free((u64)g_pBulkInTrb);
 		fboot_response_flag=0;
+#ifdef USE_WAIT_EVENT
+		event_signal(&completion, false);
+#endif
 	}
 
 	return;
@@ -464,12 +477,33 @@ int fastboot_tx_status(const char *buffer, unsigned int buffer_size, const u32 n
 
 	memcpy(reply_msg, buffer, transfer_size);
 	fboot_response_flag=1;
+#ifdef USE_WAIT_EVENT
+	completion.signaled = false;
+#endif
 	fboot_usb_int_bulkin((u64)reply_msg, transfer_size);
 
 	if (need_sync_flag)
 	{
-		while(fboot_response_flag)
-			fastboot_poll();
+#ifdef USE_WAIT_EVENT
+		status_t err;
+
+		err = event_wait_timeout(&completion, 20000);
+		if (err) {
+			printf("Response Timeout!!!!\n");
+		}
+#else
+		unsigned int wait_usec = 1000000;
+
+		do {
+			u_delay(1);
+			wait_usec--;
+			exynos_usb_handle_event();
+		} while(fboot_response_flag && wait_usec > 0);
+
+		if (wait_usec == 0) {
+			printf("Response Timeout!!!!\n");
+		}
+#endif
 	}
 	return 1;
 }
