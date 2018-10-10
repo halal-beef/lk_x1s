@@ -10,10 +10,12 @@
  *
  */
 
-#include <err.h>
+#include <stddef.h>
 #include <string.h>
+#include <err.h>
 #include <part_gpt.h>
 #include <lib/heap.h>
+#include <lib/sysparam.h>
 #include <dev/boot.h>
 #include <platform/decompress_ext4.h>
 
@@ -99,6 +101,9 @@ static int pit_load_pit(void *buf)
 {
 	uint blks;
 
+	if (!pit_dev)
+		return ERR_IO;
+
 	blks = pit_dev->new_read(pit_dev, buf, PIT_DISK_LOC, pit_blk_cnt);
 
 	if (blks != pit_blk_cnt)
@@ -110,6 +115,9 @@ static int pit_load_pit(void *buf)
 static int pit_save_pit(void *buf)
 {
 	uint blks;
+
+	if (!pit_dev)
+		return ERR_IO;
 
 	blks = pit_dev->new_write(pit_dev, buf, PIT_DISK_LOC, pit_blk_cnt);
 
@@ -151,6 +159,9 @@ static inline void pit_open_dev(void)
 
 static inline void pit_close_dev(void)		// TODO:
 {
+	if (!pit_dev)
+		return;
+
 	bio_close(pit_dev);
 }
 
@@ -669,6 +680,18 @@ void pit_init(void)
 			goto err;
 		pit_blk_cnt = ptn->blknum;
 		printf("... [PIT] pit init passes\n");
+		/* Get Sysparam */
+		ptn = pit_get_part_info("sysparam");
+		if (ptn) {
+			status_t err;
+
+			printf("[PIT] load sysparam\n");
+			err = sysparam_scan(pit_dev, ptn->blkstart, ptn->blknum);
+			if (err)
+				printf("... [PIT] fail to load sysparam, error code %d\n", err);
+			else
+				printf("... [PIT] pass to load sysparam\n");
+		}
 		return;
 	}
 err:
