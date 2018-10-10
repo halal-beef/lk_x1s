@@ -23,7 +23,7 @@
 #ifndef DPP_COEF_H_
 #define DPP_COEF_H_
 
-#include <linux/types.h>
+#include <sys/types.h>
 #include <dev/dpu/dpp.h>
 
 /* 8-tap Filter Coefficient */
