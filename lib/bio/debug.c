@@ -257,7 +257,7 @@ usage:
         do {
             ulong crc = 0;
             off_t pos = offset;
-            while (pos < offset + len) {
+            while (pos < offset + (off_t) len) {
                 ssize_t err = bio_read(dev, buf, pos, MIN(len - (pos - offset), dev->block_size));
 
                 if (err <= 0) {

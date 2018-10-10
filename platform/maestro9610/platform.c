@@ -150,14 +150,14 @@ static void load_secure_payload(void)
 		printf("Running on DRAM by TRACE32: skip load_secure_payload()\n");
 	} else {
 		if (is_first_boot()) {
-			boot_dev = readl(EXYNOS9610_POWER_INFORM3);
+			boot_dev = get_boot_device();
 
 			/*
 			 * In case WARM Reset/Watchdog Reset and DumpGPR is enabled,
 			 * Secure payload doesn't have to be loaded.
 			 */
 			if (!((rst_stat & (WARM_RESET | LITTLE_WDT_RESET)) &&
-				dfd_en & EXYNOS9610_EDPCSR_DUMP_EN)) {
+				(dfd_en & EXYNOS9610_EDPCSR_DUMP_EN))) {
 				ret = load_sp_image(boot_dev);
 				if (ret)
 					/*
@@ -256,8 +256,10 @@ void platform_init(void)
 
 	load_secure_payload();
 
-	ufs_init(2);
-	ufs_set_configuration_descriptor();
+	if (get_boot_device() == BOOT_UFS) {
+		ufs_init(2);
+		ufs_set_configuration_descriptor();
+	}
 	pit_init();
 
 #ifdef CONFIG_EXYNOS_BOOTLOADER_DISPLAY

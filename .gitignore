@@ -12,3 +12,6 @@ tagit
 blk.bin
 *.dSYM
 scripts/toolpaths.local
+.cproject
+.project
+.settings/

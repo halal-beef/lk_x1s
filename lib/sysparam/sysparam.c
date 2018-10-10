@@ -109,7 +109,7 @@ static inline uint32_t sysparam_crc32(const struct sysparam_phys *sp)
 {
     size_t len = sysparam_len(sp);
 
-    LTRACEF("len %d\n", len);
+    LTRACEF("len %d\n", (unsigned int) len);
     uint32_t sum = crc32(0, (const void *)&sp->flags, len - 8);
     LTRACEF("sum is 0x%x\n", sum);
 
@@ -175,7 +175,7 @@ status_t sysparam_scan(bdev_t *bdev, off_t offset, size_t len)
 
     DEBUG_ASSERT(bdev);
     DEBUG_ASSERT(len > 0);
-    DEBUG_ASSERT(offset + len <= bdev->total_size);
+    DEBUG_ASSERT(offset + (off_t) len <= bdev->total_size);
     DEBUG_ASSERT((offset % bdev->block_size) == 0);
 
     params.bdev = bdev;
@@ -214,7 +214,7 @@ status_t sysparam_scan(bdev_t *bdev, off_t offset, size_t len)
         size_t splen = sysparam_len(sp);
         if (pos + splen > offset + len) {
             /* length exceeds the size of the area */
-            LTRACEF("param at 0x%x: bad length\n", pos);
+            LTRACEF("param at 0x%x: bad length\n", (uint32_t) pos);
             break;
         }
 
@@ -225,7 +225,7 @@ status_t sysparam_scan(bdev_t *bdev, off_t offset, size_t len)
 
         if (sp->crc32 != sum) {
             /* failed checksum */
-            LTRACEF("param at 0x%x: failed checksum\n", pos - splen);
+            LTRACEF("param at 0x%x: failed checksum\n", (uint32_t) (pos - splen));
             continue;
         }
 
@@ -233,7 +233,7 @@ status_t sysparam_scan(bdev_t *bdev, off_t offset, size_t len)
 
         struct sysparam *param = sysparam_read_phys(sp);
         if (!param) {
-            LTRACEF("param at 0x%x: failed to make memory copy\n", pos - splen);
+            LTRACEF("param at 0x%x: failed to make memory copy\n", (uint32_t) (pos - splen));
             err = ERR_NO_MEMORY;
             break;
         }
@@ -338,7 +338,7 @@ status_t sysparam_write(void)
         total_len += ROUNDUP(param->datalen, 4);
     }
 
-    if (total_len > params.len)
+    if (total_len > (off_t) params.len)
         return ERR_NO_MEMORY;
 
     /* allocate a buffer to stage it */
