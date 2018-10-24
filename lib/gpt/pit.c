@@ -334,10 +334,11 @@ static int pit_access_ufs(struct pit_entry *ptn, int op, u64 addr, u32 size)
 				ret = write_compressed_ext4((char *)addr, blkstart);
 			} else {
 				printf("[PIT] %s flash failed on UFS\n", ptn->name);
-				return 1;
+				ret = ERR_IO;
 			}
 
-			return NO_ERROR;
+			bio_close(dev);
+			return ret;
 		}
 #if 0
 		if (!strcmp("ramdisk", ptn->name)) {
