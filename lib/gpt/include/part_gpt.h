@@ -180,6 +180,6 @@ struct gpt_backup_header {
 /*
  * Public Function
  */
-int gpt_create(struct pit_info *pit);
+int gpt_create(struct pit_info *pit, u32 pit_last_lba);
 extern int get_unique_guid(char *ptr_name, char *buf);
 #endif
