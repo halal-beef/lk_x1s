@@ -89,6 +89,13 @@ struct pit_info {
 } __attribute__((packed));
 
 
+/* Struct for gpt information */
+struct gpt_info {
+	u32 gpt_start_lba; /* The unit is 512B */
+	u32 gpt_last_lba; /* The unit is 512B, usable lba limitation */
+	u32 gpt_entry_cnt;
+};
+
 enum pit_op {
 	PIT_OP_FLASH = 0,
 	PIT_OP_ERASE,
