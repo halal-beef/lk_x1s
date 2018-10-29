@@ -52,7 +52,7 @@ static int set_protective_mbr(bdev_t *dev)
 }
 
 static int set_gpt_header(bdev_t *dev, struct gpt_header *gpt_h,
-		struct gpt_part_table *gpt_e)
+		struct gpt_part_table *gpt_e, u32 pit_last_lba)
 {
 	char *str_disk_guid;
 
@@ -61,10 +61,13 @@ static int set_gpt_header(bdev_t *dev, struct gpt_header *gpt_h,
 	gpt_h->head_sz = HEAD_SIZE;
 	gpt_h->gpt_header = GPT_HEAD_LBA;
 	gpt_h->gpt_back_header = dev->block_count - 1;
-	gpt_h->start_lba = PIT_DISK_LOC * PIT_SECTOR_SIZE / dev->block_size;
-	gpt_h->end_lba = (dev->block_count - gpt_h->start_lba) + 1;
+	gpt_h->start_lba = PIT_PART_META * PIT_SECTOR_SIZE / dev->block_size;
+
+	/* use last lba from pit */
+	gpt_h->end_lba = pit_last_lba;
+
 	gpt_h->part_table_lba = GPT_TABLE_LBA;
-	gpt_h->part_num_entry = 90;
+	gpt_h->part_num_entry = 128;
 	gpt_h->part_size_entry = sizeof(struct gpt_part_table);
 	gpt_h->head_crc = 0;
 	gpt_h->part_table_crc = 0;
@@ -259,7 +262,7 @@ static int write_gpt_table(bdev_t *dev, struct gpt_header *gpt_h,
 	return 0;
 }
 
-int gpt_create(struct pit_info *pit)
+int gpt_create(struct pit_info *pit, u32 pit_last_lba)
 {
 	struct gpt_header *gpt_h = NULL;
 	struct gpt_part_table *gpt_e = NULL;
@@ -296,7 +299,7 @@ int gpt_create(struct pit_info *pit)
 
 	memset(gpt_e, 0, sizeof(struct gpt_part_table) * GPT_ENTRY_NUMBERS);
 
-	ret = set_gpt_header(dev, gpt_h, gpt_e);
+	ret = set_gpt_header(dev, gpt_h, gpt_e, pit_last_lba);
 	if (ret) {
 		printf("Set gpt header fail\n");
 		goto entry_free;

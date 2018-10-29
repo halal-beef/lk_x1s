@@ -90,11 +90,23 @@ struct pit_entry *pit_get_part_info(const char *name);
  */
 static inline u32 pit_get_last_lba(void)
 {
+	u32 gpt_usable_count;
+	u32 units_per_block;
+
+	if (!pit_dev)
+		return 0;
+
 	/*
 	 * The unit is 512B.
+	 * decreasing 1 is because it is last lba, not count.
+	 *
+	 * And we need to minus one because PMBR only exists at the head.
 	 */
-	return (pit_dev) ? (pit_dev->block_count * (pit_dev->block_size / PIT_SECTOR_SIZE))
-						- PIT_PART_META : 0;
+	units_per_block = pit_dev->block_size / PIT_SECTOR_SIZE;
+	gpt_usable_count = (pit_dev->block_count * units_per_block)
+					- (PIT_PART_META - units_per_block);
+
+	return gpt_usable_count - 1;
 }
 
 static int pit_load_pit(void *buf)
@@ -104,7 +116,7 @@ static int pit_load_pit(void *buf)
 	if (!pit_dev)
 		return ERR_IO;
 
-	blks = pit_dev->new_read(pit_dev, buf, PIT_DISK_LOC, pit_blk_cnt);
+	blks = pit_dev->new_read(pit_dev, buf, PIT_PART_META, pit_blk_cnt);
 
 	if (blks != pit_blk_cnt)
 		return ERR_IO;
@@ -119,7 +131,7 @@ static int pit_save_pit(void *buf)
 	if (!pit_dev)
 		return ERR_IO;
 
-	blks = pit_dev->new_write(pit_dev, buf, PIT_DISK_LOC, pit_blk_cnt);
+	blks = pit_dev->new_write(pit_dev, buf, PIT_PART_META, pit_blk_cnt);
 
 	if (blks != pit_blk_cnt)
 		return ERR_IO;
@@ -503,7 +515,7 @@ static int pit_check_info_gpt(struct pit_info *ppit, int *idx)
 
 	u32 lun = 0;		/* here is only for part 0*/
 	u32 startlba =			/* adding 1 for protective mbr */
-			PIT_FAT_SIZE + PIT_PART_META + 1;
+			PIT_FAT_SIZE + PIT_PART_META;
 	u32 lastlba = pit_get_last_lba();
 	u32 lba = startlba;
 
@@ -725,7 +737,7 @@ void pit_show_info()
 			printf("%12s:\t%7s\t%15u\t%15u\t%7s\n",
 						"(FAT)",
 						"-------",
-						PIT_DISK_LOC,
+						PIT_PART_META,
 						PIT_FAT_SIZE,
 						"-------");
 			is_filesys = ptn->filesys;
@@ -783,7 +795,7 @@ int pit_update(void *buf, u32 size)
 	 */
 
 	/* for non gpt entries of part 0 */
-	if (pit_check_info(&pit, (int *)&pit_index, 0, PIT_DISK_LOC))
+	if (pit_check_info(&pit, (int *)&pit_index, 0, PIT_PART_META))
 		goto err;
 
 	/* for gpt entries of part 0 */
@@ -806,7 +818,7 @@ int pit_update(void *buf, u32 size)
 	 * GPT would open the same device as one opened here.
 	 * So, we close here temporarily.
 	 */
-	if (gpt_create(&pit)) {
+	if (gpt_create(&pit, pit_get_last_lba())) {
 		/*
 		// TODO: print_lcd_update
 		print_lcd_update(FONT_RED, FONT_BLACK, "[PIT] GPT update failed !");
