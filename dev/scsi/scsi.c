@@ -516,7 +516,7 @@ status_t scsi_scan(scsi_device_t *sdev, u32 wlun, u32 dev_num, exec_t *func,
 			}
 
 			block_size = get_dword_le(&g_buf[4]);
-			block_count = get_dword_le(&g_buf[0]);
+			block_count = get_dword_le(&g_buf[0]) + 1;
 
 #ifdef CONFIG_EXYNOS_BOOTLOADER_DISPLAY
 			capacity = ((block_size * (block_count + 1)) / 1024 / 1024);
