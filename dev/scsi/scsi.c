@@ -381,7 +381,7 @@ static status_t scsi_secu_prot_in(struct bdev *dev, void *buf, bnum_t block, uin
 	g_scm.cdb[0] = SCSI_OP_SECU_PROT_IN;
 	g_scm.cdb[1] = 0xEC;
 	set_word_le(&g_scm.cdb[2], 0x1);
-	set_dword_le(&g_scm.cdb[6], (u32)count);
+	set_dword_le(&g_scm.cdb[6], (u32)count * RPMB_MSG_DATA_SIZE);
 
 	/* Actual issue */
 	ret = sdev->exec(&g_scm);
@@ -410,7 +410,7 @@ static status_t scsi_secu_prot_out(struct bdev *dev, const void *buf, bnum_t blo
 	g_scm.cdb[0] = SCSI_OP_SECU_PROT_OUT;
 	g_scm.cdb[1] = 0xEC;
 	set_word_le(&g_scm.cdb[2], 0x1);
-	set_dword_le(&g_scm.cdb[6], (u32)count);
+	set_dword_le(&g_scm.cdb[6], (u32)count * RPMB_MSG_DATA_SIZE);
 
 	/* Actual issue */
 	ret = sdev->exec(&g_scm);
