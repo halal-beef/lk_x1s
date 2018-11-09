@@ -1388,6 +1388,12 @@ static void ufs_pre_send_query(struct ufs_host *ufs,
 			ufs->attributes.arry[UPIU_ATTR_ID_CONFIGDESCLOCK] = 0x01;
 			printf("UPIU_ATTR_ID_CONFIGDESCLOCK : %08x\n",
 					ufs->attributes.arry[UPIU_ATTR_ID_CONFIGDESCLOCK]);
+
+		/* Exynos always use reference clock attr as 0x01 */
+		} else if (((cmd_type >> 24) & 0xff) == UPIU_ATTR_ID_REFCLKFREQ) {
+			ufs->attributes.arry[UPIU_ATTR_ID_REFCLKFREQ] = 0x01;
+			printf("UPIU_ATTR_ID_REFCLKFREQ : %08x\n",
+					ufs->attributes.arry[UPIU_ATTR_ID_REFCLKFREQ]);
 		}
 		break;
 	}
@@ -1847,6 +1853,30 @@ out:
 	return res;
 }
 
+/*
+ * In this function, read device's bRefClkFreq attribute
+ * and if attr is not 1h, change it to 1h which means 26MHz.
+ * It's because Exynos always use 26MHz reference clock
+ * and device should know about soc's ref clk value.
+ */
+static int ufs_ref_clk_setup(struct ufs_host *ufs)
+{
+	int res;
+
+	res = ufs_send_upiu(UFS_SEND_READ_REFCLK_ATTR, 1);
+	if (res) {
+		printf("[UFS] read ref clk failed\n");
+		return res;
+	} else {
+		printf("[UFS] ref clk setting is %x\n", ufs->attributes.arry[UPIU_ATTR_ID_REFCLKFREQ]);
+	}
+
+	if (ufs->attributes.arry[UPIU_ATTR_ID_REFCLKFREQ] != 0x1)
+		ufs_send_upiu(UFS_SEND_WRITE_REFCLK_ATTR, 1);
+
+	return 0;
+}
+
 static int ufs_link_startup(struct ufs_host *ufs)
 {
 	struct ufs_uic_cmd uic_cmd = { UIC_CMD_DME_LINK_STARTUP, 0, 0, 0};
@@ -1890,6 +1920,9 @@ static int ufs_link_startup(struct ufs_host *ufs)
 
 	/* 6. Check a number of connected lanes */
 	if (ufs_check_2lane(ufs))
+		goto out;
+
+	if(ufs_ref_clk_setup(ufs))
 		goto out;
 
 	/* 7. pre pmc */
