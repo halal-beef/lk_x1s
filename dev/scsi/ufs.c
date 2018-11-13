@@ -1252,20 +1252,49 @@ static int setufs_boot(u32 enable)
 	return ERR_GENERIC;
 }
 
-static int ufs_edit_config_desc(u32 lun, u32 enable, u32 bootlun, u32 writeprotect, u32 type, u32 capacity)
+static int ufs_edit_config_desc(u32 lun, u32 enable, u32 bootlun, u32 writeprotect, u32 type, u32 capacity_in_mb, int *flag_p)
 {
-	int i, luns = 0, boot = 0, flag = 0;
+	int i, luns = 0, boot = 0, flag = *flag_p;
 	u32 sum = 0;
-	int res = 0;
 	struct ufs_host *ufs = get_cur_ufs_host();
 
+	unsigned long num_alloc_units;
+	unsigned long target_in_byte;
+	unsigned long alloc_unit_in_byte;
+	unsigned int enhanced_type_one_ratio;
+
 	if (!ufs || (lun > 7 && (lun & (0x1 << 7))))
-		return res;
+		return 1;
 
 	ufs->lun = 0;
 	ufs_send_upiu(UFS_SEND_READ_GEOMETRY_DESC, 1);
 
+	target_in_byte = capacity_in_mb * 1024 * 1024;
+	alloc_unit_in_byte = ufs->geometry_desc.bAllocationUnitSize *
+			be32_to_cpu(ufs->geometry_desc.dSegmentSize) * 512;
+	enhanced_type_one_ratio = be16_to_cpu(ufs->geometry_desc.wEnhanced1CapAdjFac) / 256;
+
 	if (enable) {
+		/*
+		 * We only assume non-zero input capacity
+		 * which is alinged to the size of Allocation size in bytes of
+		 * the attached UFS device.
+		 */
+		if (target_in_byte % alloc_unit_in_byte) {
+			printf("UFS: input capacity is not aligned to the size of Allocation size: %ld != %ld\n",
+					target_in_byte, alloc_unit_in_byte);
+			return 2;
+		}
+
+		/*
+		 * The current way assumes zero input capacity case
+		 * should happen once.
+		 */
+		if (flag) {
+			printf("UFS: zero input capacity cases occurs twice.\n");
+			return 2;
+		}
+
 		ufs->config_desc.unit[lun].bLUEnable = 0x1;
 		ufs->config_desc.unit[lun].bBootLunID = bootlun;
 		ufs->config_desc.unit[lun].bLUWriteProtect = writeprotect;
@@ -1276,29 +1305,20 @@ static int ufs_edit_config_desc(u32 lun, u32 enable, u32 bootlun, u32 writeprote
 		ufs->config_desc.unit[lun].bDataReliability =
 				stUnitDescrConfigParam[lun].bDataReliability;
 
-		if (capacity) {
-			if (bootlun) {
-				ufs->config_desc.unit[lun].dNumAllocUnits
-					= be32_to_cpu((2048*capacity*ufs->geometry_desc.wEnhanced1CapAdjFac)/
-						(ufs->geometry_desc.bAllocationUnitSize
-							* be32_to_cpu(ufs->geometry_desc.dSegmentSize)));
-			} else {
-				ufs->config_desc.unit[lun].dNumAllocUnits
-					= be32_to_cpu((2048*capacity)/
-						ufs->geometry_desc.bAllocationUnitSize
-							* be32_to_cpu(ufs->geometry_desc.dSegmentSize));
+		if (bootlun)
+			num_alloc_units = target_in_byte *
+				enhanced_type_one_ratio / alloc_unit_in_byte;
+		else
+			num_alloc_units = target_in_byte / alloc_unit_in_byte;
 
-			if (((2048 * capacity) % (ufs->geometry_desc.bAllocationUnitSize *
-				 be32_to_cpu(ufs->geometry_desc.dSegmentSize))) != 0) {
-				ufs->config_desc.unit[lun].dNumAllocUnits =
-					ufs->config_desc.unit[lun].dNumAllocUnits+be32_to_cpu(1);
-			}
+		ufs->config_desc.unit[lun].dNumAllocUnits = cpu_to_be32(num_alloc_units);
 
-			}
-		} else {
-			ufs->config_desc.unit[lun].dNumAllocUnits = 0x0;
+		/*
+		 * In this case, a size of this LU will be calculated
+		 * at the end of this function.
+		 */
+		if (!capacity_in_mb)
 			flag = 1;
-		}
 	} else {
 		ufs->config_desc.unit[lun].bLUEnable = 0x0;
 		ufs->config_desc.unit[lun].bBootLunID = 0x0;
@@ -1335,13 +1355,18 @@ static int ufs_edit_config_desc(u32 lun, u32 enable, u32 bootlun, u32 writeprote
 	ufs->config_desc.header.bInitActiveICCLevel = 0x0;
 	ufs->config_desc.header.wPeriodicRTCUpdate = 0x0;
 
-	if (flag)
-		ufs->config_desc.unit[lun].dNumAllocUnits
-		    =
-		    cpu_to_be32((be32_to_cpu(ufs->geometry_desc.qTotalRawDeviceCapacity_l) /
-				 be32_to_cpu(ufs->geometry_desc.dSegmentSize) - sum));
+	if (flag) {
+		num_alloc_units =
+			be32_to_cpu(ufs->geometry_desc.qTotalRawDeviceCapacity_l) /
+				be32_to_cpu(ufs->geometry_desc.dSegmentSize) /
+				ufs->geometry_desc.bAllocationUnitSize;
+		num_alloc_units -= sum;
 
-	return res;
+		ufs->config_desc.unit[lun].dNumAllocUnits = cpu_to_be32(num_alloc_units);
+	}
+
+	*flag_p = flag;
+	return 0;
 }
 
 #if 0
@@ -2140,45 +2165,43 @@ static int ufs_check_available_blocks(struct ufs_host *ufs,
 				struct ufs_unit_desc_param *src,
 				struct ufs_unit_desc_param *tgt,
 				int lun,
-				u32 sum)
+				u32 sum_in_alloc_unit)
 {
 	int ret = 0;
 
-	if (tgt->dNumAllocUnits == 0) {
-		if (be32_to_cpu((be32_to_cpu(ufs->geometry_desc.qTotalRawDeviceCapacity_l) /
-						be32_to_cpu(ufs->geometry_desc.dSegmentSize)-sum))
-				== src->dNumAllocUnits) {
-			printf("1.dNumAllocUnits error at LU%d %d %d\n",
-					lun, be32_to_cpu((be32_to_cpu(ufs->geometry_desc.qTotalRawDeviceCapacity_l)/
-							be32_to_cpu(ufs->geometry_desc.dSegmentSize)-sum)),
-					src->dNumAllocUnits);
-			ret = 1;
-		}
-	} else if (tgt->bMemoryType > 0) {
+	unsigned long src_alloc_units = be32_to_cpu(src->dNumAllocUnits);
+	unsigned long tgt_alloc_units;
+	unsigned long target_in_byte = tgt->dNumAllocUnits * 1024 * 1024;
+	unsigned int enhanced_type_one_ratio = be16_to_cpu(ufs->geometry_desc.wEnhanced1CapAdjFac) / 256;
+	unsigned long alloc_unit_in_byte = ufs->geometry_desc.bAllocationUnitSize *
+			be32_to_cpu(ufs->geometry_desc.dSegmentSize) * 512;
+
+	if (tgt->dNumAllocUnits == 0 && tgt->bLUEnable)
+		/*
+		 * Zero input capacity case such as LU #0 currently
+		 * To calculate any amount in allocation unit
+		 * with qTotalRawDeviceCapacity_l, we need to divide it
+		 * with dSegmentSize once and bAllocationUnitSize once
+		 * because a unit of qTotalRawDeviceCapacity_l is 512 bytes
+		 * specified in UFS specification.
+		 */
+		tgt_alloc_units = be32_to_cpu(ufs->geometry_desc.qTotalRawDeviceCapacity_l) /
+					be32_to_cpu(ufs->geometry_desc.dSegmentSize) /
+					ufs->geometry_desc.bAllocationUnitSize - sum_in_alloc_unit;
+
+	else if (tgt->bMemoryType > 0)
 		/* Boot LU */
-		if (be32_to_cpu((2048 * tgt->dNumAllocUnits *
-						ufs->geometry_desc.wEnhanced1CapAdjFac)/
-					(ufs->geometry_desc.bAllocationUnitSize *
-					 be32_to_cpu(ufs->geometry_desc.dSegmentSize)))
-				!= src->dNumAllocUnits) {
-			printf("2.dNumAllocUnits error at LU%d  %x, %x\n",
-					lun, tgt->dNumAllocUnits,
-					src->dNumAllocUnits);
-			ret = 1;
-		}
-	} else if (tgt->bMemoryType == 0) {
+		tgt_alloc_units = target_in_byte * enhanced_type_one_ratio /
+							alloc_unit_in_byte;
+
+	else if (tgt->bMemoryType == 0)
 		/* Normal LU */
-		if (be32_to_cpu((2048 * tgt->dNumAllocUnits)/
-					(ufs->geometry_desc.bAllocationUnitSize *
-					 be32_to_cpu(ufs->geometry_desc.dSegmentSize))) !=
-				src->dNumAllocUnits) {
-			printf("4.dNumAllocUnits error at LU%d  %x, %x\n",
-					lun, be32_to_cpu((2048*tgt->dNumAllocUnits) /
-						(ufs->geometry_desc.bAllocationUnitSize *
-						 be32_to_cpu(ufs->geometry_desc.dSegmentSize)))
-					, src->dNumAllocUnits);
-			ret = 1;
-		}
+		tgt_alloc_units = target_in_byte / alloc_unit_in_byte;
+
+	if (src_alloc_units != tgt_alloc_units) {
+		printf("UFS: dNumAllocUnits error at LU%d: (src= %ld, tgt= %ld)\n",
+				lun, src_alloc_units, tgt_alloc_units);
+		ret = 1;
 	}
 
 	return ret;
@@ -2208,8 +2231,6 @@ static int ufs_check_config_desc(void)
 	for (lun = 7; lun >= 0; lun--) {
 		src = &ufs->config_desc.unit[lun];
 		tgt = &stUnitDescrConfigParam[lun];
-
-		sum += be32_to_cpu(src->dNumAllocUnits);
 
 		if (tgt->bLUEnable != src->bLUEnable) {
 			printf("bLUEnable error at LU%d  %d, %d\n",
@@ -2266,6 +2287,7 @@ static int ufs_check_config_desc(void)
 
 		if (ufs_check_available_blocks(ufs, src, tgt, lun, sum))
 			goto error;
+		 sum += be32_to_cpu(src->dNumAllocUnits);
 	}
 
 	if (ufs_identify_bootlun(ufs) == 1)
@@ -2292,30 +2314,42 @@ int ufs_set_configuration_descriptor(void)
 	int retry_count = 3;
 	int retry = 0;
 
+	/* The pointer to represent whether capacity 0 LU is assigned which is LUN0 in general */
+	int found_no_capacity = 0;
+
 	while (ufs_check_config_desc() == 0) {
 		if (retry_count == retry) {
-			printf("LU configuration fail !!!\n");
+			printf("[UFS] LU config: FAIL !!!\n");
 			break;
 		}
 		ret = 0;
-		printf("LU configuration trying %d...\n", retry++);
+		printf("[UFS] LU config: trying %d...\n", retry++);
 
 		for (lun = 7; lun >= 0; lun--) {
-			ufs_edit_config_desc(lun,
+			ret = ufs_edit_config_desc(lun,
 				stUnitDescrConfigParam[lun].bLUEnable,
 				stUnitDescrConfigParam[lun].bBootLunID,
 				stUnitDescrConfigParam[lun].bLUWriteProtect,
 				stUnitDescrConfigParam[lun].bMemoryType,
-				stUnitDescrConfigParam[lun].dNumAllocUnits);
+				stUnitDescrConfigParam[lun].dNumAllocUnits,
+				&found_no_capacity);
+			if (ret == 2) {
+				printf("[UFS] LU config: can't edit config descriptor !!!\n");
+				goto fail;
+			}
 		}
 
 		ret = ufs_send_upiu(UFS_SEND_WRITE_CONFIG_DESC, 1);
-		if (ret)
+		if (ret) {
+			printf("[UFS] LU config: Descriptor write query fail with %d!!!\n", ret);
 			continue;
+		}
 
 		ret = ufs_send_upiu(UFS_SEND_WRITE_BOOTLUNEN_ATTR, 1);
-		if (ret)
+		if (ret) {
+			printf("[UFS] LU config: BootLUNEN setting fail with %d!!!\n", ret);
 			continue;
+		}
 
 		u_delay(1000*1000);
 		break;
@@ -2323,10 +2357,11 @@ int ufs_set_configuration_descriptor(void)
 
 	/* in case of UFS provisioning execution */
 	if (retry) {
-		puts("LU configuration pass !!!!!!!!\n");
+		puts("[UFS] LU config: PASS !!!\n");
 		ufs_init(2);
 	}
 
+fail:
 	return ret;
 }
 
