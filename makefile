@@ -17,6 +17,17 @@ CSLV_64 := $(CSLV_PATH)/cslv_64
 # variable for build server OS info
 OS_INFO := $(findstring x86_64, $(shell uname -a))
 
+################################################################################
+# SoC configs								       #
+################################################################################
+ifeq ($(MAKECMDGOALS), maestro9820)
+LK_PAD_SIZE := 1048576
+SB_SIGN_TYPE := 3
+SB_KEY_TYPE := 1
+SB_RB_COUNT := 0
+SIGNATURE_BIN := yes
+endif
+
 # check if LKROOT is already a part of LKINC list and add it only if it is not
 ifeq ($(filter $(LKROOT),$(LKINC)), )
 LKINC := $(LKROOT) $(LKINC)
