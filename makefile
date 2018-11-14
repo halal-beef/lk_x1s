@@ -9,6 +9,14 @@ BUILDROOT ?= .
 DEFAULT_PROJECT ?=
 TOOLCHAIN_PREFIX ?=
 
+# Variables for use with CodeSigner
+CSLV_PATH := $(LKROOT)/tools/cslv
+CSLV_32 := $(CSLV_PATH)/cslv_32
+CSLV_64 := $(CSLV_PATH)/cslv_64
+
+# variable for build server OS info
+OS_INFO := $(findstring x86_64, $(shell uname -a))
+
 # check if LKROOT is already a part of LKINC list and add it only if it is not
 ifeq ($(filter $(LKROOT),$(LKINC)), )
 LKINC := $(LKROOT) $(LKINC)
@@ -32,6 +40,18 @@ export TOOLCHAIN_PREFIX
 # if we're the top level invocation, call ourselves with additional args
 _top:
 	@$(MAKE) -C $(LKMAKEROOT) -rR -f $(LKROOT)/engine.mk $(addprefix -I,$(LKINC)) $(MAKECMDGOALS)
+ifeq ($(SIGNATURE_BIN), yes)
+	@$(LKROOT)/tools/Makepad_sb40 "build-"$(MAKECMDGOALS)/lk.bin $(LK_PAD_SIZE)
+	@mv "build-"$(MAKECMDGOALS)/lk.bin "build-"$(MAKECMDGOALS)/lk.bin.tmp
+ifeq ($(OS_INFO), x86_64)
+	@echo "64 bit signer"
+	@$(CSLV_64) -infile "build-"$(MAKECMDGOALS)/lk.bin.tmp -outfile "build-"$(MAKECMDGOALS)/lk.bin -sign_type $(SB_SIGN_TYPE) -key_type $(SB_KEY_TYPE) -rb_count $(SB_RB_COUNT) -dynamic_length no
+else
+	echo "32 bit signer"
+	@$(CSLV_32) -infile "build-"$(MAKECMDGOALS)/lk.bin.tmp -outfile "build-"$(MAKECMDGOALS)/lk.bin -sign_type $(SB_SIGN_TYPE) -key_type $(SB_KEY_TYPE) -rb_count $(SB_RB_COUNT) -dynamic_length no
+endif
+	@rm "build-"$(MAKECMDGOALS)/lk.bin.tmp
+endif
 
 # If any arguments were provided, create a recipe for them that depends
 # on the _top rule (thus calling it), but otherwise do nothing.
