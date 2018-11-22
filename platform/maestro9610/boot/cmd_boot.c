@@ -31,6 +31,7 @@
 #include <platform/fdt.h>
 #include <platform/chip_id.h>
 #include <pit.h>
+#include <dev/scsi.h>
 
 /* Memory node */
 #define SIZE_2GB (0x80000000)
@@ -461,6 +462,12 @@ int cmd_boot(int argc, const cmd_args *argv)
 	dtbo_table = (struct dt_table_header *)DTBO_BASE;
 
 	load_boot_images();
+
+	/*
+	 * Send SSU to UFS. Something wrong on SSU should not
+	 * affect kerel boot.
+	 */
+	scsi_do_ssu();
 
 #if defined(CONFIG_USE_AVB20)
 	if (ab_current_slot())

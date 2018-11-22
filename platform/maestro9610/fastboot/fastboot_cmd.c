@@ -303,20 +303,12 @@ int fb_do_reboot(const char *cmd_buffer)
 {
 	char buf[FB_RESPONSE_BUFFER_SIZE];
 	char *response = (char *)(((unsigned long)buf + 8) & ~0x07);
-	bdev_t *dev;
-	status_t ret;
 
-	/* Send SSU to UFS */
-	dev = bio_open("scsissu");
-	if (!dev) {
-		printf("error opening block device\n");
-	}
-
-	ret = scsi_start_stop_unit(dev);
-	if (ret != NO_ERROR)
-		printf("scsi ssu error!\n");
-
-	bio_close(dev);
+	/*
+	 * Send SSU to UFS. Something wrong on SSU should not
+	 * affect reboot sequence.
+	 */
+	scsi_do_ssu();
 
 	sprintf(response,"OKAY");
 	fastboot_tx_status(response, strlen(response), FASTBOOT_TX_SYNC);
