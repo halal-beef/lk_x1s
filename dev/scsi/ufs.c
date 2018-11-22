@@ -1536,6 +1536,7 @@ static int ufs_send_upiu(ufs_upiu_cmd cmd, int enable)
 		if (ufs->cmd_desc_addr->response_upiu.header.response) {
 			printf("lun:%d Query Response : 0x%02x\n", ufs->lun,
 			       ufs->cmd_desc_addr->response_upiu.header.response);
+			res = ERR_GENERIC;
 			break;
 		}
 		ufs_post_send_query(ufs, cmd, p);
