@@ -72,4 +72,5 @@ status_t scsi_scan(scsi_device_t *sdev, u32 wlun, u32 dev_num, exec_t *func,
 status_t scsi_scan_ssu(scsi_device_t *sdev, u32 wlun,
 					exec_t *func, get_sdev_t *func1);
 status_t scsi_do_ssu(void);
+status_t scsi_ufs_ffu(const void *buf, u32 len);
 #endif				/* _SCSI_H */
