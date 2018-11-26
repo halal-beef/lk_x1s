@@ -234,6 +234,19 @@ static void flash_using_pit(char *key, char *response,
 		return;
 	}
 
+	if (!strcmp(key, "ffu")) {
+		int ret = 0;
+		ret = scsi_ufs_ffu(addr, size);
+		if (ret == 0) {
+			print_lcd_update(FONT_GREEN, FONT_BLACK, "UFS FFU succecced! Now turn off and you can boot with usb download mode when power-up");
+			sprintf(response, "OKAY");
+		} else {
+			print_lcd_update(FONT_RED, FONT_BLACK, "UFS 'ffu' failed");
+			sprintf(response, "FAILffu is failed!!");
+		}
+		return;
+	}
+
 	ptn = pit_get_part_info(key);
 	if (ptn)
 		length = pit_get_length(ptn);

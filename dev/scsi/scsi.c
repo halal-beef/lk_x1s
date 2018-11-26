@@ -39,6 +39,14 @@
 		*(p+3) = (u8)(v) & 0xff;		\
 	} while (0)
 
+/* Change only 3 Bytes. */
+#define	set_tbyte_be(p, v)	\
+	do {						\
+		*(p) = (u8)((v) >> 16) & 0xff;	\
+		*(p+1) = (u8)((v) >> 8) & 0xff;		\
+		*(p+2) = (u8)(v) & 0xff;		\
+	} while (0)
+
 #define	get_dword_le(p)		((*(p) << 24) |		\
 				(*(p+1) << 16) |	\
 				(*(p+2) << 8) |		\
@@ -198,6 +206,71 @@ static status_t scsi_write_10(struct bdev *dev, const void *buf,
 	ret = sdev->exec(&g_scm);
 	if (!ret)
 		ret = scsi_parse_status(g_scm.status);
+
+	return ret;
+}
+
+static status_t scsi_write_buffer(struct bdev *dev, const void *buf,
+				u8 mode, u8 buf_id, u32 buf_ofs, u32 len)
+{
+	scsi_device_t *sdev = (scsi_device_t *)dev->private;
+	status_t ret = NO_ERROR;
+
+	g_scm.sdev = sdev;
+	g_scm.buf = (u8 *)buf;
+	g_scm.datalen = (u32)len;
+
+	/*
+	 * Prepare CDB
+	 *
+	 * RDPROTECT is always zero here for UFS
+	 */
+	memset((void *)g_scm.cdb, 0, sizeof(g_scm.cdb));
+	g_scm.cdb[0] = SCSI_OP_WRITE_BUFFER;
+	g_scm.cdb[1] = mode & 0x1F;
+
+	/* Change only 3 Bytes. */
+	g_scm.cdb[2] = buf_id;
+	set_tbyte_be(&g_scm.cdb[3], (u32)buf_ofs);
+	set_tbyte_be(&g_scm.cdb[6], (u32)len);
+	g_scm.cdb[9] = 0x0;
+
+	/* Actual issue */
+	ret = sdev->exec(&g_scm);
+	if (!ret)
+		ret = scsi_parse_status(g_scm.status);
+
+	return ret;
+}
+
+status_t scsi_ufs_ffu(const void *buf, u32 len)
+{
+	bdev_t *dev;
+	status_t ret = NO_ERROR;
+
+	/*
+	 * There is nothing specified in UFS spec about LUN for FFU.
+	 * So, I assumed using LU #0 and it actually wouldn't matter.
+	 */
+	dev = bio_open("scsi0");
+	if (!dev) {
+		printf("error opening block device\n");
+		return -ENOTBLK;
+	}
+
+	/*
+	 * input parameters for FFU
+	 *
+	 * MODE: 0xE, Download microcode
+	 * BUFFER ID: 0, specified in UFS spec
+	 * BUFFER OFSET: 0, assumption that it's available
+	 */
+	ret = scsi_write_buffer(dev, buf, 0xE, 0, 0, len);
+	if (ret == 0)
+		printf("[SCSI] %s: success! \n", __func__);
+	else
+		printf("[SCSI] %s: fail!\n", __func__);
+	bio_close(dev);
 
 	return ret;
 }
