@@ -82,7 +82,7 @@ uint32_t table_init_state;
 struct boot_header bootHeader;
 struct persist_data persistentData[PERSIST_DATA_CNT];
 
-static void dump_packet(u8 * data, int len)
+static void dump_packet(u8 * data, u32 len)
 {
 #ifdef RPMB_DEBUG
 	u8 s[17];
@@ -532,9 +532,9 @@ static int emmc_rpmb_commands(int dev_num, struct rpmb_packet *packet)
 				break;
 			}
 			emmc_rpmb_setblockcounter(dev_num, 1, blk_cnt);
-			dprintf(INFO, "Authenticated data write quest (Data only)\n");
+			dprintf(INFO, "Authenticated data write request (Data only)\n");
 			dump_packet((u8 *)addr, 256*blk_cnt);
-			dprintf(INFO, "Authenticated data write quest (Swapped)\n");
+			dprintf(INFO, "Authenticated data write request (Swapped)\n");
 			memset(output_data, 0, sizeof(output_data));
 
 			/*Write Data reordering */
@@ -564,10 +564,10 @@ static int emmc_rpmb_commands(int dev_num, struct rpmb_packet *packet)
 				dprintf(INFO, "\n");
 			}
 
-			dprintf(INFO, "Authenticated data write quest (Swapped & HMAC included)\n");
+			dprintf(INFO, "Authenticated data write request (Swapped & HMAC included)\n");
 			dump_packet((u8 *)(buf+(blk_cnt-1)*512), 512);
 			/* HMAC calculation here */
-			dprintf(INFO, "Send authenticated data write quest\n");
+			dprintf(INFO, "Send authenticated data write request\n");
 			emmc_rpmb_write(dev_num, start_blk, blk_cnt, buf);
 
 			memset((void *)packet,0,512);
@@ -769,20 +769,6 @@ static int ufs_rpmb_commands(int dev_num, struct rpmb_packet *packet)
 		dprintf(INFO, "Reading of the Write Counter value request (Swapped)\n");
 		dump_packet(buf, RPMB_SIZE);
 
-		memset(output_data, 0, sizeof(output_data));
-
-		memcpy((void *)hmac, (void *)(buf + DATA_START_BYTE), HMAC_CALC_SIZE);
-
-		ret = get_RPMB_hmac(hmac, HMAC_CALC_SIZE, output_data);
-		if (ret != RV_SUCCESS) {
-			dprintf(INFO, "RPMB: get hmac value: fail 0x%X\n", ret);
-			free(hmac);
-			goto out;
-		}
-
-		memcpy((void *)(buf + HMAC_START_BYTE), (void *)output_data, HMAC_SIZE);
-
-
 		dev = bio_open("scsirpmb");
 		if (dev == NULL) {
 			dprintf(INFO, "bio open fail\n");
@@ -841,10 +827,10 @@ static int ufs_rpmb_commands(int dev_num, struct rpmb_packet *packet)
 		buf = malloc(RPMB_SIZE * blk_cnt);
 		hmac = malloc(HMAC_CALC_SIZE * blk_cnt);
 
-		dprintf(INFO, "Authenticated data write quest (Data only)\n");
+		dprintf(INFO, "Authenticated data write request (Data only)\n");
 		dump_packet( INT2U8P(addr), DATA_SIZE * blk_cnt);
 
-		dprintf(INFO, "Authenticated data write quest (Swapped)\n");
+		dprintf(INFO, "Authenticated data write request (Swapped)\n");
 		dprintf(INFO, "HMAC calculatation\n");
 		memset(output_data, 0, sizeof(output_data));
 
@@ -868,7 +854,6 @@ static int ufs_rpmb_commands(int dev_num, struct rpmb_packet *packet)
 		/* Write hmac to last block */
 		memcpy((void *)(buf + HMAC_START_BYTE + (blk_cnt - 1) * RPMB_SIZE),
 		       (void *)(output_data), HMAC_SIZE);
-		memcpy((void *)(output_data), (void *)(packet->Key_MAC), HMAC_SIZE);
 		dump_packet((u8 *) (buf + (blk_cnt - 1) * RPMB_SIZE), RPMB_SIZE);
 
 		if (ret != RV_SUCCESS)
@@ -880,11 +865,11 @@ static int ufs_rpmb_commands(int dev_num, struct rpmb_packet *packet)
 			dprintf(INFO, "\n");
 		}
 
-		dprintf(INFO, "Authenticated data write quest (Swapped & HMAC included)\n");
+		dprintf(INFO, "Authenticated data write request (Swapped & HMAC included)\n");
 		dump_packet((u8 *) (buf + ((blk_cnt - 1) * RPMB_SIZE)), RPMB_SIZE);
 
 		/* HMAC calculation here */
-		dprintf(INFO, "Send authenticated data write quest\n");
+		dprintf(INFO, "Send authenticated data write request\n");
 
 		dev = bio_open("scsirpmb");
 		if (dev == NULL) {
@@ -963,6 +948,7 @@ static int ufs_rpmb_commands(int dev_num, struct rpmb_packet *packet)
 		addr = *addrp;
 		blk_cnt = packet->count;
 		start_blk = packet->address;
+		*addrp = 0;
 
 		buf = malloc(RPMB_SIZE * blk_cnt);
 		hmac = malloc(HMAC_CALC_SIZE * blk_cnt);
