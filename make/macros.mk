@@ -33,7 +33,7 @@ endef
 # generate a header file at $1 with an expanded variable in $2
 define MAKECONFIGHEADER
         $(MKDIR); \
-        echo generating $1; \
+        $(info generating $1) \
         rm -f $1.tmp; \
         LDEF=`echo $1 | tr '/\\.-' '_' | sed "s/C++/CPP/g;s/c++/cpp/g"`; \
         echo \#ifndef __$${LDEF}_H > $1.tmp; \
