@@ -203,8 +203,7 @@ int fb_do_erase(const char *cmd_buffer)
 
 	printf("erasing(formatting) '%s'\n", ptn->name);
 
-	if (ptn->filesys != FS_TYPE_NONE)
-		status = pit_access(ptn, PIT_OP_ERASE, 0, 0);
+	status = pit_access(ptn, PIT_OP_ERASE, 0, 0);
 
 	if (status) {
 		sprintf(response,"FAILfailed to erase partition");
@@ -223,7 +222,6 @@ static void flash_using_pit(char *key, char *response,
 {
 	struct pit_entry *ptn;
 	unsigned long long length;
-	u32 *env_val;
 
 	/*
 	 * In case of flashing pit, this should be
@@ -259,17 +257,6 @@ static void flash_using_pit(char *key, char *response,
 			sprintf(response, "OKAY");
 		}
 	}
-
-	if (!strcmp(key, "ramdisk")) {
-		ptn = pit_get_part_info("env");
-		env_val = memalign(0x1000, pit_get_length(ptn));
-		pit_access(ptn, PIT_OP_LOAD, (u64)env_val, 0);
-
-		env_val[ENV_ID_RAMDISK_SIZE] = size;
-		pit_access(ptn, PIT_OP_FLASH, (u64)env_val, 0);
-
-		free(env_val);
-	}
 }
 
 int fb_do_flash(const char *cmd_buffer)
@@ -293,7 +280,6 @@ int fb_do_flash(const char *cmd_buffer)
 	flash_using_pit((char *)cmd_buffer + 6, response,
 			downloaded_data_size, (void *)interface.transfer_buffer);
 
-	strcpy(response,"OKAY");
 	fastboot_tx_status(response, strlen(response), FASTBOOT_TX_ASYNC);
 
 	return 0;
