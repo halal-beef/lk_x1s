@@ -46,7 +46,7 @@
 
 #define PIT_EMMC_ERASE_SIZE		(1024)
 
-#define PIT_DISK_SIZE_LIMIT		16
+#define PIT_DISK_SIZE_LIMIT		40 /* increase for pit 128 entry */
 #define PIT_SIZE_LIMIT			(PIT_DISK_SIZE_LIMIT * PIT_SECTOR_SIZE)
 
 
