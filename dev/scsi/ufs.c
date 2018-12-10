@@ -30,7 +30,7 @@
 #define cpu_to_be32(x) be32_to_cpu(x)
 
 #ifdef	SCSI_UFS_DEBUG
-#define	ufs_debug(INFO, fmt,args...)	dprintf (INFO, fmt ,##args)
+#define	ufs_debug(fmt,args...)	dprintf (INFO, fmt ,##args)
 #else
 #define ufs_debug(INFO, fmt,args...)
 #endif
@@ -1990,11 +1990,11 @@ static int ufs_mem_init(struct ufs_host *ufs)
 		}
 	}
 
-	ufs_debug("cmd_desc_addr : %x\n", ufs->cmd_desc_addr);
-	ufs_debug("\tresponse_upiu : %x\n", &ufs->cmd_desc_addr->response_upiu);
-	ufs_debug("\tprd_table : %x (size=%x)\n", ufs->cmd_desc_addr->prd_table,
+	ufs_debug("cmd_desc_addr : %p\n", ufs->cmd_desc_addr);
+	ufs_debug("\tresponse_upiu : %p\n", &ufs->cmd_desc_addr->response_upiu);
+	ufs_debug("\tprd_table : %p (size=%lx)\n", ufs->cmd_desc_addr->prd_table,
 		  sizeof(ufs->cmd_desc_addr->prd_table));
-	ufs_debug("\tsizeof upiu : %x\n", sizeof(struct ufs_upiu));
+	ufs_debug("\tsizeof upiu : %lx\n", sizeof(struct ufs_upiu));
 
 	memset(ufs->cmd_desc_addr, 0x00, UFS_NUTRS * sizeof(struct ufs_cmd_desc));
 
@@ -2009,7 +2009,7 @@ static int ufs_mem_init(struct ufs_host *ufs)
 			goto free_utrd_out;
 		}
 	}
-	ufs_debug("utrd_addr : %x\n", ufs->utrd_addr);
+	ufs_debug("utrd_addr : %p\n", ufs->utrd_addr);
 	memset(ufs->utrd_addr, 0x00, UFS_NUTRS * sizeof(struct ufs_utrd));
 
 	if (!ufs->utmrd_addr) {
@@ -2023,7 +2023,7 @@ static int ufs_mem_init(struct ufs_host *ufs)
 			goto free_all_out;
 		}
 	}
-	ufs_debug("utmrd_addr : %x\n", ufs->utmrd_addr);
+	ufs_debug("utmrd_addr : %p\n", ufs->utmrd_addr);
 	memset(ufs->utmrd_addr, 0x00, UFS_NUTMRS * sizeof(struct ufs_utmrd));
 
 	ufs->utrd_addr->cmd_desc_addr_l = (u64)(ufs->cmd_desc_addr);
@@ -2129,7 +2129,7 @@ static int ufs_host_init(int host_index, struct ufs_host *ufs)
 	ufs->capabilities = readl(ufs->ioaddr + REG_CONTROLLER_CAPABILITIES);
 	ufs->ufs_version = readl(ufs->ioaddr + REG_UFS_VERSION);
 	ufs_debug
-	    ("%s\n\tcaps(0x%X) 0x%08X\n\tver(0x%X)  0x%08X\n\tPID(0x%X)  0x%08X\n\tMID(0x%X)  0x%08X\n",
+	    ("%s\n\tcaps(0x%p) 0x%08x\n\tver(0x%p)  0x%08x\n\tPID(0x%p)  0x%08x\n\tMID(0x%p)  0x%08x\n",
 	     ufs->host_name, ufs->ioaddr + REG_CONTROLLER_CAPABILITIES, ufs->capabilities,
 	     ufs->ioaddr + REG_UFS_VERSION, ufs->ufs_version, ufs->ioaddr + REG_CONTROLLER_PID,
 	     readl(ufs->ioaddr + REG_CONTROLLER_PID)
