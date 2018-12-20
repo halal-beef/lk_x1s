@@ -754,6 +754,10 @@ void pit_init(void)
 		/* Print initially */
 		pit_show_info();
 
+		/* Check GPT integrity */
+		if (ret = gpt_compare_chk(&pit))
+			goto err;
+
 		return;
 	}
 err:
