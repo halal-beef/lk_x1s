@@ -853,5 +853,6 @@ int ufs_init(int mode);
 int ufs_set_configuration_descriptor(void);
 int ufs_board_init(int host_index, struct ufs_host *ufs);
 void ufs_pre_vendor_setup(struct ufs_host *ufs);
+int ufs_device_reset(void);
 
 #endif				/* __UFS__ */

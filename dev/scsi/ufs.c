@@ -1725,9 +1725,14 @@ static int ufs_end_boot_mode(struct ufs_host *ufs)
 	return NO_ERROR;
 }
 
-static int ufs_device_reset(struct ufs_host *ufs, int onoff)
+int ufs_device_reset()
 {
-	writel((onoff), ufs->vs_addr + VS_GPIO_OUT);
+	struct ufs_host *ufs = get_cur_ufs_host();
+
+	writel(0, ufs->vs_addr + VS_GPIO_OUT);
+	u_delay(5);
+	writel(1, ufs->vs_addr + VS_GPIO_OUT);
+
 	return 0;
 }
 
@@ -1768,9 +1773,7 @@ static int ufs_pre_setup(struct ufs_host *ufs)
 
 	ufs_device_power(ufs, 1);
 	u_delay(1000);
-	ufs_device_reset(ufs, 0);
-	u_delay(5);
-	ufs_device_reset(ufs, 1);
+	ufs_device_reset();
 
 	if (ufs->quirks & UFS_QUIRK_BROKEN_HCE) {
 		ufs->uic_cmd = &reset_cmd;
