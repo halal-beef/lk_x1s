@@ -60,7 +60,8 @@
 enum pit_filesys {
 	FS_TYPE_NONE	= 0,
 	FS_TYPE_BASIC,
-	FS_TYPE_EXT4	= 5,
+	FS_TYPE_SPARSE_EXT4	= 5,
+	FS_TYPE_SPARSE_F2FS	= 6,
 };
 
 /*
