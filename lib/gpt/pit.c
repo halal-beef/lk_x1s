@@ -241,7 +241,7 @@ static int pit_access_emmc(struct pit_entry *ptn, int op, u64 addr, u32 size)
 	case PIT_OP_FLASH:	/* flash */
 		printf("\nPIT(%s): flash on eMMC..  \n", ptn->name);
 
-		if (ptn->filesys == FS_TYPE_EXT4) {
+		if (ptn->filesys == FS_TYPE_SPARSE_EXT4 || ptn->filesys == FS_TYPE_SPARSE_F2FS) {
 #if 0
 			... same as UFS...
 #endif
@@ -327,7 +327,7 @@ static int pit_access_ufs(struct pit_entry *ptn, int op, u64 addr, u32 size)
 	case PIT_OP_FLASH:	/* flash */
 		printf("[PIT(%s)] flash on UFS..  \n", ptn->name);
 
-		if (ptn->filesys == FS_TYPE_EXT4) {
+		if (ptn->filesys == FS_TYPE_SPARSE_EXT4 || ptn->filesys == FS_TYPE_SPARSE_F2FS) {
 			if (!check_compress_ext4((char *)addr,
 						pit_get_length(ptn)) != 0) {
 				printf("Compressed ext4 image\n");
@@ -452,7 +452,8 @@ static int pit_check_info(struct pit_info *ppit, int *idx,
 		/* Do not something here for user, so terminate */
 		if (lun != ptn->lun)
 			break;
-		if (lun == 0 && (ptn->filesys == FS_TYPE_EXT4 ||
+		if (lun == 0 && (ptn->filesys == FS_TYPE_SPARSE_EXT4 ||
+					ptn->filesys == FS_TYPE_SPARSE_F2FS ||
 					ptn->filesys == FS_TYPE_BASIC))
 			break;
 
@@ -552,7 +553,8 @@ static int pit_check_info_gpt(struct pit_info *ppit, int *idx, struct gpt_info *
 		}
 
 		/* Rule for filesys */
-		if (ptn->filesys != FS_TYPE_EXT4 &&
+		if (ptn->filesys != FS_TYPE_SPARSE_EXT4 &&
+					ptn->filesys != FS_TYPE_SPARSE_F2FS &&
 					ptn->filesys != FS_TYPE_BASIC) {
 			printf("[PIT(%s)] unknown filesys in user: filesys=%u.\n",
 					ptn->name, ptn->filesys);
@@ -589,7 +591,7 @@ static int pit_check_info_gpt(struct pit_info *ppit, int *idx, struct gpt_info *
 
 		/* Rule for size */
 		if (ptn->blknum < (5 * 1024 * 2) &&
-				ptn->filesys == FS_TYPE_EXT4 &&
+				(ptn->filesys == FS_TYPE_SPARSE_EXT4 || ptn->filesys == FS_TYPE_SPARSE_F2FS) &&
 				strncmp(ptn->option, "remained", 8)) {
 			printf("[PIT(%s)] smaller than 5MB\n", ptn->name);
 		// TODO: print_lcd_update
