@@ -258,7 +258,9 @@ void platform_init(void)
 
 	if (get_boot_device() == BOOT_UFS) {
 		ufs_init(2);
-		ufs_set_configuration_descriptor();
+		ret = ufs_set_configuration_descriptor();
+		if (ret == 1)
+			ufs_init(2);
 	}
 	pit_init();
 
