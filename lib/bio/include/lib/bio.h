@@ -82,6 +82,7 @@ typedef struct bdev {
 
 /* user api */
 bdev_t *bio_open(const char *name);
+bdev_t *bio_get_with_prefix(const char *name);
 void bio_close(bdev_t *dev);
 ssize_t bio_read(bdev_t *dev, void *buf, off_t offset, size_t len);
 ssize_t bio_read_block(bdev_t *dev, void *buf, bnum_t block, uint count);

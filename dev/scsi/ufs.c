@@ -86,6 +86,7 @@ STATIC_COMMAND_END(ufs);
 static scsi_device_t *ufs_dev[SCSI_MAX_INITIATOR];
 static scsi_device_t ufs_dev_ssu;
 static scsi_device_t ufs_dev_rpmb;
+static struct list_node ufs_lu_list = LIST_INITIAL_VALUE(ufs_lu_list);
 
 
 static int ufs_send_upiu(ufs_upiu_cmd cmd, int enable);
@@ -2324,6 +2325,11 @@ error:
  *
  * This is called at boot time to check that LU configuration is done
  * with expected values and, if not, do it.
+ *
+ * Return values
+ * 0: no error
+ * 1: LU configuration done
+ * others: uncorrectable error
  */
 int ufs_set_configuration_descriptor(void)
 {
@@ -2377,7 +2383,10 @@ int ufs_set_configuration_descriptor(void)
 	/* in case of UFS provisioning execution */
 	if (retry) {
 		puts("[UFS] LU config: PASS !!!\n");
-		ufs_init(2);
+
+		/* remove enumerated bdevs*/
+		scsi_exit(&ufs_lu_list, "scsi");
+		ret = 1;
 	}
 
 fail:
@@ -2404,6 +2413,9 @@ status_t ufs_init(int mode)
 	}
 #endif
 
+	ufs_lu_list.prev = 0;
+	ufs_lu_list.next = 0;
+
 	for (i = 0; i < SCSI_MAX_INITIATOR; i++) {
 		_ufs_curr_host = i;
 		if (!_ufs[i]) {
@@ -2428,9 +2440,9 @@ status_t ufs_init(int mode)
 
 		ufs_identify_bootlun(_ufs[i]);
 
-		scsi_scan(ufs_dev[i], 0, SCSI_MAX_DEVICE, scsi_exec, NULL, 128);
-		scsi_scan(&ufs_dev_rpmb, 0x44, 0, scsi_exec, "rpmb", 128);
-		scsi_scan_ssu(&ufs_dev_ssu, 0x50, scsi_exec, (get_sdev_t *)scsi_get_ssu_sdev);
+		scsi_scan(ufs_dev[i], 0, SCSI_MAX_DEVICE, scsi_exec, NULL, 128, &ufs_lu_list);
+		scsi_scan(&ufs_dev_rpmb, 0x44, 0, scsi_exec, "rpmb", 128, &ufs_lu_list);
+		scsi_scan_ssu(&ufs_dev_ssu, 0x50, scsi_exec, (get_sdev_t *)scsi_get_ssu_sdev, &ufs_lu_list);
 	}
 
 out:
