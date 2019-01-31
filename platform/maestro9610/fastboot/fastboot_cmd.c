@@ -93,8 +93,12 @@ int fb_do_getvar(const char *cmd_buffer)
 		 * In case of flashing pit, this should be
 		 * passed unconditionally.
 		 */
-		if (strcmp(key, "pit") && ptn->filesys != FS_TYPE_NONE)
-			strcpy(response + 4, "ext4");
+		if (strcmp(key, "pit")) {
+			if (ptn->filesys == FS_TYPE_SPARSE_EXT4)
+				strcpy(response + 4, "ext4");
+			if (ptn->filesys == FS_TYPE_SPARSE_F2FS)
+				strcpy(response + 4, "f2fs");
+		}
 	}
 	else if (!memcmp(cmd_buffer + 7, "partition-size", strlen("partition-size")))
 	{
@@ -304,8 +308,9 @@ int fb_do_reboot(const char *cmd_buffer)
 	char *response = (char *)(((unsigned long)buf + 8) & ~0x07);
 
 	/*
-	 * Send SSU to UFS. Something wrong on SSU should not
-	 * affect reboot sequence.
+	 * PON (Power off notification) to storage
+	 *
+	 * Even with its failure, subsequential operations should be executed.
 	 */
 	scsi_do_ssu();
 
@@ -563,9 +568,6 @@ int do_fastboot(int argc, const cmd_args *argv)
 
 	dprintf(ALWAYS, "This is do_fastboot\n");
 	print_lcd_update(FONT_GREEN, FONT_BLACK, "Entering fastboot mode.");
-
-	/* display all entries */
-	pit_show_info();
 
 	muic_sw_usb();
 

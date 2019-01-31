@@ -463,12 +463,6 @@ int cmd_boot(int argc, const cmd_args *argv)
 
 	load_boot_images();
 
-	/*
-	 * Send SSU to UFS. Something wrong on SSU should not
-	 * affect kerel boot.
-	 */
-	scsi_do_ssu();
-
 #if defined(CONFIG_USE_AVB20)
 	if (ab_current_slot())
 		avb_main("_b", cmdline, verifiedbootstate);
@@ -478,6 +472,13 @@ int cmd_boot(int argc, const cmd_args *argv)
 
 	configure_dtb();
 	configure_ddi_id();
+
+	/*
+	 * PON (Power off notification) to storage
+	 *
+	 * Even with its failure, subsequential operations should be executed.
+	 */
+	scsi_do_ssu();
 
 	if (readl(EXYNOS9610_POWER_SYSIP_DAT0) == REBOOT_MODE_RECOVERY || readl(EXYNOS9610_POWER_SYSIP_DAT0) == REBOOT_MODE_FACTORY)
 		writel(0, EXYNOS9610_POWER_SYSIP_DAT0);

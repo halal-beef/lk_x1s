@@ -16,7 +16,17 @@
 
 #define SECTOR_BITS		9	/* 512B */
 
+/*
+ * Exynos MMC host need buffer address space aligned to eight  bytes for DMA.
+ */
+#define ALIGN_FOR_EXYNOS	8
+#if (INTERNAL_SPARSE_BUF % 8)
+#error Buffer for sparse is not aligned to four bytes !!
+#endif
+
 #define ext4_printf(args, ...)
+
+static unsigned char *i_buf_for_sparse = (unsigned char *)CFG_FASTBOOT_MMC_BUFFER;
 
 static int write_raw_chunk(char* data, unsigned int sector, unsigned int sector_size);
 
@@ -64,7 +74,6 @@ int check_compress_ext4(char *img_base, unsigned long long parti_size) {
 }
 
 int write_raw_chunk(char* data, unsigned int sector, unsigned int sector_size) {
-	unsigned char *tmp_align;
 	bdev_t *dev;
 	unsigned int boot_dev;
 	const char *str;
@@ -80,12 +89,6 @@ int write_raw_chunk(char* data, unsigned int sector, unsigned int sector_size) {
 	}
 
 	dev = bio_open(str);
-
-	if (((unsigned long)data % 8) != 0) {
-		tmp_align = (unsigned char *)CFG_FASTBOOT_MMC_BUFFER;
-		memcpy((unsigned char *)tmp_align, (unsigned char *)data, sector_size * 512);
-		data = (char *)tmp_align;
-	}
 
 	ext4_printf("write raw data in %d size %d \n", sector, sector_size);
 
@@ -103,10 +106,14 @@ int write_raw_chunk(char* data, unsigned int sector, unsigned int sector_size) {
 }
 
 int write_compressed_ext4(char* img_base, unsigned int sector_base) {
-	unsigned int sector_size;
+	unsigned int sector_size, i;
 	int total_chunks;
 	ext4_chunk_header *chunk_header;
 	ext4_file_header *file_header;
+	char *data;
+	u32 pattern;
+	u32 *p_i_buf;
+	unsigned int boot_dev = get_boot_device();
 
 	file_header = (ext4_file_header*)img_base;
 	total_chunks = file_header->total_chunks;
@@ -122,14 +129,38 @@ int write_compressed_ext4(char* img_base, unsigned int sector_base) {
 		switch(chunk_header->type)
 		{
 		case EXT4_CHUNK_TYPE_RAW:
-			ext4_printf("raw_chunk \n");
-			write_raw_chunk(img_base + EXT4_CHUNK_HEADER_SIZE,
-							sector_base, sector_size);
+			ext4_printf("*** raw_chunk (lba: %u, sct: %u) ***\n",
+					sector_base, sector_size);
+
+			/*
+			 * Memory copy if transfer buffer address is not
+			 * aligned to eight bytes.
+			 */
+			data = (char *)(img_base + EXT4_CHUNK_HEADER_SIZE);
+			if ((boot_dev != BOOT_UFS) &&
+					((((unsigned long)data % ALIGN_FOR_EXYNOS)) != 0)) {
+				memcpy((void *)i_buf_for_sparse, (void *)data,
+						sector_size * (1 << SECTOR_BITS));
+				data = (char *)i_buf_for_sparse;
+			}
+
+			write_raw_chunk(data, sector_base, sector_size);
 			sector_base += sector_size;
 			break;
 
 		case EXT4_CHUNK_TYPE_FILL:
-			printf("*** fill_chunk ***\n");
+			/* Fill pattern */
+			pattern = *(u32 *)((char *)(&chunk_header->total_size) +
+					sizeof(u32));
+			printf("*** fill_chunk (lba: %u, sct: %u, pat: 0x%08x) %lu***\n",
+					sector_base, sector_size, pattern, sector_size * (1 << SECTOR_BITS) / sizeof(u32));
+
+			p_i_buf = (u32 *)i_buf_for_sparse;
+			for (i = 0; i < sector_size * (1 << SECTOR_BITS) / sizeof(u32); i++)
+				p_i_buf[i] = pattern;
+
+			/* Iterate block write as much as we allocate */
+			write_raw_chunk((char *)p_i_buf, sector_base, sector_size);
 			sector_base += sector_size;
 			break;
 
@@ -139,7 +170,8 @@ int write_compressed_ext4(char* img_base, unsigned int sector_base) {
 			break;
 
 		default:
-			printf("*** unknown chunk type ***\n");
+			ext4_printf("*** none chunk (lba: %u, sct: %u) ***\n",
+					sector_base, sector_size);
 			sector_base += sector_size;
 			break;
 		}
