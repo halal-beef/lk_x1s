@@ -26,6 +26,7 @@ typedef scsi_device_t *(get_sdev_t)(void);
 
 struct scsi_device_s {
 	bdev_t dev;
+	struct list_node lu_node;
 	u32 lun;
 	// TODO:
 	char vendor[40+1+3];
@@ -68,9 +69,10 @@ enum scsi_opcode {
 
 /* External Functions */
 status_t scsi_scan(scsi_device_t *sdev, u32 wlun, u32 dev_num, exec_t *func,
-				const char *name_s, bnum_t max_seg);
+			const char *name_s, bnum_t max_seg, struct list_node *list);
 status_t scsi_scan_ssu(scsi_device_t *sdev, u32 wlun,
-					exec_t *func, get_sdev_t *func1);
+			exec_t *func, get_sdev_t *func1, struct list_node *lu_list);
 status_t scsi_do_ssu(void);
 status_t scsi_ufs_ffu(const void *buf, u32 len);
+void scsi_exit(struct list_node *lu_node, const char *prefix);
 #endif				/* _SCSI_H */

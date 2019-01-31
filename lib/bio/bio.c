@@ -668,6 +668,26 @@ bdev_t *bio_open(const char *name)
     return bdev;
 }
 
+bdev_t *bio_get_with_prefix(const char *name)
+{
+    bdev_t *bdev = NULL;
+
+    LTRACEF(" '%s'\n", name);
+
+    /* see if it's in our list */
+    bdev_t *entry;
+    mutex_acquire(&bdevs.lock);
+    list_for_every_entry(&bdevs.list, entry, bdev_t, node) {
+        if (!strncmp(entry->name, name, strlen(name))) {
+            bdev = entry;
+            break;
+        }
+    }
+    mutex_release(&bdevs.lock);
+
+    return bdev;
+}
+
 void bio_close(bdev_t *dev)
 {
     DEBUG_ASSERT(dev);
