@@ -1150,7 +1150,7 @@ static int send_cmd(struct ufs_host *ufs)
 
 static status_t ufs_parse_respnse(struct ufs_host *ufs)
 {
-	scm *pscm;
+	scm *pscm = NULL;
 
 	if (!ufs || !pscm)
 		return ERR_GENERIC;

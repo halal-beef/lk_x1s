@@ -55,7 +55,6 @@
  */
 #define PIT_MAX_PART_NUM		60
 
-#define PIT_ENV_SIZE			(16 << 10)
 
 enum pit_filesys {
 	FS_TYPE_NONE	= 0,
@@ -107,11 +106,9 @@ enum pit_op {
  * Public functions
  */
 void pit_init(void);
-void pit_show_info(void);
 int pit_update(void *buf, unsigned int size);
 struct pit_entry *pit_get_part_info(const char *name);
 int pit_access(struct pit_entry *ptn, int op, u64 addr, u32 size);
-u64 pit_get_start_addr(struct pit_entry *ptn);
 u64 pit_get_length(struct pit_entry *ptn);
 
 /*

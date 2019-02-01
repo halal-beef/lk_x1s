@@ -10,12 +10,10 @@
  *
  */
 
-#include <stddef.h>
-#include <string.h>
 #include <err.h>
+#include <string.h>
 #include <part_gpt.h>
 #include <lib/heap.h>
-#include <lib/sysparam.h>
 #include <dev/boot.h>
 #include <platform/decompress_ext4.h>
 #include <platform/secure_boot.h>
@@ -33,12 +31,7 @@
  */
 // TODO: need to be migrated..
 #define FMP_USE_SIZE	(32 + 8)
-
-#define PIT_FAT_MB_SIZE			200	/* 200MB */
-#define PIT_FAT_SIZE			\
-		(PIT_FAT_MB_SIZE * 1024 * 1024 / PIT_SECTOR_SIZE)
 #define PIT_SIGNITURE_SIZE		1024
-
 #define CMD_STRING_MAX_SIZE		60
 
 #define LOAD_PIT(t, s)							\
@@ -61,12 +54,12 @@ static const char *pit_if_tokens[] = {
  * Private data
  * ---------------------------------------------------------------------------
  */
-static struct pit_info pit;
-static void *pit_buf;
-static u32 pit_blk_cnt;
+static struct pit_info pit;	/* pit cached data */
+static void *pit_buf;		/* buffer for disk access with default block count */
+static u32 pit_blk_cnt;		/* block count to access pit backed data */
 static bdev_t *pit_dev;
-static enum __pit_if pit_if;
-static struct gpt_info gpt_if;
+static enum __pit_if pit_if;	/* block device identifier */
+static struct gpt_info gpt_if;	/* GPT LBA range to give GPT */
 
 /*
  * When you erase somewhere on eMMC supporting high capacity and
@@ -84,7 +77,6 @@ static char nul_buf[PIT_EMMC_ERASE_SIZE * PIT_SECTOR_SIZE];
  * Function declaration
  * ---------------------------------------------------------------------------
  */
-struct pit_entry *pit_get_part_info(const char *name);
 
 /*
  * ---------------------------------------------------------------------------
@@ -93,33 +85,19 @@ struct pit_entry *pit_get_part_info(const char *name);
  */
 static inline u32 pit_get_last_lba(void)
 {
-	u32 gpt_usable_count;
-	u32 units_per_block;
-
-	if (!pit_dev)
-		return 0;
-
 	/*
 	 * The unit is 512B.
-	 * decreasing 1 is because it is the last lba, not count.
-	 *
-	 * And we need to minus one because PMBR only exists at the head.
+	 * decreasing 1 is because it is last lba, not count.
 	 */
-	units_per_block = pit_dev->block_size / PIT_SECTOR_SIZE;
-	gpt_usable_count = (pit_dev->block_count * units_per_block)
-					- (PIT_PART_META - units_per_block);
-
-	return gpt_usable_count - 1;
+	return (pit_dev) ? (pit_dev->block_count * (pit_dev->block_size / PIT_SECTOR_SIZE))
+						- PIT_PART_META - 1 : 0;
 }
 
 static int pit_load_pit(void *buf)
 {
 	uint blks;
 
-	if (!pit_dev)
-		return ERR_IO;
-
-	blks = pit_dev->new_read(pit_dev, buf, PIT_PART_META, pit_blk_cnt);
+	blks = pit_dev->new_read(pit_dev, buf, PIT_DISK_LOC, pit_blk_cnt);
 
 	if (blks != pit_blk_cnt)
 		return ERR_IO;
@@ -131,10 +109,7 @@ static int pit_save_pit(void *buf)
 {
 	uint blks;
 
-	if (!pit_dev)
-		return ERR_IO;
-
-	blks = pit_dev->new_write(pit_dev, buf, PIT_PART_META, pit_blk_cnt);
+	blks = pit_dev->new_write(pit_dev, buf, PIT_DISK_LOC, pit_blk_cnt);
 
 	if (blks != pit_blk_cnt)
 		return ERR_IO;
@@ -142,7 +117,7 @@ static int pit_save_pit(void *buf)
 	return NO_ERROR;
 }
 
-static inline void pit_open_dev(void)
+static status_t pit_open_dev(void)
 {
 	unsigned int boot_dev;
 	char str[CMD_STRING_MAX_SIZE];
@@ -162,6 +137,7 @@ static inline void pit_open_dev(void)
 		print_lcd_update(FONT_RED, FONT_BLACK,
 			"[PIT] block dev not set");
 	*/
+		return ERR_NOT_VALID;
 	} else {
 		len = strlen(pit_if_tokens[pit_if]);
 		memcpy(str, pit_if_tokens[pit_if], len);
@@ -169,15 +145,26 @@ static inline void pit_open_dev(void)
 		str[len + 1] = '\0';
 
 		pit_dev = bio_open(str);
+
+		return (pit_dev == 0) ? ERR_NOT_FOUND : NO_ERROR;
 	}
 }
 
 static inline void pit_close_dev(void)		// TODO:
 {
-	if (!pit_dev)
-		return;
-
 	bio_close(pit_dev);
+}
+
+u64 __pit_get_length(struct pit_entry *ptn)
+{
+	u64 blknum;
+
+	/* Only the exception is for FMP */
+	blknum = !strcmp("userdata", ptn->name) ?
+					ptn->blknum - FMP_USE_SIZE :
+					ptn->blknum;
+
+	return blknum * PIT_SECTOR_SIZE;
 }
 
 static int pit_erase_emmc(bdev_t *dev, u32 blkstart, u32 blknum)
@@ -339,7 +326,7 @@ static int pit_access_ufs(struct pit_entry *ptn, int op, u64 addr, u32 size)
 		if (ptn->filesys == FS_TYPE_SPARSE_EXT4 || ptn->filesys == FS_TYPE_SPARSE_F2FS) {
 			/* In this case, bio_open will be called in ext apis */
 			if (!check_compress_ext4((char *)addr,
-						pit_get_length(ptn)) != 0) {
+						__pit_get_length(ptn)) != 0) {
 				printf("Compressed ext4 image\n");
 				ret = write_compressed_ext4((char *)addr, blkstart);
 			} else {
@@ -494,20 +481,6 @@ static int pit_check_info(struct pit_info *ppit, int *idx,
 			print_lcd_update(FONT_RED, FONT_BLACK,
 				"[PIT] %dth entry of lu %d has no name.",
 							i, lun);
-			*/
-			goto err;
-		}
-
-		/* Rule for env size */
-		if (!strcmp("env", ptn->name) &&
-					pit_get_length(ptn) > PIT_ENV_SIZE) {
-			printf("PIT(env): the size %llu is bigger than %d.\n",
-					pit_get_length(ptn), PIT_ENV_SIZE);
-		// TODO: print_lcd_update
-		/*
-			print_lcd_update(FONT_RED, FONT_BLACK,
-				"PIT(env): the size %llu is bigger than %d.",
-					pit_get_length(ptn), PIT_ENV_SIZE);
 			*/
 			goto err;
 		}
@@ -720,103 +693,10 @@ err:
 	return 1;
 }
 
-/*
- * ---------------------------------------------------------------------------
- * Common public functions
- * ---------------------------------------------------------------------------
- */
-void pit_init(void)
-{
-	int ret;
-
-	printf("[PIT] pit init start...\n");
-
-	pit_buf = malloc(PIT_SIZE_LIMIT + PIT_SIGNITURE_SIZE);
-	if (!pit_buf) {
-		printf("[PIT] pit_buf not allocated !!\n");
-		goto err;
-	}
-
-	/* Set a block device to be accessed */
-	pit_open_dev();
-
-	/*
-	 * Set PIT block count as default, because here is the time
-	 * before reading PIT and thus, we don't know what PIT block size
-	 * is exactly.
-	 */
-	pit_blk_cnt = PIT_DISK_SIZE_LIMIT;
-
-	/* Load pit data */
-	pit_load_pit(pit_buf);
-	LOAD_PIT(&pit, pit_buf);
-
-	/*
-	ret = el3_verify_signature_using_image((uint64_t)pit_buf,
-			sizeof(struct pit_info) + PIT_SIGNITURE_SIZE);
-	if (ret) {
-		printf("[SB ERR] pit signature check fail [ret: 0x%X]\n", ret);
-	} else {
-		printf("pit signature check success\n");
-	}
-	*/
-
-	/* Calculation Start LBA */
-	ret = pit_lba_cumulation(1);
-	if (ret != 0)
-		goto err1;
-
-	/* Clear buffer for partition writes */
-	memset(nul_buf, 0, sizeof(nul_buf));
-
-	pit_close_dev();
-
-	/* Check if PIT is valid and set PIT block count */
-	ret = pit_check_header(&pit);
-	if (!ret) {
-		struct pit_entry *ptn;
-
-		ptn = pit_get_part_info("pit");
-		if (!ptn)
-			goto err;
-		pit_blk_cnt = ptn->blknum;
-
-		/* Calculation userdata lba */
-		printf("... [PIT] pit init passes\n");
-
-		/* Get Sysparam */
-		ptn = pit_get_part_info("sysparam");
-		if (ptn) {
-			status_t err;
-
-			printf("[PIT] load sysparam\n");
-			err = sysparam_scan(pit_dev, ptn->blkstart, ptn->blknum);
-			if (err)
-				printf("... [PIT] fail to load sysparam, error code %d\n", err);
-			else
-				printf("... [PIT] pass to load sysparam\n");
-		}
-
-		/* Print initially */
-		pit_show_info();
-
-		return;
-	}
-err1:
-	pit_close_dev();
-err:
-	pit_blk_cnt = 0xDEADBEAF;
-	printf("... [PIT] pit init fails !!!\n");
-	return;
-}
-
-void pit_show_info()
+static void pit_show_info(void)
 {
 	struct pit_entry *ptn;
 	u32 i;
-
-	if (pit_check_header(&pit))
-		return;
 
 	printf("================= Partition Information Table =================\n");
 	printf("%12s:\t%7s\t%15s\t%15s\t%7s\n",
@@ -840,88 +720,10 @@ void pit_show_info()
 	printf("===============================================================\n");
 }
 
-int pit_update(void *buf, u32 size)
-{
-	struct pit_entry *ptn;
-	int ret;
-
-
-	pit_open_dev();
-
-	/*
-	 * Rule for name, not check the case of movi
-	 * because you can't know download size at the time
-	 */
-	if (size != 0xDEADBEAF && size > PIT_SIZE_LIMIT) {
-		printf("[PIT] %d size is bigger than %d.\n", size, PIT_SIZE_LIMIT);
-		// TODO: print_lcd_update
-		/*
-		print_lcd_update(FONT_RED, FONT_BLACK,
-			"[PIT] %d size is bigger than %d.", size, PIT_SIZE_LIMIT);
-			*/
-		goto err;
-	}
-
-	LOAD_PIT(&pit, buf);
-
-	/*
-	 * Check pit header's integrity
-	 */
-	if (pit_check_header(&pit))
-		goto err;
-
-	/* Check if PIT is valid and set PIT block count */
-	ptn = pit_get_part_info("pit");
-	if (!ptn)
-		goto err;
-	pit_blk_cnt = ptn->blknum;
-
-	/* Save pure pit binary */
-	LOAD_PIT(pit_buf, &pit);
-	pit_save_pit(pit_buf);
-
-	/* Calculation Start LBA */
-	ret = pit_lba_cumulation(0);
-	if (ret != 0)
-		goto err;
-
-	pit_close_dev();
-
-	/*
-	 * GPT would open the same device as one opened here.
-	 * So, we close here temporarily.
-	 */
-	 pit_close_dev();
-
-	/* update gpt */
-	if (gpt_create(&pit, &gpt_if)) {
-
-		/*
-		// TODO: print_lcd_update
-		print_lcd_update(FONT_RED, FONT_BLACK, "[PIT] GPT update failed !");
-		 */
-		printf("[PIT] GPT update failed !\n\n");
-		goto err1;
-	}
-	printf("[PIT] pit updated\n\n");
-	/* display all entries */
-	pit_show_info();
-
-	return 0;
-err1:
-	return 1;
-err:
-	pit_close_dev();
-	return 1;
-}
-
-struct pit_entry *pit_get_part_info(const char *name)
+static struct pit_entry *__pit_get_part_info(const char *name)
 {
 	u32 i;
 	struct pit_entry *ptn;
-
-	if (pit_check_header(&pit))
-		return 0;
 
 	for (i = 0 ; i < pit.count; i++) {
 		ptn = &pit.pte[i];
@@ -942,23 +744,209 @@ struct pit_entry *pit_get_part_info(const char *name)
 	return 0;
 }
 
-u64 pit_get_start_addr(struct pit_entry *ptn)
+/*
+ * ---------------------------------------------------------------------------
+ * Common public functions
+ * ---------------------------------------------------------------------------
+ */
+
+/**
+ * Initialize PIT for PIT integrity, signiture verification and GPT verification
+ *
+ * This returns nothing, but if something wrong, that would show you something.
+ */
+void pit_init(void)
 {
-	return (u64)ptn->blkstart * PIT_SECTOR_SIZE;
+	int ret;
+
+	printf("[PIT] pit init start...\n");
+
+	pit_buf = malloc(PIT_SIZE_LIMIT + PIT_SIGNITURE_SIZE);
+	if (!pit_buf) {
+		printf("[PIT] pit_buf not allocated !!\n");
+		goto err;
+	}
+
+	/*
+	 * Set PIT block count as default, because here is the time
+	 * before reading PIT and thus, we don't know what PIT block size
+	 * is exactly.
+	 */
+	pit_blk_cnt = PIT_DISK_SIZE_LIMIT;
+
+	/* Load pit data */
+	if (NO_ERROR != pit_open_dev())
+		goto err;
+	pit_load_pit(pit_buf);
+	pit_close_dev();
+	LOAD_PIT(&pit, pit_buf);
+
+	/*
+	ret = el3_verify_signature_using_image((uint64_t)pit_buf,
+			sizeof(struct pit_info) + PIT_SIGNITURE_SIZE);
+	if (ret) {
+		printf("[SB ERR] pit signature check fail [ret: 0x%X]\n", ret);
+	} else {
+		printf("pit signature check success\n");
+	}
+	*/
+
+	/* Calculation Start LBA */
+	ret = pit_lba_cumulation(1);
+	if (ret != 0)
+		goto err;
+
+	/* Clear buffer for partition writes */
+	memset(nul_buf, 0, sizeof(nul_buf));
+
+	/* Check if PIT is valid and set PIT block count */
+	ret = pit_check_header(&pit);
+	if (!ret) {
+		struct pit_entry *ptn;
+
+		ptn = __pit_get_part_info("pit");
+		if (!ptn)
+			goto err;
+		pit_blk_cnt = ptn->blknum;
+
+		/* Calculation userdata lba */
+		printf("... [PIT] pit init passes\n");
+		pit_show_info();
+
+		return;
+	}
+
+err:
+	/* Disable PIT, so you can't access partitions */
+	pit_blk_cnt = 0xDEADBEAF;
+	pit.magic = 0xDEADBEAF;
+
+	printf("... [PIT] pit init fails !!!\n");
+	return;
 }
 
+/**
+ * Update PIT and GPT
+ *
+ * @buf: start memory address
+ * @size: downloaded PIT binary size
+ *
+ * Returns 0 if pit is valid and GPT is updated properly, otherwise 1.
+ */
+int pit_update(void *buf, u32 size)
+{
+	struct pit_entry *ptn;
+	int ret;
+
+
+	/*
+	 * When pit backed data is loaded in pit_init(), bootloader always uses
+	 * PIT_DISK_SIZE_LIMIT as block count because it doesn't know the value
+	 * at the time. If pit partition size is bigger than PIT_DISK_SIZE_LIMIT,
+	 * bootloader might not load partition table properly. So I limited
+	 * available block count of pit partition in here.
+	 */
+	if (size > PIT_SIZE_LIMIT) {
+		printf("[PIT] %d size is bigger than %d.\n", size, PIT_SIZE_LIMIT);
+		// TODO: print_lcd_update
+		/*
+		print_lcd_update(FONT_RED, FONT_BLACK,
+			"[PIT] %d size is bigger than %d.", size, PIT_SIZE_LIMIT);
+			*/
+		goto err;
+	}
+
+	LOAD_PIT(&pit, buf);
+
+	/*
+	 * Check pit header's integrity
+	 */
+	if (pit_check_header(&pit))
+		goto err;
+
+	/* Check if PIT is valid and set PIT block count */
+	ptn = __pit_get_part_info("pit");
+	if (!ptn)
+		goto err;
+	pit_blk_cnt = ptn->blknum;
+
+	LOAD_PIT(pit_buf, &pit);
+
+	/* Save pure pit binary */
+	if (NO_ERROR != pit_open_dev())
+		goto err;
+	pit_save_pit(pit_buf);
+	pit_close_dev();
+
+	/* Calculation Start LBA */
+	ret = pit_lba_cumulation(0);
+	if (ret != 0)
+		goto err;
+
+	/* update gpt */
+	if (gpt_create(&pit, &gpt_if)) {
+
+		/*
+		// TODO: print_lcd_update
+		print_lcd_update(FONT_RED, FONT_BLACK, "[PIT] GPT update failed !");
+		 */
+		printf("[PIT] GPT update failed !\n\n");
+		goto err;
+	}
+	printf("[PIT] pit updated\n\n");
+	/* display all entries */
+	pit_show_info();
+
+	return 0;
+err:
+	return 1;
+}
+
+/**
+ * Return data structure of target partition name
+ *
+ * @name: target partition name
+ *
+ * Returns 0 if pit header is invalid, otherwise its data structure.
+ */
+struct pit_entry *pit_get_part_info(const char *name)
+{
+	if (pit_check_header(&pit))
+		return 0;
+
+	return __pit_get_part_info(name);
+}
+
+/**
+ * Return available block count for target partition
+ * In userdata partition, OS keeps encryption data at the end of the partition,
+ * so we should exclude this amount.
+ *
+ * @ptn: target partition
+ *
+ * Returns 0 if pit header is invalid, otherwise available block count.
+ */
 u64 pit_get_length(struct pit_entry *ptn)
 {
-	u64 blknum;
-
-	/* Only the exception is for FMP */
-	blknum = !strcmp("userdata", ptn->name) ?
-					ptn->blknum - FMP_USE_SIZE :
-					ptn->blknum;
-
-	return blknum * PIT_SECTOR_SIZE;
+	return __pit_get_length(ptn);
 }
 
+/**
+ * Return if the reqeust is processed properly.
+ *
+ * @ptn: target partition
+ * @op:
+ *	PIT_OP_FLASH - write
+ *	PIT_OP_ERASE - erase
+ *	PIT_OP_LOAD - read
+ * @addr: start memory address
+ * @size: (not used)
+ *
+ * Returns
+ * NO_ERROR(0) if the reqeusted size is processed,
+ * 1 if pit header is invalid,
+ * otherwise other values.
+ */
 int pit_access(struct pit_entry *ptn, int op, u64 addr, u32 size)
 {
 	if (pit_check_header(&pit))
