@@ -66,7 +66,7 @@ u8 g_buf[4096];
 
 /* Function declaration */
 static status_t scsi_format_unit(struct bdev *dev);
-status_t scsi_start_stop_unit(struct bdev *dev);
+static status_t scsi_start_stop_unit(struct bdev *dev);
 
 /* UFS user command definition */
 #if defined(WITH_LIB_CONSOLE)
@@ -316,7 +316,7 @@ static status_t scsi_unmap(struct bdev *dev,
 
 }
 
-int scsi_start_stop_unit(struct bdev *dev)
+static int scsi_start_stop_unit(struct bdev *dev)
 {
 	scsi_device_t *sdev = (scsi_device_t *)dev->private;
 	status_t ret = NO_ERROR;
