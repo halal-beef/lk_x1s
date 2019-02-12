@@ -248,6 +248,10 @@ static int pit_access_emmc(struct pit_entry *ptn, int op, u64 addr, u32 size)
 			... same as UFS...
 #endif
 				return NO_ERROR;
+		} else {
+			dev = bio_open(str);
+			blks = dev->new_write(dev, (void *)addr, blkstart, blknum);
+			bio_close(dev);
 		}
 
 #if 0
@@ -269,11 +273,15 @@ static int pit_access_emmc(struct pit_entry *ptn, int op, u64 addr, u32 size)
 		 * There is possible not to erase eMMC with an unit of block size.
 		 * In these casee, we need to do partial write.
 		 */
+		dev = bio_open(str);
 		ret = pit_erase_emmc(dev, blkstart, blknum);
+		bio_close(dev);
 		break;
 	case PIT_OP_LOAD:	/* load */
+		dev = bio_open(str);
 		printf("[PIT(%s)] load on eMMC..  \n", ptn->name);
 		blks = dev->new_read(dev, (void *)addr, blkstart, blknum);
+		bio_close(dev);
 		break;
 	default:
 		printf("[PIT(%s)] Not supported op mode 0x%08x\n",
@@ -323,13 +331,13 @@ static int pit_access_ufs(struct pit_entry *ptn, int op, u64 addr, u32 size)
 	str[len] = '0' + ptn->lun;
 	str[len + 1] = '\0';
 
-	dev = bio_open(str);
 
 	switch (op) {
 	case PIT_OP_FLASH:	/* flash */
 		printf("[PIT(%s)] flash on UFS..  \n", ptn->name);
 
 		if (ptn->filesys == FS_TYPE_SPARSE_EXT4 || ptn->filesys == FS_TYPE_SPARSE_F2FS) {
+			/* In this case, bio_open will be called in ext apis */
 			if (!check_compress_ext4((char *)addr,
 						pit_get_length(ptn)) != 0) {
 				printf("Compressed ext4 image\n");
@@ -339,10 +347,14 @@ static int pit_access_ufs(struct pit_entry *ptn, int op, u64 addr, u32 size)
 				ret = ERR_IO;
 			}
 
-			bio_close(dev);
-
 			if (ret != NO_ERROR)
 				return ret;
+			else
+				blks = blknum;
+		} else {
+			dev = bio_open(str);
+			blks = dev->new_write(dev, (void *)addr, blkstart, blknum);
+			bio_close(dev);
 		}
 #if 0
 		if (!strcmp("ramdisk", ptn->name)) {
@@ -355,21 +367,22 @@ static int pit_access_ufs(struct pit_entry *ptn, int op, u64 addr, u32 size)
 			*/
 		}
 #endif
-		blks = dev->new_write(dev, (void *)addr, blkstart, blknum);
 		break;
 	case PIT_OP_ERASE:	/* erase */
 		printf("[PIT(%s)] erase on UFS..  \n", ptn->name);
+		dev = bio_open(str);
 		blks = dev->new_erase(dev, blkstart, blknum);
+		bio_close(dev);
 		break;
 	case PIT_OP_LOAD:	/* load */
 		printf("[PIT(%s)] load on UFS..  \n", ptn->name);
+		dev = bio_open(str);
 		blks = dev->new_read(dev, (void *)addr, blkstart, blknum);
+		bio_close(dev);
 		break;
 	default:
 		break;
 	}
-
-	bio_close(dev);
 
 	if (blks != blknum)
 		ret = ERR_IO;
