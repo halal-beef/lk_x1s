@@ -28,20 +28,19 @@
 #define PIT_LBA_ALIGMENT		8		/* 4KB */
 #define PIT_SECTOR_SIZE			512
 #define PIT_MAGIC			0x12349876
-
-/*
- * This is how PIT location was originated.
- *
- * A size of GPT entry is total 128 bytes and I assume
- * supporting '128' entries at maximum.
- * With these values, we need space as follow:
- * - 4.x blocks (UFS), 32.X blocks (eMMC)
- * And considering 4KB aligment, we need to reserve '48' units in 512 bytes
- * because we need to consider sizes of PMBR and a GPT header, and those sizes
- * depends on its block size, i.e. 8 units (UFS), 2 units (eMMC)
- */
 #define PIT_PART_META			48
 
+/*
+ * Reserved area
+ *
+ * |-----|------...----|--------------....
+ * | GPT |   RESERVED  |  MANAGED BY PIT
+ *
+ * User partition management is available in the area
+ * where GPT and reserved area are excluded.
+ */
+#define PIT_RESERVED_AREA		(32 * 1024 * 1024 / PIT_SECTOR_SIZE)	/* 32MB */
+#define PIT_DISK_LOC			(PIT_PART_META + 1 + PIT_RESERVED_AREA)	/* for protective MBR */
 #define PIT_GPT_STRING_SIZE		0x2000
 
 #define PIT_EMMC_ERASE_SIZE		(1024)
