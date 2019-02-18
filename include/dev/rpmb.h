@@ -15,10 +15,6 @@
 #ifndef __RPMB_H__
 #define __RPMB_H__
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #include <arch/arm64.h>
 
 /* For debugging */
@@ -66,29 +62,21 @@ extern "C" {
 #define CACHE_CLEAN_INVALIDATE(addr, len)
 
 /* RPMB function number */
-	enum {
-		RPMB_GET_KEY = 1,
-		RPMB_BLOCK_KEY,
-		RPMB_GET_HMAC,
-		RPMB_BLOCK_HMAC,
-		RPMB_GET_HMAC_SWD,
-	};
+enum {
+	RPMB_GET_KEY = 1,
+	RPMB_BLOCK_KEY,
+	RPMB_GET_HMAC,
+	RPMB_BLOCK_HMAC,
+	RPMB_GET_HMAC_SWD,
+};
 
 /* data definition for RPMB hmac */
-	typedef struct rpmb_param {
-		uint64_t input_data;
-		uint64_t input_len;
-		uint64_t output_data;
-	} rpmb_param;
+typedef struct rpmb_param {
+	uint64_t input_data;
+	uint64_t input_len;
+	uint64_t output_data;
+} rpmb_param;
 
-	uint32_t get_RPMB_key(size_t key_len, uint8_t * rpmb_key);
-	uint32_t block_RPMB_key(void);
-	uint32_t get_RPMB_hmac(const uint8_t * input_data, size_t input_len, uint8_t * output_data);
-	uint32_t block_RPMB_hmac(void);
-
-#ifdef __cplusplus
-}
-#endif
 struct rpmb_packet {
 	u16 request;
 	u16 result;
@@ -108,8 +96,11 @@ typedef struct random_ctx {
 } RANDOM_CTX;
 
 /* Functions */
-void rpmb_key_programming(void);
+uint32_t get_RPMB_key(size_t key_len, uint8_t *rpmb_key);
+uint32_t block_RPMB_key(void);
+uint32_t get_RPMB_hmac(const uint8_t *input_data, size_t input_len, uint8_t *output_data);
 uint32_t block_RPMB_hmac(void);
+void rpmb_key_programming(void);
 int rpmb_load_boot_table(void);
 int rpmb_get_rollback_index(size_t loc, uint64_t *rollback_index);
 int rpmb_set_rollback_index(size_t loc, uint64_t rollback_index);
@@ -132,45 +123,5 @@ int rpmb_set_lock_state(uint32_t state);
 #define DATA_START_BYTE	228
 #define RPMB_SIZE	512
 #define RPMB_BLOCK_PER_PARTITION 512
-
-#define SSS_BASE			0x10830000
-
-#define FEED_REG_BASE			(SSS_BASE + 0x0000)
-#define FCINTSTAT			(FEED_REG_BASE + 0x0000)
-#define FCINTENSET			(FEED_REG_BASE + 0x0004)
-#define FCINTENCLR			(FEED_REG_BASE + 0x0008)
-#define FCINTPEND			(FEED_REG_BASE + 0x000c)
-#define FCFIFOSTAT			(FEED_REG_BASE + 0x0010)
-#define FCFIFOCTRL			(FEED_REG_BASE + 0x0014)
-#define FCGLOBAL			(FEED_REG_BASE + 0x0018)
-#define FCBRDMAS			(FEED_REG_BASE + 0x0020)
-#define FCBRDMAL			(FEED_REG_BASE + 0x0024)
-#define FCBRDMAC			(FEED_REG_BASE + 0x0028)
-#define FCBTDMAS			(FEED_REG_BASE + 0x0030)
-#define FCBTDMAL			(FEED_REG_BASE + 0x0034)
-#define FCBTDMAC			(FEED_REG_BASE + 0x0038)
-#define FCHRDMAS			(FEED_REG_BASE + 0x0040)
-#define FCHRDMAL			(FEED_REG_BASE + 0x0044)
-#define FCHRDMAC			(FEED_REG_BASE + 0x0048)
-
-#define HASH_REG_BASE			(SSS_BASE + 0x0400)
-#define HASH_CONTROL_1			(HASH_REG_BASE + 0x0000)
-#define HASH_CONTROL_2			(HASH_REG_BASE + 0x0004)
-#define HASH_FIFO_MODE_EN		(HASH_REG_BASE + 0x0008)
-#define HASH_BYTE_SWAP		(HASH_REG_BASE + 0x000c)
-#define HASH_STATUS			(HASH_REG_BASE + 0x0010)
-#define HASH_SEED_CONF			(HASH_REG_BASE + 0x0014)
-#define HASH_MSG_SIZE_LOW		(HASH_REG_BASE + 0x0020)
-#define HASH_MSG_SIZE_HIGH		(HASH_REG_BASE + 0x0024)
-#define HASH_PRE_MSG_LENG_LOW	(HASH_REG_BASE + 0x0028)
-#define HASH_PRE_MSG_LENG_HIGH	(HASH_REG_BASE + 0x002c)
-#define HASH_DATA_IN			(HASH_REG_BASE + 0x0030)
-#define HASH_HMAC_KEY_IN		(HASH_REG_BASE + 0x0070)
-#define HASH_USER_IV_IN		(HASH_REG_BASE + 0x00b0)
-#define HASH_RESULT			(HASH_REG_BASE + 0x0100)
-#define HASH_SEED_IN			(HASH_REG_BASE + 0x0140)
-#define HASH_PRNG			(HASH_REG_BASE + 0x0160)
-
-#define UFS_RPMB 1
 
 #endif				/* __RPMB_H__ */
