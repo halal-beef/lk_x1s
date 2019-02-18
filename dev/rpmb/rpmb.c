@@ -58,7 +58,7 @@ struct persist_data {
 	u8      value[PERSIST_VALUE_LEN];
 };
 
-#define HEADER_SIZE (12)
+#define HEADER_SIZE (sizeof(struct boot_header))
 
 #ifdef USE_MMC0
 int emmc_rpmb_open(struct mmc *mmc);
@@ -677,7 +677,6 @@ static int ufs_rpmb_commands(int dev_num, struct rpmb_packet *packet)
 		}
 
 		/* Send UPIU */
-		//scsi_rpmb_out(dev_num, 0, 1 * RPMB_SIZE, buf);
 		cnt = dev->new_write(dev, (void *)buf, 0, 1);
 		if (cnt == 0) {
 			dprintf(INFO, "Authentication write command fail\n");
@@ -699,7 +698,6 @@ static int ufs_rpmb_commands(int dev_num, struct rpmb_packet *packet)
 		dump_packet(buf, RPMB_SIZE);
 
 		/* Send UPIU */
-		//scsi_rpmb_out(dev_num, 0, 1 * RPMB_SIZE, buf);
 		cnt = dev->new_write(dev, (void *)buf, 0, 1);
 		if (cnt == 0) {
 			dprintf(INFO, "Result read request fail !!!\n");
@@ -712,7 +710,6 @@ static int ufs_rpmb_commands(int dev_num, struct rpmb_packet *packet)
 		memset((void *)buf, 0, RPMB_SIZE);
 
 		/* Send UPIU */
-		//scsi_rpmb_in(dev_num, 0, 1 * RPMB_SIZE, buf);
 		cnt = dev->new_read(dev, (void *)buf, 0, 1);
 		if (cnt == 0) {
 			dprintf(INFO, "Result read fail !!!\n");
@@ -753,7 +750,6 @@ static int ufs_rpmb_commands(int dev_num, struct rpmb_packet *packet)
 		}
 
 		/* Send UPIU */
-		//scsi_rpmb_out(dev_num, 0, 1 * RPMB_SIZE, buf);
 		cnt = dev->new_write(dev, (void *)buf, 0, 1);
 		if (cnt == 0) {
 			dprintf(INFO, "Write counter read request fail !!!\n");
@@ -767,7 +763,6 @@ static int ufs_rpmb_commands(int dev_num, struct rpmb_packet *packet)
 		memset((void *)buf, 0, RPMB_SIZE);
 
 		/* Send UPIU */
-		//scsi_rpmb_in(dev_num, 0, 1 * RPMB_SIZE, buf);
 		cnt = dev->new_read(dev, (void *)buf, 0, 1);
 		if (cnt == 0) {
 			dprintf(INFO, "Write counter read fail !!!\n");
@@ -855,7 +850,6 @@ static int ufs_rpmb_commands(int dev_num, struct rpmb_packet *packet)
 		}
 
 		/* Send UPIU */
-		//scsi_rpmb_out(dev_num, start_blk, blk_cnt * RPMB_SIZE, buf);
 		cnt = dev->new_write(dev, (void *)buf, start_blk, blk_cnt);
 		if (cnt == 0) {
 			dprintf(INFO, "RPMB: Write fail !!!\n");
@@ -878,7 +872,6 @@ static int ufs_rpmb_commands(int dev_num, struct rpmb_packet *packet)
 		dump_packet((u8 *) buf, RPMB_SIZE);
 
 		/* Send UPIU */
-		//scsi_rpmb_out(dev_num, 0, 1 * RPMB_SIZE, buf);
 		cnt = dev->new_write(dev, (void *)buf, 0, 1);
 		if (cnt == 0) {
 			dprintf(INFO, "RPMB: Request read result fail !!!\n");
@@ -892,7 +885,6 @@ static int ufs_rpmb_commands(int dev_num, struct rpmb_packet *packet)
 		memset((void *)buf, 0, RPMB_SIZE);
 
 		/* Send UPIU */
-		//scsi_rpmb_in(dev_num, 0, 1 * RPMB_SIZE, buf);
 		cnt = dev->new_read(dev, (void *)buf, 0, 1);
 		if (cnt == 0) {
 			dprintf(INFO, "RPMB: Read result fail !!!\n");
@@ -944,7 +936,6 @@ static int ufs_rpmb_commands(int dev_num, struct rpmb_packet *packet)
 		}
 
 		/* Send UPIU */
-		//scsi_rpmb_out(dev_num, 0, 1 * RPMB_SIZE, buf);
 		cnt = dev->new_write(dev, (void *)buf, 0, 1);
 		if (cnt == 0) {
 			dprintf(INFO, "RPMB: Request read data fail !!!\n");
@@ -959,7 +950,6 @@ static int ufs_rpmb_commands(int dev_num, struct rpmb_packet *packet)
 		memset((void *)buf, 0, RPMB_SIZE * blk_cnt);
 
 		/* Send UPIU */
-		//scsi_rpmb_in(dev_num, start_blk, blk_cnt * RPMB_SIZE, buf);
 		cnt = dev->new_read(dev, (void *)buf, start_blk, blk_cnt);
 		if (cnt == 0) {
 			dprintf(INFO, "RPMB: Read data fail !!!\n");
