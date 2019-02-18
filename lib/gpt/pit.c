@@ -928,6 +928,9 @@ struct pit_entry *pit_get_part_info(const char *name)
  */
 u64 pit_get_length(struct pit_entry *ptn)
 {
+	if (pit_check_header(&pit))
+		return 0;
+
 	return __pit_get_length(ptn);
 }
 
