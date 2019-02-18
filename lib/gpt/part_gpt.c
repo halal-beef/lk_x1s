@@ -84,7 +84,7 @@ static int set_gpt_header(bdev_t *dev, struct gpt_header *gpt_h,
 }
 
 static int set_partition_table(bdev_t *dev, struct gpt_header *gpt_h,
-		struct gpt_part_table *gpt_e, struct pit_info *pit)
+		struct gpt_part_table *gpt_e, struct pit_info *pit, bool print)
 {
 	uint32_t offset = gpt_h->start_lba;
 	uint32_t end_use_lba = gpt_h->end_lba;
@@ -95,9 +95,11 @@ static int set_partition_table(bdev_t *dev, struct gpt_header *gpt_h,
 	char part_number[2];
 	u32 i, j, name_len;
 
-	printf("Set up start for Partition Table\n");
-	printf("The default size is 512Byte\n");
-	printf("==============================================================\n");
+	if (print) {
+		printf("Set up start for Partition Table\n");
+		printf("The default size is 512Byte\n");
+		printf("==============================================================\n");
+	}
 
 	for (i = 0, part_cnt = 0; i < pit->count; i++) {
 		/* partition start lba */
@@ -109,14 +111,14 @@ static int set_partition_table(bdev_t *dev, struct gpt_header *gpt_h,
 
 		offset = start + (pit->pte[i].blknum / num_blk_size);
 		if (offset > end_use_lba) {
-			printf("partition layout over disk size %u > %u\n",
-					offset, end_use_lba);
+			printf("partition layout over disk size %u > %u\n", offset, end_use_lba);
 			goto out;
 		}
-
-
-		printf("Start LBA : %d\t Size : %d\t\t", start * num_blk_size,
-				(offset - start) * num_blk_size);
+		gpt_e[part_cnt].part_end_lba = offset - 1;
+		if (print) {
+			printf("Start LBA : %d\t Size : %d\t\t", start * num_blk_size,
+					(offset - start) * num_blk_size);
+		}
 
 		/* Unique guid */
 		unique_guid = strdup(EXYNOS_UNIQUE_GUID);
@@ -131,7 +133,8 @@ static int set_partition_table(bdev_t *dev, struct gpt_header *gpt_h,
 			printf("Unique guid set fail : %s\n", pit->pte[i].name);
 			goto free;
 		}
-		printf("Unique GUID : %s\t name : ", unique_guid);
+		if (print)
+			printf("Unique GUID : %s\t name : ", unique_guid);
 		free(unique_guid);
 
 		/* partition type */
@@ -140,13 +143,16 @@ static int set_partition_table(bdev_t *dev, struct gpt_header *gpt_h,
 		memset(gpt_e[part_cnt].part_name, 0, sizeof(gpt_e[part_cnt].part_name));
 		for (j = 0; j < name_len; j++) {
 			gpt_e[part_cnt].part_name[j] = (u16)(pit->pte[i].name[j]);
-			printf("%c", gpt_e[part_cnt].part_name[j]);
+			if (print)
+				printf("%c", gpt_e[part_cnt].part_name[j]);
 		}
-		printf("\n");
+		if (print)
+			printf("\n");
 		part_cnt++;
 	}
 
-	printf("==============================================================\n");
+	if (print)
+		printf("==============================================================\n");
 
 	return 0;
 free:
@@ -272,7 +278,7 @@ int gpt_create(struct pit_info *pit, struct gpt_info *gpt_if)
 		goto entry_free;
 	}
 
-	ret = set_partition_table(dev, gpt_h, gpt_e, pit);
+	ret = set_partition_table(dev, gpt_h, gpt_e, pit, true);
 	if (ret) {
 		printf("Set partition table fail\n");
 		goto entry_free;
@@ -456,7 +462,7 @@ out:
 	return ret;
 }
 
-int gpt_compare_chk(struct pit_info *pit)
+int gpt_compare_chk(struct pit_info *pit, struct gpt_info *gpt_if)
 {
 	struct gpt_header *gpt_h = NULL;
 	struct gpt_part_table *gpt_e = NULL;
@@ -502,13 +508,13 @@ int gpt_compare_chk(struct pit_info *pit)
 	}
 	memset(gpt_e, 0, sizeof(struct gpt_part_table) * GPT_ENTRY_NUMBERS);
 
-	ret = set_gpt_header(dev, gpt_h, gpt_e);
+	ret = set_gpt_header(dev, gpt_h, gpt_e, gpt_if);
 	if (ret) {
 		printf("Set gpt header fail\n");
 		goto gpt_table_free;
 	}
 
-	ret = set_partition_table(dev, gpt_h, gpt_e, pit);
+	ret = set_partition_table(dev, gpt_h, gpt_e, pit, false);
 	if (ret) {
 		printf("Set partition table fail\n");
 		goto gpt_table_free;
@@ -532,7 +538,7 @@ int gpt_compare_chk(struct pit_info *pit)
 
 	/* Generate CRC for the primary GPT header */
 	calc_crc32 = crc32(0, (const unsigned char *)gpt_e,
-			gpt_h->part_num_entry * gpt_h->part_size_entry);
+		gpt_h->part_num_entry * gpt_h->part_size_entry);
 	gpt_h->part_table_crc = calc_crc32;
 	calc_crc32 = crc32(0, (const unsigned char *)gpt_h, gpt_h->head_sz);
 	gpt_h->head_crc = calc_crc32;
