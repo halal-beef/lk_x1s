@@ -283,7 +283,7 @@ uint32_t set_RPMB_provision(uint64_t state)
 	uint64_t r3 = 0;
 	uint32_t ret = RV_SUCCESS;
 
-	r0 = SMC_AARCH64_PREFIX | SMC_SRPMB_PROVISIONED;
+	r0 = SMC_AARCH64_PREFIX | SMC_SRPMB_PROVISION;
 	r1 = state == 0?0:1;
 
 	ret = exynos_smc(r0, r1, r2, r3);

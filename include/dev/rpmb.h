@@ -28,7 +28,7 @@ extern "C" {
 #define SMC_AARCH64_PREFIX			0xC2000000
 #define SMC_CM_RPMB				0x1018
 #define SMC_CM_DRBG				0x1019
-#define SMC_SRPMB_PROVISIONED			0x3818
+#define SMC_SRPMB_PROVISION			0x3818
 
 /* key and hmac length definition */
 #define RPMB_KEY_LEN				32
