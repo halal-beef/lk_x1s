@@ -8,11 +8,8 @@
  * to third parties without the express written permission of Samsung Electronics.
  */
 
-//#include <asm/io.h>
 #include <arch.h>
 #include <arch/arm64.h>
-//#include <common.h>
-//#include <command.h>
 #ifdef USE_MMC0
 #include <mmc.h>
 #else
@@ -23,6 +20,7 @@
 #include <lib/console.h>
 #include <dev/rpmb.h>
 #include <platform/sfr.h>
+#include <platform/smc.h>
 
 #define SECU_PROT_IN    0
 #define SECU_PROT_OUT   1
@@ -108,29 +106,6 @@ static void swap_packet(u8 * p, u8 * d)
 		d[i] = p[511 - i];
 }
 
-/* SMC function only for CryptoManager wrapper function */
-static inline uint64_t cm_smc(uint64_t * cmd, uint64_t * arg1, uint64_t * arg2, uint64_t * arg3)
-{
-	register uint64_t reg0 __asm__("x0") = *cmd;
-	register uint64_t reg1 __asm__("x1") = *arg1;
-	register uint64_t reg2 __asm__("x2") = *arg2;
-	register uint64_t reg3 __asm__("x3") = *arg3;
-
-	__asm__ volatile ("stp	x29, x30, [sp, #-16]!\n"
-			  "smc	0\n"
-			  "ldp	x29, x30, [sp], #16\n":"+r" (reg0),
-			  "+r"(reg1), "+r"(reg2), "+r"(reg3)
-
-	    );
-
-	*cmd = reg0;
-	*arg1 = reg1;
-	*arg2 = reg2;
-	*arg3 = reg3;
-
-	return reg0;
-}
-
 /* print byte string to hexa values */
 static void print_byte_to_hex(const uint8_t * byte_array, size_t byte_length)
 {
@@ -174,7 +149,7 @@ uint32_t get_RPMB_key(size_t key_len, uint8_t * rpmb_key)
 		r2 = RPMB_KEY_LEN;
 		r3 = (uint64_t)rpmb_key;
 
-		ret = cm_smc(&r0, &r1, &r2, &r3);
+		ret = exynos_smc(r0, r1, r2, r3);
 
 	} while (ret == RV_SYNC_AES_BUSY);
 
@@ -206,7 +181,7 @@ uint32_t block_RPMB_key(void)
 	r0 = SMC_AARCH64_PREFIX | SMC_CM_RPMB;
 	r1 = RPMB_BLOCK_KEY;
 
-	ret = cm_smc(&r0, &r1, &r2, &r3);
+	ret = exynos_smc(r0, r1, r2, r3);
 
 	if (ret != RV_SUCCESS) {
 		dprintf(INFO, "[CM] RPMB: failed to block key: 0x%X\n", ret);
@@ -256,7 +231,7 @@ uint32_t get_RPMB_hmac(const uint8_t * input_data, size_t input_len, uint8_t * o
 		r1 = RPMB_GET_HMAC;
 		r2 = (uint64_t)&rpmb_data;
 
-		ret = cm_smc(&r0, &r1, &r2, &r3);
+		ret = exynos_smc(r0, r1, r2, r3);
 
 	} while (ret == RV_SYNC_AES_BUSY);
 
@@ -288,7 +263,7 @@ uint32_t block_RPMB_hmac(void)
 	r0 = SMC_AARCH64_PREFIX | SMC_CM_RPMB;
 	r1 = RPMB_BLOCK_HMAC;
 
-	ret = cm_smc(&r0, &r1, &r2, &r3);
+	ret = exynos_smc(r0, r1, r2, r3);
 
 	if (ret != RV_SUCCESS) {
 		dprintf(INFO, "[CM] RPMB: failed to block hmac: 0x%X\n", ret);
@@ -311,7 +286,7 @@ uint32_t set_RPMB_provision(uint64_t state)
 	r0 = SMC_AARCH64_PREFIX | SMC_SRPMB_PROVISIONED;
 	r1 = state == 0?0:1;
 
-	ret = cm_smc(&r0, &r1, &r2, &r3);
+	ret = exynos_smc(r0, r1, r2, r3);
 
 	if (ret != RV_SUCCESS) {
 		printf("RPMB: failed to set provision state: 0x%X\n", ret);
@@ -1306,7 +1281,7 @@ static int rpmb_get_nonce(char *output_data)
 		r0 = SMC_AARCH64_PREFIX | SMC_CM_DRBG;
 		r1 = (uint64_t)&random_ctx;
 
-		ret = cm_smc(&r0, &r1, &r2, &r3);
+		ret = exynos_smc(r0, r1, r2, r3);
 
 	} while (ret == RV_SYNC_AES_BUSY);
 
