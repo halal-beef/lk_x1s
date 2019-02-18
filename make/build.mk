@@ -23,7 +23,7 @@ $(OUTBIN_LK3RD) : $(OUTBIN)
 	@echo lk3rd: all done! image can be found at $@
 
 $(OUTBIN): $(OUTELF)
-	$(info agenerating image: $@)
+	$(info generating image: $@)
 	$(NOECHO)$(SIZE) $<
 	$(NOECHO)$(OBJCOPY) -O binary $< $@
 
