@@ -658,6 +658,7 @@ int pit_lba_cumulation(void)
 {
 	int pit_index = 0;
 	u32 lun;
+	u32 lun_start_lba = 0;
 
 	/*
 	 * check pit entries and build input string to build gpt
@@ -671,16 +672,30 @@ int pit_lba_cumulation(void)
 	 */
 
 	/* for non gpt entries of part 0 */
-	if (pit_check_info(&pit, (int *)&pit_index, 0, PIT_DISK_LOC))
+	lun_start_lba = PIT_DISK_LOC;
+	if (pit_check_info(&pit, (int *)&pit_index, 0, (u32 *)&lun_start_lba))
 		goto err;
 
+	/* set 4K align */
+	if(lun_start_lba & (PIT_LBA_ALIGMENT-1)) {
+		lun_start_lba = lun_start_lba + PIT_LBA_ALIGMENT;
+		lun_start_lba = (lun_start_lba / PIT_LBA_ALIGMENT) * PIT_LBA_ALIGMENT;
+	}
+
+	gpt_if.gpt_start_lba = lun_start_lba;
+	gpt_if.gpt_last_lba = pit_get_last_lba();
+
 	/* for gpt entries of part 0 */
-	if (pit_check_info_gpt(&pit, (int *)&pit_index))
+	if (pit_check_info_gpt(&pit, (int *)&pit_index, &gpt_if))
 		goto err;
+
+	/* GPT check */
+	if (gpt_compare_chk(&pit, &gpt_if))
 
 	/* for entries of others */
 	for (lun = 1; ; lun++) {
-		if (pit_check_info(&pit, (int *)&pit_index, lun, 0))
+		lun_start_lba = 0;
+		if (pit_check_info(&pit, (int *)&pit_index, lun, (u32 *)&lun_start_lba))
 			goto err;
 		if (pit.count == (u32)pit_index)
 			break;
@@ -732,7 +747,9 @@ void pit_init(void)
 	*/
 
 	/* Calculation Start LBA */
-	pit_lba_cumulation();
+	ret = pit_lba_cumulation();
+	if (ret != 0)
+		goto err1;
 
 	/* Clear buffer for partition writes */
 	memset(nul_buf, 0, sizeof(nul_buf));
@@ -768,12 +785,10 @@ void pit_init(void)
 		/* Print initially */
 		pit_show_info();
 
-		/* Check GPT integrity */
-		if (ret = gpt_compare_chk(&pit))
-			goto err;
-
 		return;
 	}
+err1:
+	pit_close_dev();
 err:
 	pit_blk_cnt = 0xDEADBEAF;
 	printf("... [PIT] pit init fails !!!\n");
@@ -812,8 +827,8 @@ void pit_show_info()
 
 int pit_update(void *buf, u32 size)
 {
-	u32 lun_start_lba = 0;
 	struct pit_entry *ptn;
+	int ret;
 
 
 	pit_open_dev();
@@ -851,7 +866,9 @@ int pit_update(void *buf, u32 size)
 	pit_save_pit(pit_buf);
 
 	/* Calculation Start LBA */
-	pit_lba_cumulation();
+	ret = pit_lba_cumulation();
+	if (ret != 0)
+		goto err;
 
 	pit_close_dev();
 

@@ -182,5 +182,5 @@ struct gpt_backup_header {
  */
 int gpt_create(struct pit_info *pit, struct gpt_info *gpt_if);
 extern int get_unique_guid(char *ptr_name, char *buf);
-int gpt_compare_chk(struct pit_info *pit);
+int gpt_compare_chk(struct pit_info *pit, struct gpt_info *gpt_if);
 #endif
