@@ -340,7 +340,9 @@ static int pit_access_ufs(struct pit_entry *ptn, int op, u64 addr, u32 size)
 			}
 
 			bio_close(dev);
-			return ret;
+
+			if (ret != NO_ERROR)
+				return ret;
 		}
 #if 0
 		if (!strcmp("ramdisk", ptn->name)) {
