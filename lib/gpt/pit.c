@@ -18,11 +18,6 @@
 #include <platform/decompress_ext4.h>
 #include <platform/secure_boot.h>
 
-// TODO:
-/*
-#include <decompress_ext4.h>
-#include <asm/arch/display.h>
-*/
 
 /*
  * ---------------------------------------------------------------------------
@@ -33,6 +28,7 @@
 #define FMP_USE_SIZE	(32 + 8)
 #define PIT_SIGNITURE_SIZE		1024
 #define CMD_STRING_MAX_SIZE		60
+#define PIT_EMMC_ERASE_SIZE		(1024)
 
 #define LOAD_PIT(t, s)							\
 		memcpy((void *)(t), (void *)(s), sizeof(struct pit_info))\
@@ -160,7 +156,7 @@ u64 __pit_get_length(struct pit_entry *ptn)
 	u64 blknum;
 
 	/* Only the exception is for FMP */
-	blknum = !strcmp("userdata", ptn->name) ?
+	blknum = !strcmp("userdata", (const char *)ptn->name) ?
 					ptn->blknum - FMP_USE_SIZE :
 					ptn->blknum;
 
@@ -399,26 +395,26 @@ static int pit_check_header(struct pit_info *ppit)
 {
 	int ret = 1;
 
-	if (ppit->magic != PIT_MAGIC) {
+	if (ppit->hdr.magic != PIT_MAGIC) {
 		printf("[PIT] magic(0x%x)is corrupted. Not 0x%x\n",
-					ppit->magic, PIT_MAGIC);
+					ppit->hdr.magic, PIT_MAGIC);
 		// TODO: print_lcd_update
 		/*
 		print_lcd_update(FONT_RED, FONT_BLACK,
 			"[PIT] magic(0x%x)is corrupted. Not 0x%x",
-				ppit->magic, PIT_MAGIC);
+				ppit->hdr.magic, PIT_MAGIC);
 			*/
 		goto err;
 	}
 
-	if (ppit->count > PIT_MAX_PART_NUM) {
+	if (ppit->hdr.count > PIT_MAX_PART_NUM) {
 		printf("[PIT] too many partitions. (%d < %d)\n",
-					PIT_MAX_PART_NUM, ppit->count);
+					PIT_MAX_PART_NUM, ppit->hdr.count);
 		// TODO: print_lcd_update
 		/*
 		print_lcd_update(FONT_RED, FONT_BLACK,
 			"[PIT] too many partitions. (%d < %d)",
-				PIT_MAX_PART_NUM, ppit->count);
+				PIT_MAX_PART_NUM, ppit->hdr.count);
 			*/
 		goto err;
 	}
@@ -437,7 +433,7 @@ static int pit_check_info(struct pit_info *ppit, int *idx,
 	struct pit_entry *ptn;
 	u32 lba = *non_gpt_end;
 
-	for (i = *idx ; i < ppit->count; i++) {
+	for (i = *idx ; i < ppit->hdr.count; i++) {
 		ptn = &ppit->pte[i];
 
 		/* Rule for order */
@@ -473,7 +469,7 @@ static int pit_check_info(struct pit_info *ppit, int *idx,
 		}
 
 		/* Rule for name */
-		if (!strlen(ptn->name)) {
+		if (!strlen((const char *)ptn->name)) {
 			printf("[PIT] %dth entry of lu %d has no name.\n",
 							i, lun);
 		// TODO: print_lcd_update
@@ -511,8 +507,9 @@ static int pit_check_info_gpt(struct pit_info *ppit, int *idx, struct gpt_info *
 	u32 startlba = gpt_if->gpt_start_lba;
 	u32 lastlba = gpt_if->gpt_last_lba;
 	u32 lba = startlba;
+	bool fixed_started = false;
 
-	for (i = *idx ; i < ppit->count; i++) {
+	for (i = *idx ; i < ppit->hdr.count; i++) {
 		ptn = &ppit->pte[i];
 #ifdef PIT_DEBUG
 		printf("---------------------------------\n");
@@ -528,7 +525,7 @@ static int pit_check_info_gpt(struct pit_info *ppit, int *idx, struct gpt_info *
 		if (lun != ptn->lun)
 			break;
 
-		if (!strncmp(ptn->option, "remained", 8)) {
+		if (!strncmp((const char *)ptn->option, "remained", 8)) {
 			if (remained_idx == 0xFFFFFFFF) {
 				remained_idx = i;
 			} else {
@@ -558,7 +555,7 @@ static int pit_check_info_gpt(struct pit_info *ppit, int *idx, struct gpt_info *
 		}
 
 		/* Rule for size in lun0 except for 'remained' case*/
-		if (ptn->blknum == 0 && strncmp(ptn->option, "remained", 8)) {
+		if (ptn->blknum == 0 && strncmp((const char *)ptn->option, "remained", 8)) {
 			printf("[PIT(%s)] size 0, option=%s.\n", ptn->name, ptn->option);
 		// TODO: print_lcd_update
 		/*
@@ -582,7 +579,7 @@ static int pit_check_info_gpt(struct pit_info *ppit, int *idx, struct gpt_info *
 		/* Rule for size */
 		if (ptn->blknum < (5 * 1024 * 2) &&
 				(ptn->filesys == FS_TYPE_SPARSE_EXT4 || ptn->filesys == FS_TYPE_SPARSE_F2FS) &&
-				strncmp(ptn->option, "remained", 8)) {
+				strncmp((const char *)ptn->option, "remained", 8)) {
 			printf("[PIT(%s)] smaller than 5MB\n", ptn->name);
 		// TODO: print_lcd_update
 		/*
@@ -591,6 +588,41 @@ static int pit_check_info_gpt(struct pit_info *ppit, int *idx, struct gpt_info *
 			*/
 			goto err;
 		}
+
+		/*
+		 * Rule for fixed location
+		 *
+		 * All the fixed location partitions should be adjacent
+		 * at the end of user physical partition to guarentee
+		 * keeping data in there even if you update PIT again.
+		 *
+		 * ID	FILESYS	BLKNUM	LUN	NAME	OPTION
+		 * ...
+		 * 260	..	..	0	..	(blank)
+		 * 261	..	..	0	..	fixed	<-- Legal
+		 * 262	..	..	0	..	fixed	<-- Legal
+		 * 263	..	..	0	..	(blank)	<-- Illegal !!
+		 * 264	..	..	0	..	fixed	<-- Legal
+		 * 265	..	..	0	..	fixed	<-- Legal
+		 * 266	..	..	0	..	(blank)	<-- Illegal
+		 * 512	..	..	1	..	(blank)
+		 * (end)
+		 */
+		if (fixed_started && strncmp((const char *)ptn->option, "fixed", 8)) {
+			printf("[PIT(%s)] un-fixed partition mixed at the end of this PIT\n", ptn->name);
+			// TODO: print_lcd_update
+			/*
+			   print_lcd_update(FONT_RED, FONT_BLACK,
+			   "[PIT(%s)] un-fixed partition mixed at the end of this PIT", ptn->name);
+			 */
+			goto err;
+		}
+
+		/*
+		 * A partition with fixed location is enumerated for the first time.
+		 */
+		if (!strncmp((const char *)ptn->option, "fixed", 8))
+			fixed_started = true;
 
 		total_size += ptn->blknum;
 	}
@@ -618,26 +650,6 @@ static int pit_check_info_gpt(struct pit_info *ppit, int *idx, struct gpt_info *
 	ret = 0;
 err:
 	return ret;
-}
-
-static int pit_copy_one_string(char **t, const char *s, char *org)
-{
-	size_t len;
-
-	len = strlen(s);
-	if (*t + len > org + PIT_GPT_STRING_SIZE) {
-		printf("[PIT] gpt string overflow.\n");
-		// TODO: print_lcd_update
-		/*
-		print_lcd_update(FONT_RED, FONT_BLACK,
-			"[PIT] gpt string overflow.");
-			*/
-		return 1;
-	}
-
-	strncpy(*t, s, len);
-	*t += len;
-	return 0;
 }
 
 static int pit_lba_cumulation(int only_check)
@@ -684,7 +696,7 @@ static int pit_lba_cumulation(int only_check)
 		lun_start_lba = 0;
 		if (pit_check_info(&pit, (int *)&pit_index, lun, (u32 *)&lun_start_lba))
 			goto err;
-		if (pit.count == (u32)pit_index)
+		if (pit.hdr.count == (u32)pit_index)
 			break;
 	}
 
@@ -707,7 +719,7 @@ static void pit_show_info(void)
 					"PARTNUM");
 	printf("---------------------------------------------------------------\n");
 
-	for (i = 0; i < pit.count; i++) {
+	for (i = 0; i < pit.hdr.count; i++) {
 		ptn = &pit.pte[i];
 
 		printf("%12s:\t%7u\t%15u\t%15u\t%7u\n",
@@ -725,11 +737,11 @@ static struct pit_entry *__pit_get_part_info(const char *name)
 	u32 i;
 	struct pit_entry *ptn;
 
-	for (i = 0 ; i < pit.count; i++) {
+	for (i = 0 ; i < pit.hdr.count; i++) {
 		ptn = &pit.pte[i];
 
-		if (strlen(name) == strlen(ptn->name)) {
-			if (!strcmp(name, ptn->name))
+		if (strlen(name) == strlen((const char *)ptn->name)) {
+			if (!strcmp(name, (const char *)ptn->name))
 				return ptn;
 		}
 	}
@@ -742,6 +754,31 @@ static struct pit_entry *__pit_get_part_info(const char *name)
 	 */
 
 	return 0;
+}
+
+static int pit_check_format(void)
+{
+	int res = 0;
+
+	if (sizeof(struct pit_entry) != (PIT_SECTOR_SIZE / 2)) {
+		printf("PIT: PIT entry size %lu is not 256 bytes !\n",
+				sizeof(struct pit_entry));
+		res = -1;
+	} else if (sizeof(struct pit_header) != (PIT_SECTOR_SIZE / 2)) {
+		printf("PIT: PIT header size %lu is not 256 bytes !\n",
+				sizeof(struct pit_header));
+		res = -1;
+	} else if ((sizeof(struct pit_info) % (PIT_SECTOR_SIZE * 8)) != 0) {
+		printf("PIT: PIT info size %lu is not 4096 bytes aligned !\n",
+				sizeof(struct pit_info));
+		res = -1;
+	} else if (sizeof(struct pit_info) > PIT_SIZE_LIMIT) {
+		printf("PIT: PIT info size %lu is bigger than %u !\n",
+				sizeof(struct pit_info), PIT_SIZE_LIMIT);
+		res = -1;
+	}
+
+	return res;
 }
 
 /*
@@ -759,13 +796,26 @@ void pit_init(void)
 {
 	int ret;
 
-	printf("[PIT] pit init start...\n");
+	printf("[PIT] pit init start (Max entries: %u, Max blk count: %u)\n",
+			PIT_MAX_PART_NUM, PIT_DISK_SIZE_LIMIT);
 
 	pit_buf = malloc(PIT_SIZE_LIMIT + PIT_SIGNITURE_SIZE);
 	if (!pit_buf) {
 		printf("[PIT] pit_buf not allocated !!\n");
 		goto err;
 	}
+
+	/*
+	 * Alignment rules
+	 *
+	 * Sizes of both of PIT header and entry should be 256 bytes.
+	 * Whenever you change some fields' names, the sizes of header and an entry
+	 * should be the same as before.
+	 * And the total size of PIT should be 4096 aligned because it makes
+	 * its debugging easier.
+	 */
+	if (pit_check_format())
+		goto err;
 
 	/*
 	 * Set PIT block count as default, because here is the time
@@ -819,7 +869,7 @@ void pit_init(void)
 err:
 	/* Disable PIT, so you can't access partitions */
 	pit_blk_cnt = 0xDEADBEAF;
-	pit.magic = 0xDEADBEAF;
+	pit.hdr.magic = 0xDEADBEAF;
 
 	printf("... [PIT] pit init fails !!!\n");
 	return;

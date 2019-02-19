@@ -101,7 +101,7 @@ static int set_partition_table(bdev_t *dev, struct gpt_header *gpt_h,
 		printf("==============================================================\n");
 	}
 
-	for (i = 0, part_cnt = 0; i < pit->count; i++) {
+	for (i = 0, part_cnt = 0; i < pit->hdr.count; i++) {
 		/* partition start lba */
 		if (pit->pte[i].filesys == 0)
 			continue;
