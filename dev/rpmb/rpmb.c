@@ -25,7 +25,6 @@
 #define SECU_PROT_IN    0
 #define SECU_PROT_OUT   1
 
-#define CM_DEBUG
 //#define RPMB_DEBUG
 
 #define RPMB_BLOCK_SIZE         256
@@ -82,20 +81,18 @@ struct persist_data persistentData[PERSIST_DATA_CNT];
 
 static void dump_packet(u8 * data, u32 len)
 {
-#ifdef RPMB_DEBUG
 	u8 s[17];
 	u32 i, j;
 	s[16] = '\0';
 	for (i = 0; i < len; i += 16) {
-		dprintf(INFO, "%06X :", i);
+		printf("%06X :", i);
 		for (j = 0; j < 16; j++) {
-			dprintf(INFO, " %02X", data[i + j]);
+			printf(" %02X", data[i + j]);
 			s[j] = (data[i + j] < ' ' ? '.' : (data[i + j] > '}' ? '.' : data[i + j]));
 		}
-		dprintf(INFO, " |%s|\n", s);
+		printf(" |%s|\n", s);
 	}
-	dprintf(INFO, "\n");
-#endif
+	printf("\n");
 }
 
 static void swap_packet(u8 * p, u8 * d)
@@ -111,13 +108,13 @@ static void print_byte_to_hex(const uint8_t * byte_array, size_t byte_length)
 {
 	size_t i;
 
-	dprintf(INFO, "\n");
+	printf("\n");
 	for (i = 0; i < byte_length; i++) {
 		if ((0 != i) && (0 == (i % 16)))
-			dprintf(INFO, " \n");
-		dprintf(INFO, " %02X", byte_array[i]);
+			printf(" \n");
+		printf(" %02X", byte_array[i]);
 	}
-	dprintf(INFO, "\n");
+	printf("\n");
 }
 
 /*
@@ -140,7 +137,7 @@ uint32_t get_RPMB_key(size_t key_len, uint8_t * rpmb_key)
 	do {
 		if (++retry_cnt > MAX_SMC_RETRY_CNT) {
 			ret = RV_BOOT_RPMB_EXCEED_SMC_RETRY_CNT;
-			dprintf(INFO, "[CM] RPMB: exceed maximum SMC retry count\n");
+			printf("[CM] RPMB: exceed maximum SMC retry count\n");
 			return ret;
 		}
 
@@ -154,13 +151,14 @@ uint32_t get_RPMB_key(size_t key_len, uint8_t * rpmb_key)
 	} while (ret == RV_SYNC_AES_BUSY);
 
 	if (ret != RV_SUCCESS) {
-		dprintf(INFO, "[CM] RPMB: error in CryptoManager F/W: 0x%X\n", ret);
+		printf("[CM] RPMB: error in CryptoManager F/W: 0x%X\n", ret);
 		return ret;
 	}
 #ifdef CACHE_ENABLED
 	CACHE_CLEAN_INVALIDATE(rpmb_key, key_len);
 #endif
-#ifdef CM_DEBUG
+
+#ifdef RPMB_DEBUG
 	dprintf(INFO, "[CM] RPMB: key was derived successfully\n");
 #endif
 	return ret;
@@ -184,10 +182,10 @@ uint32_t block_RPMB_key(void)
 	ret = exynos_smc(r0, r1, r2, r3);
 
 	if (ret != RV_SUCCESS) {
-		dprintf(INFO, "[CM] RPMB: failed to block key: 0x%X\n", ret);
+		printf("[CM] RPMB: failed to block key: 0x%X\n", ret);
 		return ret;
 	}
-#ifdef CM_DEBUG
+#ifdef RPMB_DEBUG
 	dprintf(INFO, "[CM] RPMB: key was blocked successfully\n");
 #endif
 	return ret;
@@ -223,7 +221,7 @@ uint32_t get_RPMB_hmac(const uint8_t * input_data, size_t input_len, uint8_t * o
 	do {
 		if (++retry_cnt > MAX_SMC_RETRY_CNT) {
 			ret = RV_BOOT_RPMB_EXCEED_SMC_RETRY_CNT;
-			dprintf(INFO, "[CM] RPMB: exceed maximum SMC retry count\n");
+			printf("[CM] RPMB: exceed maximum SMC retry count\n");
 			return ret;
 		}
 
@@ -236,13 +234,13 @@ uint32_t get_RPMB_hmac(const uint8_t * input_data, size_t input_len, uint8_t * o
 	} while (ret == RV_SYNC_AES_BUSY);
 
 	if (ret != RV_SUCCESS) {
-		dprintf(INFO, "[CM] RPMB: error in CryptoManager F/W: 0x%X\n", ret);
+		printf("[CM] RPMB: error in CryptoManager F/W: 0x%X\n", ret);
 		return ret;
 	}
 #ifdef CACHE_ENABLED
 	CACHE_CLEAN_INVALIDATE(output_data, RPMB_HMAC_LEN);
 #endif
-#ifdef CM_DEBUG
+#ifdef RPMB_DEBUG
 	dprintf(INFO, "[CM] RPMB: hmac calculation was finished successfully\n");
 #endif
 	return ret;
@@ -266,10 +264,10 @@ uint32_t block_RPMB_hmac(void)
 	ret = exynos_smc(r0, r1, r2, r3);
 
 	if (ret != RV_SUCCESS) {
-		dprintf(INFO, "[CM] RPMB: failed to block hmac: 0x%X\n", ret);
+		printf("[CM] RPMB: failed to block hmac: 0x%X\n", ret);
 		return ret;
 	}
-#ifdef CM_DEBUG
+#ifdef RPMB_DEBUG
 	dprintf(INFO, "[CM] RPMB: hmac was blocked successfully\n");
 #endif
 	return ret;
@@ -292,8 +290,8 @@ uint32_t set_RPMB_provision(uint64_t state)
 		printf("RPMB: failed to set provision state: 0x%X\n", ret);
 		return ret;
 	}
-#ifdef CM_DEBUG
-	printf("RPMB: successfully set provision state\n");
+#ifdef RPMB_DEBUG
+	dprintf(INFO, "RPMB: successfully set provision state\n");
 #endif
 	return ret;
 }
@@ -418,7 +416,7 @@ static int emmc_rpmb_commands(int dev_num, struct rpmb_packet *packet)
 			dump_packet(packet->Key_MAC, 32);
 			buf = malloc(512);
 			if (buf == NULL) {
-				dprintf(INFO, "Memoery allocation failed\n");
+				printf("Memoery allocation failed\n");
 				ret = -1;
 				break;
 			}
@@ -460,7 +458,7 @@ static int emmc_rpmb_commands(int dev_num, struct rpmb_packet *packet)
 			/* Reading of the Write Counter value request */
 			buf = malloc(512);
 			if (buf == NULL) {
-				dprintf(INFO, "Memoery allocation failed\n");
+				printf("Memoery allocation failed\n");
 				ret = -1;
 				break;
 			}
@@ -496,13 +494,13 @@ static int emmc_rpmb_commands(int dev_num, struct rpmb_packet *packet)
 			start_blk = packet->address;
 			buf = malloc(512*blk_cnt);
 			if (buf == NULL) {
-				dprintf(INFO, "Memoery allocation failed\n");
+				printf("Memoery allocation failed\n");
 				ret = -1;
 				break;
 			}
 			hmac= malloc(284*blk_cnt);
 			if (hmac == NULL) {
-				dprintf(INFO, "Memoery allocation failed\n");
+				printf("Memoery allocation failed\n");
 				ret = -1;
 				break;
 			}
@@ -531,7 +529,7 @@ static int emmc_rpmb_commands(int dev_num, struct rpmb_packet *packet)
 			dump_packet((u8 *) (buf + (blk_cnt - 1) * RPMB_SIZE), RPMB_SIZE);
 
 			if (ret != RV_SUCCESS)
-				dprintf(INFO, "[CM] RPMB: get hamc value: fail: 0x%X\n", ret);
+				printf("[CM] RPMB: get hamc value: fail: 0x%X\n", ret);
 			else {
 				dprintf(INFO, "[CM] RPMB: get hmac value: success\n");
 				dprintf(INFO, "[CM] RPMB: HMAC: ");
@@ -582,7 +580,7 @@ static int emmc_rpmb_commands(int dev_num, struct rpmb_packet *packet)
 			*((u32 *)(packet->data)+1) = 0;
 			buf = malloc(512*blk_cnt);
 			if (buf == NULL) {
-				dprintf(INFO, "Memoery allocation failed\n");
+				printf("Memoery allocation failed\n");
 				ret = -1;
 				break;
 			}
@@ -622,7 +620,6 @@ static int emmc_rpmb_commands(int dev_num, struct rpmb_packet *packet)
 #else
 static void ufs_upiu_report(struct rpmb_packet *packet, int sp_in_out)
 {
-#ifdef RPMB_DEBUG
 	char in_out[25];
 
 	if (sp_in_out)
@@ -630,12 +627,11 @@ static void ufs_upiu_report(struct rpmb_packet *packet, int sp_in_out)
 	else
 		strcpy(in_out,"SECURITY PROTOCOL IN");
 
-	dprintf(INFO, "RPMB: Auth. %s counter %d\n", in_out, packet->write_counter);
-	dprintf(INFO, "RPMB: Auth. %s address %x\n", in_out, packet->address);
-	dprintf(INFO, "RPMB: Auth. %s block count %d\n", in_out, packet->count);
-	dprintf(INFO, "RPMB: Auth. %s result %d\n", in_out, packet->result);
-	dprintf(INFO, "RPMB: Auth. %s response %x\n", in_out, packet->request);
-#endif
+	printf("RPMB: Auth. %s counter %d\n", in_out, packet->write_counter);
+	printf("RPMB: Auth. %s address %x\n", in_out, packet->address);
+	printf("RPMB: Auth. %s block count %d\n", in_out, packet->count);
+	printf("RPMB: Auth. %s result %d\n", in_out, packet->result);
+	printf("RPMB: Auth. %s response %x\n", in_out, packet->request);
 }
 
 static int ufs_rpmb_commands(int dev_num, struct rpmb_packet *packet)
@@ -654,24 +650,25 @@ static int ufs_rpmb_commands(int dev_num, struct rpmb_packet *packet)
 	switch (packet->request) {
 	case 1:
 		/* Authentication key programming request */
+#ifdef RPMB_DEBUG
 		dprintf(INFO, "Write authentication KEY\n");
 		dump_packet(packet->Key_MAC, HMAC_SIZE);
-
+#endif
 		buf = malloc(RPMB_SIZE);
 		swap_packet((u8 *) packet, buf);
 
 		/* Key restore */
 		memcpy((void *)(buf + HMAC_START_BYTE), packet->Key_MAC, HMAC_SIZE);
 
+#ifdef RPMB_DEBUG
 		dprintf(INFO, "Authentication key programming request Packet\n");
 		dump_packet((u8 *) packet, RPMB_SIZE);
-
 		dprintf(INFO, "Authentication key programming request Packet (Swapped)\n");
 		dump_packet(buf, RPMB_SIZE);
-
+#endif
 		dev = bio_open("scsirpmb");
 		if (dev == NULL) {
-			dprintf(INFO, "bio open fail\n");
+			printf("bio open fail\n");
 			ret = -1;
 			goto out;
 		}
@@ -679,52 +676,58 @@ static int ufs_rpmb_commands(int dev_num, struct rpmb_packet *packet)
 		/* Send UPIU */
 		cnt = dev->new_write(dev, (void *)buf, 0, 1);
 		if (cnt == 0) {
-			dprintf(INFO, "Authentication write command fail\n");
+			printf("Authentication write command fail\n");
 			bio_close(dev);
 			ret = -1;
 			goto out;
 		}
 
+#ifdef RPMB_DEBUG
 		ufs_upiu_report(packet, SECU_PROT_OUT);
-
+#endif
 		memset((void *)packet, 0, RPMB_SIZE);
 		packet->request = 0x05;
 		swap_packet((u8 *) packet, buf);
 
+#ifdef RPMB_DEBUG
 		dprintf(INFO, "Result read request\n");
 		dump_packet((u8 *) packet, RPMB_SIZE);
-
 		dprintf(INFO, "Result read request (Swapped)\n");
 		dump_packet(buf, RPMB_SIZE);
+#endif
 
 		/* Send UPIU */
 		cnt = dev->new_write(dev, (void *)buf, 0, 1);
 		if (cnt == 0) {
-			dprintf(INFO, "Result read request fail !!!\n");
+			printf("Result read request fail !!!\n");
 			bio_close(dev);
 			ret = -1;
 			goto out;
 		}
+#ifdef RPMB_DEBUG
 		ufs_upiu_report(packet, SECU_PROT_OUT);
-
+#endif
 		memset((void *)buf, 0, RPMB_SIZE);
 
 		/* Send UPIU */
 		cnt = dev->new_read(dev, (void *)buf, 0, 1);
 		if (cnt == 0) {
-			dprintf(INFO, "Result read fail !!!\n");
+			printf("Result read fail !!!\n");
 			bio_close(dev);
 			ret = -1;
 			goto out;
 		}
 
 		swap_packet(buf, (u8 *) packet);
+
+#ifdef RPMB_DEBUG
 		dprintf(INFO, "Authentication key programming response\n");
 		dump_packet(buf, RPMB_SIZE);
-
 		dprintf(INFO, "Authentication key programming response (Swapped)\n");
 		dump_packet((u8 *) packet, RPMB_SIZE);
 		ufs_upiu_report(packet, SECU_PROT_IN);
+#endif
+
 		bio_close(dev);
 		break;
 
@@ -733,17 +736,18 @@ static int ufs_rpmb_commands(int dev_num, struct rpmb_packet *packet)
 		buf = malloc(RPMB_SIZE);
 		hmac = malloc(HMAC_CALC_SIZE);
 
+		swap_packet((u8 *) packet, buf);
 
+#ifdef RPMB_DEBUG
 		dprintf(INFO, "Reading of the Write Counter value request\n");
 		dump_packet((u8 *) packet, RPMB_SIZE);
-
-		swap_packet((u8 *) packet, buf);
 		dprintf(INFO, "Reading of the Write Counter value request (Swapped)\n");
 		dump_packet(buf, RPMB_SIZE);
+#endif
 
 		dev = bio_open("scsirpmb");
 		if (dev == NULL) {
-			dprintf(INFO, "bio open fail\n");
+			printf("bio open fail\n");
 			free(hmac);
 			ret = -1;
 			goto out;
@@ -752,20 +756,22 @@ static int ufs_rpmb_commands(int dev_num, struct rpmb_packet *packet)
 		/* Send UPIU */
 		cnt = dev->new_write(dev, (void *)buf, 0, 1);
 		if (cnt == 0) {
-			dprintf(INFO, "Write counter read request fail !!!\n");
+			printf("Write counter read request fail !!!\n");
 			bio_close(dev);
 			free(hmac);
 			ret = -1;
 			goto out;
 		}
-		ufs_upiu_report(packet, SECU_PROT_OUT);
 
+#ifdef RPMB_DEBUG
+		ufs_upiu_report(packet, SECU_PROT_OUT);
+#endif
 		memset((void *)buf, 0, RPMB_SIZE);
 
 		/* Send UPIU */
 		cnt = dev->new_read(dev, (void *)buf, 0, 1);
 		if (cnt == 0) {
-			dprintf(INFO, "Write counter read fail !!!\n");
+			printf("Write counter read fail !!!\n");
 			bio_close(dev);
 			free(hmac);
 			ret = -1;
@@ -774,16 +780,16 @@ static int ufs_rpmb_commands(int dev_num, struct rpmb_packet *packet)
 
 		swap_packet(buf, (u8 *) packet);
 
+#ifdef RPMB_DEBUG
 		dprintf(INFO, "Reading of the Write Counter value response\n");
 		dump_packet(buf, RPMB_SIZE);
-
 		dprintf(INFO, "Reading of the Write Counter value response (Swapped)\n");
 		dump_packet((u8 *) packet, RPMB_SIZE);
-
 		dprintf(INFO, "RPMB: MAC\n");
 		dump_packet(packet->Key_MAC, HMAC_SIZE);
-
 		ufs_upiu_report(packet, SECU_PROT_IN);
+#endif
+
 		free(hmac);
 		bio_close(dev);
 		break;
@@ -797,11 +803,12 @@ static int ufs_rpmb_commands(int dev_num, struct rpmb_packet *packet)
 		buf = malloc(RPMB_SIZE * blk_cnt);
 		hmac = malloc(HMAC_CALC_SIZE * blk_cnt);
 
+#ifdef RPMB_DEBUG
 		dprintf(INFO, "Authenticated data write request (Data only)\n");
 		dump_packet( INT2U8P(addr), DATA_SIZE * blk_cnt);
-
 		dprintf(INFO, "Authenticated data write request (Swapped)\n");
 		dprintf(INFO, "HMAC calculatation\n");
+#endif
 		memset(output_data, 0, sizeof(output_data));
 
 		/* Write Data reordering */
@@ -819,31 +826,37 @@ static int ufs_rpmb_commands(int dev_num, struct rpmb_packet *packet)
 
 		/* hmac calculation include all block data. */
 		ret = get_RPMB_hmac(hmac, blk_cnt * HMAC_CALC_SIZE, output_data);
-		dump_packet((u8 *) (buf + (blk_cnt - 1) * RPMB_SIZE), RPMB_SIZE);
 
 		/* Write hmac to last block */
 		memcpy((void *)(buf + HMAC_START_BYTE + (blk_cnt - 1) * RPMB_SIZE),
-		       (void *)(output_data), HMAC_SIZE);
+			(void *)(output_data), HMAC_SIZE);
+
+#ifdef RPMB_DEBUG
+		dprintf(INFO, "Authenticated data write request (with HMAC)\n");
 		dump_packet((u8 *) (buf + (blk_cnt - 1) * RPMB_SIZE), RPMB_SIZE);
+#endif
 
 		if (ret != RV_SUCCESS)
-			dprintf(INFO, "[CM] RPMB: get hamc value: fail: 0x%X\n", ret);
+			printf("[CM] RPMB: get hamc value: fail: 0x%X\n", ret);
 		else {
+#ifdef RPMB_DEBUG
 			dprintf(INFO, "[CM] RPMB: get hmac value: success\n");
 			dprintf(INFO, "[CM] RPMB: HMAC: ");
 			print_byte_to_hex(output_data, RPMB_HMAC_LEN);
 			dprintf(INFO, "\n");
+#endif
 		}
 
+#ifdef RPMB_DEBUG
 		dprintf(INFO, "Authenticated data write request (Swapped & HMAC included)\n");
 		dump_packet((u8 *) (buf + ((blk_cnt - 1) * RPMB_SIZE)), RPMB_SIZE);
-
 		/* HMAC calculation here */
 		dprintf(INFO, "Send authenticated data write request\n");
+#endif
 
 		dev = bio_open("scsirpmb");
 		if (dev == NULL) {
-			dprintf(INFO, "bio open fail\n");
+			printf("bio open fail\n");
 			free(hmac);
 			ret = -1;
 			goto out;
@@ -852,42 +865,46 @@ static int ufs_rpmb_commands(int dev_num, struct rpmb_packet *packet)
 		/* Send UPIU */
 		cnt = dev->new_write(dev, (void *)buf, start_blk, blk_cnt);
 		if (cnt == 0) {
-			dprintf(INFO, "RPMB: Write fail !!!\n");
+			printf("RPMB: Write fail !!!\n");
 			bio_close(dev);
 			free(hmac);
 			ret = -1;
 			goto out;
 		}
 
+#ifdef RPMB_DEBUG
 		ufs_upiu_report(packet, SECU_PROT_OUT);
-
+#endif
 		memset((void *)packet, 0, RPMB_SIZE);
 		packet->request = 0x05;
 		swap_packet((u8 *) packet, buf);
 
+#ifdef RPMB_DEBUG
 		dprintf(INFO, "Result write request\n");
 		dump_packet((u8 *) packet, RPMB_SIZE);
-
 		dprintf(INFO, "Result write request (Swapped)\n");
 		dump_packet((u8 *) buf, RPMB_SIZE);
+#endif
 
 		/* Send UPIU */
 		cnt = dev->new_write(dev, (void *)buf, 0, 1);
 		if (cnt == 0) {
-			dprintf(INFO, "RPMB: Request read result fail !!!\n");
+			printf("RPMB: Request read result fail !!!\n");
 			bio_close(dev);
 			free(hmac);
 			ret = -1;
 			goto out;
 		}
 
+#ifdef RPMB_DEBUG
 		ufs_upiu_report(packet, SECU_PROT_OUT);
+#endif
 		memset((void *)buf, 0, RPMB_SIZE);
 
 		/* Send UPIU */
 		cnt = dev->new_read(dev, (void *)buf, 0, 1);
 		if (cnt == 0) {
-			dprintf(INFO, "RPMB: Read result fail !!!\n");
+			printf("RPMB: Read result fail !!!\n");
 			bio_close(dev);
 			free(hmac);
 			ret = -1;
@@ -895,16 +912,16 @@ static int ufs_rpmb_commands(int dev_num, struct rpmb_packet *packet)
 		}
 
 		swap_packet(buf, (u8 *) packet);
-		dprintf(INFO, "Authenticated data write response\n");
 
+#ifdef RPMB_DEBUG
+		dprintf(INFO, "Authenticated data write response\n");
 		dump_packet(buf, RPMB_SIZE);
 		dprintf(INFO, "Authenticated data write response (Swapped)\n");
-
 		dump_packet((u8 *) packet, RPMB_SIZE);
 		ufs_upiu_report(packet, SECU_PROT_IN);
-
 		dprintf(INFO, "RPMB: MAC\n");
 		dump_packet(packet->Key_MAC, HMAC_SIZE);
+#endif
 		free(hmac);
 		bio_close(dev);
 		break;
@@ -921,15 +938,16 @@ static int ufs_rpmb_commands(int dev_num, struct rpmb_packet *packet)
 		hmac = malloc(HMAC_CALC_SIZE * blk_cnt);
 		swap_packet((u8 *) packet, buf);
 
+#ifdef RPMB_DEBUG
 		dprintf(INFO, "Authenticated data read request\n");
 		dump_packet((u8 *) packet, RPMB_SIZE);
-
 		dprintf(INFO, "Authenticated data read request (Swapped)\n");
 		dump_packet(buf, RPMB_SIZE);
+#endif
 
 		dev = bio_open("scsirpmb");
 		if (dev == NULL) {
-			dprintf(INFO, "bio open fail\n");
+			printf("bio open fail\n");
 			free(hmac);
 			ret = -1;
 			goto out;
@@ -938,30 +956,32 @@ static int ufs_rpmb_commands(int dev_num, struct rpmb_packet *packet)
 		/* Send UPIU */
 		cnt = dev->new_write(dev, (void *)buf, 0, 1);
 		if (cnt == 0) {
-			dprintf(INFO, "RPMB: Request read data fail !!!\n");
+			printf("RPMB: Request read data fail !!!\n");
 			bio_close(dev);
 			free(hmac);
 			ret = -1;
 			goto out;
 		}
 
+#ifdef RPMB_DEBUG
 		ufs_upiu_report(packet, SECU_PROT_OUT);
-
+#endif
 		memset((void *)buf, 0, RPMB_SIZE * blk_cnt);
 
 		/* Send UPIU */
 		cnt = dev->new_read(dev, (void *)buf, start_blk, blk_cnt);
 		if (cnt == 0) {
-			dprintf(INFO, "RPMB: Read data fail !!!\n");
+			printf("RPMB: Read data fail !!!\n");
 			bio_close(dev);
 			free(hmac);
 			ret = -1;
 			goto out;
 		}
 
-
+#ifdef RPMB_DEBUG
 		dprintf(INFO, "Authenticated data read response (Swapped)\n");
 		dprintf(INFO, "HMAC calculatation\n");
+#endif
 		memset(output_data, 0, sizeof(output_data));
 
 		/* Read hmac Data reordering */
@@ -982,24 +1002,23 @@ static int ufs_rpmb_commands(int dev_num, struct rpmb_packet *packet)
 		}
 
 		if (ret != RV_SUCCESS)
-			dprintf(INFO, "RPMB: get hamc value: fail: 0x%X\n", ret);
-		else
-			dprintf(INFO, "RPMB: get hmac value: success\n");
+			printf("RPMB: get hamc value: fail: 0x%X\n", ret);
 
 		if (result != 0) {
-			dprintf(INFO, "HMAC compare fail !!\n");
-			dprintf(INFO, "HMAC Host value\n");
+			printf("HMAC compare fail !!\n");
+			printf("HMAC Host value\n");
 			dump_packet(output_data, HMAC_SIZE);
 
-			dprintf(INFO, "HMAC Device value blk_cnt %d i %d\n", blk_cnt, i);
+			printf("HMAC Device value blk_cnt %d i %d\n", blk_cnt, i);
 			dump_packet((void *)(buf + HMAC_START_BYTE + ((blk_cnt - 1) * RPMB_SIZE)),
 				    HMAC_SIZE);
 
-			dprintf(INFO, "Authenticated data read response (Not Swapped)\n");
+			printf("Authenticated data read response (Not Swapped)\n");
 			dump_packet((void *)(buf + (blk_cnt - 1) * RPMB_SIZE), RPMB_SIZE);
-			dprintf(INFO, "Authenticated data read response (Swapped)\n");
+			printf("Authenticated data read response (Swapped)\n");
 			dump_packet((u8 *) packet, RPMB_SIZE);
 		} else {
+#ifdef RPMB_DEBUG
 			dprintf(INFO, "HMAC compare success !!\n");
 			dprintf(INFO, "RPMB: HMAC: ");
 			print_byte_to_hex(output_data, RPMB_HMAC_LEN);
@@ -1008,12 +1027,13 @@ static int ufs_rpmb_commands(int dev_num, struct rpmb_packet *packet)
 			dump_packet((void *)(buf + ((blk_cnt - 1) * RPMB_SIZE)), RPMB_SIZE);
 			dprintf(INFO, "Authenticated data read response (Swapped)\n");
 			dump_packet((u8 *) packet, RPMB_SIZE);
+#endif
 		}
-
+#ifdef RPMB_DEBUG
 		ufs_upiu_report(packet, SECU_PROT_IN);
-
 		dprintf(INFO, "RPMB: MAC\n");
 		dump_packet(packet->Key_MAC, HMAC_SIZE);
+#endif
 		free(hmac);
 		bio_close(dev);
 		break;
@@ -1046,12 +1066,12 @@ int do_rpmb(int argc, const cmd_args *argv)
 	case 'c':
 		ret = emmc_rpmb_close(mmc);;
 		if (ret == 0) dprintf(INFO, "RPMB partition CLOSE Success.!!\n");
-		else dprintf(INFO, "RPMB partition CLOSE Failed.!!\n");
+		else printf("RPMB partition CLOSE Failed.!!\n");
 		return 1;
 	case 'o':
 		ret = emmc_rpmb_open(mmc);
 		if (ret == 0) dprintf(INFO, "RPMB partition OPEN Success.!!\n");
-		else dprintf(INFO, "RPMB partition OPEN Failed.!!\n");
+		else printf("RPMB partition OPEN Failed.!!\n");
 		return 1;
 #endif
 	case 'r':
@@ -1153,7 +1173,7 @@ int do_rpmb(int argc, const cmd_args *argv)
 
 			ret = get_RPMB_key(RPMB_KEY_LEN, rpmb_key);
 			if (ret != RV_SUCCESS) {
-				dprintf(INFO, "key derivation: fail: 0x%X\n", ret);
+				printf("key derivation: fail: 0x%X\n", ret);
 				return ret;
 			}
 			dprintf(INFO, "key derivation: success\n");
@@ -1182,7 +1202,6 @@ int do_rpmb(int argc, const cmd_args *argv)
 	return 1;
 
  usage:
-	//dprintf(INFO, "Usage:\n%s\n", cmdtp->usage);
 	return -1;
 }
 
@@ -1212,7 +1231,7 @@ void rpmb_key_programming(void)
 		ret = do_rpmb(7, argv);
 		if (ret < 0) {
 			set_RPMB_provision(0);
-			dprintf(INFO, "RPMB: ERR: key programming fail: 0x%x\n", ret);
+			printf("RPMB: ERR: key programming fail: 0x%x\n", ret);
 		}
 		else{
 			set_RPMB_provision(1);
@@ -1231,14 +1250,14 @@ void rpmb_key_programming(void)
 
 	ret = block_RPMB_key();
 	if (ret != RV_SUCCESS)
-		dprintf(INFO, "RPMB: key blocking: fail: 0x%X\n", ret);
+		printf("RPMB: key blocking: fail: 0x%X\n", ret);
 	else
 		dprintf(INFO, "RPMB: key blocking: success\n");
 
 #ifndef CONFIG_USE_AVB20
 	ret = block_RPMB_hmac();
 	if (ret != RV_SUCCESS)
-		dprintf(INFO, "RPMB: hmac blocking: fail: 0x%X\n", ret);
+		printf("RPMB: hmac blocking: fail: 0x%X\n", ret);
 	else
 		dprintf(INFO, "RPMB: hmac blocking: success\n");
 #endif
@@ -1264,7 +1283,7 @@ static int rpmb_get_nonce(char *output_data)
 	do {
 		if (++retry_cnt > MAX_SMC_RETRY_CNT) {
 			ret = RV_BOOT_RPMB_EXCEED_SMC_RETRY_CNT;
-			dprintf(INFO, "[CM] RPMB: exceed maximum SMC retry count\n");
+			printf("[CM] RPMB: exceed maximum SMC retry count\n");
 			return ret;
 		}
 
@@ -1276,7 +1295,7 @@ static int rpmb_get_nonce(char *output_data)
 	} while (ret == RV_SYNC_AES_BUSY);
 
 	if (ret != RV_SUCCESS) {
-		dprintf(INFO, "[CM] DRBG: error in CryptoManager F/W: 0x%X\n", ret);
+		printf("[CM] DRBG: error in CryptoManager F/W: 0x%X\n", ret);
 		return ret;
 	}
 
@@ -1285,7 +1304,7 @@ static int rpmb_get_nonce(char *output_data)
 #ifdef CACHE_ENABLED
 	CACHE_CLEAN_INVALIDATE(output_data, RPMB_HMAC_LEN);
 #endif
-#ifdef CM_DEBUG
+#ifdef RPMB_DEBUG
 	dprintf(INFO, "[CM] RPMB: nonce calculation was finished successfully\n");
 #endif
 	return ret;
@@ -1492,6 +1511,8 @@ static void rpmb_display_rollback_index(void)
 	u32 i;
 	u8 *buf;
 
+	printf("rpmb_display_rollback_index\n");
+
 	buf = (u8 *)rollbackIndex;
 
 	for (i = 1 ; i <= (bootHeader.ri_block_cnt * RPMB_BLOCK_SIZE) ; i++) {
@@ -1505,6 +1526,8 @@ static void rpmb_display_rollback_index(void)
 static void rpmb_display_persistent_data(void)
 {
 	int i, j;
+
+	printf("rpmb_display_persistent_data\n");
 
 	for (i = 0 ; i < PERSIST_DATA_CNT ; i++) {
 		if (persistentData[i].len != 0) {
@@ -1563,8 +1586,9 @@ static int rpmb_load_rollback_index(void)
 			return ret;
 		}
 	}
-
+#ifdef RPMB_DEBUG
 	rpmb_display_rollback_index();
+#endif
 	return RV_SUCCESS;
 }
 
@@ -1588,8 +1612,9 @@ static int rpmb_load_persistent_data(void)
 			return ret;
 		}
 	}
-
+#ifdef RPMB_DEBUG
 	rpmb_display_persistent_data();
+#endif
 	return RV_SUCCESS;
 }
 
@@ -1619,6 +1644,7 @@ int rpmb_load_boot_table(void)
 		return ret;
 	}
 
+	printf("RPMB: rpmb_load_boot_table success\n");
 	return RV_SUCCESS;
 }
 
