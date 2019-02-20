@@ -14,6 +14,7 @@
 #define _SECURE_BOOT_H_
 
 #include "../../../../lib/libavb/libavb.h"
+#include "cm_api.h"
 
 /*
  *****************************************************************************
