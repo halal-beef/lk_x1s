@@ -26,6 +26,7 @@
 #define SECU_PROT_OUT   1
 
 //#define RPMB_DEBUG
+#define ENABLE_CM_NONCE
 
 #define RPMB_BLOCK_SIZE         256
 #define BOOT_RI_PARTITION       2  // Rollback Index Partiition number
@@ -1047,7 +1048,9 @@ out:
 #endif
 int do_rpmb(int argc, const cmd_args *argv)
 {
+#ifndef ENABLE_CM_NONCE
 	int i;
+#endif
 	ulong addr;
 	u32 *addrp = NULL;
 	uint rw;
@@ -1105,8 +1108,21 @@ int do_rpmb(int argc, const cmd_args *argv)
 			dprintf(INFO, "--> Read write counter first <--\n");
 			packet.request = 0x02;
 
+#ifdef ENABLE_CM_NONCE
+			ret = cm_get_random(packet.nonce, NONCE_SIZE);
+			if (ret != RV_SUCCESS) {
+				printf("RPMB: fail to get NONCE\n");
+				return ret;
+			}
+#ifdef RPMB_DEBUG
+			dprintf(INFO, "RPMB: do_rpmb(w b) NONCE\n");
+			print_byte_to_hex(packet.nonce, NONCE_SIZE);
+#endif
+#else
 			for (i = 0; i < 16; i++)
 				packet.nonce[i] = i;
+#endif
+
 #ifdef USE_MMC0
 			emmc_rpmb_commands(dev_num, &packet);
 #else
@@ -1129,8 +1145,20 @@ int do_rpmb(int argc, const cmd_args *argv)
 #endif
 			addrp = (u32 *)(packet.data) + 1;
 			*addrp = block_num;
+#ifdef ENABLE_CM_NONCE
+			ret = cm_get_random(packet.nonce, NONCE_SIZE);
+			if (ret != RV_SUCCESS) {
+				printf("RPMB: fail to get NONCE\n");
+				return ret;
+			}
+#ifdef RPMB_DEBUG
+			dprintf(INFO, "RPMB: do_rpmb(r b) NONCE\n");
+			print_byte_to_hex(packet.nonce, NONCE_SIZE);
+#endif
+#else
 			for (i = 0; i < 16; i++)
 				packet.nonce[i] = i;
+#endif
 		}
 		addrp = (u32 *)(packet.data);
 		*addrp = addr;
@@ -1146,8 +1174,20 @@ int do_rpmb(int argc, const cmd_args *argv)
 		if (rw)
 			goto usage;
 		packet.request = 0x02;
+#ifdef ENABLE_CM_NONCE
+		ret = cm_get_random(packet.nonce, NONCE_SIZE);
+		if (ret != RV_SUCCESS) {
+			printf("RPMB: fail to get NONCE\n");
+			return ret;
+		}
+#ifdef RPMB_DEBUG
+		dprintf(INFO, "RPMB: do_rpmb(c) NONCE\n");
+		print_byte_to_hex(packet.nonce, NONCE_SIZE);
+#endif
+#else
 		for (i = 0; i < 16; i++)
 			packet.nonce[i] = i;
+#endif
 #ifdef USE_MMC0
 		ret = emmc_rpmb_commands(dev_num, &packet);
 #else
@@ -1264,56 +1304,9 @@ void rpmb_key_programming(void)
 
 }
 
-static int rpmb_get_nonce(char *output_data)
-{
-	uint64_t r0 = 0;
-	uint64_t r1 = 0;
-	uint64_t r2 = 0;
-	uint64_t r3 = 0;
-	RANDOM_CTX random_ctx;
-	u8 nonce[NONCE_SIZE];
-	uint32_t retry_cnt = 0;
-	int ret;
-
-	memset(nonce, 0, NONCE_SIZE);
-
-	random_ctx.output = (u64)nonce;
-	random_ctx.len = NONCE_SIZE;
-
-	do {
-		if (++retry_cnt > MAX_SMC_RETRY_CNT) {
-			ret = RV_BOOT_RPMB_EXCEED_SMC_RETRY_CNT;
-			printf("[CM] RPMB: exceed maximum SMC retry count\n");
-			return ret;
-		}
-
-		r0 = SMC_AARCH64_PREFIX | SMC_CM_DRBG;
-		r1 = (uint64_t)&random_ctx;
-
-		ret = exynos_smc(r0, r1, r2, r3);
-
-	} while (ret == RV_SYNC_AES_BUSY);
-
-	if (ret != RV_SUCCESS) {
-		printf("[CM] DRBG: error in CryptoManager F/W: 0x%X\n", ret);
-		return ret;
-	}
-
-	memcpy(output_data, nonce, NONCE_SIZE);
-
-#ifdef CACHE_ENABLED
-	CACHE_CLEAN_INVALIDATE(output_data, RPMB_HMAC_LEN);
-#endif
-#ifdef RPMB_DEBUG
-	dprintf(INFO, "[CM] RPMB: nonce calculation was finished successfully\n");
-#endif
-	return ret;
-}
-
 static int rpmb_read_block(int addr, int blkcnt, u8 *buf)
 {
 	int block;
-	int i;
 	int ret;
 	uint64_t temp;
 	uint32_t *addrp = NULL;
@@ -1326,12 +1319,17 @@ static int rpmb_read_block(int addr, int blkcnt, u8 *buf)
 		packet.count = 1;
 
 #ifdef ENABLE_CM_NONCE
-		ret = rpmb_get_nonce(packet.nonce);
+		ret = cm_get_random(packet.nonce, NONCE_SIZE);
 		if (ret != RV_SUCCESS) {
 			printf("RPMB: fail to get NONCE\n");
 			return ret;
 		}
+#ifdef RPMB_DEBUG
+		dprintf(INFO, "RPMB: rpmb_read_block NONCE\n");
+		print_byte_to_hex(packet.nonce, NONCE_SIZE);
+#endif
 #else
+		int i;
 		for (i = 0 ; i < NONCE_SIZE ; i++) {
 			packet.nonce[i] = i;
 		}
@@ -1361,7 +1359,6 @@ static int rpmb_read_block(int addr, int blkcnt, u8 *buf)
 static int rpmb_write_block(int addr, int blkcnt, u8 *buf)
 {
 	int block;
-	int i;
 	int ret;
 	uint64_t temp;
 	uint32_t *addrp;
@@ -1369,8 +1366,21 @@ static int rpmb_write_block(int addr, int blkcnt, u8 *buf)
 	struct rpmb_packet packet;
 
 	memset((void *)&packet, 0, 512);
+#ifdef ENABLE_CM_NONCE
+	ret = cm_get_random(packet.nonce, NONCE_SIZE);
+	if (ret != RV_SUCCESS) {
+		printf("RPMB: fail to get NONCE\n");
+		return ret;
+	}
+#ifdef RPMB_DEBUG
+	dprintf(INFO, "RPMB: rpmb_write_block NONCE\n");
+	print_byte_to_hex(packet.nonce, NONCE_SIZE);
+#endif
+#else
+	int i;
 	for (i = 0 ; i < 16 ; i++)
 		packet.nonce[i] = i;
+#endif
 
 	packet.request = 0x02; // Read Write Counter
 #ifdef USE_MMC0
