@@ -24,18 +24,19 @@ int ufs_board_init(int host_index, struct ufs_host *ufs)
 
 	/* mmio */
 	sprintf(ufs->host_name,"ufs%d", host_index);
-	ufs->irq = 157;
-	ufs->ioaddr = (void __iomem *)0x13520000;
-	ufs->vs_addr = (void __iomem *)(0x13520000 + 0x1100);
-	ufs->fmp_addr = (void __iomem *)0x13530000;
-	ufs->unipro_addr = (void __iomem *)(0x13520000 - 0x10000);
-	ufs->phy_pma = (void __iomem *)(0x13520000 + 0x4000);
+	ufs->irq = 321;
+	ufs->ioaddr = (void __iomem *)0x13100000;
+	ufs->vs_addr = (void __iomem *)(0x13100000 + 0x1100);
+	ufs->fmp_addr = (void __iomem *)0x132A0000;
+	ufs->unipro_addr = (void __iomem *)0x13180000;
+	ufs->phy_pma = (void __iomem *)(0x13100000 + 0x4000);
 
 	/* power source changed compared with before */
-	ufs->dev_pwr_addr = (void __iomem *)(0x139B0000 + 0x144);
+	/* XBOOTLDO GPG1[0] */
+	ufs->dev_pwr_addr = (void __iomem *)(0x10730000 + 0xc0);
 	ufs->dev_pwr_shift = 0;
 
-	ufs->phy_iso_addr = (void __iomem *)(0x11860000 + 0x724);
+	ufs->phy_iso_addr = (void __iomem *)(0x15860000 + 0x724);
 
 	ufs->host_index = host_index;
 
@@ -46,14 +47,14 @@ int ufs_board_init(int host_index, struct ufs_host *ufs)
 	//err = exynos_pinmux_config(PERIPH_ID_UFS0, PINMUX_FLAG_NONE);
 
 	/* GPIO configurations, rst_n and refclk */
-	reg = *(volatile u32 *)0x13490008;
+	reg = *(volatile u32 *)0x13040048;
 	reg &= ~(0xFF);
-	*(volatile u32 *)0x13490008 = reg;
+	*(volatile u32 *)0x13040048 = reg;
 
-	reg = *(volatile u32 *)0x13490000;
+	reg = *(volatile u32 *)0x13040040;
 	reg &= ~(0xFF);
-	reg |= 0x33;
-	*(volatile u32 *)0x13490000 = reg;
+	reg |= 0x22;
+	*(volatile u32 *)0x13040040 = reg;
 
 	return 0;
 }
