@@ -24,6 +24,7 @@
 #include <platform/dfd.h>
 #include <platform/ldfw.h>
 #include <platform/secure_boot.h>
+#include "flexpmu_dbg.h"
 
 #include <lib/font_display.h>
 #include <lib/logo_display.h>
@@ -238,6 +239,7 @@ void platform_init(void)
 {
 	u32 ret = 0;
 
+	display_flexpmu_dbg();
 	pmic_init();
 	display_pmic_info();
 	sub_pmic_s2mpb02_init();
