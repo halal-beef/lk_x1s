@@ -276,8 +276,11 @@ void platform_init(void)
 		} else {
 			printf("ldfw: init failed.\n");
 		}
-
+#if defined(CONFIG_USE_RPMB)
 		rpmb_key_programming();
+#if defined(CONFIG_USE_AVB20)
 		rpmb_load_boot_table();
+#endif
+#endif
 	}
 }
