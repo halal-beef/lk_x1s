@@ -13,7 +13,7 @@
 #define __UFS__
 
 #include <dev/scsi.h>
-#include <platform/ufs-cal-9610.h>
+#include <platform/ufs-cal.h>
 
 #define UFS_BIT_LEN_OF_DWORD	(sizeof(u32) * 8)
 
