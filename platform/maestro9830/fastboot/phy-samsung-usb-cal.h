@@ -31,11 +31,12 @@
 #define EXYNOS_USBCON_VER_02_1_2	0x0212  /* Katmai EVT0 */
 #define EXYNOS_USBCON_VER_02_MAX	0x02FF
 
-#define EXYNOS_USBCON_VER_03_0_0	0x0300	/* Lhotse, Lassen HS */
-#define EXYNOS_USBCON_VER_03_0_1	0x0301	/* Super Speed			*/
+#define EXYNOS_USBCON_VER_03_0_0	0x0300	/* Lhotse, Lassen HS, Ramen HS */
+#define EXYNOS_USBCON_VER_03_0_1	0x0301	/* MK */
 #define EXYNOS_USBCON_VER_03_MAX	0x03FF
 
 #define EXYNOS_USBCON_VER_04_0_0	0x0400	/* Lhotse - USB/DP  */
+#define EXYNOS_USBCON_VER_04_1_0	0x0410	/* Makalu - USB/DP  */
 #define EXYNOS_USBCON_VER_04_MAX	0x04FF
 
 /* Sub phy control - not include System/Link control */
@@ -49,6 +50,10 @@
 
 #define EXYNOS_USBCON_VER_MAJOR_VER_MASK	0xFF00
 #define EXYNOS_USBCON_VER_SS_CAP			0x0010
+
+#define EXYNOS_USBCON_VER_MINOR(_x)	((_x) & 0xf)
+#define EXYNOS_USBCON_VER_MID(_x)	((_x) & 0xf0)
+#define EXYNOS_USBCON_VER_MAJOR(_x)	((_x) & 0xff00)
 
 enum exynos_usbphy_mode {
 	USBPHY_MODE_DEV = 0,
@@ -122,9 +127,20 @@ enum exynos_usbphy_tune_para {
 	USBPHY_TUNE_COMBO_TX_ACCDRV	= USBPHY_TUNE_COMBO | 0x3,
 };
 
+enum exynos_usb_bc {
+	BC_NO_CHARGER,
+	BC_SDP,
+	BC_DCP,
+	BC_CDP,
+	BC_ACA_DOCK,
+	BC_ACA_A,
+	BC_ACA_B,
+	BC_ACA_C,
+};
+
 struct exynos_usb_tune_param {
-	char name[16];
-	u32 value;
+	char name[30];
+	int value;
 };
 
 #define EXYNOS_USB_TUNE_LAST	0x4C415354
@@ -133,7 +149,7 @@ struct exynos_usb_tune_param {
 struct exynos_usbphy_hs_tune {
 	u8 tx_vref;
 	u8 tx_pre_emp;
-	u8 tx_pre_emp_puls;
+	u8 tx_pre_emp_plus;
 	u8 tx_res;
 	u8 tx_rise;
 	u8 tx_hsxv;
@@ -141,7 +157,7 @@ struct exynos_usbphy_hs_tune {
 	u8 rx_sqrx;
 	u8 compdis;
 	u8 otg;
-	unsigned char enable_user_imp;
+	bool enable_user_imp;
 	u8 user_imp_value;
 	enum exynos_usbphy_utmi utmi_clk;
 };
@@ -199,9 +215,9 @@ struct exynos_usbphy_info {
 	enum exynos_usbphy_refclk refclk;
 	enum exynos_usbphy_refsel refsel;
 
-	unsigned char use_io_for_ovc;
-	unsigned char common_block_disable;
-	unsigned char not_used_vbus_pad;
+	bool use_io_for_ovc;
+	bool common_block_disable;
+	bool not_used_vbus_pad;
 
 	void __iomem *regs_base;
 
@@ -220,13 +236,13 @@ struct exynos_usbphy_info {
 	int	used_phy_port;
 
 	/* Alternative PHY REF_CLK source */
-	unsigned char alt_ref_clk;
+	bool alt_ref_clk;
 
 	/* Remote Wake-up Advisor */
 	unsigned hs_rewa :1;
 
 	/* Dual PHY */
-	unsigned char dual_phy;
+	bool dual_phy;
 };
 
 

@@ -559,18 +559,16 @@ static int rx_handler (const unsigned char *buffer, unsigned int buffer_size)
 
 int do_fastboot(int argc, const cmd_args *argv)
 {
-#if 0 /* For Polling mode */
 	int continue_from_disconnect = 0;
-#endif
 
 	dprintf(ALWAYS, "This is do_fastboot\n");
 	print_lcd_update(FONT_GREEN, FONT_BLACK, "Entering fastboot mode.");
 
 	printf("Initialization USB!!!!\n");
-	fastboot_init(&interface);
-	fastboot_poll();
 
-#if 0 /* For Polling mode */
+	mdelay(200);
+	/* muic_sw_usb(); */
+
 	do {
 		continue_from_disconnect = 0;
 
@@ -593,7 +591,6 @@ int do_fastboot(int argc, const cmd_args *argv)
 		}
 
 	} while (continue_from_disconnect);
-#endif
 
 	return 0;
 }

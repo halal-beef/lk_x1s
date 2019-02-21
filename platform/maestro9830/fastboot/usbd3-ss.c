@@ -13,8 +13,6 @@
 #include <reg.h>
 #include <malloc.h>
 #include <platform/delay.h>
-#include <platform/interrupts.h>
-#include <lib/font_display.h>
 #include "usb.h"
 #include "usbd3-ss.h"
 
@@ -206,20 +204,16 @@ u8 g_bIsBulkInXferDone = 0;
 
 unsigned int exynos_usbd_dn_addr = 0;
 unsigned int exynos_usbd_dn_cnt = 0;
-/* Use only fastboot(not DNW) */
-int is_fastboot = 1;
+int is_fastboot = 0;
 int DNW;
 int exynos_got_header = 0;
 int exynos_receive_done = 0;
-int usb_cable_state = 0;
 
-int exynos_udc_int_hndlr(void);
 extern ulong virt_to_phy_exynos5210(ulong addr);
 static u64 exynos_usb_malloc(u32 uSize, u32 uAlign);
 static void exynos_usb_free(u64 uAddr);
 static void exynos_usb_fill_trb(usbdev3_trb_ptr_t pTrb, u64 uBufAddr, u32 uLen, u32 uTrbCtrl, u32 uHwo);
 static int exynos_usb_start_ep_xfer(USBDEV3_EP_DIR_e eEpDir, u8 ucEpNum, u64 uTrbAddr, u32 uStrmidSofn, u32 *uTri);
-static void exynos_usb_handle_event(void);
 
 extern u32 EXYNOS_USBD_DETECT_IRQ(void)
 {
@@ -303,25 +297,18 @@ int pll_enable(void *pllcon_base)
 }
 #endif
 
-#define USB_INT_NUM	(186 + 32)
-
-static enum handler_return usb_interrupt(void *arg)
-{
-	exynos_udc_int_hndlr();
-
-	return INT_NO_RESCHEDULE;
-}
-
 extern void exynos_usb_phy_on(void)
 {
 	DBG_USBD3("This is %s \n", __func__);
-	writel(0x10003, USB2_PHY_CONTROL);
+	writel(0x1, USBDP_PHY_CONTROL); /* Need to check dependency of DP PHY*/
+	writel(0x1, USB2_PHY_CONTROL);
 }
 
 static void exynoy_usb_phy_off(void)
 {
 	exynos_usb_phy_exit();
 
+	writel(0x0, USBDP_PHY_CONTROL);
 	writel(0x0, USB2_PHY_CONTROL);
 }
 
@@ -713,6 +700,32 @@ static void exynos_usb_enable_ep(USBDEV3_EP_DIR_e eEpDir, u8 ucEpNum)
 	writel(readl(rDALEPENA) | (1<<uEpEnaIdx), rDALEPENA);
 }
 
+static void exynos_usb_ep1_modify(void)
+{
+	usbdev3_depcmdpar0_set_ep_cfg_t usbdev3_depcmdpar0_set_ep_cfg;
+	usbdev3_depcmdpar1_set_ep_cfg_t usbdev3_depcmdpar1_set_ep_cfg;
+
+	// . Issue Set Ep Configuraton for EP0-IN
+	//------------------------------------
+	usbdev3_depcmdpar0_set_ep_cfg.data = 0;
+	usbdev3_depcmdpar0_set_ep_cfg.b.config_action = 2;
+	usbdev3_depcmdpar0_set_ep_cfg.b.ep_type = USBDEV3_EP_CTRL;
+	usbdev3_depcmdpar0_set_ep_cfg.b.mps = oUsbDev3.m_uControlEPMaxPktSize;	// should be reconfigured after ConnectDone event
+	usbdev3_depcmdpar0_set_ep_cfg.b.fifo_num = 0;
+
+	usbdev3_depcmdpar1_set_ep_cfg.data = 0;
+	usbdev3_depcmdpar1_set_ep_cfg.b.xfer_cmpl_en = 1;
+	//usbdev3_depcmdpar1_set_ep_cfg.b.xfer_in_prog_en = 1;
+	usbdev3_depcmdpar1_set_ep_cfg.b.xfer_nrdy_en = 1;
+	usbdev3_depcmdpar1_set_ep_cfg.b.ep_dir = USBDEV3_EP_DIR_IN;
+	usbdev3_depcmdpar1_set_ep_cfg.b.ep_num = 0;
+
+	if (!exynos_usb_set_ep_cfg(USBDEV3_EP_DIR_IN, 0, usbdev3_depcmdpar0_set_ep_cfg.data, usbdev3_depcmdpar1_set_ep_cfg.data))
+	{
+		return;
+	}
+}
+
 static int exynos_usb_activate_ep0(void)
 {
 	usbdev3_depcmd_t usbdev3_depcmd;
@@ -811,6 +824,7 @@ static int exynos_usb_activate_ep(USBDEV3_EP_DIR_e eEpDir, u8 ucEpNum)
 	// . Issue Set Ep Configuraton
 	//------------------------------------
 	usbdev3_depcmdpar0_set_ep_cfg.data = 0;
+	usbdev3_depcmdpar0_set_ep_cfg.b.config_action = 0;
 	usbdev3_depcmdpar0_set_ep_cfg.b.ep_type = USBDEV3_EP_BULK;
 	usbdev3_depcmdpar0_set_ep_cfg.b.mps = oUsbDev3.m_uBulkEPMaxPktSize;
 
@@ -931,7 +945,6 @@ static int exynos_usb_init_core(USBDEV3_SPEED_e eSpeed)
 {
 	u32 uData;
 	usbdev3_gsbuscfg0_t usbdev3_gsbuscfg0;
-	usbdev3_gsbuscfg1_t usbdev3_gsbuscfg1;
 	usbdev3_gusb2phycfg_t usbdev3_gusb2phycfg;
 	usbdev3_gusb3pipectl_t usbdev3_gusb3pipectl;
 	usbdev3_gevntsiz_t usbdev3_gevntsiz;
@@ -958,14 +971,11 @@ static int exynos_usb_init_core(USBDEV3_SPEED_e eSpeed)
 	 */
 	usbdev3_gsbuscfg0.data = 0x22220000;
 
-	//usbdev3_gsbuscfg0.b.incr_xbrst_ena = 1;
-	//usbdev3_gsbuscfg0.b.incr_4brst_ena = 1;
-	//usbdev3_gsbuscfg0.b.incr_8brst_ena = 1;
+	usbdev3_gsbuscfg0.b.incr_xbrst_ena = 1;
+	usbdev3_gsbuscfg0.b.incr_4brst_ena = 1;
+	usbdev3_gsbuscfg0.b.incr_8brst_ena = 1;
 	usbdev3_gsbuscfg0.b.incr_16brst_ena = 1;
 	writel(usbdev3_gsbuscfg0.data, rGSBUSCFG0);
-
-	usbdev3_gsbuscfg1.data = 0x00000300;	// reset value
-	writel(usbdev3_gsbuscfg1.data, rGSBUSCFG1);
 
 	// . to configure GTXTHRCFG/GRXTHRCFG
 	//------------------------------------------------
@@ -985,7 +995,7 @@ static int exynos_usb_init_core(USBDEV3_SPEED_e eSpeed)
 	// . to set usb 3.0 phy-related configuration parmeters
 	//	(I should find proper setting value)
 	//---------------------------------------------
-	usbdev3_gusb3pipectl.data = 0x00260002;	// reset value
+	//usbdev3_gusb3pipectl.data = 0x00260002;	// reset value
 	// usbdev3_gusb3pipectl.data = 0x00240002;	// clear suspend bit
 	writel(usbdev3_gusb3pipectl.data, rGUSB3PIPECTL);
 
@@ -1039,7 +1049,7 @@ static int exynos_usb_init_core(USBDEV3_SPEED_e eSpeed)
 	usbdev3_devten.b.disconn_evt_en = 1;
 	usbdev3_devten.b.usb_reset_en = 1;
 	usbdev3_devten.b.conn_done_en = 1;
-	usbdev3_devten.b.usb_lnk_sts_chng_en = 1;
+	//usbdev3_devten.b.usb_lnk_sts_chng_en = 1;
 		//usbdev3_devten.b.wake_up_en = 1;
 		//usbdev3_devten.b.errtic_err_en = 1;
 		//usbdev3_devten.b.cmd_cmplt_en = 1;
@@ -1102,8 +1112,6 @@ static void exynos_usb_handle_reset_int(void)
 {
 	u32 uEpNum;
 	usbdev3_dcfg_t usbdev3_dcfg;
-	usbdev3_dsts_t usbdev3_dsts;
-	usbdev3_dgcmd_t usbdev3_dgcmd;
 	// . Stop All Transfers except for default control EP0
 	//-------------------------------------------
 	// stop any active xfers on the non-EP0 IN endpoints
@@ -1126,6 +1134,7 @@ static void exynos_usb_handle_reset_int(void)
 		}
 	}
 
+#if 0
 	// . Flush all FIFOs
 	//---------------
 	usbdev3_dgcmd.data= 0;
@@ -1146,6 +1155,7 @@ static void exynos_usb_handle_reset_int(void)
 		u_delay(1);
 		usbdev3_dsts.data = readl(rDSTS);
 	}while(!(usbdev3_dsts.b.rx_fifo_empty));
+#endif
 
 	// . Issue a DEPCSTALL command for any stalled EP
 	//--------------------------------------------
@@ -1211,15 +1221,15 @@ static void exynos_usb_handle_connect_done_int(void)
 	//-------------------------
 	if (eSpeed == USBDEV3_SPEED_SUPER)
 	{
-		usbdev3_gusb3pipectl.data = readl(rGUSB3PIPECTL);
-		usbdev3_gusb3pipectl.b.suspend_usb3_ss_phy = 1;
-		writel(usbdev3_gusb3pipectl.data, rGUSB3PIPECTL);
-	}
-	else
-	{
 		usbdev3_gusb2phycfg.data = readl(rGUSB2PHYCFG);
 		usbdev3_gusb2phycfg.b.suspend_usb2_phy = 1;
 		writel(usbdev3_gusb2phycfg.data, rGUSB2PHYCFG);
+	}
+	else
+	{
+		usbdev3_gusb3pipectl.data = readl(rGUSB3PIPECTL);
+		usbdev3_gusb3pipectl.b.suspend_usb3_ss_phy = 1;
+		writel(usbdev3_gusb3pipectl.data, rGUSB3PIPECTL);
 	}
 
 	// . Set Max Packet Size based on enumerated speed
@@ -1249,7 +1259,7 @@ static void exynos_usb_handle_connect_done_int(void)
 	usbdev3_depcmdpar0_set_ep_cfg.data = 0;
 	usbdev3_depcmdpar0_set_ep_cfg.b.ep_type = USBDEV3_EP_CTRL;
 	usbdev3_depcmdpar0_set_ep_cfg.b.mps = oUsbDev3.m_uControlEPMaxPktSize;
-	usbdev3_depcmdpar0_set_ep_cfg.b.ign_dsnum = 1;	// to avoid resetting the sequnece number
+	usbdev3_depcmdpar0_set_ep_cfg.b.config_action = 0;
 
 	usbdev3_depcmdpar1_set_ep_cfg.data = 0;
 	usbdev3_depcmdpar1_set_ep_cfg.b.xfer_cmpl_en = 1;
@@ -1303,17 +1313,6 @@ static void exynos_usb_handle_dev_event(usbdev3_devt_t uDevEvent)
 
 		case DEVT_ULST_CHNG:
 			DBG_USBD3("Link Status Change\n");
-			if (uDevEvent.b.evt_info == 0x0 &&
-				usb_cable_state != uDevEvent.b.evt_info) {
-				print_lcd_update(FONT_GREEN, FONT_BLACK,
-						"USB cable connected...");
-				usb_cable_state = uDevEvent.b.evt_info;
-			} else if (uDevEvent.b.evt_info == 0x3 &&
-				usb_cable_state != uDevEvent.b.evt_info) {
-				print_lcd_update(FONT_YELLOW, FONT_RED,
-						"USB cable disconnected...");
-				usb_cable_state = uDevEvent.b.evt_info;
-			}
 			//USBDEV3_HandleLinkStatusChange();
 			break;
 
@@ -1686,6 +1685,8 @@ void exynos_usb_handle_setup(void)
 				printf("Super speed enumeration success\n");
 			g_usConfig = oUsbDev3.m_oDeviceRequest.wValue_L; // Configuration value in configuration descriptor
 			oUsbDev3.m_eUsbDev3State = USBDEV3_STATE_CONFIGURED;
+
+			exynos_usb_ep1_modify();
 
 			// . to activate endpoints for bulk xfer
 			exynos_usb_activate_ep(USBDEV3_EP_DIR_IN, BULK_IN_EP);
@@ -2476,11 +2477,6 @@ extern int exynos_usb_wait_cable_insert(void)
 int exynos_usbc_activate (void)
 {
 	exynos_usb_runstop_device(1);
-
-	printf("Enable USB Interrupt!\n");
-        register_int_handler(USB_INT_NUM, &usb_interrupt, NULL);
-	unmask_interrupt(USB_INT_NUM);
-
 	return 0;
 }
 
@@ -2493,7 +2489,6 @@ int exynos_usb_stop( void )
 
 	exynoy_usb_phy_off();
 	oUsbDev3.m_cable = UNCHECKED;
-	mask_interrupt(USB_INT_NUM);
 
 	return 0;
 }
@@ -2572,7 +2567,7 @@ int exynos_usbctl_init(void)
 	// . to initialize usb device phy
 	//--------------------------
 	usbdev3_gctl.data = readl(rGCTL);
-	usbdev3_gctl.b.core_soft_reset = 1;	// to keep the core in reset state until phy clocks are stable(GCTL의 11번 bit 설명 참조)
+	usbdev3_gctl.b.core_soft_reset = 1;	// to keep the core in reset state until phy clocks are stable(GCTL??11�?bit ?�명 참조)
 	/*
 	* WORKAROUND: DWC3 revisions <1.90a have a bug
 	* when The device fails to connect at SuperSpeed
@@ -2583,7 +2578,7 @@ int exynos_usbctl_init(void)
 	writel(usbdev3_gctl.data, rGCTL);
 
 	usbdev3_gctl.data = readl(rGCTL);
-	usbdev3_gctl.b.core_soft_reset = 0;	// to keep the core out of reset state after phy clocks are stable(GCTL의 11번 bit 설명 참조)
+	usbdev3_gctl.b.core_soft_reset = 0;	// to keep the core out of reset state after phy clocks are stable(GCTL??11�?bit ?�명 참조)
 	writel(usbdev3_gctl.data, rGCTL);
 
 	usbdev3_gctl.b.pwr_down_scale = ((unsigned int)get_usbdrd_clk()) / 16000;
@@ -2592,7 +2587,7 @@ int exynos_usbctl_init(void)
 	writel(usbdev3_gctl.data, rGCTL);
 
 	g_uCntOfDescOutComplete = 0;
-	/* is_fastboot = 0; */
+	is_fastboot = 0; /* Need to check!!! */
 	// . to initialize usb device controller
 	//------------------------------
 	if (exynos_usb_init_core(eSpeed))
