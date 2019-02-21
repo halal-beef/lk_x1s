@@ -85,6 +85,9 @@ static const char *up_sequencer[] = {
 	"L3FLUSH ABORT",
 	"SOC_SEQ",
 	"MIF_SEQ",
+	"CHUB",
+	"UNKNOWN",
+	"L2FLUSH ABORT",
 };
 
 static const char *down_sequencer[] = {
@@ -104,6 +107,9 @@ static const char *down_sequencer[] = {
 	"UNKNOWN",
 	"SOC_SEQ",
 	"MIF_SEQ",
+	"UNKNOWN",
+	"L2FLUSH START",
+	"UNKNOWN",
 };
 
 static const char *power_mode_name[] = {
@@ -112,7 +118,7 @@ static const char *power_mode_name[] = {
 	"NO_POWER_MODE",
 	"SICD",
 	"SLEEP",
-	"USBL2_SLEEP",
+	"SLEEP_HSI2ON",
 };
 
 #define DONE_INDEX                              (0x21444E45)
@@ -135,10 +141,10 @@ static const char *access_type[] = {
 };
 
 static const char *master[] = {
-	"CP",
-	"AUD",
 	"none",
+	"AUD",
 	"VTS",
+	"none",
 	"AP",
 };
 
