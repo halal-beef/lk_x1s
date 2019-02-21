@@ -895,10 +895,10 @@ typedef union
 		unsigned fifo_num:5;
 		// bit[25:22] : burst size
 		unsigned brst_siz:4;
-		// bit[30:26] : data sequence number
-		unsigned ds_num:5;
+		// bit[30:26] : reserved bits
+		unsigned rsvd29_26:4;
 		// bit[31] : ignor sequence number
-		unsigned ign_dsnum:1;
+		unsigned config_action:2;
 	}b;
 } usbdev3_depcmdpar0_set_ep_cfg_t;
 
