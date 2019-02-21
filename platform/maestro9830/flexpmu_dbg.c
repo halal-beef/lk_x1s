@@ -298,6 +298,36 @@ static void print_last_powermode(struct dbg_list *dbg)
 
 static void print_pmudbg_registers(void)
 {
+	const char *pd_name[20] = {
+		"pd-aud",
+		"pd-csis",
+		"pd-dns",
+		"pd-dpu",
+		"pd-dsp0",
+		"pd-dsp1",
+		"pd-dnc",
+		"pd-embedded-g3d",
+		"pd-g2d",
+		"pd-hsi0",
+		"pd-ipp",
+		"pd-itp",
+		"pd-mfc0",
+		"pd-mcsc",
+		"pd-npu0",
+		"pd-npu1",
+		"pd-tnr",
+		"pd-vra",
+		"pd-vts",
+		"pd-ssp",
+	};
+
+	const unsigned int pd_offset[20] = {
+		0x34, 0x58, 0x5c, 0x60,	0x64, 0x68, 0x6c, 0x7c, 0x80, 0x88,
+		0x94, 0x98, 0x9c, 0xb0, 0xb4, 0xb8, 0xcc, 0xd0, 0xd4, 0xd8,
+	};
+
+	int i;
+
 	printf("%s%s - 0x%x\n", FLEXPMU_DBG_LOG, "CLUSTER0_CPU0_STATES", readl(EXYNOS9830_PMUDBG_BASE));
 	printf("%s%s - 0x%x\n", FLEXPMU_DBG_LOG, "CLUSTER0_CPU1_STATES", readl(EXYNOS9830_PMUDBG_BASE + 0x4));
 	printf("%s%s - 0x%x\n", FLEXPMU_DBG_LOG, "CLUSTER0_CPU2_STATES", readl(EXYNOS9830_PMUDBG_BASE + 0x8));
@@ -309,8 +339,15 @@ static void print_pmudbg_registers(void)
 	printf("%s%s - 0x%x\n", FLEXPMU_DBG_LOG, "CLUSTER2_CPU0_STATES", readl(EXYNOS9830_PMUDBG_BASE + 0x20));
 	printf("%s%s - 0x%x\n", FLEXPMU_DBG_LOG, "CLUSTER2_CPU1_STATES", readl(EXYNOS9830_PMUDBG_BASE + 0x24));
 	printf("%s%s - 0x%x\n", FLEXPMU_DBG_LOG, "CLUSTER2_NONCPU_STATES", readl(EXYNOS9830_PMUDBG_BASE + 0x28));
-	printf("%s%s - 0x%x\n", FLEXPMU_DBG_LOG, "MIF_STATES", readl(EXYNOS9830_PMUDBG_BASE + 0xe8));
-	printf("%s%s - 0x%x\n", FLEXPMU_DBG_LOG, "TOP_STATES", readl(EXYNOS9830_PMUDBG_BASE + 0xec));
+	printf("%s%s - 0x%x\n", FLEXPMU_DBG_LOG, "MIF_STATES", readl(EXYNOS9830_PMUDBG_BASE + 0xfc));
+	printf("%s%s - 0x%x\n", FLEXPMU_DBG_LOG, "TOP_STATES", readl(EXYNOS9830_PMUDBG_BASE + 0x100));
+
+	for (i = 0; i < 20; i++) {
+		if (i % 4 == 0)
+			printf("\n");
+		printf("%16s - 0x%x\t", pd_name[i], readl(EXYNOS9830_PMUDBG_BASE + pd_offset[i]));
+	}
+	printf("\n\n");
 }
 
 static void print_acpm_last_gpr(void)
