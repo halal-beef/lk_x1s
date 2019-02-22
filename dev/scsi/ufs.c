@@ -2049,7 +2049,7 @@ static int ufs_link_startup(struct ufs_host *ufs)
 
 	if(ufs_ref_clk_setup(ufs))
 		goto out;
-
+#if 0
 	/* 9. pre pmc */
 	pmd->gear = UFS_GEAR;
 	pmd->mode = UFS_POWER_MODE;
@@ -2061,15 +2061,15 @@ static int ufs_link_startup(struct ufs_host *ufs)
 	/* 10. pmc (power mode change) */
 	if (ufs_pmc_common(ufs, pmd))
 		goto out;
-
+#endif
 	/* 11. update active lanes */
 	if (ufs_update_active_lane(ufs))
 		goto out;
-
+#if 0
 	/* 12. post pmc */
 	if (ufs_post_gear_change(ufs))
 		goto out;
-
+#endif
 	printf("Power mode change: M(%d)G(%d)L(%d)HS-series(%d)\n",
 			(pmd->mode & 0xF), pmd->gear, pmd->lane, pmd->hs_series);
 
