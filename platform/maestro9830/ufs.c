@@ -8,9 +8,60 @@
  * to third parties without the express written permission of Samsung Electronics.
  */
 
+#include <reg.h>
 #include <dev/ufs.h>
 
 struct ufs_host;
+
+#define UFS_SCLK       166000000
+#define CNT_VAL_1US_MASK       0x3ff
+#define UFSHCI_VS_1US_TO_CNT_VAL                       0x110C
+#define UFSHCI_VS_UFSHCI_V2P1_CTRL                     0X118C
+#define BIT(x) (1<<(x))
+#define IA_TICK_SEL                            BIT(16)
+
+#define MUX_CLKCMU_UFS_EMBD_CON 0x1A331098
+#define DIV_CLKCMU_UFS_EMBD_MUX 0x1A331890
+
+#define UFS_CLKCMU_TIMEOUT 100
+
+void ufs_vs_set_1us_to_cnt(struct ufs_host *ufs)
+{
+	u32 nVal;
+	u32 cnt_val;
+
+	/* IA_TICK_SEL : 1(1us_TO_CNT_VAL) */
+	nVal = readl(ufs->ioaddr + UFSHCI_VS_UFSHCI_V2P1_CTRL);
+	nVal |= IA_TICK_SEL;
+	writel(nVal, ufs->ioaddr + UFSHCI_VS_UFSHCI_V2P1_CTRL);
+
+	cnt_val = UFS_SCLK / 1000000;
+	writel(cnt_val & CNT_VAL_1US_MASK, ufs->ioaddr + UFSHCI_VS_1US_TO_CNT_VAL);
+}
+
+void ufs_set_unipro_clk(struct ufs_host *ufs)
+{
+	int timeout = 0;
+
+	writel(3, DIV_CLKCMU_UFS_EMBD_MUX);
+
+	do {
+		timeout += 1;
+	} while ((readl(DIV_CLKCMU_UFS_EMBD_MUX) & 0x10000) && timeout < UFS_CLKCMU_TIMEOUT);
+	if (timeout == UFS_CLKCMU_TIMEOUT)
+		printf("ERROR(UFS): DIV_CLKCMU_UFS_EMBD_MUX setting timeout occured\n");
+
+	timeout = 0;
+
+	writel(1, MUX_CLKCMU_UFS_EMBD_CON);
+
+	do {
+		timeout += 1;
+	} while ((readl(MUX_CLKCMU_UFS_EMBD_CON) & 0x10000) && timeout < UFS_CLKCMU_TIMEOUT);
+	if (timeout == UFS_CLKCMU_TIMEOUT)
+		printf("ERROR(UFS): MUX_CLKCMU_UFS_EMBD_CON setting timeout occured\n");
+	ufs_vs_set_1us_to_cnt(ufs);
+}
 
 int ufs_board_init(int host_index, struct ufs_host *ufs)
 {
@@ -41,6 +92,7 @@ int ufs_board_init(int host_index, struct ufs_host *ufs)
 	ufs->host_index = host_index;
 
 	ufs->mclk_rate = 166 * (1000 * 1000);
+	ufs_set_unipro_clk(ufs);
 
 	// TODO:
 	//set_ufs_clk(host_index);
