@@ -635,9 +635,6 @@ status_t scsi_scan(scsi_device_t *sdev, u32 wlun, u32 dev_num, exec_t *func,
 
 		bio_register_device(&sdev->dev);
 
-		/* add this to host specific list to remove later, if necessary */
-		list_add_tail(lu_list, &sdev->lu_node);
-
 		sdev++;
 	}
 

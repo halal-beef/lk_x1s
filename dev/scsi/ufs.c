@@ -1159,10 +1159,9 @@ static status_t ufs_parse_respnse(struct ufs_host *ufs)
 {
 	scm *pscm = NULL;
 
+	pscm = ufs->scsi_cmd;
 	if (!ufs || !pscm)
 		return ERR_GENERIC;
-
-	pscm = ufs->scsi_cmd;
 
 	if (ufs->utrd_addr->dw[2]) {
 		dprintf(INFO, "SCSI cdb : %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x\n",

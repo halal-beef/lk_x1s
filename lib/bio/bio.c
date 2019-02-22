@@ -602,18 +602,20 @@ end:
 static void bdev_inc_ref(bdev_t *dev)
 {
     LTRACEF("Add ref \"%s\" %d -> %d\n", dev->name, dev->ref, dev->ref + 1);
-    atomic_add(&dev->ref, 1);
+    //atomic_add(&dev->ref, 1);
+    dev->ref++;;
 }
 
 static void bdev_dec_ref(bdev_t *dev)
 {
-    int oldval = atomic_add(&dev->ref, -1);
+    //int oldval = atomic_add(&dev->ref, -1);
+    int oldval = (dev->ref--);
 
     LTRACEF("Dec ref \"%s\" %d -> %d\n", dev->name, oldval, dev->ref);
 
     if (oldval == 1) {
         // last ref, remove it
-        DEBUG_ASSERT(!list_in_list(&dev->node));
+        //DEBUG_ASSERT(!list_in_list(&dev->node));
 
         TRACEF("last ref, removing (%s)\n", dev->name);
 
