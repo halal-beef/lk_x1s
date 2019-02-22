@@ -112,7 +112,15 @@ static inline int ufs_init_cal(struct ufs_host *ufs, int idx)
 
 	ufs->cal_param = p = malloc(sizeof(struct ufs_cal_param));
 	ufs->cal_param->host = (void *)ufs;
-	ufs->cal_param->board = 0;
+
+	#if defined(CONFIG_MACH_UNIVERSAL9820)
+	ufs->cal_param->board = BRD_UNIV;
+	#else
+	ufs->cal_param->board = BRD_SMDK;
+	#endif
+
+	ufs->cal_param->evt_ver = (readl(0x10000010) >> 20) & 0xf;
+	printf("ufs->cal_param->evt_ver is EVT%d!!!\n", ufs->cal_param->evt_ver);
 
 	ret = ufs_cal_init(p, idx);
 	if (ret != UFS_CAL_NO_ERROR) {
@@ -129,8 +137,8 @@ static inline int ufs_pre_link(struct ufs_host *ufs, u8 lane)
 	struct ufs_cal_param *p = ufs->cal_param;
 
 	p->mclk_rate = ufs->mclk_rate;
-	p->target_lane = lane;
 	p->available_lane = lane;
+	p->tbl = HOST_EMBD;
 
 	ret = ufs_cal_pre_link(p);
 	if (ret != UFS_CAL_NO_ERROR) {
@@ -161,7 +169,6 @@ static inline int ufs_pre_gear_change(struct ufs_host *ufs,
 	int ret = 0;
 
 	p->pmd = pmd;
-	p->target_lane = pmd->lane;
 	ret = ufs_cal_pre_pmc(p);
 	if (ret != UFS_CAL_NO_ERROR) {
 		printf("ufs_pre_gear_change failed with %d!!!\n", ret);
@@ -1643,8 +1650,65 @@ out:
 	return res;
 }
 
+static int ufs_update_max_gear(struct ufs_host *ufs)
+{
+	struct ufs_uic_cmd rx_cmd = { UIC_CMD_DME_GET, (0x1587 << 16), 0, 0 };	/* PA_MAXRXHSGEAR */
+	struct ufs_cal_param *p;
+	int ret = 0;
+	u32 max_rx_hs_gear = 0;
+
+	if (!ufs)
+		return ret;
+
+	p = ufs->cal_param;
+
+	ufs->uic_cmd = &rx_cmd;
+	ret = send_uic_cmd(ufs);
+	if (ret)
+		goto out;
+
+	max_rx_hs_gear = ufs->uic_cmd->uiccmdarg3;
+	p->max_gear = MIN(max_rx_hs_gear, UFS_GEAR);
+
+	printf("ufs max_gear(%d)\n", p->max_gear);
+
+out:
+	return ret;
+}
+
+static int ufs_update_active_lane(struct ufs_host *ufs)
+{
+	int res = 0;
+	struct ufs_uic_cmd tx_cmd = { UIC_CMD_DME_GET, (0x1560 << 16), 0, 0 };	/* PA_ACTIVETXDATALANES */
+	struct ufs_uic_cmd rx_cmd = { UIC_CMD_DME_GET, (0x1580 << 16), 0, 0 };	/* PA_ACTIVERXDATALANES */
+	struct ufs_cal_param *p;
+
+	if (!ufs)
+		return res;
+
+	p = ufs->cal_param;
+
+	ufs->uic_cmd = &tx_cmd;
+	res = send_uic_cmd(ufs);
+	if (res)
+		goto out;
+	p->active_tx_lane = ufs->uic_cmd->uiccmdarg3;
+
+	ufs->uic_cmd = &rx_cmd;
+	res = send_uic_cmd(ufs);
+	if (res)
+		goto out;
+
+	p->active_rx_lane = ufs->uic_cmd->uiccmdarg3;
+	printf("active_tx_lane(%d), active_rx_lane(%d)\n", p->active_tx_lane, p->active_rx_lane);
+
+out:
+	return res;
+}
+
 static int ufs_check_2lane(struct ufs_host *ufs)
 {
+	struct ufs_cal_param *p;
 	int res = 0;
 	int tx, rx;
 	struct ufs_uic_cmd tx_cmd = { UIC_CMD_DME_GET, (0x1561 << 16), 0, 0 };	/* PA_ConnectedTxDataLane */
@@ -1665,6 +1729,8 @@ static int ufs_check_2lane(struct ufs_host *ufs)
 	if (!ufs)
 		return res;
 
+	p = ufs->cal_param;
+
 #if defined(CONFIG_UFS_1LANE_ONLY)
 	tx = 1;
 	rx = 1;
@@ -1681,6 +1747,9 @@ static int ufs_check_2lane(struct ufs_host *ufs)
 		goto out;
 	rx = ufs->uic_cmd->uiccmdarg3;
 #endif
+	p->connected_tx_lane = tx;
+	p->connected_rx_lane = rx;
+
 	if (tx == 2 && rx == 2) {
 		res = ufs_mphy_unipro_setting(ufs, ufs_2lane_cmd);
 		if (res) {
@@ -1762,14 +1831,18 @@ static int ufs_device_power(struct ufs_host *ufs, int onoff)
 static int ufs_pre_setup(struct ufs_host *ufs)
 {
 	u32 reg;
+	u32 val;
 	int res = 0;
 
 	struct ufs_uic_cmd reset_cmd = {UIC_CMD_DME_RESET, 0, 0, 0};
 	struct ufs_uic_cmd enable_cmd = {UIC_CMD_DME_ENABLE, 0, 0, 0};
 
 	/* UFS_PHY_CONTROL : 1 = Isolation bypassed, PMU MPHY ON */
-	if ((readl(ufs->phy_iso_addr) & 0x1) == 0)
-		writel(0x01, ufs->phy_iso_addr);
+	val = readl(ufs->phy_iso_addr);
+	if ((val & 0x1) == 0) {
+		val |= (1 << 0);
+		writel(val, ufs->phy_iso_addr);
+	}
 
 	/* VS_SW_RST */
 	if ((readl(ufs->vs_addr + VS_FORCE_HCS) >> 4) & 0xf)
@@ -1950,27 +2023,35 @@ static int ufs_link_startup(struct ufs_host *ufs)
 		goto out;
 	}
 
-	/* 3. post link */
+	/* 3. update max gear */
+	if (ufs_update_max_gear(ufs))
+		goto out;
+
+	/* 4. post link */
 	if (ufs_post_link(ufs))
 		goto out;
 
-	/* 4. misc hci setup for NOP and fDeviceinit */
+	/* 5. update active lanes */
+	if (ufs_update_active_lane(ufs))
+		goto out;
+
+	/* 6. misc hci setup for NOP and fDeviceinit */
 	if (ufs_vendor_setup(ufs))
 		goto out;
 
 
-	/* 5. NOP and fDeviceinit */
+	/* 7. NOP and fDeviceinit */
 	if (ufs_end_boot_mode(ufs))
 		goto out;
 
-	/* 6. Check a number of connected lanes */
+	/* 8. Check a number of connected lanes */
 	if (ufs_check_2lane(ufs))
 		goto out;
 
 	if(ufs_ref_clk_setup(ufs))
 		goto out;
 
-	/* 7. pre pmc */
+	/* 9. pre pmc */
 	pmd->gear = UFS_GEAR;
 	pmd->mode = UFS_POWER_MODE;
 	pmd->hs_series = UFS_RATE;
@@ -1978,18 +2059,22 @@ static int ufs_link_startup(struct ufs_host *ufs)
 	if (ufs_pre_gear_change(ufs, pmd))
 		goto out;
 
-	/* 8. pmc (power mode change) */
+	/* 10. pmc (power mode change) */
 	if (ufs_pmc_common(ufs, pmd))
 		goto out;
 
-	/* 9. post pmc */
+	/* 11. update active lanes */
+	if (ufs_update_active_lane(ufs))
+		goto out;
+
+	/* 12. post pmc */
 	if (ufs_post_gear_change(ufs))
 		goto out;
 
 	printf("Power mode change: M(%d)G(%d)L(%d)HS-series(%d)\n",
 			(pmd->mode & 0xF), pmd->gear, pmd->lane, pmd->hs_series);
 
- out:
+out:
 	return NO_ERROR;
 }
 
