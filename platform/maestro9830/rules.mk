@@ -23,8 +23,9 @@ MODULE_SRCS += \
 	$(LOCAL_DIR)/security/avb_main.c \
 	$(LOCAL_DIR)/security/sb_api.c \
 	$(LOCAL_DIR)/security/otp_v20.c \
-	$(LOCAL_DIR)/speedy/speedy.c \
-	$(LOCAL_DIR)/pmic/pmic_s2mpu09.c \
+	$(LOCAL_DIR)/speedy/speedy_multi.c \
+	$(LOCAL_DIR)/pmic/pmic_s2mps_19_22.c \
+	$(LOCAL_DIR)/pmic/sub_pmic_s2mpb02.c \
 	$(LOCAL_DIR)/ab_update/ab_update.c \
 	$(LOCAL_DIR)/lock/lock.c \
 	$(LOCAL_DIR)/gpio_init.S \

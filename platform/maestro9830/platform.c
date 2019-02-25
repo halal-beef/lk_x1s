@@ -19,8 +19,8 @@
 #include <platform/interrupts.h>
 #include <platform/sfr.h>
 #include <platform/smc.h>
-#include <platform/speedy.h>
-#include <platform/pmic_s2mpu09.h>
+#include <platform/pmic_s2mps_19_22.h>
+#include <platform/sub_pmic_s2mpb02.h>
 #include <platform/dfd.h>
 #include <platform/ldfw.h>
 
@@ -182,27 +182,6 @@ static void load_secure_payload(void)
 	}
 }
 
-static int check_charger_connect(void)
-{
-	unsigned char read_pwronsrc = 0;
-	unsigned int rst_stat = readl(EXYNOS9830_POWER_RST_STAT);
-
-	if (rst_stat == PIN_RESET) {
-		speedy_init();
-		speedy_read(S2MPU09_PM_ADDR, S2MPU09_PM_PWRONSRC, &read_pwronsrc);
-
-		/* Check USB or TA connected and PWRONSRC(USB)  */
-		if(read_pwronsrc & ACOK)
-			charger_mode = 1;
-		else
-			charger_mode = 0;
-	} else {
-		charger_mode = 0;
-	}
-
-	return 0;
-}
-
 #ifdef CONFIG_EXYNOS_BOOTLOADER_DISPLAY
 extern int display_drv_init(void);
 void display_panel_init(void);
@@ -244,12 +223,16 @@ void platform_early_init(void)
 void platform_init(void)
 {
 	u32 ret = 0;
-	printf("platform_init\n");
-	/*
-	pmic_init();
-	check_charger_connect();
-	display_pmic_info_s2mpu09();
 
+	pmic_init();
+	display_pmic_info();
+	sub_pmic_s2mpb02_init();
+
+	/*
+	check_charger_connect();
+	*/
+
+	/*
 	load_secure_payload();
 	*/
 

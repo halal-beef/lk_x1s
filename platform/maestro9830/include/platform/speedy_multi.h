@@ -11,7 +11,7 @@
 #ifndef __SPEEDY_H__
 #define __SPEEDY_H__
 
-#define SPEEDY_BASE				0x11A10000
+#include <config.h>
 
 /* SPEEDY Register MAP */
 #define SPEEDY_CTRL				0x000
@@ -110,12 +110,12 @@
 #define DIRECTION_READ				0
 #define DIRECTION_WRITE				1
 
-void speedy_init(void);
-void speedy_write(unsigned char slave, unsigned char addr, unsigned char data);
-void speedy_write_burst(unsigned char slave, unsigned char addr,
+void speedy_init(unsigned int SPEEDY_BASE);
+void speedy_write(unsigned int SPEEDY_BASE, unsigned char slave, unsigned char addr, unsigned char data);
+void speedy_write_burst(unsigned int SPEEDY_BASE, unsigned char slave, unsigned char addr,
 				unsigned char *data, unsigned char count);
-void speedy_read(unsigned char slave, unsigned char addr, unsigned char *data);
-void speedy_read_burst(unsigned char slave, unsigned char addr,
+void speedy_read(unsigned int SPEEDY_BASE, unsigned char slave, unsigned char addr, unsigned char *data);
+void speedy_read_burst(unsigned int SPEEDY_BASE, unsigned char slave, unsigned char addr,
 				unsigned char *data, unsigned char count);
 
 #endif  // __SPEEDY_H__
