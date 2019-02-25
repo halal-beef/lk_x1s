@@ -16,6 +16,7 @@
 #include <dev/ufs.h>
 #include <dev/ufs_provision.h>
 #include <platform/delay.h>
+#include <platform/exynos9830.h>
 
 #define be16_to_cpu(x) \
 	((((x) & 0xff00) >> 8) | \
@@ -2236,8 +2237,10 @@ static int ufs_host_init(int host_index, struct ufs_host *ufs)
 	if (ufs_mem_init(ufs))
 		goto out;
 
-	/* Encryption by-passed */
-	ufs_disable_ufsp(ufs);
+	if (*(unsigned int *)DRAM_BASE != 0xabcdef) {
+		/* It boots by T32. set FMP as by-passed */
+		ufs_disable_ufsp(ufs);
+	}
 
 	if (ufs_init_cal(ufs, host_index))
 		goto out;
