@@ -91,7 +91,7 @@ int ufs_board_init(int host_index, struct ufs_host *ufs)
 
 	ufs->host_index = host_index;
 
-	ufs->mclk_rate = 133 * (1000 * 1000);
+	ufs->mclk_rate = 166 * (1000 * 1000);
 	ufs_set_unipro_clk(ufs);
 
 	// TODO:
