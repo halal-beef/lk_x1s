@@ -30,6 +30,7 @@ MODULE_SRCS += \
 	$(LOCAL_DIR)/lock/lock.c \
 	$(LOCAL_DIR)/gpio_init.S \
 	$(LOCAL_DIR)/dfd.c \
+	$(LOCAL_DIR)/gpio.c \
 	$(LOCAL_DIR)/dfd_entry.S \
 	$(LOCAL_DIR)/dpu_cal/decon_reg.c \
 	$(LOCAL_DIR)/dpu_cal/dpp_reg.c \
