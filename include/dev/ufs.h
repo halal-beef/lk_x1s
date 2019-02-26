@@ -103,10 +103,10 @@ enum {
 	VS_MPHY_REFCLK_SEL		= 0x108,
 
 	UFSP_UPRSECURITY	= 0x10,
-	UFSP_UPSBEGIN0		= 0x200,
-	UFSP_UPSEND0		= 0x204,
-	UFSP_UPLUN0		= 0x208,
-	UFSP_UPSCTRL0		= 0x20c,
+	UFSP_UPSBEGIN0		= 0x2000,
+	UFSP_UPSEND0		= 0x2004,
+	UFSP_UPLUN0		= 0x2008,
+	UFSP_UPSCTRL0		= 0x200c,
 };
 
 /* Interrupt status */
@@ -781,7 +781,7 @@ union ufs_attributes {
 #define __iomem
 #endif
 
-#define UFS_GEAR		3
+#define UFS_GEAR		2
 #define UFS_RATE		2
 #define UFS_POWER_MODE	1
 #define UFS_RXTX_POWER_MODE	((UFS_POWER_MODE << 4)|UFS_POWER_MODE)

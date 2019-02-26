@@ -75,7 +75,7 @@ int ufs_board_init(int host_index, struct ufs_host *ufs)
 
 	/* mmio */
 	sprintf(ufs->host_name,"ufs%d", host_index);
-	ufs->irq = 321;
+	ufs->irq = 249;
 	ufs->ioaddr = (void __iomem *)0x13100000;
 	ufs->vs_addr = (void __iomem *)(0x13100000 + 0x1100);
 	ufs->fmp_addr = (void __iomem *)0x132A0000;
@@ -91,7 +91,7 @@ int ufs_board_init(int host_index, struct ufs_host *ufs)
 
 	ufs->host_index = host_index;
 
-	ufs->mclk_rate = 166 * (1000 * 1000);
+	ufs->mclk_rate = 133 * (1000 * 1000);
 	ufs_set_unipro_clk(ufs);
 
 	// TODO:

@@ -2047,9 +2047,6 @@ static int ufs_link_startup(struct ufs_host *ufs)
 	if (ufs_check_2lane(ufs))
 		goto out;
 
-	if(ufs_ref_clk_setup(ufs))
-		goto out;
-
 	/* 9. pre pmc */
 	pmd->gear = UFS_GEAR;
 	pmd->mode = UFS_POWER_MODE;
