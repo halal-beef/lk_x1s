@@ -280,6 +280,13 @@ void sub_pmic_s2mpb02_init(void)
 	printf("S2MPB02_BUCK1_CTRL: 0x%x\n", reg);
 
 	/* WA for S2MPB02 write fail - write fake odd number value  before real value */
+	IIC_EWrite(S2MPB02_W_ADDR, S2MPB02_LDO6_CTRL, 0x31);
+	IIC_EWrite(S2MPB02_W_ADDR, S2MPB02_LDO6_CTRL, 0xB0);
+
+	IIC_ERead(S2MPB02_W_ADDR, S2MPB02_LDO6_CTRL, &reg);
+	printf("S2MPB02_LDO6_CTRL: 0x%x\n", reg);
+
+	/* WA for S2MPB02 write fail - write fake odd number value  before real value */
 	IIC_EWrite(S2MPB02_W_ADDR, S2MPB02_LDO9_CTRL, 0x31);
 	IIC_EWrite(S2MPB02_W_ADDR, S2MPB02_LDO9_CTRL, 0xB0);
 
@@ -292,4 +299,11 @@ void sub_pmic_s2mpb02_init(void)
 
 	IIC_ERead(S2MPB02_W_ADDR, S2MPB02_LDO11_CTRL, &reg);
 	printf("S2MPB02_LDO11_CTRL: 0x%x\n", reg);
+
+	/* WA for S2MPB02 write fail - write fake odd number value  before real value */
+	IIC_EWrite(S2MPB02_W_ADDR, S2MPB02_LDO18_CTRL, 0x6D);
+	IIC_EWrite(S2MPB02_W_ADDR, S2MPB02_LDO18_CTRL, 0xEC);
+
+	IIC_ERead(S2MPB02_W_ADDR, S2MPB02_LDO18_CTRL, &reg);
+	printf("S2MPB02_LDO18_CTRL: 0x%x\n", reg);
 }

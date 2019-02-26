@@ -37,8 +37,10 @@
 /* S2MPB02 Register Address */
 #define S2MPB02_BUCK1_CTRL	0x0B
 #define S2MPB02_BUCK1_OUT	0x0C
+#define S2MPB02_LDO6_CTRL	0x23
 #define S2MPB02_LDO9_CTRL	0x26
 #define S2MPB02_LDO11_CTRL	0x28
+#define S2MPB02_LDO18_CTRL	0x2F
 
 #define Buck1_EN			(0x2 << 6)
 
