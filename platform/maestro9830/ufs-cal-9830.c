@@ -1,12 +1,9 @@
 #if defined(__UFS_CAL_LK__)
 #include <sys/types.h>
 #include <platform/ufs-cal-9830.h>
-#elif defined(__UFS_CAL_U_BOOT__)
-#include <linux/types.h>
-#include <ufs-cal-9830.h>
 #elif defined(__UFS_CAL_FW__)
 #include <types.h>
-#include <include/ufs-cal-9830.h>
+#include <include/ufs-cal.h>
 #else
 #include <linux/types.h>
 #include <linux/kernel.h>
@@ -66,7 +63,7 @@ enum {
 #endif
 
 #define PHY_PMA_COMN_ADDR(reg)			(reg)
-#define PHY_PMA_TRSV_ADDR(reg, lane)		((reg) + (0x400 * (lane)))
+#define PHY_PMA_TRSV_ADDR(reg, lane)		((reg) + (0x800 * (lane)))
 
 #define NUM_OF_UFS_HOST	2
 
@@ -179,6 +176,7 @@ struct ufs_cal_phy_cfg {
 static struct ufs_cal_param *ufs_cal[NUM_OF_UFS_HOST];
 static unsigned long ufs_cal_lock_timeout = 0xFFFFFFFF;
 
+#if 1
 static const struct ufs_cal_phy_cfg init_cfg_evt0[] = {
 	{0x44, 0x00, PMD_ALL, UNIPRO_DBG_PRD, BRD_ALL},
 
@@ -194,6 +192,11 @@ static const struct ufs_cal_phy_cfg init_cfg_evt0[] = {
 	{0x84, 0x01, PMD_ALL, PHY_PCS_RX, BRD_ALL},
 	{0x04, 0x01, PMD_ALL, PHY_PCS_TX, BRD_ALL},
 	{0x25, 0xF6, PMD_ALL, PHY_PCS_RX, BRD_ALL},
+
+	//{0x25, 0xF6, PMD_ALL, PHY_PCS_RX, BRD_ALL},
+	{0x2F, 0x6D, PMD_ALL, PHY_PCS_RX, BRD_ALL},
+
+
 	{0x200, 0x0, PMD_ALL, PHY_PCS_COMN, BRD_ALL},
 
 	{0x155E, 0x0, PMD_ALL, UNIPRO_STD_MIB, BRD_ALL},
@@ -202,6 +205,8 @@ static const struct ufs_cal_phy_cfg init_cfg_evt0[] = {
 	{0x4021, 0x1, PMD_ALL, UNIPRO_STD_MIB, BRD_ALL},
 	{0x4020, 0x1, PMD_ALL, UNIPRO_STD_MIB, BRD_ALL},
 
+#if 0
+	{0x10C, 0x10, PMD_ALL, PHY_PMA_COMN, BRD_ALL},
 	{0x6B0, 0x00, PMD_ALL, PHY_PMA_TRSV, BRD_ZEBU},
 	{0x584, 0x44, PMD_ALL, PHY_PMA_TRSV, BRD_ZEBU},
 	{0x6E4, 0x10, PMD_ALL, PHY_PMA_TRSV, BRD_ZEBU},
@@ -225,8 +230,10 @@ static const struct ufs_cal_phy_cfg init_cfg_evt0[] = {
 	{0x10C, 0x18, PMD_ALL, PHY_PMA_COMN, BRD_ALL},
 	{0x10C, 0x00, PMD_ALL, PHY_PMA_COMN, BRD_ALL},
 	{0x00, 0xC8, PMD_ALL, COMMON_WAIT, BRD_ALL},
+#endif
 	{0, 0, 0, 0, 0},
 };
+#endif
 
 static const struct ufs_cal_phy_cfg init_cfg_evt1[] = {
 	{0x44, 0x00, PMD_ALL, UNIPRO_DBG_PRD, BRD_ALL},
@@ -277,6 +284,7 @@ static const struct ufs_cal_phy_cfg init_cfg_evt1[] = {
 	{0, 0, 0, 0, 0},
 };
 
+#if 0
 static struct ufs_cal_phy_cfg post_init_cfg_evt0_g3[] = {
 	{0x15D2, 0x0, PMD_ALL, UNIPRO_ADAPT_LENGTH, BRD_ALL},
 	{0x15D3, 0x0, PMD_ALL, UNIPRO_ADAPT_LENGTH, BRD_ALL},
@@ -330,8 +338,9 @@ static struct ufs_cal_phy_cfg post_init_cfg_evt0_g3[] = {
 	{0x00, 0xC8, PMD_ALL, COMMON_WAIT, BRD_ALL},
 	{0, 0, 0, 0, 0},
 };
+#endif
 
-static struct ufs_cal_phy_cfg post_init_cfg_evt0_g4[] = {
+static struct ufs_cal_phy_cfg post_init_cfg_evt0_g3[] = {
 	{0x15D2, 0x0, PMD_ALL, UNIPRO_ADAPT_LENGTH, BRD_ALL},
 	{0x15D3, 0x0, PMD_ALL, UNIPRO_ADAPT_LENGTH, BRD_ALL},
 
@@ -339,6 +348,65 @@ static struct ufs_cal_phy_cfg post_init_cfg_evt0_g4[] = {
 	{0x15A4, 0x3E8, PMD_ALL, UNIPRO_STD_MIB, BRD_ALL},
 	{0x9529, 0x00, PMD_ALL, UNIPRO_DBG_MIB, BRD_ALL},
 
+#if 0
+	{0x10C, 0x10, PMD_ALL, PHY_PMA_COMN, BRD_ALL},
+	{0xB84, 0xC0, PMD_ALL, PHY_PMA_TRSV, BRD_ALL},
+	{0x804, 0x06, PMD_ALL, PHY_PMA_TRSV, BRD_ALL},
+	{0x808, 0x06, PMD_ALL, PHY_PMA_TRSV, BRD_ALL},
+	{0x810, 0x01, PMD_ALL, PHY_PMA_TRSV, BRD_ALL},
+	{0x814, 0x11, PMD_ALL, PHY_PMA_TRSV, BRD_ALL},
+
+
+//	{0xA8, 0x11, PMD_ALL, PHY_PMA_COMN, BRD_ALL},
+//	{0xAC, 0x11, PMD_ALL, PHY_PMA_COMN, BRD_ALL},
+//	{0x11C, 0x00, PMD_ALL, PHY_PMA_COMN, BRD_ALL},
+//	{0x88C, 0x33, PMD_ALL, PHY_PMA_TRSV, BRD_ALL},
+//	{0x890, 0x37, PMD_ALL, PHY_PMA_TRSV, BRD_ALL},
+//	{0x894, 0x31, PMD_ALL, PHY_PMA_TRSV, BRD_ALL},
+//	{0x898, 0x00, PMD_ALL, PHY_PMA_TRSV, BRD_ALL},
+
+
+//	{0x89C, 0x33, PMD_ALL, PHY_PMA_TRSV, BRD_ALL},
+//	{0x8A0, 0x37, PMD_ALL, PHY_PMA_TRSV, BRD_ALL},
+//	{0x8A4, 0x31, PMD_ALL, PHY_PMA_TRSV, BRD_ALL},
+//	{0x8A8, 0x00, PMD_ALL, PHY_PMA_TRSV, BRD_ALL},
+
+//	{0xA8C, 0x00, PMD_ALL, PHY_PMA_TRSV, BRD_ALL},
+//	{0xA90, 0x82, PMD_ALL, PHY_PMA_TRSV, BRD_ALL},
+//	{0xA94, 0x00, PMD_ALL, PHY_PMA_TRSV, BRD_ALL},
+//	{0xA98, 0x98, PMD_ALL, PHY_PMA_TRSV, BRD_ALL},
+//	{0xAA0, 0x60, PMD_ALL, PHY_PMA_TRSV, BRD_ALL},
+//	{0xAA8, 0x70, PMD_ALL, PHY_PMA_TRSV, BRD_ALL},
+
+//	{0xBFC, 0x00, PMD_ALL, PHY_PMA_TRSV, BRD_ALL},
+//	{0xC00, 0x82, PMD_ALL, PHY_PMA_TRSV, BRD_ALL},
+//	{0xC04, 0x00, PMD_ALL, PHY_PMA_TRSV, BRD_ALL},
+//	{0xC08, 0x98, PMD_ALL, PHY_PMA_TRSV, BRD_ALL},
+//	{0xC10, 0x60, PMD_ALL, PHY_PMA_TRSV, BRD_ALL},
+//	{0xC18, 0x70, PMD_ALL, PHY_PMA_TRSV, BRD_ALL},
+
+//	{0x8C4, 0x33, PMD_ALL, PHY_PMA_TRSV, BRD_ALL},
+//	{0x8C8, 0x33, PMD_ALL, PHY_PMA_TRSV, BRD_ALL},
+	{0xB90, 0x18, PMD_ALL, PHY_PMA_TRSV, BRD_ALL},
+
+	{0x10C, 0x18, PMD_ALL, PHY_PMA_COMN, BRD_ALL},
+	{0x10C, 0x00, PMD_ALL, PHY_PMA_COMN, BRD_ALL},
+	{0x00, 0xC8, PMD_ALL, COMMON_WAIT, BRD_ALL},
+#endif
+	{0, 0, 0, 0, 0},
+};
+
+#if 1
+static struct ufs_cal_phy_cfg post_init_cfg_evt0_g4[] = {
+
+	{0x15D2, 0x0, PMD_ALL, UNIPRO_ADAPT_LENGTH, BRD_ALL},
+	{0x15D3, 0x0, PMD_ALL, UNIPRO_ADAPT_LENGTH, BRD_ALL},
+
+	{0x9529, 0x01, PMD_ALL, UNIPRO_DBG_MIB, BRD_ALL},
+	{0x15A4, 0x3E8, PMD_ALL, UNIPRO_STD_MIB, BRD_ALL},
+	{0x9529, 0x00, PMD_ALL, UNIPRO_DBG_MIB, BRD_ALL},
+
+#if	0
 	{0xFC, 0x10, PMD_ALL, PHY_PMA_COMN, BRD_ALL},
 	{0x6D8, 0xC0, PMD_ALL, PHY_PMA_TRSV, BRD_ALL},
 	{0x404, 0x06, PMD_ALL, PHY_PMA_TRSV, BRD_ALL},
@@ -366,8 +434,44 @@ static struct ufs_cal_phy_cfg post_init_cfg_evt0_g4[] = {
 	{0x10C, 0x18, PMD_ALL, PHY_PMA_COMN, BRD_ALL},
 	{0x10C, 0x00, PMD_ALL, PHY_PMA_COMN, BRD_ALL},
 	{0x00, 0xC8, PMD_ALL, COMMON_WAIT, BRD_ALL},
+#endif
 	{0, 0, 0, 0, 0},
 };
+#endif
+
+#if 0
+static struct ufs_cal_phy_cfg post_init_cfg_evt0_g4[] = {
+	{0x15D2, 0x0, PMD_ALL, UNIPRO_ADAPT_LENGTH, BRD_ALL},
+	{0x15D3, 0x0, PMD_ALL, UNIPRO_ADAPT_LENGTH, BRD_ALL},
+
+	{0x9529, 0x01, PMD_ALL, UNIPRO_DBG_MIB, BRD_ALL},
+	{0x15A4, 0x3E8, PMD_ALL, UNIPRO_STD_MIB, BRD_ALL},
+	{0x9529, 0x00, PMD_ALL, UNIPRO_DBG_MIB, BRD_ALL},
+
+	{0x10C, 0x10, PMD_ALL, PHY_PMA_COMN, BRD_ALL},
+
+	{0xA88, 0x04, PMD_ALL, PHY_PMA_TRSV, BRD_ALL},
+	{0xB84, 0xC0, PMD_ALL, PHY_PMA_TRSV, BRD_ALL},
+	{0x800, 0x00, PMD_ALL, PHY_PMA_TRSV, BRD_ALL},
+	{0x804, 0x06, PMD_ALL, PHY_PMA_TRSV, BRD_ALL},
+	{0x808, 0x06, PMD_ALL, PHY_PMA_TRSV, BRD_ALL},
+	{0x80C, 0x0A, PMD_ALL, PHY_PMA_TRSV, BRD_ALL},
+	{0x810, 0x01, PMD_ALL, PHY_PMA_TRSV, BRD_ALL},
+	{0x814, 0x11, PMD_ALL, PHY_PMA_TRSV, BRD_ALL},
+
+	{0x9F4, 0x00, PMD_ALL, PHY_PMA_TRSV, BRD_ALL},
+	{0xBE8, 0x00, PMD_ALL, PHY_PMA_TRSV, BRD_ALL},
+	{0xA14, 0x00, PMD_ALL, PHY_PMA_TRSV, BRD_ALL},
+	{0xA24, 0x00, PMD_ALL, PHY_PMA_TRSV, BRD_ALL},
+
+	{0xB90, 0x18, PMD_ALL, PHY_PMA_TRSV, BRD_ALL},
+
+	{0x10C, 0x18, PMD_ALL, PHY_PMA_COMN, BRD_ALL},
+	{0x10C, 0x00, PMD_ALL, PHY_PMA_COMN, BRD_ALL},
+	{0x00, 0xC8, PMD_ALL, COMMON_WAIT, BRD_ALL},
+	{0, 0, 0, 0, 0},
+};
+#endif
 
 static struct ufs_cal_phy_cfg post_init_cfg_evt1_g3[] = {
 	{0x15D2, 0x0, PMD_ALL, UNIPRO_ADAPT_LENGTH, BRD_ALL},
@@ -377,6 +481,7 @@ static struct ufs_cal_phy_cfg post_init_cfg_evt1_g3[] = {
 	{0x15A4, 0x3E8, PMD_ALL, UNIPRO_STD_MIB, BRD_ALL},
 	{0x9529, 0x00, PMD_ALL, UNIPRO_DBG_MIB, BRD_ALL},
 
+#if 0
 	{0xFC, 0x10, PMD_ALL, PHY_PMA_COMN, BRD_ALL},
 
 	{0x6D8, 0xC0, PMD_ALL, PHY_PMA_TRSV, BRD_ALL},
@@ -424,6 +529,7 @@ static struct ufs_cal_phy_cfg post_init_cfg_evt1_g3[] = {
 	{0x10C, 0x18, PMD_ALL, PHY_PMA_COMN, BRD_ALL},
 	{0x10C, 0x00, PMD_ALL, PHY_PMA_COMN, BRD_ALL},
 	{0x00, 0xC8, PMD_ALL, COMMON_WAIT, BRD_ALL},
+#endif
 	{0, 0, 0, 0, 0},
 };
 
@@ -435,6 +541,7 @@ static struct ufs_cal_phy_cfg post_init_cfg_evt1_g4[] = {
 	{0x15A4, 0x3E8, PMD_ALL, UNIPRO_STD_MIB, BRD_ALL},
 	{0x9529, 0x0, PMD_ALL, UNIPRO_DBG_MIB, BRD_ALL},
 
+#if 0
 	{0xFC, 0x10, PMD_ALL, PHY_PMA_COMN, BRD_ALL},
 
 	{0x600, 0x04, PMD_ALL, PHY_PMA_TRSV, BRD_ALL},
@@ -460,6 +567,7 @@ static struct ufs_cal_phy_cfg post_init_cfg_evt1_g4[] = {
 	{0x10C, 0x18, PMD_ALL, PHY_PMA_COMN, BRD_ALL},
 	{0x10C, 0x00, PMD_ALL, PHY_PMA_COMN, BRD_ALL},
 	{0x00, 0xC8, PMD_ALL, COMMON_WAIT, BRD_ALL},
+#endif
 	{0, 0, 0, 0, 0},
 };
 
@@ -504,24 +612,27 @@ static struct ufs_cal_phy_cfg calib_of_hs_rate_a[] = {
 	{0x78BC, 32000, PMD_HS, UNIPRO_DBG_APB, BRD_ALL},
 	{0x78C0, 16000, PMD_HS, UNIPRO_DBG_APB, BRD_ALL},
 
-	{0xBB4, 0x08, PMD_HS, PHY_PMA_TRSV, BRD_ZEBU},
+//	{0xBB4, 0x08, PMD_HS, PHY_PMA_TRSV, BRD_ZEBU},
 
-	{0x818, 0x20, PMD_ALL, PHY_PMA_TRSV, BRD_ALL},
-	{0xBC4, 0x07, PMD_HS_G1_L2, PHY_PMA_TRSV, BRD_ALL},
-	{0xBC8, 0x3F, PMD_HS_G2_L2|PMD_HS_G3_L2|PMD_HS_G4_L2, PHY_PMA_TRSV, BRD_ALL},
-	{0x918, 0x03, PMD_HS, PHY_PMA_TRSV, BRD_ALL},
+//	{0x818, 0x20, PMD_ALL, PHY_PMA_TRSV, BRD_ALL},
+//	{0xBC4, 0x07, PMD_HS_G1_L2, PHY_PMA_TRSV, BRD_ALL},
+//	{0xBC8, 0x3F, PMD_HS_G2_L2|PMD_HS_G3_L2|PMD_HS_G4_L2, PHY_PMA_TRSV, BRD_ALL},
+//	{0x918, 0x03, PMD_HS, PHY_PMA_TRSV, BRD_ALL},
+
 
 	{0, 0, 0, 0, 0},
 };
 
 static struct ufs_cal_phy_cfg post_calib_of_hs_rate_a[] = {
 	{0xCE0, 0x02, PMD_HS, PHY_EMB_CDR_WAIT, BRD_ZEBU},
-	{0xCE4, 0x08, PMD_HS, PHY_EMB_CDR_WAIT, BRD_ALL^BRD_ZEBU},
-	{0x918, 0x01, PMD_HS, PHY_PMA_TRSV, BRD_ALL},
+	//{0xCE4, 0x08, PMD_HS, PHY_EMB_CDR_WAIT, BRD_ALL^BRD_ZEBU},
+	{0xCE4, 0x08, PMD_HS, PHY_CDR_WAIT, BRD_ALL^BRD_ZEBU},
+	//{0x918, 0x01, PMD_HS, PHY_PMA_TRSV, BRD_ALL},
 	{0, 0, 0, 0, 0},
 };
 
 static struct ufs_cal_phy_cfg calib_of_hs_rate_b[] = {
+
 	{0x15D4, 0x1, PMD_HS, UNIPRO_STD_MIB, BRD_ALL},
 
 	{0x2041, 8064, PMD_HS, UNIPRO_STD_MIB, BRD_ALL},
@@ -538,24 +649,26 @@ static struct ufs_cal_phy_cfg calib_of_hs_rate_b[] = {
 	{0x78BC, 32000, PMD_HS, UNIPRO_DBG_APB, BRD_ALL},
 	{0x78C0, 16000, PMD_HS, UNIPRO_DBG_APB, BRD_ALL},
 
-	{0x708, 0x08, PMD_HS, PHY_PMA_TRSV, BRD_ZEBU},
+//	{0x708, 0x08, PMD_HS, PHY_PMA_TRSV, BRD_ZEBU},
 
 	//{0x418, 0x10, PMD_HS_G1_L2, PHY_PMA_TRSV, BRD_ALL},
 	//{0x418, 0x3C, PMD_HS_G2_L2|PMD_HS_G3_L2|PMD_HS_G4_L2, PHY_PMA_TRSV, BRD_ALL},
 	//{0x4E8, 0x03, PMD_HS, PHY_PMA_TRSV, BRD_ALL},
 
-	{0x818, 0x20, PMD_ALL ,  PHY_PMA_TRSV, BRD_ALL},
-	{0xBC4, 0x07, PMD_HS_G1_L2, PHY_PMA_TRSV, BRD_ALL},
-	{0xBC8, 0x3F, PMD_HS_G2_L2|PMD_HS_G3_L2|PMD_HS_G4_L2, PHY_PMA_TRSV, BRD_ALL},
-	{0x918, 0x03, PMD_HS, PHY_PMA_TRSV, BRD_ALL},
+//	{0x818, 0x20, PMD_ALL ,  PHY_PMA_TRSV, BRD_ALL},
+//	{0xBC4, 0x07, PMD_HS_G1_L2, PHY_PMA_TRSV, BRD_ALL},
+//	{0xBC8, 0x3F, PMD_HS_G2_L2|PMD_HS_G3_L2|PMD_HS_G4_L2, PHY_PMA_TRSV, BRD_ALL},
+//	{0x918, 0x03, PMD_HS, PHY_PMA_TRSV, BRD_ALL},
 
 	{0, 0, 0, 0, 0},
 };
 
 static struct ufs_cal_phy_cfg post_calib_of_hs_rate_b[] = {
 	{0xCE0, 0x02, PMD_HS, PHY_EMB_CDR_WAIT, BRD_ZEBU},
-	{0xCE4, 0x08, PMD_HS, PHY_EMB_CDR_WAIT, BRD_ALL^BRD_ZEBU},
-	{0x918, 0x03, PMD_HS, PHY_PMA_TRSV, BRD_ALL},
+	//{0xCE4, 0x08, PMD_HS, PHY_EMB_CDR_WAIT, BRD_ALL^BRD_ZEBU},
+
+	{0xCE4, 0x08, PMD_HS, PHY_CDR_WAIT, BRD_ALL^BRD_ZEBU},
+//	{0x918, 0x03, PMD_HS, PHY_PMA_TRSV, BRD_ALL},
 
 	{0, 0, 0, 0, 0},
 };
