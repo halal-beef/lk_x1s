@@ -314,7 +314,7 @@ int fb_do_reboot(const char *cmd_buffer)
 	else
 		writel(0, CONFIG_RAMDUMP_SCRATCH);
 
-	writel(0x1, EXYNOS9830_SWRESET);
+	writel(0x2, EXYNOS9830_POWER_SYSTEM_CONFIGURATION);
 
 	return 0;
 }
