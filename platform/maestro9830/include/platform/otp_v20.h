@@ -50,6 +50,9 @@
 #define OTP_MAX_ANTIRBK_NS_AP0_LEN			16
 #define OTP_MAX_ANTIRBK_NS_AP1_LEN			12
 
+#define OTP_MAX_ANTIRBK_S_AP_CNT			32
+#define OTP_MAX_ANTIRBK_NS_AP0_CNT			128
+
 /*****************************************************************************/
 /* ERROR Codes                                                               */
 /*****************************************************************************/
@@ -66,6 +69,12 @@
 #define RV_OTP_PARAM_INVALID_KEY_LEN			0x85001
 #define RV_OTP_PARAM_INVALID_ANTIRBK_NS_AP0_LEN		0x85002
 #define RV_OTP_PARAM_INVALID_ANTIRBK_NS_AP1_LEN		0x85003
+
+#define RV_OTP_UPDATE_RNTIRBK_SEC_AP_INVALID_COUNT1	0x85010
+#define RV_OTP_UPDATE_RNTIRBK_SEC_AP_INVALID_COUNT2	0x85011
+#define RV_OTP_UPDATE_RNTIRBK_NS_AP0_INVALID_COUNT1	0x85012
+#define RV_OTP_UPDATE_RNTIRBK_NS_AP0_INVALID_COUNT2	0x85013
+
 
 /*****************************************************************************/
 /* OTP commands                                                              */
@@ -162,6 +171,7 @@ uint64_t cm_otp_read_enable_antirbk(uint64_t *output);
 uint64_t cm_otp_write_antirbk_non_sec_ap0(uint8_t *antirbk,
 					  uint32_t antirbk_len);
 uint64_t cm_otp_read_antirbk_non_sec_ap0(uint64_t *antirbk);
+uint64_t cm_otp_update_antirbk_non_sec_ap0(uint64_t new_count_dec);
 uint64_t cm_otp_write_antirbk_non_sec_ap1(uint8_t *antirbk,
 					  uint32_t antirbk_len);
 uint64_t cm_otp_read_antirbk_non_sec_ap1(uint64_t *antirbk);
@@ -169,6 +179,8 @@ uint64_t cm_otp_write_antirbk_sec_ap(uint64_t antirbk_sec);
 uint64_t cm_otp_read_antirbk_sec_ap(uint64_t *antirbk_sec);
 uint64_t cm_otp_write_antirbk_sec_cp(uint64_t antirbk_sec);
 uint64_t cm_otp_read_antirbk_sec_cp(uint64_t *antirbk_sec);
+uint64_t cm_otp_update_antirbk_sec_ap(uint64_t new_count_dec);
+
 /*****************************************************************************/
 /* OTP functions for Secure JTAG                                             */
 /*****************************************************************************/
