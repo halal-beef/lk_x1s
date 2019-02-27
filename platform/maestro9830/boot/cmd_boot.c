@@ -299,29 +299,14 @@ int cmd_scatter_load_boot(int argc, const cmd_args *argv);
 int load_boot_images(void)
 {
 	struct pit_entry *ptn;
+	cmd_args argv[6];
 
-	ptn = pit_get_part_info("kernel");
+	ptn = pit_get_part_info("boot");
 	if (ptn == 0) {
-		printf("Partition 'kernel' does not exist\n");
+		printf("Partition 'boot' does not exist\n");
 		return -1;
 	} else {
-		pit_access(ptn, PIT_OP_LOAD, (u64)KERNEL_BASE, 0);
-	}
-
-	ptn = pit_get_part_info("ramdisk");
-	if (ptn == 0) {
-		printf("Partition 'ramdisk' does not exist\n");
-		return -1;
-	} else {
-		pit_access(ptn, PIT_OP_LOAD, (u64)RAMDISK_BASE, 0);
-	}
-
-	ptn = pit_get_part_info("dtb");
-	if (ptn == 0) {
-		printf("Partition 'dtb' does not exist\n");
-		return -1;
-	} else {
-		pit_access(ptn, PIT_OP_LOAD, (u64)DT_BASE, 0);
+		pit_access(ptn, PIT_OP_LOAD, (u64)BOOT_BASE, 0);
 	}
 
 	ptn = pit_get_part_info("dtbo");
@@ -331,6 +316,13 @@ int load_boot_images(void)
 	} else {
 		pit_access(ptn, PIT_OP_LOAD, (u64)DTBO_BASE, 0);
 	}
+
+	argv[1].u = BOOT_BASE;
+	argv[2].u = KERNEL_BASE;
+	argv[3].u = 0;
+	argv[4].u = DT_BASE;
+	argv[5].u = 0;
+	cmd_scatter_load_boot(6, argv);
 
 	return 0;
 }

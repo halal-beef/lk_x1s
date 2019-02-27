@@ -170,12 +170,7 @@ int fb_do_getvar(const char *cmd_buffer)
 		}
 	else if (!memcmp(cmd_buffer + 7, "has-slot", strlen("has-slot")))
 	{
-		if (!strcmp(cmd_buffer + 7 + strlen("has-slot:"), "boot") ||
-			!strcmp(cmd_buffer + 7 + strlen("has-slot:"), "system") ||
-			!strcmp(cmd_buffer + 7 + strlen("has-slot:"), "vendor"))
-			sprintf(response + 4, "yes");
-		else
-			sprintf(response + 4, "no");
+		sprintf(response + 4, "no");
 	}
 	else
 	{
