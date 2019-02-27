@@ -554,6 +554,53 @@ uint64_t cm_otp_read_antirbk_non_sec_ap0(uint64_t *antirbk)
 	return RV_SUCCESS;
 }
 
+uint64_t cm_otp_update_antirbk_non_sec_ap0(uint64_t new_count_dec)
+{
+	uint64_t ret = RV_SUCCESS;
+	uint64_t old_count_dec;
+	uint64_t byte_index;
+	uint8_t new_count_otp[OTP_MAX_ANTIRBK_NS_AP0_CNT];
+
+	if (new_count_dec == 0)
+		return RV_SUCCESS;
+
+	if (new_count_dec > OTP_MAX_ANTIRBK_NS_AP0_CNT) {
+		printf("[OTP] ANTIRBK_NS_AP0 update invalid new count: %lld\n", new_count_dec);
+		return RV_OTP_UPDATE_RNTIRBK_NS_AP0_INVALID_COUNT1;
+	}
+
+	ret = cm_otp_read_antirbk_non_sec_ap0(&old_count_dec);
+	if (ret != RV_SUCCESS)
+		return ret;
+
+	if (new_count_dec < old_count_dec) {
+		printf("[OTP] ANTIRBK_NS_AP0 update invalid count: old: %lld, new: %lld\n", \
+		old_count_dec, new_count_dec);
+		return RV_OTP_UPDATE_RNTIRBK_NS_AP0_INVALID_COUNT2;
+	}
+
+	if (new_count_dec > old_count_dec) {
+		memset(new_count_otp, 0, OTP_MAX_ANTIRBK_NS_AP0_CNT);
+
+		byte_index = (new_count_dec - 1) / 8;
+
+		if (new_count_dec % 8)
+			new_count_otp[byte_index] = 1 << ((new_count_dec % 8) - 1);
+		else
+			new_count_otp[byte_index] = 1 << 7;
+
+		ret = cm_otp_write_antirbk_non_sec_ap0(new_count_otp,
+			OTP_MAX_ANTIRBK_NS_AP0_LEN);
+		if (ret != RV_SUCCESS)
+			return ret;
+
+		printf("[OTP] ANTIRBK_NS_AP0 update success: old: %lld, new: %lld\n", \
+		old_count_dec, new_count_dec);
+	}
+
+	return RV_SUCCESS;
+}
+
 uint64_t cm_otp_write_antirbk_non_sec_ap1(uint8_t *antirbk_ptr,
 					  uint32_t antirbk_len)
 {
@@ -669,6 +716,44 @@ uint64_t cm_otp_read_antirbk_sec_ap(uint64_t *antirbk_sec)
 	*antirbk_sec = r2;
 
 	printf("[OTP] ANTIRBK_SEC_AP read value: 0x%llx\n", r2);
+
+	return RV_SUCCESS;
+}
+
+uint64_t cm_otp_update_antirbk_sec_ap(uint64_t new_count_dec)
+{
+	uint64_t ret = RV_SUCCESS;
+	uint64_t old_count_dec;
+	uint64_t new_count_otp;
+
+	if (new_count_dec == 0)
+		return RV_SUCCESS;
+
+	if (new_count_dec > OTP_MAX_ANTIRBK_S_AP_CNT) {
+		printf("[OTP] ANTIRBK_SEC_AP update invalid new count: %lld\n", new_count_dec);
+		return RV_OTP_UPDATE_RNTIRBK_SEC_AP_INVALID_COUNT1;
+	}
+
+	ret = cm_otp_read_antirbk_sec_ap(&old_count_dec);
+	if (ret != RV_SUCCESS)
+		return ret;
+
+	if (new_count_dec < old_count_dec) {
+		printf("[OTP] ANTIRBK_SEC_AP update invalid count: old: %lld, new: %lld\n", \
+		old_count_dec, new_count_dec);
+		return RV_OTP_UPDATE_RNTIRBK_SEC_AP_INVALID_COUNT2;
+	}
+
+	if (new_count_dec > old_count_dec) {
+		new_count_otp = 1 << (new_count_dec - 1);
+
+		ret = cm_otp_write_antirbk_sec_ap(new_count_otp);
+		if (ret != RV_SUCCESS)
+			return ret;
+
+		printf("[OTP] ANTIRBK_SEC_AP update success: old: %lld, new: %lld\n", \
+		old_count_dec, new_count_dec);
+	}
 
 	return RV_SUCCESS;
 }
