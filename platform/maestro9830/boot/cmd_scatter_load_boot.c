@@ -23,7 +23,7 @@ int cmd_scatter_load_boot(int argc, const cmd_args *argv)
 	int ramdisk_offset;
 	int recovery_dtbo_offset;
 
-	if (argc != 5) goto usage;
+	if (argc != 6) goto usage;
 
 	boot_addr = argv[1].u;
 	kernel_addr = argv[2].u;
