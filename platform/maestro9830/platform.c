@@ -244,6 +244,7 @@ void platform_init(void)
 			ufs_init(2);
 	}
 	pit_init();
+	debug_snapshot_fdt_init();
 	return;
 #ifdef CONFIG_EXYNOS_BOOTLOADER_DISPLAY
 	/* If the display_drv_init function is not called before,
@@ -262,8 +263,6 @@ void platform_init(void)
 	read_dram_info();
 
 	dfd_display_reboot_reason();
-	if (is_first_boot())
-		debug_snapshot_fdt_init();
 
 	if (secure_os_loaded == 1) {
 		if (!init_keystorage())
