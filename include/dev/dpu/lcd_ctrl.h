@@ -25,8 +25,6 @@
 
 #include <dev/dpu/decon_lcd.h>
 
-#define ARRAY_SIZE(x) (sizeof(x) / sizeof((x)[0]))
-
 void s6e3fa0_lcd_init(unsigned int id, struct decon_lcd *lcd);
 void s6e3fa0_lcd_enable_exynos(unsigned int id);
 void s6e3fa0_lcd_disable_exynos(unsigned int id);
