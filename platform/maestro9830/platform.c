@@ -31,6 +31,10 @@
 #include <target/dpu_config.h>
 #include <stdio.h>
 
+#ifdef EXYNOS_ACPM_BASE
+#include "acpm.h"
+#endif
+
 #define ARCH_TIMER_IRQ		30
 
 void speedy_gpio_init(void);
@@ -235,11 +239,46 @@ void platform_early_init(void)
 	*/
 }
 
+static void print_acpm_version(void)
+{
+#ifdef EXYNOS_ACPM_BASE
+	unsigned int i;
+	unsigned int plugins, num_plugins, plugin_address, plugin_ops_address;
+	struct plugin *plugin;
+	struct plugin_ops *plugin_ops;
+	char *build_info;
+
+	/* Check ACPM STACK Magic */
+	if (readl(EXYNOS_ACPM_MAGIC) != ACPM_MAGIC_VALUE)
+		return ;
+
+	build_info = (char *)EXYNOS_ACPM_APSHARE + APSHARE_BUILDINFO_OFFSET;
+	printf("ACPM: Framework's  version is %s %s\n", build_info,
+			build_info + BUILDINFO_ELEMENT_SIZE);
+
+	plugins = readl(EXYNOS_ACPM_APSHARE);
+	num_plugins = readl(EXYNOS_ACPM_APSHARE + 4);
+
+	for (i = 1; i < num_plugins; i++) {
+		plugin_address = plugins + sizeof(struct plugin) * i;
+		if (readl(get_acpm_plugin_element(plugin, is_attached)) == 1) {
+			plugin_ops_address = readl(get_acpm_plugin_element(plugin, plugin_ops));
+			build_info = (char *)get_acpm_plugin_element(plugin_ops, info);
+			printf("ACPM: Plugin(id:%d) version is %s %s\n",
+					(int)readl(get_acpm_plugin_element(plugin, id)),
+					build_info, build_info + BUILDINFO_ELEMENT_SIZE);
+		}
+	}
+#endif
+}
+
 void platform_init(void)
 {
 	u32 ret = 0;
 
 	display_flexpmu_dbg();
+	print_acpm_version();
+
 	pmic_init();
 	display_pmic_info();
 	sub_pmic_s2mpb02_init();
