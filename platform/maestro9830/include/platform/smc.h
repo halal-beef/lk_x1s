@@ -49,6 +49,12 @@
 #define SMC_CMD_END_OF_BOOTLOADER	(-0x3FF)
 #define SMC_CMD_LOAD_LDFW		(-0x500)
 #define SMC_CMD_KEYSTORAGE		(-0x502)
+#define SMC_CMD_LOAD_SSP		(-0x510)
+#define SMC_CMD_LOAD_SECURE_PAYLOAD2	(-0x511)
+#define SMC_CMD_LOAD_SSP_BY_USB		(-0x512)
+#define SMC_CMD_LOAD_LDFW_BY_USB	(-0x513)
+#define SMC_CMD_LOAD_SECURE_PAYLOAD2_BY_USB	(-0x514)
+
 
 #define SMC_DRM_GET_SOC_INFO		(0x82002060)
 
@@ -239,5 +245,8 @@ u64 skip_ect(void);
 u64 set_tzasc_action(u32 val);
 u64 sdm_encrypt_secdram(void);
 u64 dumpgpr_flush_secdram(u32 cache_level, u32 core);
+u64 init_ldfw_by_usb(u64 addr, u64 size);
+u64 load_sp(u64 addr, u64 size);
+u64 load_sp_by_usb(u64 addr, u64 size);
 
 #endif /* _SMC_H_ */

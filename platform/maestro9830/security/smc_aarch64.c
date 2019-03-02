@@ -93,6 +93,24 @@ unsigned long load_sp_image(u32 boot_device)
 			(u64)boot_device, 0, 0);
 }
 
+u64 init_ldfw_by_usb(u64 addr, u64 size)
+{
+	return exynos_smc(SMC_CMD_LOAD_LDFW_BY_USB,
+			addr, size, 0);
+}
+
+u64 load_sp(u64 addr, u64 size)
+{
+	return exynos_smc(SMC_CMD_LOAD_SECURE_PAYLOAD2,
+			addr, size, 0);
+}
+
+u64 load_sp_by_usb(u64 addr, u64 size)
+{
+	return exynos_smc(SMC_CMD_LOAD_SECURE_PAYLOAD2_BY_USB,
+			addr, size, 0);
+}
+
 unsigned int find_second_boot(void)
 {
 	return exynos_smc_read(SMC_CMD_CHECK_SECOND_BOOT, 0);

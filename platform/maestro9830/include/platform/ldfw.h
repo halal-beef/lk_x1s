@@ -40,10 +40,14 @@
 enum {
 	LDFW_PART,
 	KEYSTORAGE_PART,
+	SSP_PART,
+	TZSW_PART,
 	MAX_CH_NUM,
 };
 
 int init_ldfws(void);
 int init_keystorage(void);
+int init_sp(void);
+
 #endif	/* __ASSEMBLY__ */
 #endif	/* __LDFW_H_ */
