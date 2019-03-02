@@ -106,6 +106,8 @@ static int load_partition(u64 addr, u64 ch, u64 *size)
 		ptn = pit_get_part_info("ldfw");
 	} else if (ch == KEYSTORAGE_PART) {
 		ptn = pit_get_part_info("keystorage");
+	} else if (ch == TZSW_PART) {
+		ptn = pit_get_part_info("tzsw");
 	} else {
 		printf("Invalid ch\n");
 		return -1;
@@ -252,10 +254,6 @@ int init_sp(void)
 	s64 ret = 0;
 	u64 addr = EXYNOS9610_KEYSTORAGE_NWD_ADDR;
 	u64 size = 0x100000; /* default size 1MB */
-
-#ifndef CONFIG_ARM64
-	return -1;
-#endif
 
 	if (is_usb_boot()) {
 		/* boot from iROM USB booting */
