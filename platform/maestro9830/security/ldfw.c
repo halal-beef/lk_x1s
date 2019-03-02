@@ -15,6 +15,7 @@
 #include <dev/boot.h>
 #include <platform/sfr.h>
 #include <platform/ldfw.h>
+#include <platform/smc.h>
 
 int init_ldfw(u64 addr, u64 size);
 int load_keystorage(u64 addr, u64 size);
@@ -47,11 +48,59 @@ typedef struct
 	uint32_t reserved[3];
 } SB_KEYSTORAGE_HEADER;
 
-int load_parition(u64 addr, u64 ch)
+static u32 get_boot_device_info(void)
+{
+	u32 boot_device_info;
+
+	if (*(unsigned int *)DRAM_BASE != 0xabcdef) {
+		/* Running on DRAM by TRACE32 */
+		boot_device_info = 0x0;
+	} else {
+		boot_device_info = find_second_boot();
+	}
+
+	return boot_device_info;
+}
+
+static int is_usb_boot(void)
+{
+	u32 order = 0;
+	u32 boot_device_info = 0;
+
+	boot_device_info = get_boot_device_info();
+	if (!boot_device_info) {
+		/* boot from T32 */
+		return 0;
+	}
+
+	if ((boot_device_info & 0xFF000000) != 0xCB000000) {
+		/* abnormal boot */
+		while (1) ;
+	}
+
+	order = boot_device_info & 0xF;
+	switch ((boot_device_info >> (4 * order)) & 0xF) {
+	case BD_USB:
+		return 1;
+		break;
+	default:
+		break;
+	}
+	return 0;
+}
+
+
+static int load_partition(u64 addr, u64 ch, u64 *size)
 {
 	int OmPin = readl(EXYNOS9830_POWER_INFORM3);
 	int ret;
 	struct pit_entry *ptn;
+	char ch_name[][20] = { "ldfw", "keystorage", "ssp", "tzsw" };
+
+	if (ch >= MAX_CH_NUM) {
+		LDFW_ERR("Invalid ch\n");
+		return -1;
+	}
 
 	if (ch == LDFW_PART) {
 		ptn = pit_get_part_info("ldfw");
@@ -77,11 +126,7 @@ int load_parition(u64 addr, u64 ch)
 			LDFW_INFO("ldfw: booting device is eMMC.\n");
 
 	} else {
-		/* LDFW should be on eMMC or UFS */
-		if (ch == LDFW_PART)
-			LDFW_INFO("ldfw: This booting device is not supported.\n");
-		else if (ch == KEYSTORAGE_PART)
-			printf("keystorage: This booting device is not supported.\n");
+		LDFW_INFO("%s: This booting device is not supported.\n", ch_name[ch]);
 		return -1;
 	}
 
@@ -91,15 +136,11 @@ int load_parition(u64 addr, u64 ch)
 		ret = 0;
 
 	if (ret != 1) {
-		if (ch == LDFW_PART)
-			LDFW_ERR("ldfw: there is no ldfw partition\n");
-		else if (ch == KEYSTORAGE_PART)
-			printf("keystorage: there is no keystorage partition\n");
+		LDFW_ERR("%s: there is no ldfw partition\n", ch_name[ch]);
+
 	} else {
-		if (ch == LDFW_PART)
-			LDFW_INFO("ldfw: read whole ldfw partition from the storage\n");
-		else if (ch == KEYSTORAGE_PART)
-			printf("read whole keystorage partition from the storage\n");
+		*size = pit_get_length(ptn);
+		LDFW_INFO("%s: read whole partition from the storage\n", ch_name[ch]);
 	}
 
 	return ret == 1 ? 0:-1;
@@ -107,29 +148,39 @@ int load_parition(u64 addr, u64 ch)
 
 int init_keystorage(void)
 {
-	u32 ret = 0;
+	int ret = 0;
 	u64 addr = EXYNOS9610_KEYSTORAGE_NWD_ADDR;
 	u64 size = EXYNOS9610_KEYSTORAGE_PARTITION_SIZE;
 	SB_KEYSTORAGE_HEADER *header = NULL;
 
-	if (load_parition(addr, KEYSTORAGE_PART)) {
-		printf("keystorage: can not read keystorage from the storage\n");
+	if (is_usb_boot()) {
+		/* boot from iROM USB booting */
+		return 1;
+	}
+
+	if (load_partition(addr, KEYSTORAGE_PART, &size)) {
+		LDFW_ERR("keystorage: can not read keystorage from the storage\n");
 		return -1;
+	}
+
+	if (!size) {
+		LDFW_ERR("keystorage: partition size is invalid\n");
 	}
 
 	header = (SB_KEYSTORAGE_HEADER *)addr;
 	if (header->magic != EXYNOS_AP_MAGIC) {
-		printf("keystorage: Invalid binary magic\n");
+		LDFW_ERR("keystorage: Invalid binary magic\n");
 		return -1;
 	}
 
 	ret = load_keystorage(addr, size);
-	if (ret == 0xFFFFFFFF)
-		printf("keystorage: It is dump_gpr state. It does not load keystorage.\n");
+
+	if (ret == -1)
+		LDFW_INFO("keystorage: It is dump_gpr state. It does not load keystorage.\n");
 	else if (ret == 0)
-		printf("keystorage: It is successfully loaded.\n");
+		LDFW_INFO("keystorage: It is successfully loaded.\n");
 	else
-		printf("keystorage: [SB_ERR] ret = [0x%X]\n", ret);
+		LDFW_INFO("keystorage: [SB_ERR] ret = [0x%X]\n", ret);
 
 	return ret;
 }
@@ -143,23 +194,32 @@ int init_ldfws(void)
 	u32 try, try_fail, i;
 	char name[17] = {0,};
 
-	if (load_parition(addr, LDFW_PART)) {
+	if (is_usb_boot()) {
+		/* boot from iROM USB booting */
+		ret =  init_ldfw_by_usb(addr, size);
+		if (ret) {
+			LDFW_INFO("spayload: read Spayload from USB with error # 0x%llx\n", (u64)ret);
+			return ret;
+		}
+	} else if (load_partition(addr, LDFW_PART, &size)) {
 		LDFW_ERR("ldfw: can not read ldfw from the storage\n");
 		return -1;
 	}
 
 	fwh = (struct fw_header *)addr;
 	if (fwh->magic != EXYNOS_LDFW_MAGIC) {
-		/* there are no ldfw */
+		/* There are no LDFWs */
 		LDFW_ERR("ldfw: there is no ldfw at ldfw partition\n");
 		return -1;
 	} else {
-		for(i=0;;i++) {
+		for (i = 0, size = 0;; i++) {
 			if (fwh->magic != EXYNOS_LDFW_MAGIC)
 				break;
 			strncpy(name, fwh->fw_name, 16);
 			LDFW_INFO("ldfw: %dth ldfw's version 0x%x name : %s\n",
 				i, fwh->version, name);
+
+			/* to calculate real ldfw size */
 			size += (u64)fwh->size;
 			fwh = (struct fw_header *)((u64)fwh + (u64)fwh->size);
 		}
@@ -185,4 +245,42 @@ int init_ldfws(void)
 	}
 
 	return 0;
+}
+
+int init_sp(void)
+{
+	s64 ret = 0;
+	u64 addr = EXYNOS9610_KEYSTORAGE_NWD_ADDR;
+	u64 size = 0x100000; /* default size 1MB */
+
+#ifndef CONFIG_ARM64
+	return -1;
+#endif
+
+	if (is_usb_boot()) {
+		/* boot from iROM USB booting */
+		ret =  load_sp_by_usb(addr, size);
+		if (ret) {
+			LDFW_INFO("spayload: read Spayload from USB with error # 0x%llx\n", ret);
+			return ret;
+		}
+	} else if (load_partition(addr, TZSW_PART, &size)) {
+		LDFW_ERR("spayload: can not read spayload from the storage\n");
+		return -1;
+	}
+
+	if (!size) {
+		LDFW_ERR("spayload: secure payload partition size is not valid.\n");
+		return -1;
+	}
+
+	ret = (s64)load_sp(addr, size);
+	if (ret == -1)
+		LDFW_INFO("spayload: It is dump_gpr state. It does not load spayload.\n");
+	else if (ret == 0)
+		LDFW_INFO("spayload: It is successfully loaded.\n");
+	else
+		LDFW_INFO("spayload: [ERR] ret = [0x%llX]\n", ret);
+
+	return ret;
 }
