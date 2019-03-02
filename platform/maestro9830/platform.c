@@ -232,10 +232,6 @@ void platform_init(void)
 	check_charger_connect();
 	*/
 
-	/*
-	load_secure_payload();
-	*/
-
 	if (get_boot_device() == BOOT_UFS) {
 		printf("get_boot_device() == BOOT_UFS\n");
 		ufs_init(2);
@@ -245,7 +241,7 @@ void platform_init(void)
 	}
 	pit_init();
 	debug_snapshot_fdt_init();
-	return;
+#if 0
 #ifdef CONFIG_EXYNOS_BOOTLOADER_DISPLAY
 	/* If the display_drv_init function is not called before,
 	 * you must use the print_lcd function.
@@ -263,8 +259,8 @@ void platform_init(void)
 	read_dram_info();
 
 	dfd_display_reboot_reason();
-
-	if (secure_os_loaded == 1) {
+#endif
+	if (*(unsigned int *)DRAM_BASE == 0xabcdef) {
 		if (!init_keystorage())
 			printf("keystorage: init done successfully.\n");
 		else
@@ -281,5 +277,10 @@ void platform_init(void)
 		rpmb_load_boot_table();
 #endif
 #endif
+	ret = (u32)init_sp();
+	if (!ret)
+		printf("secure_payload: init done successfully.\n");
+	else
+		printf("secure_payload: init failed.\n");
 	}
 }
