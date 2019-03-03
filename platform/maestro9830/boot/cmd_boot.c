@@ -35,6 +35,8 @@
 
 /* Memory node */
 #define SIZE_2GB (0x80000000)
+#define SIZE_1GB (0x40000000)
+#define SIZE_500MB (0x20000000)
 #define MASK_1MB (0x100000 - 1)
 
 #define BUFFER_SIZE 2048
@@ -198,10 +200,13 @@ static void configure_dtb(void)
 {
 	char str[BUFFER_SIZE];
 	u32 soc_ver = 0;
+	u64 dram_size = *(u64 *)BL_SYS_INFO_DRAM_SIZE;
 	unsigned long sec_dram_base = 0;
 	unsigned int sec_dram_size = 0;
+	unsigned long sec_dram_end = 0;
 	unsigned long sec_pt_base = 0;
 	unsigned int sec_pt_size = 0;
+	unsigned long sec_pt_end = 0;
 	int len;
 	const char *np;
 	int noff;
@@ -231,6 +236,8 @@ static void configure_dtb(void)
 		printf("[ERROR] el3_mon is old version. (0x%x)\n", soc_ver);
 		while (1);
 	}
+
+	sec_dram_end = sec_dram_base + sec_dram_size;
 
 	printf("SEC_DRAM_BASE[%#lx]\n", sec_dram_base);
 	printf("SEC_DRAM_SIZE[%#x]\n", sec_dram_size);
@@ -272,12 +279,61 @@ static void configure_dtb(void)
 		sec_pt_size = 0;
 	}
 
+	sec_pt_end = sec_pt_base + sec_pt_size;
+
 	printf("SEC_PGTBL_BASE[%#lx]\n", sec_pt_base);
 	printf("SEC_PGTBL_SIZE[%#x]\n", sec_pt_size);
 
 	/* DT control code must write after this function call. */
 	merge_dto_to_main_dtb();
 	resize_dt(SZ_4K);
+
+	/* Secure memories are carved-out in case of EVT1 */
+	/*
+	 * 1st DRAM node
+	 */
+	add_dt_memory_node(DRAM_BASE,
+				sec_dram_base - DRAM_BASE);
+	/*
+	 * 2nd DRAM node
+	 */
+	if (sec_pt_base && sec_pt_size) {
+		add_dt_memory_node(sec_dram_end,
+					sec_pt_base - sec_dram_end);
+
+		if (dram_size >= SIZE_2GB) {
+			add_dt_memory_node(sec_pt_end,
+					(DRAM_BASE + SIZE_2GB)
+					- sec_pt_end);
+		} else {
+			add_dt_memory_node(sec_pt_end,
+					(DRAM_BASE + dram_size)
+					- sec_pt_end);
+		}
+	} else {
+		if (dram_size >= SIZE_2GB) {
+			add_dt_memory_node(sec_dram_end,
+					(DRAM_BASE + SIZE_2GB)
+					- sec_dram_end);
+		} else {
+			add_dt_memory_node(sec_dram_end,
+					(DRAM_BASE + dram_size)
+					- sec_dram_end);
+		}
+	}
+
+	/*
+	 * 3rd DRAM node
+	 */
+	if (dram_size <= SIZE_2GB)
+		goto mem_node_out;
+
+	for (u64 i = 0; i < dram_size - SIZE_2GB; i+= SIZE_500MB) {
+		/* add 500MB mem node */
+		add_dt_memory_node(DRAM_BASE2 + i, SIZE_500MB);
+	}
+
+mem_node_out:
 
 	sprintf(str, "<0x%x>", RAMDISK_BASE);
 	set_fdt_val("/chosen", "linux,initrd-start", str);
