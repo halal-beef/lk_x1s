@@ -239,6 +239,7 @@ unsigned int find_second_boot(void);
 void emmc_endbootop(void);
 void set_secure_reg(u64 reg_val, u32 num);
 unsigned int read_secure_reg(u32 addr);
+void get_el3_mon_version(char *ptr, u32 string_size);
 u64 load_ect_head(void);
 u64 load_ect_all(void);
 u64 skip_ect(void);

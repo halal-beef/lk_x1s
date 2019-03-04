@@ -138,9 +138,9 @@ u64 cpu_boot(u64 id, u64 cpu, u64 fn)
 }
 #endif
 
-unsigned int get_el3_mon_version(char *ptr, u32 string_size)
+void get_el3_mon_version(char *ptr, u32 string_size)
 {
-	return exynos_smc(SMC_CMD_GET_EL3_MON_VERSION,
+	exynos_smc(SMC_CMD_GET_EL3_MON_VERSION,
 			(u64)ptr, (u64)string_size, 0);
 }
 
