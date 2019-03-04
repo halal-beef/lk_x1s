@@ -17,6 +17,11 @@
 /******************************************************************************/
 /* EL3 API */
 /******************************************************************************/
+uint32_t read_secure_chip(void)
+{
+	return exynos_smc(SMC_CMD_READ_SB_PARAM, 0, 0, 0);
+}
+
 uint32_t el3_sss_hash_init(
 	uint32_t alg,
 	struct ace_hash_ctx *ctx)

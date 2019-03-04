@@ -23,6 +23,7 @@
 #include <platform/sub_pmic_s2mpb02.h>
 #include <platform/dfd.h>
 #include <platform/ldfw.h>
+#include <platform/secure_boot.h>
 
 #include <lib/font_display.h>
 #include <lib/logo_display.h>
@@ -274,6 +275,16 @@ void platform_init(void)
 	dfd_display_reboot_reason();
 #endif
 	if (*(unsigned int *)DRAM_BASE == 0xabcdef) {
+		/* read secure chip state */
+		if (read_secure_chip() == 0)
+			        printf("Secure boot is disabled (non-secure chip)\n");
+		else if (read_secure_chip() == 1)
+			        printf("Secure boot is enabled (test key)\n");
+		else if (read_secure_chip() == 2)
+			        printf("Secure boot is enabled (secure chip)\n");
+		else
+			        printf("Can not read secure chip state\n");
+
 		if (!init_keystorage())
 			printf("keystorage: init done successfully.\n");
 		else
