@@ -781,7 +781,7 @@ union ufs_attributes {
 #define __iomem
 #endif
 
-#define UFS_GEAR		3
+#define UFS_GEAR		4
 #define UFS_RATE		2
 #define UFS_POWER_MODE	1
 #define UFS_RXTX_POWER_MODE	((UFS_POWER_MODE << 4)|UFS_POWER_MODE)
