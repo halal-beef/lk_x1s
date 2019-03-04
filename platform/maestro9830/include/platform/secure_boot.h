@@ -6,16 +6,22 @@
 /******************************************************************************/
 /* Definition value */
 /******************************************************************************/
-/* SMC ID */
-#define SMC_CM_SECURE_BOOT		(0x101D)
+/* return value */
+#define SB_ERROR_PREFIX			0xFDAA0000
+
+/* Binary infomation */
+#define OTHER_MCD_NS_BIN		(0xE)
+#define OTHER_NS_BIN			(0xF)
+#define KERNEL_BIN			(0x10)
 
 /* secure boot crypto variable */
-#define SHA1_DIGEST_LEN                 (20)
-#define SHA1_BLOCK_LEN                  (64)
-#define SHA256_DIGEST_LEN               (32)
-#define SHA256_BLOCK_LEN                (64)
-#define SHA512_DIGEST_LEN               (64)
-#define SHA512_BLOCK_LEN                (128)
+#define SHA512_BLOCK_LEN		(128)
+#define SHA512_DIGEST_LEN		(64)
+
+#define SB_MAX_RSA_KEY_N_LEN		(512) /* 4096bit */
+#define SB_MAX_RSA_SIGN_LEN		(SB_MAX_RSA_KEY_N_LEN)
+#define SB_MAX_ECDSA_R_LEN		(68)
+#define SB_MAX_ECDSA_S_LEN		(68)
 
 /* keystorage variable */
 #define SB_MAX_PUBKEY_LEN		(1056)
@@ -38,6 +44,10 @@
 #define CACHE_WRITEBACK_GRANULE_64	(1 << CACHE_WRITEBACK_SHIFT_6)
 #define CACHE_WRITEBACK_GRANULE_128	(1 << CACHE_WRITEBACK_SHIFT_7)
 
+/*
+ * Cache macro
+ * This macro must be implemented if it is environment using cache.
+ */
 #define FLUSH_DCACHE_RANGE(addr, length)
 #define INV_DCACHE_RANGE(addr, length)
 
@@ -58,6 +68,41 @@ struct ace_hash_ctx {
 	unsigned int prelen_high;
 	unsigned int prelen_low;
 };
+
+typedef struct {
+	uint8_t r[SB_MAX_ECDSA_R_LEN];
+	uint8_t s[SB_MAX_ECDSA_S_LEN];
+	uint8_t padding[376];
+} SB_ECDSA_SignData;
+
+typedef union {
+	uint8_t rsa_sign_data[SB_MAX_RSA_SIGN_LEN];
+	SB_ECDSA_SignData ecdsa_sign_data;
+} SB_RSA_ECDSA_SIGN;
+
+typedef struct {
+	uint32_t rp_count;
+	uint32_t sign_type;
+	uint32_t key_type;
+	uint32_t key_index;
+	SB_RSA_ECDSA_SIGN sign;
+} SB_V40_SIGN_FIELD;
+
+typedef struct {
+	uint32_t sign_type;
+	uint32_t key_type;
+	uint32_t key_index;
+	uint32_t reserved_32[3];
+	uint64_t pub_key_ptr;
+	uint64_t pub_key_len;
+	uint64_t signed_img_ptr;
+	uint64_t signed_img_len;
+	uint64_t sign_field_ptr;
+	uint64_t sign_field_len;
+	uint8_t hash[SHA512_DIGEST_LEN];
+	uint64_t hash_len;
+	uint64_t reserved_64[6];
+} SB_V40_SMC_CTX;
 
 uint32_t el3_sss_hash_digest(
 	uint32_t addr,
@@ -82,12 +127,22 @@ uint32_t el3_sss_hash_final(
 
 uint32_t el3_verify_signature_using_image(
 	uint64_t signed_img_ptr,
+	uint64_t signed_img_len,
+	uint64_t sign_field_ptr,
+	uint32_t ch);
+
+uint32_t cm_verify_signature_using_image(
+	uint64_t signed_img_ptr,
 	uint64_t signed_img_len);
 
 /******************************************************************************/
 /* Secure Boot context used by LDFW */
 /******************************************************************************/
-/* define secure boot commands */
+/* SMC ID */
+#define SMC_CM_SECURE_BOOT		(0x101D)
+
+/* mode */
+#define SB_CHECK_SIGN_NWD		(7)
 #define SB_GET_AVB_KEY			(16)
 
 /******************************************************************************/
