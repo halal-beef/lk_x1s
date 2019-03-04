@@ -151,8 +151,8 @@ static int load_partition(u64 addr, u64 ch, u64 *size)
 int init_keystorage(void)
 {
 	int ret = 0;
-	u64 addr = EXYNOS9610_KEYSTORAGE_NWD_ADDR;
-	u64 size = EXYNOS9610_KEYSTORAGE_PARTITION_SIZE;
+	u64 addr = EXYNOS9830_KEYSTORAGE_NWD_ADDR;
+	u64 size = EXYNOS9830_KEYSTORAGE_PARTITION_SIZE;
 	SB_KEYSTORAGE_HEADER *header = NULL;
 
 	if (is_usb_boot()) {
@@ -189,8 +189,8 @@ int init_keystorage(void)
 
 int init_ldfws(void)
 {
-	u64 addr = EXYNOS9610_LDFW_NWD_ADDR;
-	u64 size = 0;
+	u64 addr = EXYNOS9830_LDFW_NWD_ADDR;
+	u64 size = EXYNOS9830_LDFW_PARTITION_SIZE;
 	struct fw_header *fwh;
 	s64 ret;
 	u32 try, try_fail, i;
@@ -252,8 +252,8 @@ int init_ldfws(void)
 int init_sp(void)
 {
 	s64 ret = 0;
-	u64 addr = EXYNOS9610_KEYSTORAGE_NWD_ADDR;
-	u64 size = 0x100000; /* default size 1MB */
+	u64 addr = EXYNOS9830_LDFW_NWD_ADDR;
+	u64 size = EXYNOS9830_SP_PARTITION_SIZE; /* default size 1MB */
 
 	if (is_usb_boot()) {
 		/* boot from iROM USB booting */
