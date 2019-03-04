@@ -1,8 +1,6 @@
 #ifndef __FLEXPMU_DBG_H__
 #define __FLEXPMU_DBG_H__
 
-#define ARRAY_SIZE(x) (sizeof(x) / sizeof((x)[0]))
-
 #define EXYNOS9830_ECT_BASE			(0x90000000)
 #define EXYNOS9830_ECT_SIZE			(0x14000)
 #define EXYNOS9830_DUMP_ACPM_BASE		(EXYNOS9830_ECT_BASE + EXYNOS9830_ECT_SIZE)
