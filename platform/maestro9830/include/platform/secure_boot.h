@@ -104,6 +104,8 @@ typedef struct {
 	uint64_t reserved_64[6];
 } SB_V40_SMC_CTX;
 
+uint32_t read_secure_chip(void);
+
 uint32_t el3_sss_hash_digest(
 	uint32_t addr,
 	uint32_t size,
