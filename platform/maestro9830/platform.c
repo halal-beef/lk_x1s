@@ -182,6 +182,19 @@ static void load_secure_payload(void)
 	}
 }
 
+#define EL3_MON_VERSION_STR_SIZE		(180)
+static void print_el3_monitor_version(void)
+{
+	char el3_mon_ver[EL3_MON_VERSION_STR_SIZE] = {0, };
+
+	if (*(unsigned int *)DRAM_BASE == 0xabcdef) {
+		/* This booting is from eMMC/UFS. not T32 */
+		get_el3_mon_version(el3_mon_ver, EL3_MON_VERSION_STR_SIZE);
+		printf("\nEL3 Monitor information: \n");
+		printf("%s\n\n", el3_mon_ver);
+	}
+}
+
 #ifdef CONFIG_EXYNOS_BOOTLOADER_DISPLAY
 extern int display_drv_init(void);
 void display_panel_init(void);
@@ -282,5 +295,7 @@ void platform_init(void)
 		printf("secure_payload: init done successfully.\n");
 	else
 		printf("secure_payload: init failed.\n");
+
+		print_el3_monitor_version();
 	}
 }
