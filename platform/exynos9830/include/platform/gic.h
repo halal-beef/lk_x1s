@@ -15,7 +15,7 @@
 
 #define MAX_INT		512
 
-#define GICBASE(n) (0x12300000)
+#define GICBASE(n)	(0x10100000)
 #define GICC_OFFSET	(0x2000)
 #define GICD_OFFSET	(0x1000)
 

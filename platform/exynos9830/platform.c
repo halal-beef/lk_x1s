@@ -239,11 +239,9 @@ void platform_early_init(void)
 	uart_test_function();
 	printf("LK build date: %s, time: %s\n", __DATE__, __TIME__);
 
-	/*
-	 * arm_gic_init();
-	 * writel(1 << 8, EXYNOS9830_MCT_G_TCON);
-	 * arm_generic_timer_init(ARCH_TIMER_IRQ, 26000000);
-	 */
+	arm_gic_init();
+	writel(1 << 8, EXYNOS9830_MCT_G_TCON);
+	arm_generic_timer_init(ARCH_TIMER_IRQ, 26000000);
 }
 
 static void print_acpm_version(void)
