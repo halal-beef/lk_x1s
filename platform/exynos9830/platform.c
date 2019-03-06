@@ -238,6 +238,7 @@ void platform_early_init(void)
 
 	uart_test_function();
 	printf("LK build date: %s, time: %s\n", __DATE__, __TIME__);
+	debug_snapshot_boot_cnt();
 
 	arm_gic_init();
 	writel(1 << 8, EXYNOS9830_MCT_G_TCON);

@@ -173,6 +173,8 @@
 #define RESET_DISABLE_PRESET_DBG	(1 << 18)
 #define RESET_DISABLE_L2RESET		(1 << 16)
 
+#define RAMDUMP_BOOT_CNT_MAGIC	0xFACEDB90
+
 #ifndef __ASSEMBLY__
 #ifdef CONFIG_RAMDUMP_GPR
 void dfd_run_dump_gpr(void);
@@ -184,6 +186,7 @@ void dfd_display_core_stat(void);
 u32 dfd_get_pmudbg_stat(u32 cpu);
 void debug_snapshot_fdt_init(void);
 int debug_snapshot_getvar_item(const char *name, char *response);
+void debug_snapshot_boot_cnt(void);
 
 #else
 #define dfd_run_dump_gpr()			do { } while (0)
@@ -195,6 +198,7 @@ int debug_snapshot_getvar_item(const char *name, char *response);
 #define dfd_get_pmudbg_stat(a)			do { } while (0)
 #define debug_snapshot_fdt_init()		do { } while (0)
 #define debug_snapshot_getvar_item(a, b)	do { } while (0)
+#define debug_snapshot_boot_cnt()		do { } while (0)
 #endif // ifdef CONFIG_RAMDUMP_GPR
 #endif //__ASSEMBLY__
 #endif // ifndef _EXYNOS9830_DFD_H
