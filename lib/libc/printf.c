@@ -28,7 +28,9 @@
 #include <sys/types.h>
 #include <stdio.h>
 #include <string.h>
+#include <platform.h>
 #include <platform/debug.h>
+#include <platform/sfr.h>
 
 #if WITH_NO_FP
 #define FLOAT_PRINTF 0
@@ -403,6 +405,26 @@ __NO_INLINE static char *double_to_hexstring(char *buf, size_t len, double d, ui
 
 #endif // FLOAT_PRINTF
 
+#ifdef CONFIG_PRINT_TIMESTAMP
+#define USEC_PER_SEC			1000000L
+#define CONSOLE_TIMEBUF_LEN		64
+#define do_div(n, base) ({					\
+    uint32_t __base = (base);				\
+    uint32_t __rem;						\
+    __rem = ((uint64_t)(n)) % __base;			\
+    (n) = ((uint64_t)(n)) / __base;				\
+    __rem;							\
+ })
+
+static ssize_t debug_print_time(char *buf)
+{
+    lk_bigtime_t now = current_time_hires();
+    lk_time_t rem_usec = do_div(now, USEC_PER_SEC);
+
+    return sprintf(buf, "[%5lu.%06lu ] ", (unsigned long)now, (unsigned long)rem_usec);
+}
+#endif
+
 int _printf_engine(_printf_engine_output_func out, void *state, const char *fmt, va_list ap)
 {
     int err = 0;
@@ -420,6 +442,19 @@ int _printf_engine(_printf_engine_output_func out, void *state, const char *fmt,
 
 #define OUTPUT_STRING(str, len) do { err = out(str, len, state); if (err < 0) { goto exit; } else { chars_written += err; } } while(0)
 #define OUTPUT_CHAR(c) do { char __temp[1] = { c }; OUTPUT_STRING(__temp, 1); } while (0)
+#ifdef CONFIG_PRINT_TIMESTAMP
+#define print_timestamp() \
+    do { \
+        ssize_t timestamp_len = 0; \
+        char timestamp_buf[CONSOLE_TIMEBUF_LEN]; \
+        timestamp_len = debug_print_time(timestamp_buf); \
+        OUTPUT_STRING((const char *)timestamp_buf, timestamp_len); \
+    } while (0)
+
+    static int newline_flag = 1;
+#endif
+
+
 
     for (;;) {
         /* reset the format state */
@@ -431,6 +466,22 @@ int _printf_engine(_printf_engine_output_func out, void *state, const char *fmt,
         s = fmt;
         string_len = 0;
         while ((c = *fmt++) != 0) {
+#ifdef CONFIG_PRINT_TIMESTAMP
+            if (out != _vsnprintf_output) {
+                if (newline_flag) {
+                    print_timestamp();
+                    newline_flag = 0;
+                }
+                if (c == '\n') {
+                    string_len++;
+                    OUTPUT_STRING(s, string_len);
+                    s += string_len;
+                    string_len = 0;
+                    newline_flag = 1;
+                    continue;
+                }
+            }
+#endif
             if (c == '%')
                 break; /* we saw a '%', break and start parsing format */
             string_len++;
