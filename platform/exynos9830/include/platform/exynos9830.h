@@ -64,6 +64,7 @@
 #define LITTLE_WDT_RESET				(1 << 23)
 #define BIG_WDT_RESET					(1 << 24)
 #define PIN_RESET					(1 << 16)
+#define CONFIG_PRINT_TIMESTAMP
 #define CONFIG_RAMDUMP_GPR
 #define CONFIG_RAMDUMP_MODE				0xD
 #define CONFIG_RAMDUMP_OFFSET				(0x7D900000)
