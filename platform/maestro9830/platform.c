@@ -44,7 +44,7 @@ void fg_init_s2mu004(void);
 
 unsigned int s5p_chip_id[4] = {0x0, 0x0, 0x0, 0x0};
 unsigned int charger_mode = 0;
-unsigned int board_id = 0;
+unsigned int board_id = CONFIG_BOARD_ID;
 unsigned int board_rev = 0;
 unsigned int dram_info[24] = {0, 0, 0, 0};
 unsigned long long dram_size_info = 0;
