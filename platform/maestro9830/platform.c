@@ -25,6 +25,7 @@
 #include <platform/ldfw.h>
 #include <platform/secure_boot.h>
 #include "flexpmu_dbg.h"
+#include <platform/tmu.h>
 
 #include <lib/font_display.h>
 #include <lib/logo_display.h>
@@ -350,4 +351,7 @@ void platform_init(void)
 
 		print_el3_monitor_version();
 	}
+
+	display_tmu_info();
+	display_trip_info();
 }

@@ -34,6 +34,9 @@
 #define CONFIG_SPEEDY0_BASE							0x15940000
 #define CONFIG_SPEEDY1_BASE							0x15950000
 
+#define EXYNOS9830_TMU_TOP_BASE                     0x10090000
+#define EXYNOS9830_TMU_SUB_BASE                     0x100A0000
+
 /* CHIP ID */
 #define CHIPID0_OFFSET								0x4
 #define CHIPID1_OFFSET								0x8
