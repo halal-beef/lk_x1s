@@ -65,6 +65,24 @@ struct dbg_snapshot_bl static_dss_bl = {
 
 struct dbg_snapshot_bl *dss_bl_p;
 
+void debug_snapshot_boot_cnt(void)
+{
+	unsigned int reg;
+
+	reg = readl(CONFIG_RAMDUMP_BL_BOOT_CNT_MAGIC);
+	if (reg == RAMDUMP_BOOT_CNT_MAGIC) {
+		reg = readl(CONFIG_RAMDUMP_BL_BOOT_CNT);
+		reg += 1;
+		writel(reg , CONFIG_RAMDUMP_BL_BOOT_CNT);
+	} else {
+		reg = 1;
+		writel(reg, CONFIG_RAMDUMP_BL_BOOT_CNT);
+		writel(RAMDUMP_BOOT_CNT_MAGIC, CONFIG_RAMDUMP_BL_BOOT_CNT_MAGIC);
+	}
+
+	printf("Bootloader Booting SEQ #%u\n", reg);
+}
+
 static int debug_snapshot_get_items(void)
 {
 	char path[64];
