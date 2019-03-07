@@ -66,6 +66,30 @@ static void read_chip_id(void)
 	s5p_chip_id[1] = readl(EXYNOS9830_PRO_ID + CHIPID1_OFFSET) & 0xFFFF;
 }
 
+static void display_rst_stat(void)
+{
+	u32 rst_stat = readl(POWER_RST_STAT);
+	u32 temp = rst_stat & (WARM_RESET | LITTLE_WDT_RESET | BIG_WDT_RESET | PIN_RESET);
+
+	switch(temp) {
+	case WARM_RESET:
+		printf("rst_stat:0x%x / WARMRESET\n", rst_stat);
+		break;
+	case LITTLE_WDT_RESET:
+		printf("rst_stat:0x%x / CL0_WDTRESET\n", rst_stat);
+		break;
+	case BIG_WDT_RESET:
+		printf("rst_stat:0x%x / CL2_WDTRESET\n", rst_stat);
+		break;
+	case PIN_RESET:
+		printf("rst_stat:0x%x / PINRESET\n", rst_stat);
+		break;
+	default:
+		printf("rst_stat:0x%x\n", rst_stat);
+		break;
+	}
+}
+
 static void read_dram_info(void)
 {
 	char type[16];
@@ -288,6 +312,7 @@ void platform_init(void)
 	display_flexpmu_dbg();
 	print_acpm_version();
 
+	display_rst_stat();
 	pmic_init();
 	display_pmic_info();
 #ifdef CONFIG_SUB_PMIC_S2DOS05
@@ -309,7 +334,6 @@ void platform_init(void)
 	}
 	pit_init();
 	debug_snapshot_fdt_init();
-#if 0
 #ifdef CONFIG_EXYNOS_BOOTLOADER_DISPLAY
 	/* If the display_drv_init function is not called before,
 	 * you must use the print_lcd function.
@@ -327,7 +351,6 @@ void platform_init(void)
 	read_dram_info();
 
 	dfd_display_reboot_reason();
-#endif
 	if (*(unsigned int *)DRAM_BASE == 0xabcdef) {
 		/* read secure chip state */
 		if (read_secure_chip() == 0)
