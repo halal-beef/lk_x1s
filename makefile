@@ -32,6 +32,12 @@ SB_SIGN_TYPE := 3
 SB_KEY_TYPE := 1
 SB_RB_COUNT := 0
 SIGNATURE_BIN := yes
+else ifeq ($(MAKECMDGOALS), universal9830_bringup)
+LK_PAD_SIZE := 2097152
+SB_SIGN_TYPE := 3
+SB_KEY_TYPE := 1
+SB_RB_COUNT := 0
+SIGNATURE_BIN := yes
 endif
 
 # check if LKROOT is already a part of LKINC list and add it only if it is not
