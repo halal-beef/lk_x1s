@@ -3,13 +3,13 @@ ARCH_arm64_TOOLCHAIN_INCLUDED := 1
 
 ifndef ARCH_arm64_TOOLCHAIN_PREFIX
 	ifeq ($(TOOLCHAIN_PREFIX),)
-		ARCH_arm64_TOOLCHAIN_PREFIX := $(BUILDROOT)/compiler/gcc/linaro/4.9.4-2017.01/bin/aarch64-linux-gnu-
+		ARCH_arm64_TOOLCHAIN_PREFIX := aarch64-elf-
 		FOUNDTOOL=$(shell which $(ARCH_arm64_TOOLCHAIN_PREFIX)gcc)
 		ifeq ($(FOUNDTOOL),)
 			ARCH_arm64_TOOLCHAIN_PREFIX := aarch64-elf-
 			FOUNDTOOL=$(shell which $(ARCH_arm64_TOOLCHAIN_PREFIX)gcc)
 			ifeq ($(FOUNDTOOL),)
-				ARCH_arm64_TOOLCHAIN_PREFIX := aarch64-linux-gnu-
+				ARCH_arm64_TOOLCHAIN_PREFIX := aarch64-elf-
 				FOUNDTOOL=$(shell which $(ARCH_arm64_TOOLCHAIN_PREFIX)gcc)
 				ifeq ($(FOUNDTOOL),)
 					$(error cannot find toolchain, please set ARCH_arm64_TOOLCHAIN_PREFIX or add it to your path)
