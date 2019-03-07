@@ -142,6 +142,9 @@ static void read_dram_info(void)
 	M7 = (dram_info[1] >> 8) & 0xFF;
 	M8 = (dram_info[0] & 0x3) | (((dram_info[0] >> 20) & 0xF) << 2) | ((dram_info[0]  >> 16 & 0x3) << 6);
 
+	printf("DRAM %llu GB %s %s %s M5=0x%02x M6=0x%02x M7=0x%02x M8=0x%02x\n",
+			dram_size_info,	type, rank_num, manufacturer,
+			M5, M6, M7, M8);
 #ifdef CONFIG_EXYNOS_BOOTLOADER_DISPLAY
 	print_lcd(FONT_WHITE, FONT_BLACK, "DRAM %lu GB %s %s %s M5=0x%02x M6=0x%02x M7=0x%02x M8=0x%02x",
 	          dram_size_info, type, rank_num, manufacturer,
