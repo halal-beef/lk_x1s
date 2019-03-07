@@ -47,4 +47,7 @@ MODULE_DEPS += \
 
 LINKER_SCRIPT += $(BUILDDIR)/system-onesegment.ld
 
+GLOBAL_COMPILEFLAGS += -mfix-cortex-a53-835769
+GLOBAL_COMPILEFLAGS += -mfix-cortex-a53-843419
+
 include make/module.mk
