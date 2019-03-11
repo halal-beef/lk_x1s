@@ -114,11 +114,10 @@ static inline int ufs_init_cal(struct ufs_host *ufs, int idx)
 	ufs->cal_param = p = malloc(sizeof(struct ufs_cal_param));
 	ufs->cal_param->host = (void *)ufs;
 
-	#if defined(CONFIG_MACH_UNIVERSAL9820)
-	ufs->cal_param->board = BRD_UNIV;
-	#else
-	ufs->cal_param->board = BRD_SMDK;
-	#endif
+	if (CONFIG_UFS_BOARD_TYPE)
+		ufs->cal_param->board = BRD_UNIV;
+	else
+		ufs->cal_param->board = BRD_SMDK;
 
 	ufs->cal_param->evt_ver = (readl(0x10000010) >> 20) & 0xf;
 	printf("ufs->cal_param->evt_ver is EVT%d!!!\n", ufs->cal_param->evt_ver);
