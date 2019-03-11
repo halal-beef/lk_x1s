@@ -371,7 +371,16 @@ int load_boot_images(void)
 	} else {
 		pit_access(ptn, PIT_OP_LOAD, (u64)BOOT_BASE, 0);
 	}
+#ifndef CONFIG_DTB_IN_BOOT
+	ptn = pit_get_part_info("dtb");
+	if (ptn == 0) {
+		printf("Partition 'dtb' does not exist\n");
+		return -1;
+	} else {
+		pit_access(ptn, PIT_OP_LOAD, (u64)DT_BASE, 0);
+	}
 
+#endif
 	ptn = pit_get_part_info("dtbo");
 	if (ptn == 0) {
 		printf("Partition 'dtbo' does not exist\n");
@@ -383,7 +392,11 @@ int load_boot_images(void)
 	argv[1].u = BOOT_BASE;
 	argv[2].u = KERNEL_BASE;
 	argv[3].u = 0;
+#if defined(CONFIG_DTB_IN_BOOT)
 	argv[4].u = DT_BASE;
+#else
+	argv[4].u = 0;
+#endif
 	argv[5].u = 0;
 	cmd_scatter_load_boot(6, argv);
 
