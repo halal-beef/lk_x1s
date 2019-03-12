@@ -174,6 +174,10 @@ GLOBAL_DEFINES += \
 	LK_DEBUGLEVEL=$(DEBUG)
 endif
 
+#build mode defines
+ifeq ($(USER), user)
+GLOBAL_DEFINES += RAMDUMP_MODE_OFF
+endif
 # allow additional defines from outside the build system
 ifneq ($(EXTERNAL_DEFINES),)
 GLOBAL_DEFINES += $(EXTERNAL_DEFINES)
