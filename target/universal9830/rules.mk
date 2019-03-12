@@ -15,5 +15,6 @@ MODULE_SRCS += \
 	$(LOCAL_DIR)/dpu_panels/nt36672a_lcd_ctrl.c \
 	$(LOCAL_DIR)/dpu_panels/nt36672a_mipi_lcd.c \
 	$(LOCAL_DIR)/dpu_panels/lcd_module.c \
+	$(LOCAL_DIR)/display_pmic/pmic_s2dos05.c \
 
 include make/module.mk

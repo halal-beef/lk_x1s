@@ -12,5 +12,6 @@
 #define __BOARD_INFO_H__
 
 #define CONFIG_BOARD_ID	0x10
+#define CONFIG_SUB_PMIC_S2DOS05
 
 #endif /*__BOARD_INFO_H__ */

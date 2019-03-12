@@ -20,7 +20,11 @@
 #include <platform/sfr.h>
 #include <platform/smc.h>
 #include <platform/pmic_s2mps_19_22.h>
+#ifdef CONFIG_SUB_PMIC_S2DOS05
+#include <target/pmic_s2dos05.h>
+#else
 #include <platform/sub_pmic_s2mpb02.h>
+#endif
 #include <platform/dfd.h>
 #include <platform/ldfw.h>
 #include <platform/secure_boot.h>
@@ -282,7 +286,11 @@ void platform_init(void)
 
 	pmic_init();
 	display_pmic_info();
+#ifdef CONFIG_SUB_PMIC_S2DOS05
+	pmic_init_s2dos05();
+#else
 	sub_pmic_s2mpb02_init();
+#endif
 
 	/*
 	check_charger_connect();
