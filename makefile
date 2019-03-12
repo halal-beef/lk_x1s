@@ -20,6 +20,15 @@ OS_INFO := $(findstring x86_64, $(shell uname -a))
 ################################################################################
 # SoC configs								       #
 ################################################################################
+
+ifeq ($(findstring user, $(MAKECMDGOALS)), user)
+USER := user
+TEMP := $(filter-out user, $(MAKECMDGOALS))
+MAKECMDGOALS = $(TEMP)
+else
+USER := eng
+endif
+
 ifeq ($(MAKECMDGOALS), maestro9820)
 LK_PAD_SIZE := 1048576
 SB_SIGN_TYPE := 3
@@ -58,7 +67,9 @@ export LKINC
 export BUILDROOT
 export DEFAULT_PROJECT
 export TOOLCHAIN_PREFIX
+export USER
 
+$(warning OS_INFO=$(OS_INFO))
 # veneer makefile that calls into the engine with lk as the build root
 # if we're the top level invocation, call ourselves with additional args
 _top:
@@ -83,4 +94,6 @@ endif
 $(MAKECMDGOALS): _top
 	@:
 
-.PHONY: _top
+user:
+	@echo This is user build!
+.PHONY: _top user
