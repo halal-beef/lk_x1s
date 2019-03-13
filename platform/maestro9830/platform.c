@@ -30,6 +30,7 @@
 #include <platform/secure_boot.h>
 #include "flexpmu_dbg.h"
 #include <platform/tmu.h>
+#include <platform/chg_max77705.h>
 
 #include <lib/font_display.h>
 #include <lib/logo_display.h>
@@ -362,4 +363,6 @@ void platform_init(void)
 
 	display_tmu_info();
 	display_trip_info();
+
+	chg_init_max77705();
 }
