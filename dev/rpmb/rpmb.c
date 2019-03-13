@@ -79,6 +79,7 @@ uint64_t rollbackIndex[BOOT_RI_TABLE_SIZE];
 uint32_t table_init_state;
 struct boot_header bootHeader;
 struct persist_data persistentData[PERSIST_DATA_CNT];
+static u8 nonce[NONCE_SIZE];
 
 static void dump_packet(u8 * data, u32 len)
 {
@@ -1109,18 +1110,20 @@ int do_rpmb(int argc, const cmd_args *argv)
 			packet.request = 0x02;
 
 #ifdef ENABLE_CM_NONCE
-			ret = cm_get_random(packet.nonce, NONCE_SIZE);
+			memset(nonce, 0, NONCE_SIZE);
+			ret = cm_get_random(nonce, NONCE_SIZE);
 			if (ret != RV_SUCCESS) {
 				printf("RPMB: fail to get NONCE\n");
 				return ret;
 			}
+			memcpy(packet.nonce, nonce, NONCE_SIZE);
 #ifdef RPMB_DEBUG
 			dprintf(INFO, "RPMB: do_rpmb(w b) NONCE\n");
 			print_byte_to_hex(packet.nonce, NONCE_SIZE);
 #endif
 #else
 			for (i = 0; i < 16; i++)
-				packet.nonce[i] = i;
+				nonce[i] = packet.nonce[i] = i;
 #endif
 
 #ifdef USE_MMC0
@@ -1128,6 +1131,15 @@ int do_rpmb(int argc, const cmd_args *argv)
 #else
 			ufs_rpmb_commands(dev_num, &packet);
 #endif
+			if(memcmp((u8 *)&packet.nonce, nonce, NONCE_SIZE)) {
+				printf(" do_rpmb(w b) NONCE compare fail\n");
+				return -1;
+			}
+			if (packet.result != 0){
+				printf("do_rpmb(w b) ufs_rpmb_commands result error = %d\n", packet.result );
+				return -1;
+			}
+
 			dprintf(INFO, "--> Write counter : %x\n", packet.write_counter);
 			w_counter = packet.write_counter;
 			memset((void *)&packet, 0, 512);
@@ -1146,18 +1158,20 @@ int do_rpmb(int argc, const cmd_args *argv)
 			addrp = (u32 *)(packet.data) + 1;
 			*addrp = block_num;
 #ifdef ENABLE_CM_NONCE
-			ret = cm_get_random(packet.nonce, NONCE_SIZE);
+			memset(nonce, 0, NONCE_SIZE);
+			ret = cm_get_random(nonce, NONCE_SIZE);
 			if (ret != RV_SUCCESS) {
 				printf("RPMB: fail to get NONCE\n");
 				return ret;
 			}
+			memcpy(packet.nonce, nonce, NONCE_SIZE);
 #ifdef RPMB_DEBUG
 			dprintf(INFO, "RPMB: do_rpmb(r b) NONCE\n");
 			print_byte_to_hex(packet.nonce, NONCE_SIZE);
 #endif
 #else
 			for (i = 0; i < 16; i++)
-				packet.nonce[i] = i;
+				nonce[i] = packet.nonce[i] = i;
 #endif
 		}
 		addrp = (u32 *)(packet.data);
@@ -1168,6 +1182,14 @@ int do_rpmb(int argc, const cmd_args *argv)
 #else
 		ufs_rpmb_commands(dev_num, &packet);
 #endif
+		if(memcmp(packet.nonce, nonce, NONCE_SIZE)) {
+			printf("do_rpmb(r b)NONCE compare fail\n");
+			return -1;
+		}
+		if (packet.result != 0){
+			printf("do_rpmb(r b) ufs_rpmb_commands result error = %d\n", packet.result );
+			return -1;
+		}
 		break;
 
 	case 'c':
@@ -1175,30 +1197,38 @@ int do_rpmb(int argc, const cmd_args *argv)
 			goto usage;
 		packet.request = 0x02;
 #ifdef ENABLE_CM_NONCE
-		ret = cm_get_random(packet.nonce, NONCE_SIZE);
+		memset(nonce, 0, NONCE_SIZE);
+		ret = cm_get_random(nonce, NONCE_SIZE);
 		if (ret != RV_SUCCESS) {
 			printf("RPMB: fail to get NONCE\n");
 			return ret;
 		}
+		memcpy(packet.nonce, nonce, NONCE_SIZE);
 #ifdef RPMB_DEBUG
 		dprintf(INFO, "RPMB: do_rpmb(c) NONCE\n");
 		print_byte_to_hex(packet.nonce, NONCE_SIZE);
 #endif
 #else
 		for (i = 0; i < 16; i++)
-			packet.nonce[i] = i;
+			nonce[i] = packet.nonce[i] = i;
 #endif
 #ifdef USE_MMC0
 		ret = emmc_rpmb_commands(dev_num, &packet);
 #else
 		ret = ufs_rpmb_commands(dev_num, &packet);
 #endif
-
 		if (ret < 0)
 			return ret;
 
-		if (packet.result != 0)
+		if(memcmp(packet.nonce, nonce, NONCE_SIZE)) {
+			printf("do_rpmb(c) NONCE compare fail\n");
 			return -1;
+		}
+		if (packet.result != 0){
+			printf("do_rpmb(c) ufs_rpmb_commands result error = %d\n", packet.result );
+			return -1;
+		}
+
 		break;
 
 	case 'k':
@@ -1230,6 +1260,7 @@ int do_rpmb(int argc, const cmd_args *argv)
 		ufs_rpmb_commands(dev_num, &packet);
 #endif
 		if (packet.result != 0) {
+			printf("do_rpmb(k) ufs_rpmb_commands result error = %d\n", packet.result );
 			memset(rpmb_key, 0x0, RPMB_KEY_LEN);
 			memset(packet.Key_MAC, 0x0, RPMB_KEY_LEN);
 			return -1;
@@ -1319,11 +1350,13 @@ static int rpmb_read_block(int addr, int blkcnt, u8 *buf)
 		packet.count = 1;
 
 #ifdef ENABLE_CM_NONCE
-		ret = cm_get_random(packet.nonce, NONCE_SIZE);
+		memset(nonce, 0, NONCE_SIZE);
+		ret = cm_get_random(nonce, NONCE_SIZE);
 		if (ret != RV_SUCCESS) {
 			printf("RPMB: fail to get NONCE\n");
 			return ret;
 		}
+		memcpy(packet.nonce, nonce, NONCE_SIZE);
 #ifdef RPMB_DEBUG
 		dprintf(INFO, "RPMB: rpmb_read_block NONCE\n");
 		print_byte_to_hex(packet.nonce, NONCE_SIZE);
@@ -1331,7 +1364,7 @@ static int rpmb_read_block(int addr, int blkcnt, u8 *buf)
 #else
 		int i;
 		for (i = 0 ; i < NONCE_SIZE ; i++) {
-			packet.nonce[i] = i;
+			nonce[i] = packet.nonce[i] = i;
 		}
 #endif
 
@@ -1346,7 +1379,10 @@ static int rpmb_read_block(int addr, int blkcnt, u8 *buf)
 #else
 		ret = ufs_rpmb_commands(0, &packet);
 #endif
-
+		if(memcmp((u8 *)&packet.nonce, nonce, NONCE_SIZE)) {
+			printf("Authentication read NONCE compare fail\n");
+			return -1;
+		}
 		if (ret != RV_SUCCESS) {
 			printf("RPMB: rpmb_read_block(%d) fail !!!\n", packet.address);
 			return ret;
@@ -1367,11 +1403,13 @@ static int rpmb_write_block(int addr, int blkcnt, u8 *buf)
 
 	memset((void *)&packet, 0, 512);
 #ifdef ENABLE_CM_NONCE
-	ret = cm_get_random(packet.nonce, NONCE_SIZE);
+	memset(nonce, 0, NONCE_SIZE);
+	ret = cm_get_random(nonce, NONCE_SIZE);
 	if (ret != RV_SUCCESS) {
 		printf("RPMB: fail to get NONCE\n");
 		return ret;
 	}
+	memcpy(packet.nonce, nonce, NONCE_SIZE);
 #ifdef RPMB_DEBUG
 	dprintf(INFO, "RPMB: rpmb_write_block NONCE\n");
 	print_byte_to_hex(packet.nonce, NONCE_SIZE);
@@ -1379,7 +1417,7 @@ static int rpmb_write_block(int addr, int blkcnt, u8 *buf)
 #else
 	int i;
 	for (i = 0 ; i < 16 ; i++)
-		packet.nonce[i] = i;
+		nonce[i] = packet.nonce[i] = i;
 #endif
 
 	packet.request = 0x02; // Read Write Counter
@@ -1412,7 +1450,10 @@ static int rpmb_write_block(int addr, int blkcnt, u8 *buf)
 #else
 		ret = ufs_rpmb_commands(0, &packet);
 #endif
-
+		if(memcmp((u8 *)&packet.nonce, nonce, NONCE_SIZE)) {
+			printf("Authentication write NONCE compare fail\n");
+			return -1;
+		}
 		if (ret != RV_SUCCESS) {
 			printf("RPMB: write block (%d) fail !!!\n", packet.address);
 			return ret;
