@@ -15,9 +15,26 @@
 #include <dev/scsi.h>
 #include <platform/ufs-cal-9830.h>
 
+#define be16_to_cpu(x) \
+	((((x) & 0xff00) >> 8) | \
+	 (((x) & 0x00ff) << 8))
+#define cpu_to_be16(x) be16_to_cpu(x)
+
+#define be32_to_cpu(x) \
+	((((x) & 0xff000000) >> 24) | \
+	 (((x) & 0x00ff0000) >>  8) | \
+	 (((x) & 0x0000ff00) <<  8) | \
+	 (((x) & 0x000000ff) << 24))
+#define cpu_to_be32(x) be32_to_cpu(x)
+
+#ifdef	SCSI_UFS_DEBUG
+#define	ufs_debug(fmt,args...)	dprintf (INFO, fmt ,##args)
+#else
+#define ufs_debug(INFO, fmt,args...)
+#endif
+
 #define UFS_BIT_LEN_OF_DWORD	(sizeof(u32) * 8)
 
-#define UFS_QUIRK_HELSINKI_EVT0	(1<<0)
 #define UFS_QUIRK_USE_1LANE		(1<<1)
 #define UFS_QUIRK_BROKEN_HCE	(1<<2)
 
@@ -30,17 +47,12 @@
 
 #define MAX_CDB_SIZE		16
 #define ALIGNED_UPIU_SIZE	1024
-#define SCSI_MAX_SG_SEGMENTS	(128)
-#define SCSI_MAX_RPMB_SG_SEGMENTS (1024)
+#define SCSI_MAX_SG_SEGMENTS	128
 
-#define UFS_LOGICAL_BLOCK_SIZE	512
 #define UFS_SG_BLOCK_SIZE_BIT	12
-#define UFS_RPMB_SG_BLOCK_SIZE_BIT	9
 #define UFS_SG_BLOCK_SIZE	(1<<UFS_SG_BLOCK_SIZE_BIT)
-#define UFS_RPMB_SG_BLOCK_SIZE	(1<<UFS_SG_BLOCK_SIZE_BIT)
 
 #define UFS_NUTRS		2
-#define UFS_NUTMRS		2
 
 #define UFS_DEBUG_UPIU		0x00323110
 #define UFS_DEBUG_UPIU_ALL	0x00743112
@@ -53,7 +65,6 @@
 
 #define UFS_GET_SFR(addr, mask, shift)	((readl(addr)>>(shift))&(mask))
 #define UFS_SET_SFR(addr, value, mask, shift)	writel((readl(addr)&(~((mask)<<(shift))))|((value)<<(shift)), (addr))
-#define UFS_WAIT_CLK(addr, value, mask, shift)	while( ((readl(addr)>>(shift))&(mask))!=(value) )
 
 /* UFSHCI Registers */
 enum {
@@ -163,26 +174,10 @@ enum {
 	RX_LANE_3 = 7,
 };
 
-enum {
-	Alive_Clock = 0,
-	Alternative_Clock = 1,
-};
-
-#define MPHY_REFCLK_SEL		(1 << 0)
 #define UIC_ARG_MIB_SEL(attr, sel)	((((attr) & 0xFFFF) << 16) |\
 					 ((sel) & 0xFFFF))
 #define UIC_ARG_MIB(attr)		UIC_ARG_MIB_SEL(attr, 0)
 
-#if defined(CONFIG_CPU_EMULATOR8895)
-#define MPHY_PMA_COMN_ADDR(reg)		((reg) << 2)
-#define MPHY_PMA_TRSV_ADDR(reg, lane)    (((reg) + (0x40 * (lane))) << 2)
-#elif !defined(CONFIG_SOC_EXYNOS7420) && !defined(CONFIG_SOC_EXYNOS8890)
-#define MPHY_PMA_COMN_ADDR(reg)		(reg)
-#define MPHY_PMA_TRSV_ADDR(reg, lane)	((reg) + (0x140 * (lane)))
-#else
-#define MPHY_PMA_COMN_ADDR(reg)		((reg) << 2)
-#define MPHY_PMA_TRSV_ADDR(reg, lane)	(((reg) + (0x30 * (lane))) << 2)
-#endif
 
 /* Well known logical unit id in LUN field of UPIU */
 enum {
@@ -376,141 +371,6 @@ enum {
 	UFS_TRANSFER_COMPLETE = (1 << 31),
 };
 
-/*
-	command_type :
-	| descriptor ID | opcode | function | UPIU type |
-
-	UPIU type[7:0] : NOP_OUT, COMMAND, DATA_OUT, TASK_REQ, QUERY_REQ
-	function[15:8] : Used by QUERY_REQ / TASK_REQ
-	opcode[23:16] : Opcode in query / input parameter1 (TASK_REQ)
-	descriptor ID[31:24] : descriptor ID in query / input parameter2 (TASK_REQ)
-
-*/
-typedef enum {
-	UFS_SEND_CMD = UPIU_HEADER_DWORD(0,
-					 0,
-					 0,
-					 UPIU_TRANSACTION_COMMAND),
-	UFS_SEND_REQUEST_SENSE_CMD = UPIU_HEADER_DWORD(0,
-						       SCSI_OP_REQUEST_SENSE,
-						       0,
-						       UPIU_TRANSACTION_COMMAND),
-	UFS_SEND_INQUIRY_CMD = UPIU_HEADER_DWORD(0,
-						 SCSI_OP_INQUIRY,
-						 0,
-						 UPIU_TRANSACTION_COMMAND),
-	UFS_SEND_NOP = UPIU_HEADER_DWORD(0,
-					 0,
-					 0,
-					 UPIU_TRANSACTION_NOP_OUT),
-
-	/* For set fDeviceInit */
-	UFS_SEND_SET_DEVICEINIT_FLAG = UPIU_HEADER_DWORD(UPIU_FLAG_ID_DEVICEINIT,
-							 UPIU_QUERY_OPCODE_SET_FLAG,
-							 UFS_STD_WRITE_REQ,
-							 UPIU_TRANSACTION_QUERY_REQ),
-	UFS_SEND_READ_DEVICEINIT_FLAG = UPIU_HEADER_DWORD(UPIU_FLAG_ID_DEVICEINIT,
-							  UPIU_QUERY_OPCODE_READ_FLAG,
-							  UFS_STD_READ_REQ,
-							  UPIU_TRANSACTION_QUERY_REQ),
-
-	/* For set fPermanentWPEn */
-	UFS_SEND_SET_PERM_WP_FLAG = UPIU_HEADER_DWORD(UPIU_FLAG_ID_PER_WRITEPROTECT,
-						      UPIU_QUERY_OPCODE_SET_FLAG,
-						      UFS_STD_WRITE_REQ,
-						      UPIU_TRANSACTION_QUERY_REQ),
-	UFS_SEND_GET_PERM_WP_FLAG = UPIU_HEADER_DWORD(UPIU_FLAG_ID_POW_WRITEPROTECT,
-						      UPIU_QUERY_OPCODE_READ_FLAG,
-						      UFS_STD_READ_REQ,
-						      UPIU_TRANSACTION_QUERY_REQ),
-
-	/* For set fPowerOnWPEn */
-	UFS_SEND_SET_POW_WP_FLAG = UPIU_HEADER_DWORD(UPIU_FLAG_ID_POW_WRITEPROTECT,
-						     UPIU_QUERY_OPCODE_SET_FLAG,
-						     UFS_STD_WRITE_REQ,
-						     UPIU_TRANSACTION_QUERY_REQ),
-	UFS_SEND_GET_POW_WP_FLAG = UPIU_HEADER_DWORD(UPIU_FLAG_ID_POW_WRITEPROTECT,
-						     UPIU_QUERY_OPCODE_READ_FLAG,
-						     UFS_STD_READ_REQ,
-						     UPIU_TRANSACTION_QUERY_REQ),
-
-	/* For set fBackgroundOpsEn */
-	UFS_SEND_SET_BGO_EN_FLAG = UPIU_HEADER_DWORD(UPIU_FLAG_ID_BG_OPERATRION,
-						     UPIU_QUERY_OPCODE_SET_FLAG,
-						     UFS_STD_WRITE_REQ,
-						     UPIU_TRANSACTION_QUERY_REQ),
-	UFS_SEND_GET_BGO_EN_FLAG = UPIU_HEADER_DWORD(UPIU_FLAG_ID_BG_OPERATRION,
-						     UPIU_QUERY_OPCODE_READ_FLAG,
-						     UFS_STD_READ_REQ,
-						     UPIU_TRANSACTION_QUERY_REQ),
-	UFS_SEND_CLN_BGO_EN_FLAG = UPIU_HEADER_DWORD(UPIU_FLAG_ID_BG_OPERATRION,
-						     UPIU_QUERY_OPCODE_CLEAR_FLAG,
-						     UFS_STD_WRITE_REQ,
-						     UPIU_TRANSACTION_QUERY_REQ),
-
-	/* For set fPurgeEnable Write Only */
-	UFS_SEND_SET_PERGE_EN_FLAG = UPIU_HEADER_DWORD(UPIU_FLAG_ID_PURGE_ENABLE,
-						       UPIU_QUERY_OPCODE_SET_FLAG,
-						       UFS_STD_WRITE_REQ,
-						       UPIU_TRANSACTION_QUERY_REQ),
-
-	UFS_SEND_READ_DEVICE_DESC = UPIU_HEADER_DWORD(UPIU_DESC_ID_DEVICE,
-						      UPIU_QUERY_OPCODE_READ_DESC,
-						      UFS_STD_READ_REQ,
-						      UPIU_TRANSACTION_QUERY_REQ),
-	UFS_SEND_READ_CONFIG_DESC = UPIU_HEADER_DWORD(UPIU_DESC_ID_CONFIGURATION,
-						      UPIU_QUERY_OPCODE_READ_DESC,
-						      UFS_STD_READ_REQ,
-						      UPIU_TRANSACTION_QUERY_REQ),
-	UFS_SEND_WRITE_CONFIG_DESC = UPIU_HEADER_DWORD(UPIU_DESC_ID_CONFIGURATION,
-						       UPIU_QUERY_OPCODE_WRITE_DESC,
-						       UFS_STD_WRITE_REQ,
-						       UPIU_TRANSACTION_QUERY_REQ),
-	UFS_SEND_READ_UNIT_DESC = UPIU_HEADER_DWORD(UPIU_DESC_ID_UNIT,
-						    UPIU_QUERY_OPCODE_READ_DESC,
-						    UFS_STD_READ_REQ,
-						    UPIU_TRANSACTION_QUERY_REQ),
-	UFS_SEND_READ_GEOMETRY_DESC = UPIU_HEADER_DWORD(UPIU_DESC_ID_GEOMETRY,
-							UPIU_QUERY_OPCODE_READ_DESC,
-							UFS_STD_READ_REQ,
-							UPIU_TRANSACTION_QUERY_REQ),
-	UFS_SEND_READ_BOOTLUNEN_ATTR = UPIU_HEADER_DWORD(UPIU_ATTR_ID_BOOTLUNEN,
-							 UPIU_QUERY_OPCODE_READ_ATTR,
-							 UFS_STD_READ_REQ,
-							 UPIU_TRANSACTION_QUERY_REQ),
-	UFS_SEND_WRITE_BOOTLUNEN_ATTR = UPIU_HEADER_DWORD(UPIU_ATTR_ID_BOOTLUNEN,
-							  UPIU_QUERY_OPCODE_WRITE_ATTR,
-							  UFS_STD_WRITE_REQ,
-							  UPIU_TRANSACTION_QUERY_REQ),
-	UFS_SEND_READ_POWERMODE_ATTR = UPIU_HEADER_DWORD(UPIU_ATTR_ID_POWERMODE,
-							 UPIU_QUERY_OPCODE_READ_ATTR,
-							 UFS_STD_READ_REQ,
-							 UPIU_TRANSACTION_QUERY_REQ),
-	UFS_SEND_REQUEST_FORMAT_QUERY_REQ = UPIU_HEADER_DWORD(0,
-							      0,
-							      0xc2,
-							      UPIU_TRANSACTION_QUERY_REQ),
-	UFS_SEND_TASKMGNT_QUERY = UPIU_HEADER_DWORD(0,
-						    0,
-						    UFS_QUERY_TASK,
-						    UPIU_TRANSACTION_TASK_REQ),
-	UFS_SEND_WRITE_LOCK_ATTR = UPIU_HEADER_DWORD(UPIU_ATTR_ID_CONFIGDESCLOCK,
-						     UPIU_QUERY_OPCODE_WRITE_ATTR,
-						     UFS_STD_WRITE_REQ,
-						     UPIU_TRANSACTION_QUERY_REQ),
-
-	UFS_SEND_READ_REFCLK_ATTR = UPIU_HEADER_DWORD(UPIU_ATTR_ID_REFCLKFREQ,
-							 UPIU_QUERY_OPCODE_READ_ATTR,
-							 UFS_STD_READ_REQ,
-							 UPIU_TRANSACTION_QUERY_REQ),
-
-	UFS_SEND_WRITE_REFCLK_ATTR = UPIU_HEADER_DWORD(UPIU_ATTR_ID_REFCLKFREQ,
-								 UPIU_QUERY_OPCODE_WRITE_ATTR,
-								 UFS_STD_WRITE_REQ,
-								 UPIU_TRANSACTION_QUERY_REQ),
-
-} ufs_upiu_cmd;
-
 enum {
 	UFS_NO_ERROR = 0,
 	UFS_TIMEOUT,
@@ -535,16 +395,16 @@ struct ufs_upiu_header {
 	u8 ehslength;		/* Total EHS length */
 	u8 deviceinfo;		/* Device Information */
 	u16 datalength;		/* Data Seqment Length (MSB|LSB) */
-
-	/* DW3 ~ DW7 */
-	u32 tsf[5];		/* Transaction Specific Fields */
 } __attribute__ ((__packed__));
 
-// TODO:
-#define UPIU_DATA_SIZE		(ALIGNED_UPIU_SIZE-sizeof(struct ufs_upiu_header))
+#define DW_NUM_OF_TSF		20
+#define UPIU_DATA_SIZE		(ALIGNED_UPIU_SIZE - \
+		sizeof(u8) * DW_NUM_OF_TSF - sizeof(struct ufs_upiu_header))
 
 struct ufs_upiu {
 	struct ufs_upiu_header header;
+	/* DW3 ~ DW7 */
+	u8 tsf[DW_NUM_OF_TSF];		/* Transaction Specific Fields */
 	u8 data[UPIU_DATA_SIZE];
 } __attribute__ ((__packed__));
 
@@ -579,18 +439,6 @@ struct ufs_utrd {
 	/* DW 7 */
 	u16 prdt_len;
 	u16 prdt_off;
-} __attribute__ ((__packed__));
-
-/*	UTP Task Management Request Descriptor	*/
-struct ufs_utmrd {
-	/* DW 0-3 */
-	u32 dw[4];
-
-	/* DW 4-11 */
-	struct ufs_upiu_header task_req_upiu;
-
-	/* DW 12-19 */
-	struct ufs_upiu_header task_rsp_upiu;
 } __attribute__ ((__packed__));
 
 /*	UIC Command	*/
@@ -804,7 +652,6 @@ struct ufs_host {
 	scm *scsi_cmd;
 	u8 *ufs_descriptor;
 	u8 *arglist;
-	ufs_upiu_cmd command_type;
 	u32 lun;
 	int scsi_status;
 	u8 *sense_buffer;
@@ -849,10 +696,17 @@ struct ufs_host {
 	u32 dev_pwr_shift;
 };
 
+int ufs_alloc_memory(void);
 int ufs_init(int mode);
 int ufs_set_configuration_descriptor(void);
 int ufs_board_init(int host_index, struct ufs_host *ufs);
 void ufs_pre_vendor_setup(struct ufs_host *ufs);
 int ufs_device_reset(void);
 
+void print_ufs_upiu(struct ufs_host *ufs, int print_level);
+void print_ufs_desc(u8 * desc);
+void print_ufs_device_desc(u8 * desc);
+void print_ufs_configuration_desc(u8 * desc);
+void print_ufs_geometry_desc(u8 * desc);
+void print_ufs_flags(union ufs_flags *flags);
 #endif				/* __UFS__ */
