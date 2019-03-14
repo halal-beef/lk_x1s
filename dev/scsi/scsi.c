@@ -331,6 +331,8 @@ static int scsi_start_stop_unit(struct bdev *dev)
 	memset((void *)g_scm.cdb, 0, sizeof(g_scm.cdb));
 	g_scm.cdb[0] = SCSI_OP_START_STOP_UNIT;
 	g_scm.cdb[4] = 3 << 4;
+	/* To clear Expected Data Transfer Length in UFS COMMAND UPIU */
+	g_scm.datalen = 0;
 
 	/* Actual issue */
 	ret = sdev->exec(&g_scm);
