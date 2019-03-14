@@ -1012,3 +1012,78 @@ int pit_access(struct pit_entry *ptn, int op, u64 addr, u32 size)
 	else
 		return 1;
 }
+
+int pit_entry_write(struct pit_entry *ptn, void *buf, u64 offset, u64 size)
+{
+	u64 blk_offset;
+	u64 blk_num;
+	u64 ret;
+
+	if (!pit_dev || (offset % PIT_SECTOR_SIZE) || (size % PIT_SECTOR_SIZE))
+		return 1;
+
+	blk_num = size / PIT_SECTOR_SIZE;
+	blk_offset = offset / PIT_SECTOR_SIZE;
+	blk_offset += ptn->blkstart;
+
+	if ((blk_offset + blk_num) > (ptn->blkstart + ptn->blknum))
+		return 1;
+
+	printf("%s: start[%llu] num[%llu]\n", __func__, blk_offset, blk_num);
+	ret = pit_dev->new_write(pit_dev, buf, (bnum_t)blk_offset, (uint)blk_num);
+	if (ret != blk_num) {
+		printf("%s: ret = [%llu]\n", __func__, ret);
+	}
+
+	return 0;
+}
+
+int pit_entry_read(struct pit_entry *ptn, void *buf, u64 offset, u64 size)
+{
+	u64 blk_offset;
+	u64 blk_num;
+	u64 ret;
+
+	if (!pit_dev || (offset % PIT_SECTOR_SIZE) || (size % PIT_SECTOR_SIZE))
+		return 1;
+
+	blk_num = size / PIT_SECTOR_SIZE;
+	blk_offset = offset / PIT_SECTOR_SIZE;
+	blk_offset += ptn->blkstart;
+
+	if ((blk_offset + blk_num) > (ptn->blkstart + ptn->blknum))
+		return 1;
+
+	printf("%s: start[%llu] num[%llu]\n", __func__, blk_offset, blk_num);
+	ret = pit_dev->new_read(pit_dev, buf, (bnum_t)blk_offset, (uint)blk_num);
+	if (ret != blk_num) {
+		printf("%s: ret = [%llu]\n", __func__,  ret);
+	}
+
+	return 0;
+}
+
+int pit_entry_erase(struct pit_entry *ptn, u64 offset, u64 size)
+{
+	u64 blk_offset;
+	u64 blk_num;
+	u64 ret;
+
+	if (!pit_dev || (offset % PIT_SECTOR_SIZE) || (size % PIT_SECTOR_SIZE))
+		return 1;
+
+	blk_num = size / PIT_SECTOR_SIZE;
+	blk_offset = offset / PIT_SECTOR_SIZE;
+	blk_offset += ptn->blkstart;
+
+	if ((blk_offset + blk_num) > (ptn->blkstart + ptn->blknum))
+		return 1;
+
+	printf("%s: start[%llu] num[%llu]\n", __func__, blk_offset, blk_num);
+	ret = pit_dev->new_erase(pit_dev, (bnum_t)blk_offset, (uint)blk_num);
+	if (ret != blk_num) {
+		printf("%s: ret = [%llu]\n", __func__, ret);
+	}
+
+	return 0;
+}
