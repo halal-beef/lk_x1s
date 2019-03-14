@@ -49,18 +49,20 @@ struct dbg_snapshot_bl {
 struct reserve_mem cp_rmem;
 
 struct dbg_snapshot_bl static_dss_bl = {
-	.item[0] = { "header",           { 0, 0 }, 0 },
-	.item[1] = { "log_kernel",       { 0, 0 }, 0 },
-	.item[2] = { "log_platform",     { 0, 0 }, 0 },
-	.item[3] = { "log_sfr",          { 0, 0 }, 0 },
-	.item[4] = { "log_s2d",          { 0, 0 }, 0 },
-	.item[5] = { "log_cachedump",    { 0, 0 }, 0 },
-	.item[6] = { "log_etm",          { 0, 0 }, 0 },
-	.item[7] = { "log_bcm",          { 0, 0 }, 0 },
-	.item[8] = { "log_llc",          { 0, 0 }, 0 },
-	.item[9] = { "log_dbgc",         { 0, 0 }, 0 },
-	.item[10] = { "log_pstore",      { 0, 0 }, 0 },
-	.item[11] = { "log_kevents",     { 0, 0 }, 0 },
+	.item[0] = {"header",		{0, 0}, 0},
+	.item[1] = {"log_kernel",	{0, 0}, 0},
+	.item[2] = {"log_platform",	{0, 0}, 0},
+	.item[3] = {"log_sfr",		{0, 0}, 0},
+	.item[4] = {"log_s2d",		{0, 0}, 0},
+	.item[5] = {"log_arrdumpreset",	{0, 0}, 0},
+	.item[6] = {"log_arrdumppanic",	{0, 0}, 0},
+	.item[7] = {"log_etm",		{0, 0}, 0},
+	.item[8] = {"log_bcm",		{0, 0}, 0},
+	.item[9] = {"log_llc",		{0, 0}, 0},
+	.item[10] = {"log_dbgc",	{0, 0}, 0},
+	.item[11] = {"log_pstore",	{0, 0}, 0},
+	.item[12] = {"log_kevents",	{0, 0}, 0},
+	.item[13] = {"log_fatal",	{0, 0}, 0},
 };
 
 struct dbg_snapshot_bl *dss_bl_p;
@@ -215,7 +217,7 @@ int debug_snapshot_getvar_item(const char *name, char *response)
 			if (cp_rmem.paddr == 0 || cp_rmem.size == 0)
 				return -1;
 
-			sprintf(response, "%X, %X, %X", cp_rmem.paddr, cp_rmem.size - 1,
+			sprintf(response, "%X, %X, %X", cp_rmem.paddr, cp_rmem.size,
 			        cp_rmem.paddr + cp_rmem.size - 1);
 		}
 		return 0;
@@ -226,7 +228,7 @@ int debug_snapshot_getvar_item(const char *name, char *response)
 		if (!item)
 			return -1;
 
-		sprintf(response, "%X, %X, %X", item->rmem.paddr, item->rmem.size - 1,
+		sprintf(response, "%X, %X, %X", item->rmem.paddr, item->rmem.size,
 		        item->rmem.paddr + item->rmem.size - 1);
 	}
 
@@ -235,7 +237,7 @@ int debug_snapshot_getvar_item(const char *name, char *response)
 	if (!item)
 		return -1;
 
-	sprintf(response, "%X, %X, %X", item->rmem.paddr, item->rmem.size - 1,
+	sprintf(response, "%X, %X, %X", item->rmem.paddr, item->rmem.size,
 	        item->rmem.paddr + item->rmem.size - 1);
 	return 0;
 }
