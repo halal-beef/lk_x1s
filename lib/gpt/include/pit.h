@@ -43,6 +43,9 @@ int pit_update(void *buf, unsigned int size);
 struct pit_entry *pit_get_part_info(const char *name);
 int pit_access(struct pit_entry *ptn, int op, u64 addr, u32 size);
 u64 pit_get_length(struct pit_entry *ptn);
+int pit_entry_write(struct pit_entry *ptn, void *buf, u64 offset, u64 size);
+int pit_entry_read(struct pit_entry *ptn, void *buf, u64 offset, u64 size);
+int pit_entry_erase(struct pit_entry *ptn, u64 offset, u64 size);
 
 
 /*
