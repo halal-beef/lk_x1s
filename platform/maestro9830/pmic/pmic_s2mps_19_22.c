@@ -64,6 +64,12 @@ void pmic_init(void)
 	speedy_read(CONFIG_SPEEDY1_BASE, S2MPS22_PM_ADDR, S2MPS22_PM_LDO4S_CTRL, &reg);
 	reg |= S2MPS_OUTPUT_ON_NORMAL;
 	speedy_write(CONFIG_SPEEDY1_BASE, S2MPS22_PM_ADDR, S2MPS22_PM_LDO4S_CTRL, reg);
+
+	/* ICEN enable for PB02 & PB03 */
+	speedy_read(CONFIG_SPEEDY0_BASE, S2MPS19_PM_ADDR, S2MPS19_PM_LDO16M_CTRL, &reg);
+	reg |= S2MPS_OUTPUT_ON_NORMAL;
+	speedy_write(CONFIG_SPEEDY0_BASE, S2MPS19_PM_ADDR, S2MPS19_PM_LDO16M_CTRL, reg);
+
 }
 
 void display_pmic_info(void)
