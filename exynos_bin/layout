@@ -25,7 +25,7 @@
 0	24	1	fwbl1	0	0
 0	152	1	epbl	0	0
 0	864	1	bl2	0	0
-0	32	1	dram_train	0	0
+0	200	1	dram_train	0	0
 0	8	1	ocp_train	0	0
 0	160	1	ect_test	0	0
 0	344	1	acpm_test	0	0
