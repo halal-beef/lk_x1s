@@ -1,12 +1,12 @@
 /* Copyright (c) 2018 Samsung Electronics Co, Ltd.
-
+ *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
  * published by the Free Software Foundation.
-
+ *
  * Copyright@ Samsung Electronics Co. LTD
  * Manseok Kim <manseoks.kim@samsung.com>
-
+ *
  * Alternatively, Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -34,8 +34,8 @@
 #define CONFIG_DISPLAY_FONT_BASE_ADDRESS	0xee800000
 #define CONFIG_DISPLAY_TEMP_BASE_ADDRESS	0xf0000000
 
-#define LCD_WIDTH		1080
-#define LCD_HEIGHT		2246
+#define LCD_WIDTH				1080
+#define LCD_HEIGHT				2246
 
 
 /* =================================================== */
@@ -55,18 +55,17 @@
 /* DECON Properties */
 static struct decon_dt_info decon_dt = {
 	.max_win	= 4,
-	.dft_win	= 0,	/* window for font should be top window, It means it's zero */
+	.dft_win	= 0,    /* window for font should be top window, It means it's zero */
 	.dft_idma	= IDMA_G0,
-	.psr_mode	= 0,	/* 0: video mode, 1: DP command mode, 2: MIPI command mode */
-	.trig_mode	= 0,	/* 0: hw trigger, 1: sw trigger */
-	.dsi_mode	= 0,	/* 0: single dsi, 1: dual dsi */
-	.out_type	= 0,	/* 0: DSI, 1: eDP, 2:HDMI, 3: WB */
-	.out_idx	= 0,	/* 0: DSI0, 1: DSI1, 2: DSI2 */
+	.psr_mode	= 0,    /* 0: video mode, 1: DP command mode, 2: MIPI command mode */
+	.trig_mode	= 0,    /* 0: hw trigger, 1: sw trigger */
+	.dsi_mode	= 0,    /* 0: single dsi, 1: dual dsi */
+	.out_type	= 0,    /* 0: DSI, 1: eDP, 2:HDMI, 3: WB */
+	.out_idx	= 0,    /* 0: DSI0, 1: DSI1, 2: DSI2 */
 	.ss_regs	= DPU_SYSREG_BASE_ADDR,
 };
 
 /* TODO : add dsim_dt and parse function at dsim_drv */
-
 
 
 /* TODO : divide platform info and target info */
@@ -82,4 +81,5 @@ static inline struct decon_dt_info *get_decon_pdata(void)
 {
 	return &decon_dt;
 }
+
 #endif /* __DISPLAY_CONFIG_H__ */

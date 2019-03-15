@@ -7,7 +7,7 @@
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
  * published by the Free Software Foundation.
-*/
+ */
 
 #ifndef __NT36672A_PARAM_H__
 #define __NT36672A_PARAM_H__
@@ -40,5 +40,4 @@ static const unsigned char SEQ_CMD_1[] = {
 static const unsigned char SEQ_CMD_2[] = {
 	0x55, 0x02
 };
-
 #endif /* __NT36672A_GAMMA_H__ */

@@ -1,12 +1,12 @@
 /* Copyright (c) 2018 Samsung Electronics Co, Ltd.
-
+ *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
  * published by the Free Software Foundation.
-
+ *
  * Copyright@ Samsung Electronics Co. LTD
  * Manseok Kim <manseoks.kim@samsung.com>
-
+ *
  * Alternatively, Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -25,7 +25,7 @@
 #include "nt36672a_param.h"
 
 
-#define GAMMA_PARAM_SIZE 26
+#define GAMMA_PARAM_SIZE	26
 
 #define NT36672A_VIDEO_VBP	2
 #define NT36672A_VIDEO_VFP	10
@@ -51,8 +51,8 @@ struct decon_lcd nt36672a_lcd_info = {
 	/* Mhz */
 	.hs_clk = 1100,
 	.esc_clk = 20,
-	.dphy_pms = {1, 100, 1, 0}, /* pmsk */
-	.vt_compensation = 14,	/* for underrun detect at video mode */
+	.dphy_pms = { 1, 100, 1, 0 },   /* pmsk */
+	.vt_compensation = 14,          /* for underrun detect at video mode */
 
 	/* Maybe, width and height will be removed */
 	.width = 80,
@@ -76,7 +76,6 @@ struct decon_lcd *decon_get_lcd_info(void)
 }
 #endif
 
-
 /*
  * NT36672A lcd init sequence
  *
@@ -89,20 +88,20 @@ void nt36672a_lcd_init(unsigned int id, struct decon_lcd *lcd)
 	mdelay(12);
 
 	if (dsim_wr_data(id, MIPI_DSI_DCS_SHORT_WRITE_PARAM,
-				SEQ_CMD_0[0],
-				SEQ_CMD_0[1]) < 0)
+	                 SEQ_CMD_0[0],
+	                 SEQ_CMD_0[1]) < 0)
 		dsim_err("fail to send SEQ_CMD_0 command.\n");
 	mdelay(12);
 
 	if (dsim_wr_data(id, MIPI_DSI_DCS_SHORT_WRITE_PARAM,
-				SEQ_CMD_1[0],
-				SEQ_CMD_1[1]) < 0)
+	                 SEQ_CMD_1[0],
+	                 SEQ_CMD_1[1]) < 0)
 		dsim_err("fail to send SEQ_CMD_1 command.\n");
 	mdelay(12);
 
 	if (dsim_wr_data(id, MIPI_DSI_DCS_SHORT_WRITE_PARAM,
-				SEQ_CMD_2[0],
-				SEQ_CMD_2[1]) < 0)
+	                 SEQ_CMD_2[0],
+	                 SEQ_CMD_2[1]) < 0)
 		dsim_err("fail to send SEQ_CMD_2 command.\n");
 	mdelay(12);
 
