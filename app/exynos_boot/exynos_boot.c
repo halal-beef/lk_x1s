@@ -28,8 +28,6 @@ static void exynos_boot_task(const struct app_descriptor *app, void *args)
 	int gpio = 3;	/* Volume Up */
 	int val;
 
-	printf("RST_STAT: 0x%x\n", rst_stat);
-
 	if (*(unsigned int *)DRAM_BASE != 0xabcdef) {
 		printf("Running on DRAM by TRACE32: skip auto booting\n");
 		do_fastboot(0, 0);
@@ -40,14 +38,34 @@ static void exynos_boot_task(const struct app_descriptor *app, void *args)
 	exynos_gpio_set_pull(bank, gpio, GPIO_PULL_UP);
 	exynos_gpio_cfg_pin(bank, gpio, GPIO_INPUT);
 	val = exynos_gpio_get_value(bank, gpio);
-	if (!is_first_boot() || (rst_stat & (WARM_RESET | LITTLE_WDT_RESET | BIG_WDT_RESET)) ||
-		((readl(CONFIG_RAMDUMP_SCRATCH) == CONFIG_RAMDUMP_MODE) && get_charger_mode() == 0) ||
-		!val) {
-		do_fastboot(0, 0);
-	} else {
-		cmd_boot(0, 0);
+	if (!is_first_boot() ||
+			(rst_stat & (WARM_RESET | LITTLE_WDT_RESET | BIG_WDT_RESET))) {
+		dfd_run_post_processing();
+		goto ramdump;
 	}
+	if ((readl(CONFIG_RAMDUMP_SCRATCH) == CONFIG_RAMDUMP_MODE) &&
+		get_charger_mode() == 0) {
+		goto ramdump;
+	}
+	if (!val)
+		do_fastboot(0, 0);
 
+#ifdef RAMDUMP_MODE_OFF
+	dfd_set_dump_en_for_cacheop(0);
+	set_debug_level("low");
+#else
+	dfd_set_dump_en_for_cacheop(1);
+	set_debug_level("mid");
+#endif
+	set_debug_level_by_env();
+	cmd_boot(0, 0);
+	return;
+ramdump:
+#ifdef RAMDUMP_MODE_OFF
+	cmd_boot(0, 0);
+#else
+	do_fastboot(0, 0);
+#endif
 	return;
 }
 

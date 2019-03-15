@@ -351,6 +351,7 @@ void platform_init(void)
 	read_dram_info();
 
 	dfd_display_reboot_reason();
+	dfd_display_core_stat();
 	if (*(unsigned int *)DRAM_BASE == 0xabcdef) {
 		/* read secure chip state */
 		if (read_secure_chip() == 0)
