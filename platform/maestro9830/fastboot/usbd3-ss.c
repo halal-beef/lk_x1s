@@ -23,7 +23,7 @@
 #define DBG_USBD3(fmt, ...) do { } while (0)
 #endif
 
-#define Assert(value) value ? : printf("[%s:%d] Assert(%d) \n", __func__, __LINE__, value)
+#define Assert(value) (value) ? : printf("[%s:%d] Assert(%d) \n", __func__, __LINE__, (value))
 
 #define USBDEVICE3_LINK_BASE		(oUsbDev3.m_uLinkBaseRegs)
 #define USBDEVICE3_PHYCTRL_BASE		(oUsbDev3.m_uPhyBaseRegs)
