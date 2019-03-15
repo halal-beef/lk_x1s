@@ -625,15 +625,14 @@ void reset_prepare_board(void)
 	writel(0, CONFIG_RAMDUMP_DEBUG_LEVEL);
 }
 
-#ifdef CONFIG_OF_LIBFDT
 const char *debug_level_val[] = {
 	"low",
 	"mid",
 };
 
-static void set_debug_level(char *buf)
+void set_debug_level(const char *buf)
 {
-	int i;
+	int i, debug_level = DEBUG_LEVEL_MID;
 
 	if (!buf)
 		return;
@@ -645,7 +644,6 @@ static void set_debug_level(char *buf)
 			goto debug_level_print;
 		}
 	}
-	debug_level = DEBUG_LEVEL_MID;
 
 debug_level_print:
 	/* Update debug_level to reserved region */
@@ -653,24 +651,16 @@ debug_level_print:
 	printf("debug level: %s\n", debug_level_val[debug_level]);
 }
 
-void set_debug_level_by_prev(void)
-{
-	u32 dl_temp = readl(CONFIG_RAMDUMP_DEBUG_LEVEL);
-
-	if ((dl_temp & (0xFFFF << 16)) == DEBUG_LEVEL_PREFIX) {
-		set_debug_level(debug_level_val[dl_temp & 0xFF]);
-		printf("found previous debug_level state: %s\n", debug_level_val[debug_level]);
-	}
-}
-
 void set_debug_level_by_env(void)
 {
+#if 0
 	char buf[16] = {0, };
 	int ret;
 
 	ret = getenv_s("debug_level", buf, sizeof(buf));
-
-	if (ret > 0)
+	if (ret > 0) {
+		printf("Change ");
 		set_debug_level(buf);
-}
+	}
 #endif
+}

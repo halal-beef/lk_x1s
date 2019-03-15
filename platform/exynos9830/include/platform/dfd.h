@@ -146,9 +146,8 @@ enum frmk_ipc_cmd {
 };
 
 void dfd_verify_enable(void);
+extern void set_debug_level(const char *buf);
 extern void set_debug_level_by_env(void);
-extern void set_debug_level_by_dt(void);
-extern void set_debug_level_to_dt(void);
 extern void debug_snapshot_fdt_init(void);
 extern int debug_snapshot_getvar_item(const char *name, char *response);
 extern unsigned long debug_snapshot_get_item_paddr(const char *name);
