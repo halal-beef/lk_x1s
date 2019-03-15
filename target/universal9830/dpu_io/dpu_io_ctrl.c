@@ -1,12 +1,12 @@
 /* Copyright (c) 2018 Samsung Electronics Co, Ltd.
-
+ *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
  * published by the Free Software Foundation.
-
+ *
  * Copyright@ Samsung Electronics Co. LTD
  * Manseok Kim <manseoks.kim@samsung.com>
-
+ *
  * Alternatively, Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -30,11 +30,12 @@ void display_te_init(void);
 void display_panel_reset(void);
 void display_panel_release(void);
 void display_panel_power(void);
+
 /*
  * ########## Machine dependency ##########
  */
 static void mipi_phy_control(unsigned int dev_index,
-					unsigned int enable)
+                             unsigned int enable)
 {
 	unsigned int addr, cfg = 0;
 
@@ -50,7 +51,6 @@ static void mipi_phy_control(unsigned int dev_index,
 	writel(cfg, addr);
 }
 
-
 /* MIPI-PHY related with master interface */
 static void set_mipi_phy_control(unsigned int enable)
 {
@@ -63,7 +63,6 @@ static void set_gpio_hw_te(void)
 	/* HW TE: GPC2_3(TE_DECON_F) */
 	display_te_init();
 }
-
 
 /*
  * ########## Board dependency ##########

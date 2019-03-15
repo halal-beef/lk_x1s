@@ -1,12 +1,12 @@
 /* Copyright (c) 2018 Samsung Electronics Co, Ltd.
-
+ *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
  * published by the Free Software Foundation.
-
+ *
  * Copyright@ Samsung Electronics Co. LTD
  * Manseok Kim <manseoks.kim@samsung.com>
-
+ *
  * Alternatively, Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -24,9 +24,9 @@
 #define _DPU_IO_CTRL_H_
 
 /**********************EXYNOS_BOOTLOADER_DISPLAY*******************************/
-#define EXYNOS_MIPI_PHY_ENABLE          (1 << 0)
-#define EXYNOS_MIPI_PHY_SRESETN         (1 << 1)
-#define EXYNOS_MIPI_PHY_MRESETN         (1 << 2)
+#define EXYNOS_MIPI_PHY_ENABLE	(1 << 0)
+#define EXYNOS_MIPI_PHY_SRESETN (1 << 1)
+#define EXYNOS_MIPI_PHY_MRESETN (1 << 2)
 
 /* GPIO are depenent upon board schematic */
 enum board_gpio_type {
