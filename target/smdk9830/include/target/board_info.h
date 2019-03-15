@@ -13,5 +13,6 @@
 
 #define CONFIG_BOARD_ID	0
 #define CONFIG_DTB_IN_BOOT
+#define CONFIG_UFS_BOARD_TYPE 0        /* smdk : 0, universal : 1 */
 
 #endif /*__BOARD_INFO_H__ */
