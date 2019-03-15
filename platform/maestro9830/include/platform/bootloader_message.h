@@ -61,22 +61,22 @@ static const size_t WIPE_PACKAGE_OFFSET_IN_MISC = 16 * 1024;
  * issue.
  */
 struct bootloader_message {
-    char command[32];
-    char status[32];
-    char recovery[768];
+	char command[32];
+	char status[32];
+	char recovery[768];
 
-    // The 'recovery' field used to be 1024 bytes.  It has only ever
-    // been used to store the recovery command line, so 768 bytes
-    // should be plenty.  We carve off the last 256 bytes to store the
-    // stage string (for multistage packages) and possible future
-    // expansion.
-    char stage[32];
+	// The 'recovery' field used to be 1024 bytes.  It has only ever
+	// been used to store the recovery command line, so 768 bytes
+	// should be plenty.  We carve off the last 256 bytes to store the
+	// stage string (for multistage packages) and possible future
+	// expansion.
+	char stage[32];
 
-    // The 'reserved' field used to be 224 bytes when it was initially
-    // carved off from the 1024-byte recovery field. Bump it up to
-    // 1184-byte so that the entire bootloader_message struct rounds up
-    // to 2048-byte.
-    char reserved[1184];
+	// The 'reserved' field used to be 224 bytes when it was initially
+	// carved off from the 1024-byte recovery field. Bump it up to
+	// 1184-byte so that the entire bootloader_message struct rounds up
+	// to 2048-byte.
+	char reserved[1184];
 };
 
 /**
@@ -107,12 +107,12 @@ static_assert(sizeof(struct bootloader_message) == 2048);
  * if update_engine is compiled with Omaha support.
  */
 struct bootloader_message_ab {
-    struct bootloader_message message;
-    char slot_suffix[32];
-    char update_channel[128];
+	struct bootloader_message message;
+	char slot_suffix[32];
+	char update_channel[128];
 
-    // Round up the entire struct to 4096-byte.
-    char reserved[1888];
+	// Round up the entire struct to 4096-byte.
+	char reserved[1888];
 };
 
 /**
@@ -123,22 +123,22 @@ struct bootloader_message_ab {
 static_assert(sizeof(struct bootloader_message_ab) == 4096);
 #endif
 
-#define BOOT_CTRL_MAGIC   0x42414342 /* Bootloader Control AB */
-#define BOOT_CTRL_VERSION 1
+#define BOOT_CTRL_MAGIC		0x42414342 /* Bootloader Control AB */
+#define BOOT_CTRL_VERSION	1
 
 struct slot_metadata {
-    // Slot priority with 15 meaning highest priority, 1 lowest
-    // priority and 0 the slot is unbootable.
-    uint8_t priority : 4;
-    // Number of times left attempting to boot this slot.
-    uint8_t tries_remaining : 3;
-    // 1 if this slot has booted successfully, 0 otherwise.
-    uint8_t successful_boot : 1;
-    // 1 if this slot is corrupted from a dm-verity corruption, 0
-    // otherwise.
-    uint8_t verity_corrupted : 1;
-    // Reserved for further use.
-    uint8_t reserved : 7;
+	// Slot priority with 15 meaning highest priority, 1 lowest
+	// priority and 0 the slot is unbootable.
+	uint8_t priority : 4;
+	// Number of times left attempting to boot this slot.
+	uint8_t tries_remaining : 3;
+	// 1 if this slot has booted successfully, 0 otherwise.
+	uint8_t successful_boot : 1;
+	// 1 if this slot is corrupted from a dm-verity corruption, 0
+	// otherwise.
+	uint8_t verity_corrupted : 1;
+	// Reserved for further use.
+	uint8_t reserved : 7;
 } __attribute__((packed));
 
 /* Bootloader Control AB
@@ -150,25 +150,25 @@ struct slot_metadata {
  * mandatory.
  */
 struct bootloader_control {
-    // NUL terminated active slot suffix.
-    char slot_suffix[4];
-    // Bootloader Control AB magic number (see BOOT_CTRL_MAGIC).
-    uint32_t magic;
-    // Version of struct being used (see BOOT_CTRL_VERSION).
-    uint8_t version;
-    // Number of slots being managed.
-    uint8_t nb_slot : 3;
-    // Number of times left attempting to boot recovery.
-    uint8_t recovery_tries_remaining : 3;
-    // Ensure 4-bytes alignment for slot_info field.
-    uint8_t reserved0[2];
-    // Per-slot information.  Up to 4 slots.
-    struct slot_metadata slot_info[4];
-    // Reserved for further use.
-    uint8_t reserved1[8];
-    // CRC32 of all 28 bytes preceding this field (little endian
-    // format).
-    uint32_t crc32_le;
+	// NUL terminated active slot suffix.
+	char slot_suffix[4];
+	// Bootloader Control AB magic number (see BOOT_CTRL_MAGIC).
+	uint32_t magic;
+	// Version of struct being used (see BOOT_CTRL_VERSION).
+	uint8_t version;
+	// Number of slots being managed.
+	uint8_t nb_slot : 3;
+	// Number of times left attempting to boot recovery.
+	uint8_t recovery_tries_remaining : 3;
+	// Ensure 4-bytes alignment for slot_info field.
+	uint8_t reserved0[2];
+	// Per-slot information.  Up to 4 slots.
+	struct slot_metadata slot_info[4];
+	// Reserved for further use.
+	uint8_t reserved1[8];
+	// CRC32 of all 28 bytes preceding this field (little endian
+	// format).
+	uint32_t crc32_le;
 } __attribute__((packed));
 
 #if (__STDC_VERSION__ >= 201112L) || defined(__cplusplus)
@@ -177,62 +177,58 @@ static_assert(sizeof(struct bootloader_control) ==
 #endif
 
 #ifdef __cplusplus
-
 #include <string>
 #include <vector>
 
 // Return the block device name for the bootloader message partition and waits
 // for the device for up to 10 seconds. In case of error returns the empty
 // string.
-std::string get_bootloader_message_blk_device(std::string* err);
+std::string get_bootloader_message_blk_device(std::string *err);
 
 // Read bootloader message into boot. Error message will be set in err.
-bool read_bootloader_message(bootloader_message* boot, std::string* err);
+bool read_bootloader_message(bootloader_message *boot, std::string *err);
 
 // Read bootloader message from the specified misc device into boot.
-bool read_bootloader_message_from(bootloader_message* boot, const std::string& misc_blk_device,
-                                  std::string* err);
+bool read_bootloader_message_from(bootloader_message *boot, const std::string&misc_blk_device,
+                                  std::string *err);
 
 // Write bootloader message to BCB.
-bool write_bootloader_message(const bootloader_message& boot, std::string* err);
+bool write_bootloader_message(const bootloader_message&boot, std::string *err);
 
 // Write bootloader message to the specified BCB device.
-bool write_bootloader_message_to(const bootloader_message& boot,
-                                 const std::string& misc_blk_device, std::string* err);
+bool write_bootloader_message_to(const bootloader_message&boot,
+                                 const std::string&misc_blk_device, std::string *err);
 
 // Write bootloader message (boots into recovery with the options) to BCB. Will
 // set the command and recovery fields, and reset the rest.
-bool write_bootloader_message(const std::vector<std::string>& options, std::string* err);
+bool write_bootloader_message(const std::vector<std::string>&options, std::string *err);
 
 // Update bootloader message (boots into recovery with the options) to BCB. Will
 // only update the command and recovery fields.
-bool update_bootloader_message(const std::vector<std::string>& options, std::string* err);
+bool update_bootloader_message(const std::vector<std::string>&options, std::string *err);
 
 // Update bootloader message (boots into recovery with the |options|) in |boot|. Will only update
 // the command and recovery fields.
-bool update_bootloader_message_in_struct(bootloader_message* boot,
-                                         const std::vector<std::string>& options);
+bool update_bootloader_message_in_struct(bootloader_message *boot,
+                                         const std::vector<std::string>&options);
 
 // Clear BCB.
-bool clear_bootloader_message(std::string* err);
+bool clear_bootloader_message(std::string *err);
 
 // Writes the reboot-bootloader reboot reason to the bootloader_message.
-bool write_reboot_bootloader(std::string* err);
+bool write_reboot_bootloader(std::string *err);
 
 // Read the wipe package from BCB (from offset WIPE_PACKAGE_OFFSET_IN_MISC).
-bool read_wipe_package(std::string* package_data, size_t size, std::string* err);
+bool read_wipe_package(std::string *package_data, size_t size, std::string *err);
 
 // Write the wipe package into BCB (to offset WIPE_PACKAGE_OFFSET_IN_MISC).
-bool write_wipe_package(const std::string& package_data, std::string* err);
+bool write_wipe_package(const std::string&package_data, std::string *err);
 
-#else
-
+#else // ifdef __cplusplus
 #include <stdbool.h>
 
 // C Interface.
-bool write_bootloader_message(const char* options);
+bool write_bootloader_message(const char *options);
 bool write_reboot_bootloader(void);
-
 #endif  // ifdef __cplusplus
-
 #endif  // _BOOTLOADER_MESSAGE_H

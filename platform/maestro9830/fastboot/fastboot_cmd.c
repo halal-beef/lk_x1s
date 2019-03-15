@@ -37,12 +37,11 @@ unsigned int downloaded_data_size;
 int extention_flag;
 static unsigned int is_ramdump = 0;
 
-static int rx_handler (const unsigned char *buffer, unsigned int buffer_size);
+static int rx_handler(const unsigned char *buffer, unsigned int buffer_size);
 int fastboot_tx_mem(u64 buffer, u64 buffer_size);
 
 /* cmd_fastboot_interface	in fastboot.h	*/
-struct cmd_fastboot_interface interface =
-{
+struct cmd_fastboot_interface interface = {
 	.rx_handler            = rx_handler,
 	.reset_handler         = NULL,
 	.product_name          = NULL,
@@ -62,29 +61,20 @@ int fb_do_getvar(const char *cmd_buffer)
 	char buf[FB_RESPONSE_BUFFER_SIZE];
 	char *response = (char *)(((unsigned long)buf + 8) & ~0x07);
 
-	sprintf(response,"OKAY");
+	sprintf(response, "OKAY");
 
-	if (!memcmp(cmd_buffer + 7, "version", strlen("version")))
-	{
+	if (!memcmp(cmd_buffer + 7, "version", strlen("version"))) {
 		sprintf(response + 4, FASTBOOT_VERSION);
-	}
-	else if (!memcmp(cmd_buffer + 7, "product", strlen("product")))
-	{
+	} else if (!memcmp(cmd_buffer + 7, "product", strlen("product"))) {
 		if (interface.product_name)
 			sprintf(response + 4, interface.product_name);
-	}
-	else if (!memcmp(cmd_buffer + 7, "serialno", strlen("serialno")))
-	{
+	} else if (!memcmp(cmd_buffer + 7, "serialno", strlen("serialno"))) {
 		if (interface.serial_no)
 			sprintf(response + 4, interface.serial_no);
-	}
-	else if (!memcmp(cmd_buffer + 7, "downloadsize", strlen("downloadsize")))
-	{
+	} else if (!memcmp(cmd_buffer + 7, "downloadsize", strlen("downloadsize"))) {
 		if (interface.transfer_buffer_size)
 			sprintf(response + 4, "%08x", interface.transfer_buffer_size);
-	}
-	else if (!memcmp(cmd_buffer + 7, "partition-type", strlen("partition-type")))
-	{
+	} else if (!memcmp(cmd_buffer + 7, "partition-type", strlen("partition-type")))	{
 		char *key = (char *)cmd_buffer + 7 + strlen("partition-type:");
 		struct pit_entry *ptn = pit_get_part_info(key);
 
@@ -98,9 +88,7 @@ int fb_do_getvar(const char *cmd_buffer)
 			if (ptn->filesys == FS_TYPE_SPARSE_F2FS)
 				strcpy(response + 4, "f2fs");
 		}
-	}
-	else if (!memcmp(cmd_buffer + 7, "partition-size", strlen("partition-size")))
-	{
+	} else if (!memcmp(cmd_buffer + 7, "partition-size", strlen("partition-size")))	{
 		char *key = (char *)cmd_buffer + 7 + strlen("partition-size:");
 		struct pit_entry *ptn = pit_get_part_info(key);
 
@@ -111,20 +99,14 @@ int fb_do_getvar(const char *cmd_buffer)
 		 */
 		if (ptn->filesys != FS_TYPE_NONE)
 			sprintf(response + 4, "0x%llx", pit_get_length(ptn));
-	}
-	else if (!strcmp(cmd_buffer + 7, "slot-count"))
-	{
+	} else if (!strcmp(cmd_buffer + 7, "slot-count")) {
 		sprintf(response + 4, "2");
-	}
-	else if (!strcmp(cmd_buffer + 7, "current-slot"))
-	{
+	} else if (!strcmp(cmd_buffer + 7, "current-slot")) {
 		if (ab_current_slot())
 			sprintf(response + 4, "_b");
 		else
 			sprintf(response + 4, "_a");
-	}
-	else if (!memcmp(cmd_buffer + 7, "slot-successful", strlen("slot-successful")))
-	{
+	} else if (!memcmp(cmd_buffer + 7, "slot-successful", strlen("slot-successful"))) {
 		int slot = -1;
 		if (!strcmp(cmd_buffer + 7 + strlen("slot-successful:"), "_a"))
 			slot = 0;
@@ -139,9 +121,7 @@ int fb_do_getvar(const char *cmd_buffer)
 			else
 				sprintf(response + 4, "no");
 		}
-	}
-	else if (!memcmp(cmd_buffer + 7, "slot-unbootable", strlen("slot-unbootable")))
-	{
+	} else if (!memcmp(cmd_buffer + 7, "slot-unbootable", strlen("slot-unbootable"))) {
 		int slot = -1;
 		if (!strcmp(cmd_buffer + 7 + strlen("slot-unbootable:"), "_a"))
 			slot = 0;
@@ -155,9 +135,7 @@ int fb_do_getvar(const char *cmd_buffer)
 			else
 				sprintf(response + 4, "no");
 		}
-	}
-	else if (!memcmp(cmd_buffer + 7, "slot-retry-count", strlen("slot-retry-count")))
-	{
+	} else if (!memcmp(cmd_buffer + 7, "slot-retry-count", strlen("slot-retry-count"))) {
 		int slot = -1;
 		if (!strcmp(cmd_buffer + 7 + strlen("slot-retry-count:"), "_a"))
 			slot = 0;
@@ -167,13 +145,9 @@ int fb_do_getvar(const char *cmd_buffer)
 			sprintf(response, "FAILinvalid slot");
 		if (slot >= 0)
 			sprintf(response + 4, "%d", ab_slot_retry_count(slot));
-		}
-	else if (!memcmp(cmd_buffer + 7, "has-slot", strlen("has-slot")))
-	{
+	} else if (!memcmp(cmd_buffer + 7, "has-slot", strlen("has-slot"))) {
 		sprintf(response + 4, "no");
-	}
-	else
-	{
+	} else {
 		debug_snapshot_getvar_item(cmd_buffer + 7, response + 4);
 	}
 
@@ -190,8 +164,7 @@ int fb_do_erase(const char *cmd_buffer)
 	struct pit_entry *ptn = pit_get_part_info(key);
 	int status = 1;
 
-	if (strcmp(key, "pit") && ptn == 0)
-	{
+	if (strcmp(key, "pit") && ptn == 0) {
 		sprintf(response, "FAILpartition does not exist");
 		fastboot_tx_status(response, strlen(response), FASTBOOT_TX_ASYNC);
 		return 0;
@@ -202,7 +175,7 @@ int fb_do_erase(const char *cmd_buffer)
 	status = pit_access(ptn, PIT_OP_ERASE, 0, 0);
 
 	if (status) {
-		sprintf(response,"FAILfailed to erase partition");
+		sprintf(response, "FAILfailed to erase partition");
 	} else {
 		printf("partition '%s' erased\n", ptn->name);
 		sprintf(response, "OKAY");
@@ -214,7 +187,7 @@ int fb_do_erase(const char *cmd_buffer)
 }
 
 static void flash_using_pit(char *key, char *response,
-		u32 size, void *addr)
+                            u32 size, void *addr)
 {
 	struct pit_entry *ptn;
 	unsigned long long length;
@@ -234,7 +207,10 @@ static void flash_using_pit(char *key, char *response,
 		int ret = 0;
 		ret = scsi_ufs_ffu(addr, size);
 		if (ret == 0) {
-			print_lcd_update(FONT_GREEN, FONT_BLACK, "UFS FFU succecced! Now turn off and you can boot with usb download mode when power-up");
+			print_lcd_update(FONT_GREEN,
+			                 FONT_BLACK,
+			                 "UFS FFU succecced! Now turn off. You can boot with usb down mode on power-up"
+			                 );
 			sprintf(response, "OKAY");
 		} else {
 			print_lcd_update(FONT_RED, FONT_BLACK, "UFS 'ffu' failed");
@@ -273,11 +249,11 @@ int fb_do_flash(const char *cmd_buffer)
 	char buf[FB_RESPONSE_BUFFER_SIZE];
 	char *response = (char *)(((unsigned long)buf + 8) & ~0x07);
 
-	if(is_first_boot()) {
+	if (is_first_boot()) {
 		uint32_t lock_state;
 		rpmb_get_lock_state(&lock_state);
 		printf("Lock state: %d\n", lock_state);
-		if(lock_state) {
+		if (lock_state) {
 			sprintf(response, "FAILDevice is locked");
 			fastboot_tx_status(response, strlen(response), FASTBOOT_TX_ASYNC);
 			return 1;
@@ -287,7 +263,7 @@ int fb_do_flash(const char *cmd_buffer)
 	dprintf(ALWAYS, "flash\n");
 
 	flash_using_pit((char *)cmd_buffer + 6, response,
-			downloaded_data_size, (void *)interface.transfer_buffer);
+	                downloaded_data_size, (void *)interface.transfer_buffer);
 
 	fastboot_tx_status(response, strlen(response), FASTBOOT_TX_ASYNC);
 
@@ -306,10 +282,10 @@ int fb_do_reboot(const char *cmd_buffer)
 	 */
 	scsi_do_ssu();
 
-	sprintf(response,"OKAY");
+	sprintf(response, "OKAY");
 	fastboot_tx_status(response, strlen(response), FASTBOOT_TX_SYNC);
 
-	if(!memcmp(cmd_buffer, "reboot-bootloader", strlen("reboot-bootloader")))
+	if (!memcmp(cmd_buffer, "reboot-bootloader", strlen("reboot-bootloader")))
 		writel(CONFIG_RAMDUMP_MODE, CONFIG_RAMDUMP_SCRATCH);
 	else
 		writel(0, CONFIG_RAMDUMP_SCRATCH);
@@ -356,19 +332,17 @@ static void start_ramdump(void *buf)
 	printf("ramdump size is [0x%lx]\n", hdr->size);
 	printf("version is [0x%lx]\n", hdr->version);
 
-	if (hdr->version != 2) {
+	if (hdr->version != 2)
 		printf("you are using wrong version of fastboot!!!\n");
-	}
 
 	/* dont't generate DECERR even if permission failure of ASP occurs */
 	if (ramdump_cnt++ == 0)
 		set_tzasc_action(0);
 
-	if (!fastboot_tx_mem(hdr->base, hdr->size)) {
+	if (!fastboot_tx_mem(hdr->base, hdr->size))
 		printf("Failed ramdump~! \n");
-	} else {
+	else
 		printf("Finished ramdump~! \n");
-	}
 }
 
 int fb_do_ramdump(const char *cmd_buffer)
@@ -404,7 +378,7 @@ int fb_do_set_active(const char *cmd_buffer)
 
 	printf("set_active\n");
 
-	sprintf(response,"OKAY");
+	sprintf(response, "OKAY");
 	if (!strcmp(cmd_buffer + 11, "a")) {
 		printf("Set slot 'a' active.\n");
 		print_lcd_update(FONT_GREEN, FONT_BLACK, "Set slot 'a' active.");
@@ -428,17 +402,17 @@ int fb_do_flashing(const char *cmd_buffer)
 	char buf[FB_RESPONSE_BUFFER_SIZE];
 	char *response = (char *)(((unsigned long)buf + 8) & ~0x07);
 
-	sprintf(response,"OKAY");
+	sprintf(response, "OKAY");
 	if (!strcmp(cmd_buffer + 9, "lock")) {
 		printf("Lock this device.\n");
 		print_lcd_update(FONT_GREEN, FONT_BLACK, "Lock this device.");
-		if(rpmb_set_lock_state(1))
+		if (rpmb_set_lock_state(1))
 			sprintf(response, "FAILRPBM error: failed to change lock state on RPMB");
 	} else if (!strcmp(cmd_buffer + 9, "unlock")) {
 		if (get_unlock_ability()) {
 			printf("Unlock this device.\n");
 			print_lcd_update(FONT_GREEN, FONT_BLACK, "Unlock this device.");
-			if(rpmb_set_lock_state(0))
+			if (rpmb_set_lock_state(0))
 				sprintf(response, "FAILRPBM error: failed to change lock state on RPMB");
 		} else {
 			sprintf(response, "FAILunlock_ability is 0");
@@ -465,17 +439,17 @@ int fb_do_flashing(const char *cmd_buffer)
 }
 
 struct cmd_fastboot cmd_list[] = {
-	{"reboot", fb_do_reboot},
-	{"flash:", fb_do_flash},
-	{"erase:", fb_do_erase},
-	{"download:", fb_do_download},
-	{"ramdump:", fb_do_ramdump},
-	{"getvar:", fb_do_getvar},
-	{"set_active:", fb_do_set_active},
-	{"flashing", fb_do_flashing},
+	{ "reboot", fb_do_reboot },
+	{ "flash:", fb_do_flash },
+	{ "erase:", fb_do_erase },
+	{ "download:", fb_do_download },
+	{ "ramdump:", fb_do_ramdump },
+	{ "getvar:", fb_do_getvar },
+	{ "set_active:", fb_do_set_active },
+	{ "flashing", fb_do_flashing },
 };
 
-static int rx_handler (const unsigned char *buffer, unsigned int buffer_size)
+static int rx_handler(const unsigned char *buffer, unsigned int buffer_size)
 {
 	unsigned int i;
 	unsigned int rx_size;
@@ -485,8 +459,7 @@ static int rx_handler (const unsigned char *buffer, unsigned int buffer_size)
 	char buf[FB_RESPONSE_BUFFER_SIZE];
 	char *response = (char *)(((unsigned long)buf + 8) & ~0x07);
 
-	if (download_size)
-	{
+	if (download_size) {
 		if (buffer_size == 0) {
 			printf("USB download buffer is empty\n");
 			return 0;
@@ -503,8 +476,8 @@ static int rx_handler (const unsigned char *buffer, unsigned int buffer_size)
 			exynos_move_trb_buff(rx_size, remain);
 		else
 			/* Save the data to the transfer buffer */
-			memcpy (interface.transfer_buffer + downloaded_data_size,
-				buffer, rx_size);
+			memcpy(interface.transfer_buffer + downloaded_data_size,
+			       buffer, rx_size);
 
 		downloaded_data_size += rx_size;
 
@@ -540,11 +513,11 @@ static int rx_handler (const unsigned char *buffer, unsigned int buffer_size)
 		cmd_buffer = (char *)buffer;
 
 #ifdef PIT_DEBUG
-		printf("fb %s\n", cmd_buffer);	/* test: probing protocol */
+		printf("fb %s\n", cmd_buffer);  /* test: probing protocol */
 #endif
 
 		for (i = 0; i < (sizeof(cmd_list) / sizeof(struct cmd_fastboot)); i++) {
-			if(!memcmp(cmd_buffer, cmd_list[i].cmd_name, strlen(cmd_list[i].cmd_name)))
+			if (!memcmp(cmd_buffer, cmd_list[i].cmd_name, strlen(cmd_list[i].cmd_name)))
 				cmd_list[i].handler(cmd_buffer);
 		}
 	}
@@ -567,8 +540,7 @@ int do_fastboot(int argc, const cmd_args *argv)
 	do {
 		continue_from_disconnect = 0;
 
-		if(!fastboot_init(&interface))
-		{
+		if (!fastboot_init(&interface))	{
 			int poll_status;
 			dprintf(ALWAYS, "fastboot_init success!!\n");
 			while (1) {
@@ -584,12 +556,11 @@ int do_fastboot(int argc, const cmd_args *argv)
 				}
 			}
 		}
-
 	} while (continue_from_disconnect);
 
 	return 0;
 }
 
 STATIC_COMMAND_START
-STATIC_COMMAND("fast", "usb fastboot", &do_fastboot)
+	STATIC_COMMAND("fast", "usb fastboot", &do_fastboot)
 STATIC_COMMAND_END(usb_fastboot);

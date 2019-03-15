@@ -6,8 +6,8 @@
  * transcribed, stored in a retrieval system or translated into any human or computer language in any form by any means,
  * electronic, mechanical, manual or otherwise, or disclosed
  * to third parties without the express written permission of Samsung Electronics.
-
-
+ *
+ *
  * Alternatively, this program is free software in case of open source project
  * you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -27,18 +27,19 @@
 #include "phy-exynos-usbdp-gen2.h"
 #include "usb.h"
 
-#define DEBUG 0
-#define DISABLE	0
+#define DEBUG			0
+#define DISABLE			0
 
 #define CONFIG_USB_SSPHY_SAMSUNG_V2
-#define USB_PHY_CONTROL_BASE		USBDEVICE3_PHYCTRL_CH0_BASE
+#define USB_PHY_CONTROL_BASE	USBDEVICE3_PHYCTRL_CH0_BASE
 #if defined(CONFIG_USB_SSPHY_SAMSUNG_V2)
-#define USBDP_PHY_BASE			USBDEVICE3_PHYCTRL_DP_BASE
-#define USBPCS_BASE			USBDEVICE3_PHYCTRL_PCS_BASE
+#define USBDP_PHY_BASE		USBDEVICE3_PHYCTRL_DP_BASE
+#define USBPCS_BASE		USBDEVICE3_PHYCTRL_PCS_BASE
 #endif
 
-/* Phy tuning parameter - define here till final tune param is fixed */
-/* 2.0 USB Only PHY Info */
+/*
+ * Phy tuning parameter - define here till final tune param is fixed
+ * 2.0 USB Only PHY Info*/
 static struct exynos_usb_tune_param usbcal_20phy_tune[] = {
 	{ .name = "tx_pre_emp", .value = 0x3, },
 	{ .name = "tx_vref", .value = 0x7, },
@@ -53,7 +54,7 @@ static struct exynos_usbphy_info usbphy_cal_info = {
 	.refsel = USBPHY_REFSEL_CLKCORE,
 	.not_used_vbus_pad = true,
 	.use_io_for_ovc = DISABLE,
-	.regs_base = (void *) USB_PHY_CONTROL_BASE,
+	.regs_base = (void *)USB_PHY_CONTROL_BASE,
 	.tune_param = usbcal_20phy_tune,
 	.used_phy_port = 0,
 	.hs_rewa = 1,
@@ -92,7 +93,7 @@ static struct exynos_usb_tune_param usbcal_ssphyy_tune[] = {
 	{ .name = "sstx_idrv_dn",		.value = 0x0, },
 	{ .name = "sstx_up_term",		.value = 0x3, },
 	{ .name = "sstx_dn_term",		.value = 0x3, },
-#endif
+#endif /* if defined(CONFIG_USB_SSPHY_SAMSUNG) */
 	{ .value = EXYNOS_USB_TUNE_LAST, },
 };
 
@@ -100,18 +101,18 @@ static struct exynos_usbphy_info usbphy_cal_ssphy_info = {
 #if defined(CONFIG_USB_SSPHY_SAMSUNG)
 	.version = EXYNOS_USBCON_VER_04_0_0,
 	.refsel = USBPHY_REFSEL_CLKCORE,
-	.regs_base = (void *) USBDP_PHY_BASE,
-	.regs_base_2nd = (void *) USBPCS_BASE,
+	.regs_base = (void *)USBDP_PHY_BASE,
+	.regs_base_2nd = (void *)USBPCS_BASE,
 #else
 	.version = EXYNOS_USBCON_VER_04_1_0,
 	.refsel = USBPHY_REFSEL_CLKCORE,
-	.regs_base = (void *) USBDEVICE3_PHYCTRL_DP_BASE,
-	.regs_base_2nd = (void *) USBDEVICE3_PHYCTRL_PCS_BASE,
+	.regs_base = (void *)USBDEVICE3_PHYCTRL_DP_BASE,
+	.regs_base_2nd = (void *)USBDEVICE3_PHYCTRL_PCS_BASE,
 #endif
 	.used_phy_port = 0,
 	.tune_param = usbcal_ssphyy_tune,
 };
-#endif
+#endif /* if defined(CONFIG_USB_SSPHY_SAMSUNG) || defined(CONFIG_USB_SSPHY_SAMSUNG_V2) */
 
 enum samsung_phy_set_option {
 	SET_DPPULLUP_ENABLE,
@@ -157,7 +158,7 @@ void exynos_usb_sub_phy_init(void)
 		int pll_lock;
 
 		pll_lock = phy_exynos_usbdp_g2_rx_cdr_pll_lock(
-				&usbphy_cal_ssphy_info);
+			&usbphy_cal_ssphy_info);
 		if (!pll_lock)
 			break;
 	}
@@ -167,7 +168,7 @@ void exynos_usb_sub_phy_init(void)
 	}
 	/* [step7] link_pclk_sel change */
 	phy_exynos_usb_v3p1_g2_link_pclk_sel(&usbphy_cal_info);
-#endif
+#endif /* if defined(CONFIG_USB_SSPHY_SAMSUNG) */
 }
 
 void exynos_usb_phy_init(void)
@@ -209,5 +210,4 @@ void exynos_usb_set_ss_port(int port_num)
 #if defined(CONFIG_USB_SSPHY_SAMSUNG) || defined(CONFIG_USB_SSPHY_SAMSUNG_V2)
 	usbphy_cal_ssphy_info.used_phy_port = port_num;
 #endif
-
 }

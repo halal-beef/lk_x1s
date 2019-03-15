@@ -6,8 +6,8 @@
  * transcribed, stored in a retrieval system or translated into any human or computer language in any form by any means,
  * electronic, mechanical, manual or otherwise, or disclosed
  * to third parties without the express written permission of Samsung Electronics.
-
-
+ *
+ *
  * Alternatively, this program is free software in case of open source project
  * you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -28,7 +28,7 @@ int phy_exynos_usbdp_check_pll_lock(struct exynos_usbphy_info *info)
 		reg2f = readl(regs_base + EXYNOS_USBDP_COM_CMN_R2F);
 		reg4b = readl(regs_base + EXYNOS_USBDP_COM_TRSV_R4B);
 		if ((reg2f & USBDP_CMN2F_PLL_LOCK_DONE) &&
-				(reg4b & USBDP_TRSV4B_CDR_FLD_PLL_MODE_DONE))
+		    (reg4b & USBDP_TRSV4B_CDR_FLD_PLL_MODE_DONE))
 			break;
 		udelay(1);
 	}
@@ -39,7 +39,7 @@ int phy_exynos_usbdp_check_pll_lock(struct exynos_usbphy_info *info)
 }
 
 void phy_exynos_usbdp_tune_each(struct exynos_usbphy_info *info, char *name,
-	int val)
+                                int val)
 {
 	void __iomem *regs_base = info->regs_base;
 	u32 reg;
@@ -487,10 +487,8 @@ void phy_exynos_usbdp_enable(struct exynos_usbphy_info *info)
 	writel(reg, regs_base + EXYNOS_USBDP_COM_TRSV_R24);
 
 	writel(0x78, regs_base + EXYNOS_USBDP_COM_TRSV_R3D);
-
 }
 
 void phy_exynos_usbdp_disable(struct exynos_usbphy_info *info)
 {
-
 }

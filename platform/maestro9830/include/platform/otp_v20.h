@@ -26,18 +26,19 @@
 #ifndef _OTP_V20_H_
 #define _OTP_V20_H_
 
-/*****************************************************************************/
-/* defines for general purpose                                               */
-/*****************************************************************************/
-#define VIRT_TO_PHYS(_virt_addr_)		((uint64_t)(_virt_addr_))
+/*
+ ****************************************************************************
+ * defines for general purpose
+ *****************************************************************************/
+#define VIRT_TO_PHYS(_virt_addr_) ((uint64_t)(_virt_addr_))
 #define FLUSH_DCACHE_RANGE(addr, length)
 
-#define CACHE_WRITEBACK_SHIFT			6
-#define CACHE_WRITEBACK_GRANULE			(1 << CACHE_WRITEBACK_SHIFT)
+#define CACHE_WRITEBACK_SHIFT				6
+#define CACHE_WRITEBACK_GRANULE				(1 << CACHE_WRITEBACK_SHIFT)
 
-#define MASK_LSB8				0x00000000000000FFULL
-#define MASK_LSB16				0x000000000000FFFFULL
-#define MASK_LSB32				0x00000000FFFFFFFFULL
+#define MASK_LSB8					0x00000000000000FFULL
+#define MASK_LSB16					0x000000000000FFFFULL
+#define MASK_LSB32					0x00000000FFFFFFFFULL
 
 /* SMC ID for OTP control */
 #define SMC_AARCH64_PREFIX				(0xC2000000)
@@ -53,9 +54,10 @@
 #define OTP_MAX_ANTIRBK_S_AP_CNT			32
 #define OTP_MAX_ANTIRBK_NS_AP0_CNT			128
 
-/*****************************************************************************/
-/* ERROR Codes                                                               */
-/*****************************************************************************/
+/*
+ ****************************************************************************
+ * ERROR Codes
+ *****************************************************************************/
 #define RV_SUCCESS					0
 
 #define RV_OTP_TEST_BIT_SET_ALREADY			0x3020A
@@ -76,12 +78,12 @@
 #define RV_OTP_UPDATE_RNTIRBK_NS_AP0_INVALID_COUNT2	0x85013
 
 
-/*****************************************************************************/
-/* OTP commands                                                              */
-/*****************************************************************************/
-/* commands for program */
-enum
-{
+/*
+ ****************************************************************************
+ * OTP commands
+ ****************************************************************************
+ * commands for program*/
+enum {
 	CMD_W_ROM_SEC_BOOT_KEY = 0x1,
 	CMD_W_USE_ROM_SEC_BOOT_KEY,
 	CMD_W_BAN_ROM_SEC_BOOT_KEY,
@@ -106,8 +108,7 @@ enum
 };
 
 /* commands for read & verification */
-enum
-{
+enum {
 	CMD_C_ROM_SEC_BOOT_KEY = 0x100,
 	CMD_R_USE_ROM_SEC_BOOT_KEY,
 	CMD_R_BAN_ROM_SEC_BOOT_KEY,
@@ -131,29 +132,30 @@ enum
 };
 
 /* otp command id for debug and test */
-enum
-{
+enum {
 	CMD_DEBUG_BASE_ID = 0x1000,
 	CMD_R_SMC_TEST,
 	CMD_R_CHIP_ID,
 	CMD_W_OTP_SW_BLOCK,
 };
 
-/*****************************************************************************/
-/* OTP functions for Test                                                    */
-/*****************************************************************************/
+/*
+ ****************************************************************************
+ * OTP functions for Test
+ *****************************************************************************/
 uint64_t string_to_dec(char str[]);
 uint64_t cm_otp_smc_test(uint64_t test_num);
 uint64_t cm_otp_read_chip_id(uint64_t *chip_id);
 uint64_t cm_otp_sw_block_enable(void);
 
-/*****************************************************************************/
-/* OTP functions for Secure Boot                                             */
-/*****************************************************************************/
+/*
+ ****************************************************************************
+ * OTP functions for Secure Boot
+ *****************************************************************************/
 uint64_t cm_otp_write_rom_sec_boot_key(uint8_t *rom_sec_boot_key_ptr,
-				       uint32_t rom_sec_boot_key_len);
+                                       uint32_t rom_sec_boot_key_len);
 uint64_t cm_otp_check_rom_sec_boot_key(uint8_t *rom_sec_boot_key_ptr,
-				       uint32_t rom_sec_boot_key_len);
+                                       uint32_t rom_sec_boot_key_len);
 uint64_t cm_otp_write_use_rom_sec_boot_key(void);
 uint64_t cm_otp_read_use_rom_sec_boot_key(uint64_t *output);
 uint64_t cm_otp_write_ban_rom_sec_boot_key(void);
@@ -161,19 +163,20 @@ uint64_t cm_otp_read_ban_rom_sec_boot_key(uint64_t *output);
 uint64_t cm_otp_write_enable_aes(void);
 uint64_t cm_otp_read_enable_aes(uint64_t *output);
 uint64_t cm_otp_enable_secure_boot(uint8_t *rom_sec_boot_key_ptr,
-				   uint32_t rom_sec_boot_key_len);
+                                   uint32_t rom_sec_boot_key_len);
 
-/*****************************************************************************/
-/* OTP functions for Anti-Rollback Protection                                */
-/*****************************************************************************/
+/*
+ ****************************************************************************
+ * OTP functions for Anti-Rollback Protection
+ *****************************************************************************/
 uint64_t cm_otp_write_enable_antirbk(void);
 uint64_t cm_otp_read_enable_antirbk(uint64_t *output);
 uint64_t cm_otp_write_antirbk_non_sec_ap0(uint8_t *antirbk,
-					  uint32_t antirbk_len);
+                                          uint32_t antirbk_len);
 uint64_t cm_otp_read_antirbk_non_sec_ap0(uint64_t *antirbk);
 uint64_t cm_otp_update_antirbk_non_sec_ap0(uint64_t new_count_dec);
 uint64_t cm_otp_write_antirbk_non_sec_ap1(uint8_t *antirbk,
-					  uint32_t antirbk_len);
+                                          uint32_t antirbk_len);
 uint64_t cm_otp_read_antirbk_non_sec_ap1(uint64_t *antirbk);
 uint64_t cm_otp_write_antirbk_sec_ap(uint64_t antirbk_sec);
 uint64_t cm_otp_read_antirbk_sec_ap(uint64_t *antirbk_sec);
@@ -181,30 +184,33 @@ uint64_t cm_otp_write_antirbk_sec_cp(uint64_t antirbk_sec);
 uint64_t cm_otp_read_antirbk_sec_cp(uint64_t *antirbk_sec);
 uint64_t cm_otp_update_antirbk_sec_ap(uint64_t new_count_dec);
 
-/*****************************************************************************/
-/* OTP functions for Secure JTAG                                             */
-/*****************************************************************************/
+/*
+ ****************************************************************************
+ * OTP functions for Secure JTAG
+ *****************************************************************************/
 uint64_t cm_otp_write_sec_jtag_key(uint8_t *jtag_key_ptr,
-				   uint32_t jtag_key_len);
+                                   uint32_t jtag_key_len);
 uint64_t cm_otp_check_sec_jtag_key(uint8_t *jtag_key_ptr,
-				   uint32_t jtag_key_len);
+                                   uint32_t jtag_key_len);
 uint64_t cm_otp_write_jtag_sw_lock(void);
 uint64_t cm_otp_read_jtag_sw_lock(uint64_t *output);
 uint64_t cm_otp_enable_secure_jtag(uint8_t *jtag_key_ptr, uint32_t jtag_key_len);
 
-/*****************************************************************************/
-/* OTP functions for customer specific key & flags                           */
-/*****************************************************************************/
+/*
+ ****************************************************************************
+ * OTP functions for customer specific key & flags
+ *****************************************************************************/
 uint64_t cm_otp_write_sw_custom_config1(uint8_t *sw_custom_config1_ptr,
-					uint32_t sw_custom_config1_len);
+                                        uint32_t sw_custom_config1_len);
 uint64_t cm_otp_check_sw_custom_config1(uint8_t *sw_custom_config1_ptr,
-					uint32_t sw_custom_config1_len);
+                                        uint32_t sw_custom_config1_len);
 uint64_t cm_otp_write_custom_flag(uint64_t index);
 uint64_t cm_otp_read_custom_flag(uint64_t index, uint64_t *output);
 
-/*****************************************************************************/
-/* OTP functions for MCD use cases                                           */
-/*****************************************************************************/
+/*
+ ****************************************************************************
+ * OTP functions for MCD use cases
+ *****************************************************************************/
 uint64_t cm_otp_write_use_preorder(void);
 uint64_t cm_otp_read_use_preorder(uint64_t *output);
 uint64_t cm_otp_write_preorder(uint64_t preorder);

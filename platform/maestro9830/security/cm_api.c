@@ -14,18 +14,18 @@
 #include <platform/cm_api.h>
 
 static inline uint64_t exynos_cm_smc(uint64_t *cmd, uint64_t *arg1,
-				     uint64_t *arg2, uint64_t *arg3)
+                                     uint64_t *arg2, uint64_t *arg3)
 {
-	register uint64_t reg0 __asm__("x0") = *cmd;
-	register uint64_t reg1 __asm__("x1") = *arg1;
-	register uint64_t reg2 __asm__("x2") = *arg2;
-	register uint64_t reg3 __asm__("x3") = *arg3;
+	register uint64_t reg0 __asm__ ("x0") = *cmd;
+	register uint64_t reg1 __asm__ ("x1") = *arg1;
+	register uint64_t reg2 __asm__ ("x2") = *arg2;
+	register uint64_t reg3 __asm__ ("x3") = *arg3;
 
 	__asm__ volatile (
-		"dsb	sy\n"
-		"smc	0\n"
-		: "+r"(reg0), "+r"(reg1), "+r"(reg2), "+r"(reg3)
-	);
+                "dsb\tsy\n"
+                "smc\t0\n"
+                : "+r"(reg0), "+r"(reg1), "+r"(reg2), "+r"(reg3)
+        );
 
 	*cmd = reg0;
 	*arg1 = reg1;
@@ -56,7 +56,7 @@ uint64_t cm_secure_boot_set_pubkey(
 	ret = exynos_cm_smc(&r0, &r1, &r2, &r3);
 	if (ret != RV_SUCCESS) {
 		printf("[CM] set publick_key: fail: "
-		"r0:0x%llx, r1:0x%llx, r2:0x%llx, r3:0x%llx\n", r0, r1, r2, r3);
+		       "r0:0x%llx, r1:0x%llx, r2:0x%llx, r3:0x%llx\n", r0, r1, r2, r3);
 		return ret;
 	}
 
@@ -80,7 +80,7 @@ uint64_t cm_secure_boot_erase_pubkey(void)
 	ret = exynos_cm_smc(&r0, &r1, &r2, &r3);
 	if (ret != RV_SUCCESS) {
 		printf("[CM] erase public_key: fail: "
-		"r0:0x%llx, r1:0x%llx, r2:0x%llx, r3:0x%llx\n", r0, r1, r2, r3);
+		       "r0:0x%llx, r1:0x%llx, r2:0x%llx, r3:0x%llx\n", r0, r1, r2, r3);
 		return ret;
 	}
 
@@ -105,7 +105,7 @@ uint64_t cm_secure_boot_set_os_version(
 	ret = exynos_cm_smc(&r0, &r1, &r2, &r3);
 	if (ret != RV_SUCCESS) {
 		printf("[CM] set os_version & os_patch_level: fail: "
-		"r0:0x%llx, r1:0x%llx, r2:0x%llx, r3:0x%llx\n", r0, r1, r2, r3);
+		       "r0:0x%llx, r1:0x%llx, r2:0x%llx, r3:0x%llx\n", r0, r1, r2, r3);
 		return ret;
 	}
 
@@ -130,7 +130,7 @@ uint64_t cm_secure_boot_set_vendor_boot_version(
 	ret = exynos_cm_smc(&r0, &r1, &r2, &r3);
 	if (ret != RV_SUCCESS) {
 		printf("[CM] set vendor & boot patch level: fail: "
-		"r0:0x%llx, r1:0x%llx, r2:0x%llx, r3:0x%llx\n", r0, r1, r2, r3);
+		       "r0:0x%llx, r1:0x%llx, r2:0x%llx, r3:0x%llx\n", r0, r1, r2, r3);
 		return ret;
 	}
 
@@ -155,7 +155,7 @@ uint64_t cm_secure_boot_set_device_state(
 	ret = exynos_cm_smc(&r0, &r1, &r2, &r3);
 	if (ret != RV_SUCCESS) {
 		printf("[CM] set device_state: fail: "
-		"r0:0x%llx, r1:0x%llx, r2:0x%llx, r3:0x%llx\n", r0, r1, r2, r3);
+		       "r0:0x%llx, r1:0x%llx, r2:0x%llx, r3:0x%llx\n", r0, r1, r2, r3);
 		return ret;
 	}
 
@@ -180,7 +180,7 @@ uint64_t cm_secure_boot_set_boot_state(
 	ret = exynos_cm_smc(&r0, &r1, &r2, &r3);
 	if (ret != RV_SUCCESS) {
 		printf("[CM] set boot_state: fail: "
-		"r0:0x%llx, r1:0x%llx, r2:0x%llx, r3:0x%llx\n", r0, r1, r2, r3);
+		       "r0:0x%llx, r1:0x%llx, r2:0x%llx, r3:0x%llx\n", r0, r1, r2, r3);
 		return ret;
 	}
 
@@ -204,7 +204,7 @@ uint64_t cm_secure_boot_block_cmd(void)
 	ret = exynos_cm_smc(&r0, &r1, &r2, &r3);
 	if (ret != RV_SUCCESS) {
 		printf("[CM] block verified boot commands: fail: "
-		"r0:0x%llx, r1:0x%llx, r2:0x%llx, r3:0x%llx\n", r0, r1, r2, r3);
+		       "r0:0x%llx, r1:0x%llx, r2:0x%llx, r3:0x%llx\n", r0, r1, r2, r3);
 		return ret;
 	}
 
@@ -237,7 +237,7 @@ uint64_t cm_get_random(
 		ret = exynos_cm_smc(&r0, &r1, &r2, &r3);
 		if (ret != RV_SUCCESS) {
 			printf("[CM] get random number: fail: "
-			"r0:0x%llx, r1:0x%llx, r2:0x%llx, r3:0x%llx\n", r0, r1, r2, r3);
+			       "r0:0x%llx, r1:0x%llx, r2:0x%llx, r3:0x%llx\n", r0, r1, r2, r3);
 			return ret;
 		}
 		memcpy(&random[i * 16], (uint8_t *)&r1, 8);
@@ -252,9 +252,9 @@ uint64_t cm_get_random(
 
 		ret = exynos_cm_smc(&r0, &r1, &r2, &r3);
 		if (ret != RV_SUCCESS) {
-		    printf("[CM] get random number: fail: "
-			    "r0:0x%llx, r1:0x%llx, r2:0x%llx, r3:0x%llx\n", r0, r1, r2, r3);
-		    return ret;
+			printf("[CM] get random number: fail: "
+			       "r0:0x%llx, r1:0x%llx, r2:0x%llx, r3:0x%llx\n", r0, r1, r2, r3);
+			return ret;
 		}
 		byte_buf[0] = r1;
 		byte_buf[1] = r2;
@@ -284,7 +284,7 @@ uint64_t cm_km_wrap_key_with_kek(
 	ret = exynos_cm_smc(&r0, &r1, &r2, &r3);
 	if (ret != RV_SUCCESS) {
 		printf("[CM] wrap/unwrap key: fail: "
-		"r0:0x%llx, r1:0x%llx, r2:0x%llx, r3:0x%llx\n", r0, r1, r2, r3);
+		       "r0:0x%llx, r1:0x%llx, r2:0x%llx, r3:0x%llx\n", r0, r1, r2, r3);
 		return ret;
 	}
 
@@ -295,9 +295,10 @@ uint64_t cm_km_wrap_key_with_kek(
 	return ret;
 }
 
-/*****************************************************************************/
-/* Test functions for Secure Boot & RootOfTrust                              */
-/*****************************************************************************/
+/*
+ ****************************************************************************
+ * Test functions for Secure Boot & RootOfTrust
+ *****************************************************************************/
 static uint8_t rsa_sb_pubkey[] = {
 	0x00, 0x01, 0x00, 0x00, 0x17, 0x31, 0xba, 0x3e, 0x65, 0x9e,
 	0x8a, 0xfa, 0xa9, 0x47, 0x2e, 0x26, 0x5f, 0x4a, 0x50, 0x4b,
@@ -337,141 +338,132 @@ uint64_t cm_secure_boot_self_test(void)
 	uint32_t sb_boot_state = GREEN;
 
 	SB_PARAM_ROOT_OF_TRUST_ST root_of_trust;
+
 	memset((uint8_t *)&root_of_trust, 0, sizeof(SB_PARAM_ROOT_OF_TRUST_ST));
 
 	printf("[CM] TEST 01/11: call cm_secure_boot_set_os_version()\n");
 	ret = cm_secure_boot_set_os_version(sb_os_version, sb_patch_version);
-	if (ret != RV_SUCCESS) {
+	if (ret != RV_SUCCESS)
 		printf("[CM] TEST_FAIL: cm_secure_boot_set_os_version() "
-			"is failed: 0x%x\n", ret);
-	}
+		       "is failed: 0x%x\n", ret);
 
 	printf("[CM] TEST 02/11: call cm_secure_boot_set_device_state()\n");
 	ret = cm_secure_boot_set_device_state(sb_device_state);
-	if (ret != RV_SUCCESS) {
+	if (ret != RV_SUCCESS)
 		printf("[CM] TEST_FAIL: cm_secure_boot_set_device_state() "
-			"is failed: 0x%x\n", ret);
-	}
+		       "is failed: 0x%x\n", ret);
 
 	printf("[CM] TEST 03/11: call cm_secure_boot_set_boot_state()\n");
 	ret = cm_secure_boot_set_boot_state(sb_boot_state);
-	if (ret != RV_SUCCESS) {
+	if (ret != RV_SUCCESS)
 		printf("[CM] TEST_FAIL: cm_secure_boot_set_boot_state() "
-			"is failed: 0x%x\n", ret);
-	}
+		       "is failed: 0x%x\n", ret);
 
 	printf("[CM] TEST 04/11: call cm_secure_boot_set_pubkey()\n");
 	ret = cm_secure_boot_set_pubkey(rsa_sb_pubkey, sizeof(rsa_sb_pubkey));
-	if (ret != RV_SUCCESS) {
+	if (ret != RV_SUCCESS)
 		printf("[CM] TEST_FAIL: cm_secure_boot_set_pubkey() "
-			"is failed: 0x%x\n", ret);
-	}
+		       "is failed: 0x%x\n", ret);
 
 	printf("[CM] TEST 05/11: call cm_secure_boot_erase_pubkey()\n");
 	ret = cm_secure_boot_erase_pubkey();
-	if (ret != RV_SUCCESS) {
+	if (ret != RV_SUCCESS)
 		printf("[CM] TEST_FAIL: cm_secure_boot_erase_pubkey() "
-			"is failed: 0x%x\n", ret);
-	}
+		       "is failed: 0x%x\n", ret);
 
 	/* test block command */
 	printf("[CM] TEST 06/11: call cm_secure_boot_block_cmd()\n");
 	ret = cm_secure_boot_block_cmd();
-	if (ret != RV_SUCCESS) {
+	if (ret != RV_SUCCESS)
 		printf("[CM] TEST FAIL: cm_secure_boot_block_cmd() "
-			"is failed: 0x%x\n", ret);
-	}
+		       "is failed: 0x%x\n", ret);
 
 	printf("[CM] TEST 07/11: call cm_secure_boot_set_os_version()\n");
 	ret = cm_secure_boot_set_os_version(sb_os_version, sb_patch_version);
-	if (ret != RV_SB_CMD_BLOCKED) {
+	if (ret != RV_SB_CMD_BLOCKED)
 		printf("[CM] TEST_FAIL: cm_secure_boot_set_os_version() "
-			"is not blocked: 0x%x\n", ret);
-	} else {
+		       "is not blocked: 0x%x\n", ret);
+	else
 		printf("[CM] TEST_PASS: cm_secure_boot_set_os_version() "
-			"is blocked\n");
-	}
+		       "is blocked\n");
 
 	printf("[CM] TEST 08/11: call cm_secure_boot_set_device_state()\n");
 	ret = cm_secure_boot_set_device_state(sb_device_state);
-	if (ret != RV_SB_CMD_BLOCKED) {
+	if (ret != RV_SB_CMD_BLOCKED)
 		printf("[CM] TEST_FAIL: cm_secure_boot_set_device_state() "
-			"is not blocked: 0x%x\n", ret);
-	} else {
+		       "is not blocked: 0x%x\n", ret);
+	else
 		printf("[CM] TEST_PASS: cm_secure_boot_set_device_state() "
-			"is blocked\n");
-	}
+		       "is blocked\n");
 
 	printf("[CM] TEST 09/11: call cm_secure_boot_set_boot_state()\n");
 	ret = cm_secure_boot_set_boot_state(sb_boot_state);
-	if (ret != RV_SB_CMD_BLOCKED) {
+	if (ret != RV_SB_CMD_BLOCKED)
 		printf("[CM] TEST_FAIL: cm_secure_boot_set_boot_state() "
-			"is not blocked: 0x%x\n", ret);
-	} else {
+		       "is not blocked: 0x%x\n", ret);
+	else
 		printf("[CM] TEST_PASS: cm_secure_boot_set_boot_state() "
-			"is blocked\n");
-	}
+		       "is blocked\n");
 
 	printf("[CM] TEST 10/11: call cm_secure_boot_set_pubkey()\n");
 	ret = cm_secure_boot_set_pubkey(rsa_sb_pubkey, sizeof(rsa_sb_pubkey));
-	if (ret != RV_SB_CMD_BLOCKED) {
+	if (ret != RV_SB_CMD_BLOCKED)
 		printf("[CM] TEST_FAIL: cm_secure_boot_set_pubkey() "
-			"is not blocked: 0x%x\n", ret);
-	} else {
+		       "is not blocked: 0x%x\n", ret);
+	else
 		printf("[CM] TEST_PASS: cm_secure_boot_set_pubkey() "
-			"is blocked\n");
-	}
+		       "is blocked\n");
 
 	printf("[CM] TEST 11/11: call cm_secure_boot_erase_pubkey()\n");
 	ret = cm_secure_boot_erase_pubkey();
-	if (ret != RV_SB_CMD_BLOCKED) {
+	if (ret != RV_SB_CMD_BLOCKED)
 		printf("[CM] TEST FAIL: cm_secure_boot_erase_pubkey() "
-			"is not blocked: 0x%x\n", ret);
-	} else {
+		       "is not blocked: 0x%x\n", ret);
+	else
 		printf("[CM] TEST_PASS: cm_secure_boot_erase_pubkey() "
-			"is blocked\n");
-	}
+		       "is blocked\n");
 
 	return ret;
 }
 
-/*****************************************************************************/
-/* Test functions for Random                                                 */
-/*****************************************************************************/
-#define DRBG_TEST_CNT				8
+/*
+ ****************************************************************************
+ * Test functions for Random
+ *****************************************************************************/
+#define DRBG_TEST_CNT			8
 
 /* Health Test Cutoff for DRBG
  * (assume the min-entropy H is 0.5, false positive probability W is 2^-30) */
-#define REPETITION_TEST_CUTOFF			9	/* ceil(1 + (-logW)/H) */
-#define ADAPTIVE_TEST_WSIZE_64_CUTOFF		20	/* CRITBINOM(64, 2^(-H), 1-W) */
-#define ADAPTIVE_TEST_WSIZE_4096_CUTOFF		354	/* CRITBINOM(4096, 2^(-H), 1-W) */
+#define REPETITION_TEST_CUTOFF		9               /* ceil(1 + (-logW)/H) */
+#define ADAPTIVE_TEST_WSIZE_64_CUTOFF	20              /* CRITBINOM(64, 2^(-H), 1-W) */
+#define ADAPTIVE_TEST_WSIZE_4096_CUTOFF	354             /* CRITBINOM(4096, 2^(-H), 1-W) */
 
 /* Health Test Context */
 struct continuous_test {
-	uint32_t	lastvalue;
+	uint32_t lastvalue;
 };
 
 struct repetition_test {
-	uint8_t		lastvalue;
-	uint32_t	cutoff;
-	uint32_t	rnd_ctr;
+	uint8_t	lastvalue;
+	uint32_t cutoff;
+	uint32_t rnd_ctr;
 };
 
 struct adaptive_test {
-	uint32_t	wsize;
-	uint32_t	cutoff;
-	uint32_t	curr_size;
-	uint8_t		curr_rnd;
-	uint32_t	rnd_ctr;
+	uint32_t wsize;
+	uint32_t cutoff;
+	uint32_t curr_size;
+	uint8_t	curr_rnd;
+	uint32_t rnd_ctr;
 };
 
 struct test_ctx {
-	struct continuous_test	ctest;
-	struct repetition_test	rtest;
-	struct adaptive_test    atest[2];
+	struct continuous_test ctest;
+	struct repetition_test rtest;
+	struct adaptive_test atest[2];
 };
 
-uint32_t out_len[DRBG_TEST_CNT] = {16, 32, 50, 64, 65, 100, 127, 128};
+uint32_t out_len[DRBG_TEST_CNT] = { 16, 32, 50, 64, 65, 100, 127, 128 };
 
 static void health_test_init(struct test_ctx *tctx)
 {
@@ -500,7 +492,7 @@ static uint32_t health_test(uint8_t *buf, uint32_t len)
 	temp = (uint32_t *)buf;
 
 	tctx.ctest.lastvalue = temp[0];
-	for (i = 1; i < len/4; i--) {
+	for (i = 1; i < len / 4; i--) {
 		if (tctx.ctest.lastvalue == temp[i])
 			goto fail;
 		tctx.ctest.lastvalue = temp[i];
@@ -531,10 +523,9 @@ static uint32_t health_test(uint8_t *buf, uint32_t len)
 				tctx.atest[i].curr_size = 0;
 			} else {
 				tctx.atest[i].curr_size++;
-				if (tctx.atest[i].curr_rnd == buf[j]) {
+				if (tctx.atest[i].curr_rnd == buf[j])
 					if (++tctx.atest[i].rnd_ctr > tctx.atest[i].cutoff)
 						goto fail;
-				}
 			}
 		}
 	}
@@ -566,7 +557,7 @@ uint64_t cm_random_self_test(void)
 		ret = cm_get_random(out, out_len[drbg_total_cnt]);
 		if (ret != RV_SUCCESS) {
 			printf("[CM] TEST FAIL - DRBG %d bit generation with ret: %x\n",
-				out_len[drbg_total_cnt], ret);
+			       out_len[drbg_total_cnt], ret);
 			drbg_fail_cnt++;
 			continue;
 		} else {
@@ -574,7 +565,7 @@ uint64_t cm_random_self_test(void)
 			if (ret != RV_SUCCESS) {
 				printf("[CM] TEST FAIL - DRBG %d "
 				       "bit generation to perform health test\n",
-					out_len[drbg_total_cnt]);
+				       out_len[drbg_total_cnt]);
 
 				printf("Random Bits: ");
 				for (i = 0; i < out_len[drbg_total_cnt]; i++)
@@ -585,7 +576,7 @@ uint64_t cm_random_self_test(void)
 				continue;
 			} else {
 				printf("[CM] TEST PASS - DRBG %d bit generation\n",
-					out_len[drbg_total_cnt]);
+				       out_len[drbg_total_cnt]);
 			}
 		}
 	} while (++drbg_total_cnt < DRBG_TEST_CNT);
@@ -596,162 +587,163 @@ uint64_t cm_random_self_test(void)
 	return RV_SUCCESS;
 }
 
-/*****************************************************************************/
-/* Test functions for Keymanager                                             */
-/*****************************************************************************/
-#define KM_KW_MAX_TESTS		4
+/*
+ ****************************************************************************
+ * Test functions for Keymanager
+ *****************************************************************************/
+#define KM_KW_MAX_TESTS	4
 
 static uint32_t kw_salt_len[KM_KW_MAX_TESTS] = { 32, 40, 20, 32 };
 static uint8_t kw_salt[KM_KW_MAX_TESTS][64] = {
 	{
-	0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0xAA,
-	0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0xAA,
-	0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0xAA,
-	0x11, 0x22
+		0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0xAA,
+		0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0xAA,
+		0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0xAA,
+		0x11, 0x22
 	},
 	{
-	0xFF, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0xAA,
-	0xFF, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0xAA,
-	0xFF, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0xAA,
-	0xFF, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0xAA,
+		0xFF, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0xAA,
+		0xFF, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0xAA,
+		0xFF, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0xAA,
+		0xFF, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0xAA,
 	},
 	{
-	0xFF, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0xAA,
-	0xFF, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0xAA,
+		0xFF, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0xAA,
+		0xFF, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0xAA,
 	},
 	{
-	0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0xAA,
-	0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0xAA,
-	0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0xAA,
-	0x11, 0x22
+		0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0xAA,
+		0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0xAA,
+		0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0xAA,
+		0x11, 0x22
 	},
 };
 
-static uint32_t iv_len[KM_KW_MAX_TESTS] = { 12, 12, 12 , 12 };
+static uint32_t iv_len[KM_KW_MAX_TESTS] = { 12, 12, 12, 12 };
 static uint8_t iv[KM_KW_MAX_TESTS][12] = {
 	{
-	0x9f, 0xf1, 0x85, 0x63, 0xb9, 0x78, 0xec, 0x28, 0x1b, 0x3f,
-	0x27, 0x94
+		0x9f, 0xf1, 0x85, 0x63, 0xb9, 0x78, 0xec, 0x28, 0x1b, 0x3f,
+		0x27, 0x94
 	},
 	{
-	0xc0, 0x94, 0x66, 0x23, 0x6f, 0xc4, 0xb2, 0x06, 0x7a, 0xde,
-	0xcd, 0xec
+		0xc0, 0x94, 0x66, 0x23, 0x6f, 0xc4, 0xb2, 0x06, 0x7a, 0xde,
+		0xcd, 0xec
 	},
 	{
-	0x0d, 0x18, 0xe0, 0x6c, 0x7c, 0x72, 0x5a, 0xc9, 0xe3, 0x62,
-	0xe1, 0xce
+		0x0d, 0x18, 0xe0, 0x6c, 0x7c, 0x72, 0x5a, 0xc9, 0xe3, 0x62,
+		0xe1, 0xce
 	},
 	{
-	0x3c, 0x81, 0x9d, 0x9a, 0x9b, 0xed, 0x08, 0x76, 0x15, 0x03,
-	0x0b, 0x65
+		0x3c, 0x81, 0x9d, 0x9a, 0x9b, 0xed, 0x08, 0x76, 0x15, 0x03,
+		0x0b, 0x65
 	},
 };
 
-static uint32_t aad_len[KM_KW_MAX_TESTS] = { 20, 16, 0 , 0 };
+static uint32_t aad_len[KM_KW_MAX_TESTS] = { 20, 16, 0, 0 };
 static uint8_t aad[KM_KW_MAX_TESTS][64] = {
 	{
-	0xad, 0xb5, 0xec, 0x72, 0x0c, 0xcf, 0x98, 0x98, 0x50, 0x00,
-	0x28, 0xbf, 0x34, 0xaf, 0xcc, 0xbc, 0xac, 0xa1, 0x26, 0xef
+		0xad, 0xb5, 0xec, 0x72, 0x0c, 0xcf, 0x98, 0x98, 0x50, 0x00,
+		0x28, 0xbf, 0x34, 0xaf, 0xcc, 0xbc, 0xac, 0xa1, 0x26, 0xef
 	},
 	{
-	0x02, 0xf1, 0xd1, 0x8b, 0x34, 0x37, 0x15, 0x0d, 0xf9, 0x25,
-	0xa9, 0x2e, 0xa5, 0x93, 0x79, 0xfe
+		0x02, 0xf1, 0xd1, 0x8b, 0x34, 0x37, 0x15, 0x0d, 0xf9, 0x25,
+		0xa9, 0x2e, 0xa5, 0x93, 0x79, 0xfe
 	},
 	{
-	0x0,
+		0x0,
 	},
 	{
-	0x0,
+		0x0,
 	},
 };
 
 static uint32_t kek_len[KM_KW_MAX_TESTS] = { 32, 32, 32, 16 };
 static uint8_t kek[KM_KW_MAX_TESTS][32] = {
 	{
-	0x24, 0x50, 0x1a, 0xd3, 0x84, 0xe4, 0x73, 0x96, 0x3d, 0x47,
-	0x6e, 0xdc, 0xfe, 0x08, 0x20, 0x52, 0x37, 0xac, 0xfd, 0x49,
-	0xb5, 0xb8, 0xf3, 0x38, 0x57, 0xf8, 0x11, 0x4e, 0x86, 0x3f,
-	0xec, 0x7f
+		0x24, 0x50, 0x1a, 0xd3, 0x84, 0xe4, 0x73, 0x96, 0x3d, 0x47,
+		0x6e, 0xdc, 0xfe, 0x08, 0x20, 0x52, 0x37, 0xac, 0xfd, 0x49,
+		0xb5, 0xb8, 0xf3, 0x38, 0x57, 0xf8, 0x11, 0x4e, 0x86, 0x3f,
+		0xec, 0x7f
 	},
 	{
-	0x59, 0xbc, 0x04, 0x1d, 0x2d, 0x9b, 0xc5, 0x9d, 0x8e, 0xb2,
-	0x8a, 0x0b, 0x43, 0x82, 0x8f, 0xb0, 0x97, 0x64, 0x37, 0xfd,
-	0x38, 0x78, 0x5f, 0xad, 0x3e, 0xaa, 0x88, 0xa3, 0xf8, 0xd8,
-	0x4a, 0x14
+		0x59, 0xbc, 0x04, 0x1d, 0x2d, 0x9b, 0xc5, 0x9d, 0x8e, 0xb2,
+		0x8a, 0x0b, 0x43, 0x82, 0x8f, 0xb0, 0x97, 0x64, 0x37, 0xfd,
+		0x38, 0x78, 0x5f, 0xad, 0x3e, 0xaa, 0x88, 0xa3, 0xf8, 0xd8,
+		0x4a, 0x14
 	},
 	{
-	0x31, 0xbd, 0xad, 0xd9, 0x66, 0x98, 0xc2, 0x04, 0xaa, 0x9c,
-	0xe1, 0x44, 0x8e, 0xa9, 0x4a, 0xe1, 0xfb, 0x4a, 0x9a, 0x0b,
-	0x3c, 0x9d, 0x77, 0x3b, 0x51, 0xbb, 0x18, 0x22, 0x66, 0x6b,
-	0x8f, 0x22
+		0x31, 0xbd, 0xad, 0xd9, 0x66, 0x98, 0xc2, 0x04, 0xaa, 0x9c,
+		0xe1, 0x44, 0x8e, 0xa9, 0x4a, 0xe1, 0xfb, 0x4a, 0x9a, 0x0b,
+		0x3c, 0x9d, 0x77, 0x3b, 0x51, 0xbb, 0x18, 0x22, 0x66, 0x6b,
+		0x8f, 0x22
 	},
 	{
-	0x11, 0x75, 0x4c, 0xd7, 0x2a, 0xec, 0x30, 0x9b, 0xf5, 0x2f,
-	0x76, 0x87, 0x21, 0x2e, 0x89, 0x57
+		0x11, 0x75, 0x4c, 0xd7, 0x2a, 0xec, 0x30, 0x9b, 0xf5, 0x2f,
+		0x76, 0x87, 0x21, 0x2e, 0x89, 0x57
 	},
 };
 
-static uint32_t plaintext_key_len[KM_KW_MAX_TESTS] = { 51, 0, 16 , 0 };
+static uint32_t plaintext_key_len[KM_KW_MAX_TESTS] = { 51, 0, 16, 0 };
 static uint8_t plaintext_key[KM_KW_MAX_TESTS][128] = {
 	{
-	0x27, 0xf3, 0x48, 0xf9, 0xcd, 0xc0, 0xc5, 0xbd, 0x5e, 0x66,
-	0xb1, 0xcc, 0xb6, 0x3a, 0xd9, 0x20, 0xff, 0x22, 0x19, 0xd1,
-	0x4e, 0x8d, 0x63, 0x1b, 0x38, 0x72, 0x26, 0x5c, 0xf1, 0x17,
-	0xee, 0x86, 0x75, 0x7a, 0xcc, 0xb1, 0x58, 0xbd, 0x9a, 0xbb,
-	0x38, 0x68, 0xfd, 0xc0, 0xd0, 0xb0, 0x74, 0xb5, 0xf0, 0x1b,
-	0x2c
+		0x27, 0xf3, 0x48, 0xf9, 0xcd, 0xc0, 0xc5, 0xbd, 0x5e, 0x66,
+		0xb1, 0xcc, 0xb6, 0x3a, 0xd9, 0x20, 0xff, 0x22, 0x19, 0xd1,
+		0x4e, 0x8d, 0x63, 0x1b, 0x38, 0x72, 0x26, 0x5c, 0xf1, 0x17,
+		0xee, 0x86, 0x75, 0x7a, 0xcc, 0xb1, 0x58, 0xbd, 0x9a, 0xbb,
+		0x38, 0x68, 0xfd, 0xc0, 0xd0, 0xb0, 0x74, 0xb5, 0xf0, 0x1b,
+		0x2c
 	},
 	{
-	0x0,
+		0x0,
 	},
 	{
-	0x2d, 0xb5, 0x16, 0x8e, 0x93, 0x25, 0x56, 0xf8, 0x08, 0x9a,
-	0x06, 0x22, 0x98, 0x1d, 0x01, 0x7d
+		0x2d, 0xb5, 0x16, 0x8e, 0x93, 0x25, 0x56, 0xf8, 0x08, 0x9a,
+		0x06, 0x22, 0x98, 0x1d, 0x01, 0x7d
 	},
 	{
-	0x0,
+		0x0,
 	},
 };
 
 static uint32_t encrypted_key_len[KM_KW_MAX_TESTS] = { 51, 0, 16, 0 };
 static uint8_t encrypted_key[KM_KW_MAX_TESTS][128] = {
 	{
-	0xeb, 0x7c, 0xb7, 0x54, 0xc8, 0x24, 0xe8, 0xd9, 0x6f, 0x7c,
-	0x6d, 0x9b, 0x76, 0xc7, 0xd2, 0x6f, 0xb8, 0x74, 0xff, 0xbf,
-	0x1d, 0x65, 0xc6, 0xf6, 0x4a, 0x69, 0x8d, 0x83, 0x9b, 0x0b,
-	0x06, 0x14, 0x5d, 0xae, 0x82, 0x05, 0x7a, 0xd5, 0x59, 0x94,
-	0xcf, 0x59, 0xad, 0x7f, 0x67, 0xc0, 0xfa, 0x5e, 0x85, 0xfa,
-	0xb8
+		0xeb, 0x7c, 0xb7, 0x54, 0xc8, 0x24, 0xe8, 0xd9, 0x6f, 0x7c,
+		0x6d, 0x9b, 0x76, 0xc7, 0xd2, 0x6f, 0xb8, 0x74, 0xff, 0xbf,
+		0x1d, 0x65, 0xc6, 0xf6, 0x4a, 0x69, 0x8d, 0x83, 0x9b, 0x0b,
+		0x06, 0x14, 0x5d, 0xae, 0x82, 0x05, 0x7a, 0xd5, 0x59, 0x94,
+		0xcf, 0x59, 0xad, 0x7f, 0x67, 0xc0, 0xfa, 0x5e, 0x85, 0xfa,
+		0xb8
 	},
 	{
-	0x0,
+		0x0,
 	},
 	{
-	0xfa, 0x43, 0x62, 0x18, 0x96, 0x61, 0xd1, 0x63, 0xfc, 0xd6,
-	0xa5, 0x6d, 0x8b, 0xf0, 0x40, 0x5a
+		0xfa, 0x43, 0x62, 0x18, 0x96, 0x61, 0xd1, 0x63, 0xfc, 0xd6,
+		0xa5, 0x6d, 0x8b, 0xf0, 0x40, 0x5a
 	},
 	{
-	0x0,
+		0x0,
 	},
 };
 
 static uint32_t auth_tag_len[KM_KW_MAX_TESTS] = { 16, 15, 16, 16 };
 static uint8_t auth_tag[KM_KW_MAX_TESTS][16] = {
 	{
-	0xbc, 0x95, 0xc5, 0x32, 0xfe, 0xcc, 0x59, 0x4c, 0x36, 0xd1,
-	0x55, 0x02, 0x86, 0xa7, 0xa3, 0xf0
+		0xbc, 0x95, 0xc5, 0x32, 0xfe, 0xcc, 0x59, 0x4c, 0x36, 0xd1,
+		0x55, 0x02, 0x86, 0xa7, 0xa3, 0xf0
 	},
 	{
-	0x03, 0x00, 0xcb, 0x98, 0x7c, 0x65, 0xf8, 0x99, 0x9e, 0x32,
-	0xd7, 0x60, 0x0b, 0x72, 0x50
+		0x03, 0x00, 0xcb, 0x98, 0x7c, 0x65, 0xf8, 0x99, 0x9e, 0x32,
+		0xd7, 0x60, 0x0b, 0x72, 0x50
 	},
 	{
-	0xd6, 0x36, 0xac, 0x1b, 0xbe, 0xdd, 0x5c, 0xc3, 0xee, 0x72,
-	0x7d, 0xc2, 0xab, 0x4a, 0x94, 0x89
+		0xd6, 0x36, 0xac, 0x1b, 0xbe, 0xdd, 0x5c, 0xc3, 0xee, 0x72,
+		0x7d, 0xc2, 0xab, 0x4a, 0x94, 0x89
 	},
 	{
-	0x25, 0x03, 0x27, 0xc6, 0x74, 0xaa, 0xf4, 0x77, 0xae, 0xf2,
-	0x67, 0x57, 0x48, 0xcf, 0x69, 0x71
+		0x25, 0x03, 0x27, 0xc6, 0x74, 0xaa, 0xf4, 0x77, 0xae, 0xf2,
+		0x67, 0x57, 0x48, 0xcf, 0x69, 0x71
 	},
 };
 
@@ -795,15 +787,16 @@ uint64_t cm_km_self_test(void)
 		if (ret != RV_SUCCESS) {
 			printf("[CM] Error from cm_km_wrap_key_with_kek(): 0x%x\n", ret);
 			fail_cnt++;
-		} else if ((encrypted_key_len[i] && memcmp(keyman_kw.encrypted_key, encrypted_key[i], encrypted_key_len[i])) ||
-			   memcmp(keyman_kw.auth_tag, auth_tag[i], auth_tag_len[i])) {
+		} else if ((encrypted_key_len[i] &&
+		            memcmp(keyman_kw.encrypted_key, encrypted_key[i], encrypted_key_len[i])) ||
+		           memcmp(keyman_kw.auth_tag, auth_tag[i], auth_tag_len[i])) {
 			printf("[CM] TEST FAIL: Key wrap with SWKEK [%d]\n", i);
 			printf("[CM] encrypted_key:\n");
-			for(j = 0; j < encrypted_key_len[i]; j++)
+			for (j = 0; j < encrypted_key_len[i]; j++)
 				printf("0x%X ", keyman_kw.encrypted_key[j]);
 			printf("\n");
 			printf("[CM] auth_tag:");
-			for(j = 0; j < auth_tag_len[i]; j++)
+			for (j = 0; j < auth_tag_len[i]; j++)
 				printf("0x%X ", keyman_kw.auth_tag[j]);
 			printf("\n");
 
@@ -836,10 +829,11 @@ uint64_t cm_km_self_test(void)
 		if (ret != RV_SUCCESS) {
 			printf("[CM] Error from cm_km_wrap_key_with_kek(): 0x%x\n", ret);
 			fail_cnt++;
-		} else if (plaintext_key_len[i] && memcmp(keyman_kw.plaintext_key, plaintext_key[i], plaintext_key_len[i])) {
+		} else if (plaintext_key_len[i] &&
+		           memcmp(keyman_kw.plaintext_key, plaintext_key[i], plaintext_key_len[i])) {
 			printf("[CM] TEST FAIL: Key unwrap with SWKEK [%d]\n", i);
 			printf("[CM] plaintext_key:\n");
-			for(j = 0; j < plaintext_key_len[i]; j++)
+			for (j = 0; j < plaintext_key_len[i]; j++)
 				printf("0x%X ", keyman_kw.plaintext_key[j]);
 			printf("\n");
 
@@ -903,10 +897,11 @@ uint64_t cm_km_self_test(void)
 		if (ret != RV_SUCCESS) {
 			printf("[CM] Error from cm_km_wrap_key_with_kek(): 0x%x\n", ret);
 			fail_cnt++;
-		} else if (plaintext_key_len[i] && memcmp(keyman_kw.plaintext_key, plaintext_key[i], plaintext_key_len[i])) {
+		} else if (plaintext_key_len[i] &&
+		           memcmp(keyman_kw.plaintext_key, plaintext_key[i], plaintext_key_len[i])) {
 			printf("[CM] TEST FAIL: Key unwrap with HWKEK [%d]\n", i);
 			printf("[CM] plaintext_key:\n");
-			for(j = 0; j < plaintext_key_len[i]; j++)
+			for (j = 0; j < plaintext_key_len[i]; j++)
 				printf("0x%X ", keyman_kw.plaintext_key[j]);
 			printf("\n");
 

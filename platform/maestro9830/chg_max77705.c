@@ -6,14 +6,14 @@
  * transcribed, stored in a retrieval system or translated into any human or computer language in any form by any means,
  * electronic, mechanical, manual or otherwise, or disclosed
  * to third parties without the express written permission of Samsung Electronics.
-
-
+ *
+ *
  * Alternatively, this program is free software in case of open source project
  * you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
  * published by the Free Software Foundation.
-
-*/
+ *
+ */
 
 //#include <common.h>
 //#include <asm/arch/cpu.h>
@@ -23,6 +23,7 @@
 static void Delay(void)
 {
 	unsigned long i = 0;
+
 	for (i = 0; i < DELAY; i++)
 		;
 }
@@ -145,7 +146,7 @@ void IIC_MAX77705_ESetport(void)
 }
 
 void IIC_MAX77705_EWrite(unsigned char ChipId,
-		unsigned char IicAddr, unsigned char IicData)
+                         unsigned char IicAddr, unsigned char IicData)
 {
 	unsigned long i = 0;
 
@@ -167,7 +168,7 @@ void IIC_MAX77705_EWrite(unsigned char ChipId,
 
 	/* write reg. addr. */
 	for (i = 8; i > 0; i--) {
-		if ((IicAddr >> (i-1)) & 0x0001)
+		if ((IicAddr >> (i - 1)) & 0x0001)
 			IIC_MAX77705_EHigh();
 		else
 			IIC_MAX77705_ELow();
@@ -178,7 +179,7 @@ void IIC_MAX77705_EWrite(unsigned char ChipId,
 
 	/* write reg. data. */
 	for (i = 8; i > 0; i--) {
-		if ((IicData >> (i-1)) & 0x0001)
+		if ((IicData >> (i - 1)) & 0x0001)
 			IIC_MAX77705_EHigh();
 		else
 			IIC_MAX77705_ELow();
@@ -191,7 +192,7 @@ void IIC_MAX77705_EWrite(unsigned char ChipId,
 }
 
 void IIC_MAX77705_ERead(unsigned char ChipId,
-		unsigned char IicAddr, unsigned char *IicData)
+                        unsigned char IicAddr, unsigned char *IicData)
 {
 	unsigned long i = 0;
 	unsigned long reg = 0;
@@ -215,7 +216,7 @@ void IIC_MAX77705_ERead(unsigned char ChipId,
 
 	/* write reg. addr. */
 	for (i = 8; i > 0; i--) {
-		if ((IicAddr >> (i-1)) & 0x0001)
+		if ((IicAddr >> (i - 1)) & 0x0001)
 			IIC_MAX77705_EHigh();
 		else
 			IIC_MAX77705_ELow();
@@ -263,7 +264,7 @@ void IIC_MAX77705_ERead(unsigned char ChipId,
 
 		reg = (reg >> GPIO_DAT_SHIFT2) & 0x1;
 
-		data |= reg << (i-1);
+		data |= reg << (i - 1);
 	}
 
 	/* ACK */

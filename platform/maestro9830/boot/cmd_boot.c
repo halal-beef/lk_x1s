@@ -34,12 +34,12 @@
 #include <dev/scsi.h>
 
 /* Memory node */
-#define SIZE_2GB (0x80000000)
-#define SIZE_1GB (0x40000000)
-#define SIZE_500MB (0x20000000)
-#define MASK_1MB (0x100000 - 1)
+#define SIZE_2GB		(0x80000000)
+#define SIZE_1GB		(0x40000000)
+#define SIZE_500MB		(0x20000000)
+#define MASK_1MB		(0x100000 - 1)
 
-#define BUFFER_SIZE 2048
+#define BUFFER_SIZE		2048
 
 #define REBOOT_MODE_RECOVERY	0xFF
 #define REBOOT_MODE_FACTORY	0xFD
@@ -49,14 +49,14 @@ void arm_generic_timer_disable(void);
 
 #if defined(CONFIG_USE_AVB20)
 static char cmdline[AVB_CMD_MAX_SIZE];
-static char verifiedbootstate[AVB_VBS_MAX_SIZE]="androidboot.verifiedbootstate=";
+static char verifiedbootstate[AVB_VBS_MAX_SIZE] = "androidboot.verifiedbootstate=";
 #endif
 
 struct bootargs_prop {
 	char prop[64];
 	char val[64];
 };
-static struct bootargs_prop prop[32] = { { {0, }, {0, } }, };
+static struct bootargs_prop prop[32] = { { { 0, }, { 0, } }, };
 static int prop_cnt = 0;
 
 static int bootargs_init(void)
@@ -109,16 +109,17 @@ static int bootargs_init(void)
 
 	return 0;
 }
+
 static char *get_bootargs_val(const char *name)
 {
-       int i = 0;
+	int i = 0;
 
-       for (i = 0; i <= prop_cnt; i++) {
-               if (strncmp(prop[i].prop, name, strlen(name)) == 0)
-                       return prop[i].val;
-       }
+	for (i = 0; i <= prop_cnt; i++) {
+		if (strncmp(prop[i].prop, name, strlen(name)) == 0)
+			return prop[i].val;
+	}
 
-       return NULL;
+	return NULL;
 }
 
 static void update_val(const char *name, const char *val)
@@ -177,7 +178,7 @@ static void remove_string_from_bootargs(const char *str)
 	str_len = strlen(str);
 
 	for (i = 0; i < bootargs_len - str_len; i++)
-		if(!strncmp(str, (np + i), str_len))
+		if (!strncmp(str, (np + i), str_len))
 			break;
 
 	memset(bootargs, 0, BUFFER_SIZE);
@@ -214,27 +215,30 @@ static void configure_dtb(void)
 
 	/* Get Secure DRAM information */
 	soc_ver = exynos_smc(SMC_CMD_GET_SOC_INFO, SOC_INFO_TYPE_VERSION, 0, 0);
-        if (soc_ver == SOC_INFO_VERSION(SOC_INFO_MAJOR_VERSION, SOC_INFO_MINOR_VERSION)) {
+	if (soc_ver == SOC_INFO_VERSION(SOC_INFO_MAJOR_VERSION, SOC_INFO_MINOR_VERSION)) {
 		sec_dram_base = exynos_smc(SMC_CMD_GET_SOC_INFO,
-						SOC_INFO_TYPE_SEC_DRAM_BASE,
-						0,
-						0);
+		                           SOC_INFO_TYPE_SEC_DRAM_BASE,
+		                           0,
+		                           0);
 		if (sec_dram_base == (unsigned long)ERROR_INVALID_TYPE) {
 			printf("get secure memory base addr error!!\n");
-			while (1);
+			while (1)
+				;
 		}
 
 		sec_dram_size = (unsigned int)exynos_smc(SMC_CMD_GET_SOC_INFO,
-							SOC_INFO_TYPE_SEC_DRAM_SIZE,
-							0,
-							0);
+		                                         SOC_INFO_TYPE_SEC_DRAM_SIZE,
+		                                         0,
+		                                         0);
 		if (sec_dram_size == (unsigned int)ERROR_INVALID_TYPE) {
 			printf("get secure memory size error!!\n");
-			while (1);
+			while (1)
+				;
 		}
 	} else {
 		printf("[ERROR] el3_mon is old version. (0x%x)\n", soc_ver);
-		while (1);
+		while (1)
+			;
 	}
 
 	sec_dram_end = sec_dram_base + sec_dram_size;
@@ -244,9 +248,9 @@ static void configure_dtb(void)
 
 	/* Get secure page table for DRM information */
 	sec_pt_base = exynos_smc(SMC_DRM_GET_SOC_INFO,
-					SOC_INFO_SEC_PGTBL_BASE,
-					0,
-					0);
+	                         SOC_INFO_SEC_PGTBL_BASE,
+	                         0,
+	                         0);
 	if (sec_pt_base == ERROR_DRM_INVALID_TYPE) {
 		printf("[SEC_PGTBL_BASE] Invalid type\n");
 		sec_pt_base = 0;
@@ -262,9 +266,9 @@ static void configure_dtb(void)
 	}
 
 	sec_pt_size = (unsigned int)exynos_smc(SMC_DRM_GET_SOC_INFO,
-						SOC_INFO_SEC_PGTBL_SIZE,
-						0,
-						0);
+	                                       SOC_INFO_SEC_PGTBL_SIZE,
+	                                       0,
+	                                       0);
 	if (sec_pt_size == ERROR_DRM_INVALID_TYPE) {
 		printf("[SEC_PGTBL_SIZE] Invalid type\n");
 		sec_pt_size = 0;
@@ -293,32 +297,32 @@ static void configure_dtb(void)
 	 * 1st DRAM node
 	 */
 	add_dt_memory_node(DRAM_BASE,
-				sec_dram_base - DRAM_BASE);
+	                   sec_dram_base - DRAM_BASE);
 	/*
 	 * 2nd DRAM node
 	 */
 	if (sec_pt_base && sec_pt_size) {
 		add_dt_memory_node(sec_dram_end,
-					sec_pt_base - sec_dram_end);
+		                   sec_pt_base - sec_dram_end);
 
 		if (dram_size >= SIZE_2GB) {
 			add_dt_memory_node(sec_pt_end,
-					(DRAM_BASE + SIZE_2GB)
-					- sec_pt_end);
+			                   (DRAM_BASE + SIZE_2GB)
+			                   - sec_pt_end);
 		} else {
 			add_dt_memory_node(sec_pt_end,
-					(DRAM_BASE + dram_size)
-					- sec_pt_end);
+			                   (DRAM_BASE + dram_size)
+			                   - sec_pt_end);
 		}
 	} else {
 		if (dram_size >= SIZE_2GB) {
 			add_dt_memory_node(sec_dram_end,
-					(DRAM_BASE + SIZE_2GB)
-					- sec_dram_end);
+			                   (DRAM_BASE + SIZE_2GB)
+			                   - sec_dram_end);
 		} else {
 			add_dt_memory_node(sec_dram_end,
-					(DRAM_BASE + dram_size)
-					- sec_dram_end);
+			                   (DRAM_BASE + dram_size)
+			                   - sec_dram_end);
 		}
 	}
 
@@ -328,7 +332,7 @@ static void configure_dtb(void)
 	if (dram_size <= SIZE_2GB)
 		goto mem_node_out;
 
-	for (u64 i = 0; i < dram_size - SIZE_2GB; i+= SIZE_500MB) {
+	for (u64 i = 0; i < dram_size - SIZE_2GB; i += SIZE_500MB) {
 		/* add 500MB mem node */
 		add_dt_memory_node(DRAM_BASE2 + i, SIZE_500MB);
 	}
@@ -349,7 +353,7 @@ mem_node_out:
 	}
 
 	printf("\nbootargs\n");
-	noff = fdt_path_offset (fdt_dtb, "/chosen");
+	noff = fdt_path_offset(fdt_dtb, "/chosen");
 	printf("\fdt_getprop\n");
 	np = fdt_getprop(fdt_dtb, noff, "bootargs", &len);
 	printf("\nbootargs: %s\n", np);
@@ -379,7 +383,6 @@ int load_boot_images(void)
 	} else {
 		pit_access(ptn, PIT_OP_LOAD, (u64)DT_BASE, 0);
 	}
-
 #endif
 	ptn = pit_get_part_info("dtbo");
 	if (ptn == 0) {
@@ -428,13 +431,15 @@ int cmd_boot(int argc, const cmd_args *argv)
 	 */
 	scsi_do_ssu();
 
-	if (readl(EXYNOS9830_POWER_SYSIP_DAT0) == REBOOT_MODE_RECOVERY || readl(EXYNOS9830_POWER_SYSIP_DAT0) == REBOOT_MODE_FACTORY)
+	if (readl(EXYNOS9830_POWER_SYSIP_DAT0) == REBOOT_MODE_RECOVERY ||
+	    readl(EXYNOS9830_POWER_SYSIP_DAT0) == REBOOT_MODE_FACTORY)
 		writel(0, EXYNOS9830_POWER_SYSIP_DAT0);
 	/* notify EL3 Monitor end of bootloader */
 	exynos_smc(SMC_CMD_END_OF_BOOTLOADER, 0, 0, 0);
 
-	/* before jumping to kernel. disble arch_timer */
-	/* arm_generic_timer_disable(); */
+	/*
+	 * before jumping to kernel. disble arch_timer
+	 * arm_generic_timer_disable();*/
 
 	printf("Starting kernel...\n");
 	void (*kernel_entry)(int r0, int r1, int r2, int r3);
@@ -446,5 +451,5 @@ int cmd_boot(int argc, const cmd_args *argv)
 }
 
 STATIC_COMMAND_START
-STATIC_COMMAND("boot", "start kernel booting", &cmd_boot)
+	STATIC_COMMAND("boot", "start kernel booting", &cmd_boot)
 STATIC_COMMAND_END(boot);

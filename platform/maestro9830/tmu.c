@@ -17,9 +17,9 @@
 void display_tmu_info(void)
 {
 	unsigned int tmu_base[2] = { EXYNOS9830_TMU_TOP_BASE,
-					EXYNOS9830_TMU_SUB_BASE };
+		                     EXYNOS9830_TMU_SUB_BASE };
 	unsigned int tmu_probe_num[2] = { EXYNOS9830_TMU_TOP_PROBE,
-					EXYNOS9830_TMU_SUB_PROBE };
+		                          EXYNOS9830_TMU_SUB_PROBE };
 	unsigned int ps_hold_control;
 	unsigned int i;
 
@@ -80,8 +80,9 @@ void display_tmu_info(void)
 		counter_value |= (0x028A << 16);
 		writel(counter_value, tmu_base[i] + EXYNOS9830_TMU_COUNTER_VALUE1);
 
-		/* set TRIM0 BGR_I/VREF/VBE_I */
-		/* write TRIM0 values read from TMU_TOP to each TMU_TOP and TMU_SUB */
+		/*
+		 * set TRIM0 BGR_I/VREF/VBE_I
+		 * write TRIM0 values read from TMU_TOP to each TMU_TOP and TMU_SUB*/
 		trim = readl(tmu_base[i] + EXYNOS9830_TMU_TRIM0);
 		trim &= ~(EXYNOS9830_TMU_BGRI_TRIM_MASK << EXYNOS9830_TMU_BGRI_TRIM_SHIFT);
 		trim &= ~(EXYNOS9830_TMU_VREF_TRIM_MASK << EXYNOS9830_TMU_VREF_TRIM_SHIFT);
@@ -98,10 +99,10 @@ void display_tmu_info(void)
 		fuse_85 = (trim >> 9) & EXYNOS9830_TMU_CURRENT_TEMP_MASK;
 
 		/* enable HW TRIP */
-		if (is_2point_calib) {
+		if (is_2point_calib)
 			trip_code = (EXYNOS_TMU_HWTRIP_TEMP - 25) *
-				(fuse_85 - fuse_25) / (85 - 25) + fuse_25;
-		} else
+			            (fuse_85 - fuse_25) / (85 - 25) + fuse_25;
+		else
 			trip_code = EXYNOS_TMU_HWTRIP_TEMP + fuse_25 - 25;
 
 		rising_threshold = readl(tmu_base[i] + EXYNOS9830_TMU_TEMP_RISE7_6_REG(main_sensor));
@@ -126,10 +127,10 @@ void display_tmu_info(void)
 
 		temp_code = (readl(tmu_base[i] + offset) >> shift) & EXYNOS9830_TMU_CURRENT_TEMP_MASK;
 
-		if (is_2point_calib) {
+		if (is_2point_calib)
 			tmu_temp = (temp_code - fuse_25) *
-				(85 - 25) / (fuse_85 - fuse_25) + 25;
-		} else
+			           (85 - 25) / (fuse_85 - fuse_25) + 25;
+		else
 			tmu_temp = temp_code - fuse_25 + 25;
 
 		printf("[TMU:%d] %d\n", i, tmu_temp);

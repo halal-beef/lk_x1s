@@ -46,9 +46,9 @@ int ab_set_active(int slot)
 
 	printf("\n");
 	printf("_a bootable: %d, priority %d, tries_remaining %d, boot_successful %d\n",
-			(si + 0)->bootable, (si + 0)->priority, (si + 0)->tries_remaining, (si + 0)->boot_successful);
+	       (si + 0)->bootable, (si + 0)->priority, (si + 0)->tries_remaining, (si + 0)->boot_successful);
 	printf("_b bootable: %d, priority %d, tries_remaining %d, boot_successful %d\n",
-			(si + 1)->bootable, (si + 1)->priority, (si + 1)->tries_remaining, (si + 1)->boot_successful);
+	       (si + 1)->bootable, (si + 1)->priority, (si + 1)->tries_remaining, (si + 1)->boot_successful);
 
 	pit_access(ptn, PIT_OP_FLASH, (u64)buf, 0);
 

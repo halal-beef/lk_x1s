@@ -1,12 +1,25 @@
+/*
+ * Copyright@ Samsung Electronics Co. LTD
+ *
+ * This software is proprietary of Samsung Electronics.
+ *
+ * No part of this software, either material or conceptual may be copied or
+ * distributed, transmitted, transcribed, stored in a retrieval system or
+ * translated into any human or computer language in any form by any means,
+ * electronic, mechanical, manual or otherwise, or disclosed to third parties
+ * without the express written permission of Samsung Electronics.
+ *
+ */
 #ifndef _SECURE_BOOT_H_
 #define _SECURE_BOOT_H_
 
 #include "../../../../lib/libavb/libavb.h"
 
-/******************************************************************************/
-/* Definition value */
-/******************************************************************************/
-/* return value */
+/*
+ *****************************************************************************
+ * Definition value
+ *****************************************************************************
+ * return value*/
 #define SB_ERROR_PREFIX			0xFDAA0000
 
 /* Binary infomation */
@@ -35,9 +48,10 @@
 #define AVB_VBS_MAX_SIZE		(40)
 #define AVB_COLOR_MAX_SIZE		(10)
 
-/******************************************************************************/
-/* Cache operation */
-/******************************************************************************/
+/*
+ *****************************************************************************
+ * Cache operation
+ ******************************************************************************/
 #define CACHE_WRITEBACK_SHIFT_6		(6)
 #define CACHE_WRITEBACK_SHIFT_7		(7)
 
@@ -51,9 +65,10 @@
 #define FLUSH_DCACHE_RANGE(addr, length)
 #define INV_DCACHE_RANGE(addr, length)
 
-/******************************************************************************/
-/* Secure Boot context used by EL3 */
-/******************************************************************************/
+/*
+ *****************************************************************************
+ * Secure Boot context used by EL3
+ ******************************************************************************/
 enum {
 	ALG_SHA1,
 	ALG_SHA256,
@@ -64,7 +79,7 @@ struct ace_hash_ctx {
 	int alg;
 	size_t buflen;
 	unsigned char buffer[SHA512_BLOCK_LEN];
-	unsigned int state[SHA512_DIGEST_LEN/4];
+	unsigned int state[SHA512_DIGEST_LEN / 4];
 	unsigned int prelen_high;
 	unsigned int prelen_low;
 };
@@ -137,19 +152,21 @@ uint32_t cm_verify_signature_using_image(
 	uint64_t signed_img_ptr,
 	uint64_t signed_img_len);
 
-/******************************************************************************/
-/* Secure Boot context used by LDFW */
-/******************************************************************************/
-/* SMC ID */
-#define SMC_CM_SECURE_BOOT		(0x101D)
+/*
+ *****************************************************************************
+ * Secure Boot context used by LDFW
+ *****************************************************************************
+ * SMC ID*/
+#define SMC_CM_SECURE_BOOT	(0x101D)
 
 /* mode */
-#define SB_CHECK_SIGN_NWD		(7)
-#define SB_GET_AVB_KEY			(16)
+#define SB_CHECK_SIGN_NWD	(7)
+#define SB_GET_AVB_KEY		(16)
 
-/******************************************************************************/
-/* Android verified boot */
-/******************************************************************************/
+/*
+ *****************************************************************************
+ * Android verified boot
+ ******************************************************************************/
 void set_avbops(void);
 
 uint32_t avb_main(const char *suffix, char *cmdline, char *verifiedbootstate);

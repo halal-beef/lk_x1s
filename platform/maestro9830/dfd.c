@@ -1,3 +1,15 @@
+/*
+ * Copyright@ Samsung Electronics Co. LTD
+ *
+ * This software is proprietary of Samsung Electronics.
+ *
+ * No part of this software, either material or conceptual may be copied or
+ * distributed, transmitted, transcribed, stored in a retrieval system or
+ * translated into any human or computer language in any form by any means,
+ * electronic, mechanical, manual or otherwise, or disclosed to third parties
+ * without the express written permission of Samsung Electronics.
+ *
+ */
 #include <reg.h>
 #include <pit.h>
 #include <arch/ops.h>
@@ -20,7 +32,7 @@ enum pt_reg {
 
 void wfi(void)
 {
-	asm volatile("wfi");
+	asm volatile ("wfi");
 }
 
 static void dfd_print_pcval(int nCpuId)
@@ -51,7 +63,7 @@ static void dfd_display_panic_reason(void)
 	int is_string = 0;
 	int cnt = 0;
 
-	for (cnt = 0; cnt < CONFIG_RAMDUMP_PANIC_LOGSZ; cnt++,str++)
+	for (cnt = 0; cnt < CONFIG_RAMDUMP_PANIC_LOGSZ; cnt++, str++)
 		if (0x0 == *str)
 			is_string = 1;
 
@@ -115,11 +127,11 @@ void dfd_display_core_stat(void)
 	int val;
 	u32 ret, ret2;
 
-	printf("Core stat at previous(IRAM)\n" );
+	printf("Core stat at previous(IRAM)\n");
 	for (val = 0; val < NR_CPUS; val++) {
 		ret = readl(core_stat[val]);
 		printf("Core%d: 0x%x :", val, core_stat[val]);
-		switch(ret) {
+		switch (ret) {
 		case CLEAR:
 			printf("Running\n");
 			break;
@@ -143,11 +155,11 @@ void dfd_display_core_stat(void)
 			break;
 		}
 	}
-	printf("Core stat at previous(KERNEL)\n" );
+	printf("Core stat at previous(KERNEL)\n");
 	for (val = 0; val < NR_CPUS; val++) {
 		ret = readl(CONFIG_RAMDUMP_CORE_POWER_STAT + (val * REG_OFFSET));
 		printf("Core%d: ", val);
-		switch(ret) {
+		switch (ret) {
 		case RAMDUMP_SIGN_ALIVE:
 			printf("Alive");
 			break;
@@ -161,7 +173,7 @@ void dfd_display_core_stat(void)
 		}
 
 		ret2 = readl(CONFIG_RAMDUMP_CORE_PANIC_STAT + (val * REG_OFFSET));
-		switch(ret2) {
+		switch (ret2) {
 		case RAMDUMP_SIGN_PANIC:
 			printf("/PANIC\n");
 			break;
@@ -226,7 +238,7 @@ static int dfd_wait_complete(unsigned int core)
 		if (ret & core)
 			return 0;
 		u_delay(1000);
-	} while(loop-- > 0);
+	} while (loop-- > 0);
 
 	printf("Failed to wait complete - ret:%x core:%x\n", ret, core);
 	return -1;
@@ -294,9 +306,9 @@ static void dfd_set_cache_flush_level(void)
 		} else {
 			stat = (FLUSH_LEVEL1 << 16) | ret1;
 			if (val >= LITTLE_CORE_START && val <= LITTLE_CORE_LAST)
-					little_on = val;
+				little_on = val;
 			else
-					big_on = val;
+				big_on = val;
 		}
 		writel(stat, CONFIG_RAMDUMP_GPR_POWER_STAT + (val * REG_OFFSET));
 		printf("Core %d: Initial policy - Cache Flush Level %u\n", val, (u32)(stat >> 16));
@@ -346,8 +358,8 @@ void dfd_secondary_dump_gpr(int cpu)
 {
 	u32 val, reg;
 
-        reg = CONFIG_RAMDUMP_COREREG + ((u64)cpu * COREREG_OFFSET);
-        val = cpu <= LITTLE_CORE_LAST ? LITTLE_DUMP_PC_ADDRESS : BIG_DUMP_PC_ADDRESS;
+	reg = CONFIG_RAMDUMP_COREREG + ((u64)cpu * COREREG_OFFSET);
+	val = cpu <= LITTLE_CORE_LAST ? LITTLE_DUMP_PC_ADDRESS : BIG_DUMP_PC_ADDRESS;
 
 	if (cpu >= LITTLE_CORE_START && cpu <= LITTLE_CORE_LAST)
 		__dfd_dump_gpr(cpu, reg, val);
@@ -431,6 +443,7 @@ void dfd_run_dump_gpr(void)
 	};
 
 	u64 *cpu_dst;
+
 	u64 (*cpu_src)[35];
 	u32 cpu;
 	u32 reg;
@@ -457,7 +470,6 @@ void dfd_run_dump_gpr(void)
 
 	printf("dumpGPR for little cluster\n");
 	for (cpu = LITTLE_CORE_START; cpu <= LITTLE_CORE_LAST; cpu++) {
-
 		if (dfd_check_pre_stat(cpu))
 			continue;
 
@@ -467,7 +479,7 @@ void dfd_run_dump_gpr(void)
 		} else {
 			/* ON other cpus */
 			ret = cpu_boot(CPU_ON_PSCI_ID,
-					cpu_logical_map[cpu], (u64)dfd_entry_dump_gpr);
+			               cpu_logical_map[cpu], (u64)dfd_entry_dump_gpr);
 			if (ret) {
 				printf("ERROR: Core %d: failed to power on : 0x%x\n", cpu, ret);
 				ret = readl(CONFIG_RAMDUMP_DUMP_GPR_WAIT);
@@ -489,11 +501,11 @@ void dfd_run_dump_gpr(void)
 
 		/* Copy BIG core's GPR from SRAM to DRAM */
 		cpu_dst = (u64 *)(CONFIG_RAMDUMP_COREREG + ((u64)cpu * COREREG_OFFSET));
-		cpu_src = (u64(*)[35])0x0203F400;
+		cpu_src = (u64(*)[35]) 0x0203F400;
 
 		/* cpu_dst[0]~cpu_dst[34] <-- cpu_src[cpu-BIG_CORE_START][0] ~ cpu_src[cpu-BIG_CORE_START][34] */
 		for (i = 0; i < 35; i++)
-			cpu_dst[i] = cpu_src[cpu-BIG_CORE_START][i];
+			cpu_dst[i] = cpu_src[cpu - BIG_CORE_START][i];
 
 #ifdef DEBUG_PRINT
 		/* print gpr x0 ~ x30, sp, pc, pstate, esr */
@@ -517,7 +529,7 @@ void dfd_run_dump_gpr(void)
 		if (need_cache_flush) {
 			/* ON BIG cpus */
 			ret = cpu_boot(CPU_ON_PSCI_ID,
-					cpu_logical_map[cpu], (u64)dfd_entry_dump_gpr);
+			               cpu_logical_map[cpu], (u64)dfd_entry_dump_gpr);
 			if (ret) {
 				printf("ERROR: Core %d: failed to power on : 0x%x\n", cpu, ret);
 				ret = readl(CONFIG_RAMDUMP_DUMP_GPR_WAIT);

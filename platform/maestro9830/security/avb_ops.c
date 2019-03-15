@@ -20,8 +20,8 @@
 #include <platform/smc.h>
 #include <dev/rpmb.h>
 
-#define CMD_STRING_MAX_SIZE 60
-#define AVB_PRELOAD_BASE 0xA0000000
+#define CMD_STRING_MAX_SIZE	60
+#define AVB_PRELOAD_BASE	0xA0000000
 
 static uint32_t avbkey_is_trusted;
 static struct AvbOps ops;
@@ -29,11 +29,11 @@ static struct AvbOps ops;
 int get_unique_guid(char *ptr_name, char *buf);
 
 static AvbIOResult exynos_read_from_partition(AvbOps *ops,
-		const char *partition,
-		int64_t offset,
-		size_t num_bytes,
-		void *buffer,
-		size_t *out_num_read)
+                                              const char *partition,
+                                              int64_t offset,
+                                              size_t num_bytes,
+                                              void *buffer,
+                                              size_t *out_num_read)
 {
 	struct pit_entry *ptn;
 	bdev_t *dev;
@@ -49,9 +49,9 @@ static AvbIOResult exynos_read_from_partition(AvbOps *ops,
 	u32 i;
 
 	boot_dev = get_boot_device();
-	if (boot_dev == BOOT_UFS)
+	if (boot_dev == BOOT_UFS) {
 		name = "scsi0";
-	else {
+	} else {
 		printf("Boot device: 0x%x. Unsupported boot device!\n", boot_dev);
 		return AVB_IO_RESULT_ERROR_IO;
 	}
@@ -71,7 +71,7 @@ static AvbIOResult exynos_read_from_partition(AvbOps *ops,
 	tmp_num_bytes = num_bytes;
 	tmp_offset = offset;
 	tmp_num_read = ((PIT_SECTOR_SIZE - (tmp_offset % PIT_SECTOR_SIZE)) < tmp_num_bytes)
-					? (PIT_SECTOR_SIZE - (tmp_offset % PIT_SECTOR_SIZE)) : tmp_num_bytes;
+	               ? (PIT_SECTOR_SIZE - (tmp_offset % PIT_SECTOR_SIZE)) : tmp_num_bytes;
 	blkstart = ptn->blkstart + (u32)(offset / PIT_SECTOR_SIZE);
 	dev->new_read(dev, tmp_buff, blkstart, 1);
 	memcpy((void *)p, (void *)(tmp_buff + (tmp_offset % PIT_SECTOR_SIZE)), tmp_num_read);
@@ -115,10 +115,10 @@ static AvbIOResult exynos_read_from_partition(AvbOps *ops,
 }
 
 static AvbIOResult exynos_get_preloaded_partition(AvbOps *ops,
-		const char *partition,
-		size_t num_bytes,
-		uint8_t **out_pointer,
-		size_t *out_num_bytes_preloaded)
+                                                  const char *partition,
+                                                  size_t num_bytes,
+                                                  uint8_t **out_pointer,
+                                                  size_t *out_num_bytes_preloaded)
 {
 	struct pit_entry *ptn;
 	bdev_t *dev;
@@ -126,9 +126,9 @@ static AvbIOResult exynos_get_preloaded_partition(AvbOps *ops,
 	unsigned int boot_dev;
 
 	boot_dev = get_boot_device();
-	if (boot_dev == BOOT_UFS)
+	if (boot_dev == BOOT_UFS) {
 		name = "scsi0";
-	else {
+	} else {
 		printf("Boot device: 0x%x. Unsupported boot device!\n", boot_dev);
 		return AVB_IO_RESULT_ERROR_IO;
 	}
@@ -150,29 +150,30 @@ static AvbIOResult exynos_get_preloaded_partition(AvbOps *ops,
 }
 
 static AvbIOResult exynos_write_to_partition(AvbOps *ops,
-		const char *partition,
-		int64_t offset,
-		size_t num_bytes,
-		const void *buffer)
+                                             const char *partition,
+                                             int64_t offset,
+                                             size_t num_bytes,
+                                             const void *buffer)
 {
 	AvbIOResult ret = AVB_IO_RESULT_OK;
+
 	//TODO
 
 	return ret;
 }
 
 static AvbIOResult exynos_validate_vbmeta_public_key(AvbOps *ops,
-		const uint8_t *public_key_data,
-		size_t public_key_length,
-		const uint8_t *public_key_metadata,
-		size_t public_key_metadata_length,
-		bool *out_is_trusted)
+                                                     const uint8_t *public_key_data,
+                                                     size_t public_key_length,
+                                                     const uint8_t *public_key_metadata,
+                                                     size_t public_key_metadata_length,
+                                                     bool *out_is_trusted)
 {
 	AvbIOResult ret = AVB_IO_RESULT_OK;
 	uint8_t buf[SB_MAX_PUBKEY_LEN] __attribute__((__aligned__(CACHE_WRITEBACK_GRANULE_128)));
 
 	ret = exynos_smc((SMC_AARCH64_PREFIX | SMC_CM_SECURE_BOOT), SB_GET_AVB_KEY,
-			(uint64_t)buf, public_key_length);
+	                 (uint64_t)buf, public_key_length);
 	if (ret) {
 		*out_is_trusted = false;
 		printf("[AVB 2.0 ERR] Fail to read AVB pubkey [ret: 0x%X]\n", ret);
@@ -180,7 +181,7 @@ static AvbIOResult exynos_validate_vbmeta_public_key(AvbOps *ops,
 	}
 
 	INV_DCACHE_RANGE(buf, public_key_length)
-	*out_is_trusted = !memcmp(buf, public_key_data, public_key_length);
+	* out_is_trusted = !memcmp(buf, public_key_data, public_key_length);
 	if (*out_is_trusted == false) {
 		printf("[AVB 2.0 ERR] AVB pubkey is not matched with vbmeta\n");
 		goto out;
@@ -192,8 +193,8 @@ out:
 }
 
 static AvbIOResult exynos_read_rollback_index(AvbOps *ops,
-		size_t rollback_index_location,
-		uint64_t *out_rollback_index)
+                                              size_t rollback_index_location,
+                                              uint64_t *out_rollback_index)
 {
 	AvbIOResult ret = AVB_IO_RESULT_OK;
 
@@ -203,10 +204,11 @@ static AvbIOResult exynos_read_rollback_index(AvbOps *ops,
 }
 
 static AvbIOResult exynos_write_rollback_index(AvbOps *ops,
-		size_t rollback_index_location,
-		uint64_t rollback_index)
+                                               size_t rollback_index_location,
+                                               uint64_t rollback_index)
 {
 	AvbIOResult ret = AVB_IO_RESULT_OK;
+
 	ret = rpmb_set_rollback_index(rollback_index_location, rollback_index);
 
 	return ret;
@@ -222,9 +224,9 @@ static AvbIOResult exynos_read_is_device_unlocked(AvbOps *ops, bool *out_is_unlo
 }
 
 static AvbIOResult exynos_get_unique_guid_for_partition(AvbOps *ops,
-		const char *partition,
-		char *guid_buf,
-		size_t guid_buf_size)
+                                                        const char *partition,
+                                                        char *guid_buf,
+                                                        size_t guid_buf_size)
 {
 	AvbIOResult ret;
 	struct pit_entry *ptn;
@@ -242,8 +244,8 @@ static AvbIOResult exynos_get_unique_guid_for_partition(AvbOps *ops,
 }
 
 static AvbIOResult exynos_get_size_of_partition(AvbOps *ops,
-		const char *partition,
-		uint64_t *out_size_num_bytes)
+                                                const char *partition,
+                                                uint64_t *out_size_num_bytes)
 {
 	AvbIOResult ret;
 	struct pit_entry *ptn;
@@ -260,78 +262,78 @@ static AvbIOResult exynos_get_size_of_partition(AvbOps *ops,
 }
 
 static AvbIOResult exynos_read_persistent_value(AvbOps *ops,
-		const char *name,
-		size_t buffer_size,
-		uint8_t *out_buffer,
-		size_t *out_num_bytes_read)
+                                                const char *name,
+                                                size_t buffer_size,
+                                                uint8_t *out_buffer,
+                                                size_t *out_num_bytes_read)
 {
 	int ret;
 
-        if (!name) {
-                *out_num_bytes_read = 0;
-                return AVB_IO_RESULT_ERROR_NO_SUCH_VALUE;
-        }
+	if (!name) {
+		*out_num_bytes_read = 0;
+		return AVB_IO_RESULT_ERROR_NO_SUCH_VALUE;
+	}
 
-        if (buffer_size == 0) {
-                *out_num_bytes_read = 0;
-                return AVB_IO_RESULT_OK;
-        }
+	if (buffer_size == 0) {
+		*out_num_bytes_read = 0;
+		return AVB_IO_RESULT_OK;
+	}
 
-        if (!out_buffer) {
-                *out_num_bytes_read = 0;
-                return AVB_IO_RESULT_ERROR_IO;
-        }
+	if (!out_buffer) {
+		*out_num_bytes_read = 0;
+		return AVB_IO_RESULT_ERROR_IO;
+	}
 
-        ret = rpmb_read_persistent_value(name, buffer_size, out_buffer, out_num_bytes_read);
+	ret = rpmb_read_persistent_value(name, buffer_size, out_buffer, out_num_bytes_read);
 
-        if (!ret)
-                return AVB_IO_RESULT_OK;
+	if (!ret)
+		return AVB_IO_RESULT_OK;
 
-        switch (ret) {
-        case RV_RPMB_PERSIST_NAME_NOT_FOUND:
-                ret = AVB_IO_RESULT_ERROR_NO_SUCH_VALUE;
-                break;
-        case RV_RPMB_INVALID_PERSIST_DATA_SIZE:
-                ret = AVB_IO_RESULT_ERROR_INSUFFICIENT_SPACE;
-                break;
-        default:
-                ret = AVB_IO_RESULT_ERROR_IO;
-                break;
-        }
+	switch (ret) {
+	case RV_RPMB_PERSIST_NAME_NOT_FOUND:
+		ret = AVB_IO_RESULT_ERROR_NO_SUCH_VALUE;
+		break;
+	case RV_RPMB_INVALID_PERSIST_DATA_SIZE:
+		ret = AVB_IO_RESULT_ERROR_INSUFFICIENT_SPACE;
+		break;
+	default:
+		ret = AVB_IO_RESULT_ERROR_IO;
+		break;
+	}
 
 	return ret;
 }
 
 static AvbIOResult exynos_write_persistent_value(AvbOps *ops,
-		const char *name,
-		size_t value_size,
-		const uint8_t *value)
+                                                 const char *name,
+                                                 size_t value_size,
+                                                 const uint8_t *value)
 {
 	int ret;
 
-        if (!name)
-                return AVB_IO_RESULT_ERROR_NO_SUCH_VALUE;
+	if (!name)
+		return AVB_IO_RESULT_ERROR_NO_SUCH_VALUE;
 
-        if (value_size == 0)
-                return AVB_IO_RESULT_OK;
+	if (value_size == 0)
+		return AVB_IO_RESULT_OK;
 
-        ret = rpmb_write_persistent_value(name, value_size, value);
+	ret = rpmb_write_persistent_value(name, value_size, value);
 
-        if (!ret)
-                return AVB_IO_RESULT_OK;
+	if (!ret)
+		return AVB_IO_RESULT_OK;
 
-        switch (ret) {
-        case RV_RPMB_PERSIST_NAME_NOT_FOUND:
-        case RV_RPMB_INVALID_KEY_LEN:
-                ret = AVB_IO_RESULT_ERROR_NO_SUCH_VALUE;
-                break;
-        case RV_RPMB_INVALID_PERSIST_DATA_SIZE:
-                ret = AVB_IO_RESULT_ERROR_INSUFFICIENT_SPACE;
-                break;
-        default:
-                ret = AVB_IO_RESULT_ERROR_IO;
-                break;
-        }
+	switch (ret) {
+	case RV_RPMB_PERSIST_NAME_NOT_FOUND:
+	case RV_RPMB_INVALID_KEY_LEN:
+		ret = AVB_IO_RESULT_ERROR_NO_SUCH_VALUE;
+		break;
+	case RV_RPMB_INVALID_PERSIST_DATA_SIZE:
+		ret = AVB_IO_RESULT_ERROR_INSUFFICIENT_SPACE;
+		break;
+	default:
+		ret = AVB_IO_RESULT_ERROR_IO;
+		break;
+	}
 
 	return ret;
 }

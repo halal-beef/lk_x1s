@@ -47,15 +47,15 @@ static void speedy_set_cmd(unsigned int SPEEDY_BASE, int direction, u16 address,
 	case ACCESS_RANDOM:
 		speedy_command |= SPEEDY_ACCESS_RANDOM;
 		speedy_fifo_ctl |= (SPEEDY_RX_TRIGGER_LEVEL(1) |
-				SPEEDY_TX_TRIGGER_LEVEL(1));
+		                    SPEEDY_TX_TRIGGER_LEVEL(1));
 		break;
 	case ACCESS_BURST:
 		speedy_command |= (SPEEDY_ACCESS_BURST | SPEEDY_BURST_INCR |
-				   SPEEDY_BURST_LENGTH(burst_length-1));
+		                   SPEEDY_BURST_LENGTH(burst_length - 1));
 		speedy_fifo_ctl |= (
 			SPEEDY_RX_TRIGGER_LEVEL(burst_length) |
 			SPEEDY_TX_TRIGGER_LEVEL(1)
-		);
+			);
 		break;
 
 	default:
@@ -67,26 +67,26 @@ static void speedy_set_cmd(unsigned int SPEEDY_BASE, int direction, u16 address,
 	writel(speedy_fifo_ctl, SPEEDY_BASE + SPEEDY_FIFO_CTRL);
 
 	speedy_int_en |= (SPEEDY_TIMEOUT_CMD_EN | SPEEDY_TIMEOUT_STANDBY_EN |
-			SPEEDY_TIMEOUT_DATA_EN);
+	                  SPEEDY_TIMEOUT_DATA_EN);
 
 	switch (direction) {
 	case DIRECTION_READ:
 		speedy_command |= SPEEDY_DIRECTION_READ;
 		speedy_int_en |= (SPEEDY_FIFO_RX_ALMOST_FULL_EN |
-				SPEEDY_RX_FIFO_INT_TRAILER_EN |
-				SPEEDY_RX_MODEBIT_ERR_EN |
-				SPEEDY_RX_GLITCH_ERR_EN |
-				SPEEDY_RX_ENDBIT_ERR_EN |
-				SPEEDY_REMOTE_RESET_REQ_EN);
+		                  SPEEDY_RX_FIFO_INT_TRAILER_EN |
+		                  SPEEDY_RX_MODEBIT_ERR_EN |
+		                  SPEEDY_RX_GLITCH_ERR_EN |
+		                  SPEEDY_RX_ENDBIT_ERR_EN |
+		                  SPEEDY_REMOTE_RESET_REQ_EN);
 		break;
 
 	case DIRECTION_WRITE:
 		speedy_command |= SPEEDY_DIRECTION_WRITE;
 		speedy_int_en |= (SPEEDY_TRANSFER_DONE_EN |
-				SPEEDY_FIFO_TX_ALMOST_EMPTY_EN |
-				SPEEDY_TX_LINE_BUSY_ERR_EN |
-				SPEEDY_TX_STOPBIT_ERR_EN |
-				SPEEDY_REMOTE_RESET_REQ_EN);
+		                  SPEEDY_FIFO_TX_ALMOST_EMPTY_EN |
+		                  SPEEDY_TX_LINE_BUSY_ERR_EN |
+		                  SPEEDY_TX_STOPBIT_ERR_EN |
+		                  SPEEDY_REMOTE_RESET_REQ_EN);
 		break;
 
 	default:
@@ -163,7 +163,7 @@ void speedy_read(unsigned int SPEEDY_BASE, unsigned char slave, unsigned char ad
 }
 
 void speedy_read_burst(unsigned int SPEEDY_BASE, unsigned char slave, unsigned char addr,
-				unsigned char *data, unsigned char count)
+                       unsigned char *data, unsigned char count)
 {
 	int result;
 	u16 address = addr + ((slave & 0xF) << 8);
@@ -173,10 +173,9 @@ void speedy_read_burst(unsigned int SPEEDY_BASE, unsigned char slave, unsigned c
 
 	result = speedy_wait_transfer_done(SPEEDY_BASE);
 
-	if (result == 0) {
-		for(i = 0; i < count; i++)
+	if (result == 0)
+		for (i = 0; i < count; i++)
 			data[i] = (unsigned char)readl(SPEEDY_BASE + SPEEDY_RX_DATA);
-	}
 	else
 		printf("[SPEEDY] timeout at burst_read\n");
 }
@@ -198,7 +197,7 @@ void speedy_write(unsigned int SPEEDY_BASE, unsigned char slave, unsigned char a
 }
 
 void speedy_write_burst(unsigned int SPEEDY_BASE, unsigned char slave, unsigned char addr,
-                                unsigned char *data, unsigned char count)
+                        unsigned char *data, unsigned char count)
 {
 	int result;
 	u16 address = addr + ((slave & 0xF) << 8);
@@ -206,7 +205,7 @@ void speedy_write_burst(unsigned int SPEEDY_BASE, unsigned char slave, unsigned 
 
 	speedy_set_cmd(SPEEDY_BASE, DIRECTION_WRITE, address, ACCESS_BURST, count);
 
-	for(i = 0; i < count; i++)
+	for (i = 0; i < count; i++)
 		writel(data[i], SPEEDY_BASE + SPEEDY_TX_DATA);
 
 	result = speedy_wait_transfer_done(SPEEDY_BASE);

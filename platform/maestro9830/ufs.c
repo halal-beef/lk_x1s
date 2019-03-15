@@ -13,17 +13,17 @@
 
 struct ufs_host;
 
-#define UFS_SCLK       166000000
-#define CNT_VAL_1US_MASK       0x3ff
-#define UFSHCI_VS_1US_TO_CNT_VAL                       0x110C
-#define UFSHCI_VS_UFSHCI_V2P1_CTRL                     0X118C
-#define BIT(x) (1<<(x))
-#define IA_TICK_SEL                            BIT(16)
+#define UFS_SCLK			166000000
+#define CNT_VAL_1US_MASK		0x3ff
+#define UFSHCI_VS_1US_TO_CNT_VAL	0x110C
+#define UFSHCI_VS_UFSHCI_V2P1_CTRL	0X118C
+#define BIT(x) (1 << (x))
+#define IA_TICK_SEL			BIT(16)
 
-#define MUX_CLKCMU_UFS_EMBD_CON 0x1A331098
-#define DIV_CLKCMU_UFS_EMBD_MUX 0x1A331890
+#define MUX_CLKCMU_UFS_EMBD_CON		0x1A331098
+#define DIV_CLKCMU_UFS_EMBD_MUX		0x1A331890
 
-#define UFS_CLKCMU_TIMEOUT 100
+#define UFS_CLKCMU_TIMEOUT		100
 
 void ufs_vs_set_1us_to_cnt(struct ufs_host *ufs)
 {
@@ -66,6 +66,7 @@ void ufs_set_unipro_clk(struct ufs_host *ufs)
 int ufs_board_init(int host_index, struct ufs_host *ufs)
 {
 	u32 reg;
+
 	//u32 err;
 
 	if (host_index) {
@@ -74,7 +75,7 @@ int ufs_board_init(int host_index, struct ufs_host *ufs)
 	}
 
 	/* mmio */
-	sprintf(ufs->host_name,"ufs%d", host_index);
+	sprintf(ufs->host_name, "ufs%d", host_index);
 	ufs->irq = 249;
 	ufs->ioaddr = (void __iomem *)0x13100000;
 	ufs->vs_addr = (void __iomem *)(0x13100000 + 0x1100);
@@ -82,8 +83,9 @@ int ufs_board_init(int host_index, struct ufs_host *ufs)
 	ufs->unipro_addr = (void __iomem *)0x13180000;
 	ufs->phy_pma = (void __iomem *)(0x13100000 + 0x4000);
 
-	/* power source changed compared with before */
-	/* XBOOTLDO GPG1[0] */
+	/*
+	 * power source changed compared with before
+	 * XBOOTLDO GPG1[0]*/
 	ufs->dev_pwr_addr = (void __iomem *)(0x10730000 + 0xc0);
 	ufs->dev_pwr_shift = 0;
 
@@ -113,5 +115,4 @@ int ufs_board_init(int host_index, struct ufs_host *ufs)
 
 void ufs_pre_vendor_setup(struct ufs_host *ufs)
 {
-
 }

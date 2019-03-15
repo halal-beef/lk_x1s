@@ -12,11 +12,11 @@
 #define __S2MPS_19_22_PMIC_H__
 
 /* S2MPS19 slave address */
-#define S2MPS19_PM_ADDR			0x1
-#define S2MPS19_RTC_ADDR		0x2
+#define S2MPS19_PM_ADDR		0x1
+#define S2MPS19_RTC_ADDR	0x2
 
 /* S2MPS22 slave address */
-#define S2MPS22_PM_ADDR			0x1
+#define S2MPS22_PM_ADDR		0x1
 
 /* S2MPS19 Register Address */
 #define S2MPS19_PM_INT1		0x000
@@ -44,7 +44,7 @@
 #define S2MPS19_PM_LDO17M_CTRL	0x056
 
 #define S2MPS19_RTC_WTSR_SMPL	0x001
-#define S2MPU19_RTC_CAP_SEL		0x003
+#define S2MPU19_RTC_CAP_SEL	0x003
 
 /* S2MPS22 Register Address */
 #define S2MPS22_PM_CTRL1	0x013
@@ -69,16 +69,16 @@
 
 
 #define S2MPS19_RTC_WTSR_SMPL	0x001
-#define S2MPS19_RTC_UPDATE		0x002
-#define S2MPS19_RTC_CAP_SEL		0x003
-#define S2MPS19_RTC_MSEC		0x004
-#define S2MPS19_RTC_SEC			0x005
-#define S2MPS19_RTC_MIN			0x006
-#define S2MPS19_RTC_HOUR		0x007
-#define S2MPS19_RTC_WEEK		0x008
-#define S2MPS19_RTC_DAY			0x009
-#define S2MPS19_RTC_MON			0x00A
-#define S2MPS19_RTC_YEAR		0x00B
+#define S2MPS19_RTC_UPDATE	0x002
+#define S2MPS19_RTC_CAP_SEL	0x003
+#define S2MPS19_RTC_MSEC	0x004
+#define S2MPS19_RTC_SEC		0x005
+#define S2MPS19_RTC_MIN		0x006
+#define S2MPS19_RTC_HOUR	0x007
+#define S2MPS19_RTC_WEEK	0x008
+#define S2MPS19_RTC_DAY		0x009
+#define S2MPS19_RTC_MON		0x00A
+#define S2MPS19_RTC_YEAR	0x00B
 
 /* RTC Counter Register offsets */
 enum {
@@ -103,4 +103,3 @@ void display_pmic_info(void);
 void display_pmic_rtc_time(void);
 
 #endif /*__S2MPS_19_22_PMIC_H__*/
-

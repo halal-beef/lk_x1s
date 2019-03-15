@@ -37,10 +37,9 @@ typedef struct _ext4_chunk_header {
 #define EXT4_CHUNK_HEADER_SIZE	(sizeof(struct _ext4_chunk_header))
 
 
-#define EXT4_CHUNK_TYPE_RAW			0xCAC1
-#define EXT4_CHUNK_TYPE_FILL		0xCAC2
-#define EXT4_CHUNK_TYPE_NONE		0xCAC3
+#define EXT4_CHUNK_TYPE_RAW	0xCAC1
+#define EXT4_CHUNK_TYPE_FILL	0xCAC2
+#define EXT4_CHUNK_TYPE_NONE	0xCAC3
 
-int write_compressed_ext4(char* img_base, unsigned int sector_base);
+int write_compressed_ext4(char *img_base, unsigned int sector_base);
 int check_compress_ext4(char *img_base, unsigned long long parti_size);
-

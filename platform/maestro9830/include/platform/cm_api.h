@@ -11,40 +11,43 @@
 #ifndef _CM_API_H_
 #define _CM_API_H_
 
-/*****************************************************************************/
-/* defines for general purpose                                               */
-/*****************************************************************************/
-#define VIRT_TO_PHYS(_virt_addr_)		((uint64_t)(_virt_addr_))
+/*
+ ****************************************************************************
+ * defines for general purpose
+ *****************************************************************************/
+#define VIRT_TO_PHYS(_virt_addr_) ((uint64_t)(_virt_addr_))
 
 #define FLUSH_DCACHE_RANGE(addr, length)
 #define INV_DCACHE_RANGE(addr, length)
 
-#define CACHE_WRITEBACK_SHIFT			6
-#define CACHE_WRITEBACK_GRANULE			(1 << CACHE_WRITEBACK_SHIFT)
+#define CACHE_WRITEBACK_SHIFT	6
+#define CACHE_WRITEBACK_GRANULE	(1 << CACHE_WRITEBACK_SHIFT)
 
-#define MASK_LSB8				0x00000000000000FFULL
-#define MASK_LSB16				0x000000000000FFFFULL
-#define MASK_LSB32				0x00000000FFFFFFFFULL
+#define MASK_LSB8		0x00000000000000FFULL
+#define MASK_LSB16		0x000000000000FFFFULL
+#define MASK_LSB32		0x00000000FFFFFFFFULL
 
 /* SMC ID for CM APIs */
-#define SMC_AARCH64_PREFIX				(0xC2000000)
-#define SMC_CM_KEY_MANAGER				(0x1013)
-#define SMC_CM_RANDOM					(0x101C)
-#define SMC_CM_SECURE_BOOT				(0x101D)
+#define SMC_AARCH64_PREFIX	(0xC2000000)
+#define SMC_CM_KEY_MANAGER	(0x1013)
+#define SMC_CM_RANDOM		(0x101C)
+#define SMC_CM_SECURE_BOOT	(0x101D)
 
-#define SHA256_DIGEST_LEN				(32)
+#define SHA256_DIGEST_LEN	(32)
 
-/*****************************************************************************/
-/* ERROR Codes                                                               */
-/*****************************************************************************/
-#define RV_SUCCESS					0
-#define RV_SB_LDFW_NOT_LOADED				0xFFFFFFFF
-#define RV_SB_CMD_BLOCKED				0x51007
+/*
+ ****************************************************************************
+ * ERROR Codes
+ *****************************************************************************/
+#define RV_SUCCESS		0
+#define RV_SB_LDFW_NOT_LOADED	0xFFFFFFFF
+#define RV_SB_CMD_BLOCKED	0x51007
 
-/*****************************************************************************/
-/* CM API functions for RootOfTrust                                          */
-/*****************************************************************************/
-/* define device state */
+/*
+ ****************************************************************************
+ * CM API functions for RootOfTrust
+ ****************************************************************************
+ * define device state*/
 enum device_state {
 	UNLOCKED,
 	LOCKED,
@@ -73,54 +76,56 @@ enum secure_boot_cmd {
 	SB_SET_OS_VERSION,
 	SB_BLOCK_CMD,
 	SB_CHECK_SIGN_NWD_WITH_PUBKEY,
-	SB_CHECK_SIGN_NWD_AND_RP, /* Automotive */
-	SB_CHECK_SIGN_NWD_WITH_HASH_AND_RP, /* Automotive */
+	SB_CHECK_SIGN_NWD_AND_RP,               /* Automotive */
+	SB_CHECK_SIGN_NWD_WITH_HASH_AND_RP,     /* Automotive */
 	SB_CHECK_SIGN_CP_WITH_HASH,
 	SB_GET_AVB_KEY,
 	SB_SET_VENDOR_BOOT_VERSION,
 };
 
 typedef struct {
-	uint32_t	verified_boot_state;
-	uint32_t	device_locked;
-	uint32_t	os_version;
-	uint32_t	os_patch_level;
-	uint8_t		verified_boot_key[SHA256_DIGEST_LEN];
-	uint32_t	vendor_patch_level;
-	uint32_t	boot_patch_level;
-	uint64_t	reserved[3];
+	uint32_t verified_boot_state;
+	uint32_t device_locked;
+	uint32_t os_version;
+	uint32_t os_patch_level;
+	uint8_t	verified_boot_key[SHA256_DIGEST_LEN];
+	uint32_t vendor_patch_level;
+	uint32_t boot_patch_level;
+	uint64_t reserved[3];
 } SB_PARAM_ROOT_OF_TRUST_ST __attribute__((__aligned__(CACHE_WRITEBACK_GRANULE)));
 
 uint64_t cm_secure_boot_set_pubkey(uint8_t *pub_key_ptr, uint32_t pub_key_len);
 uint64_t cm_secure_boot_erase_pubkey(void);
 uint64_t cm_secure_boot_set_os_version(uint32_t os_version,
-		uint32_t patch_month_year);
+                                       uint32_t patch_month_year);
 uint64_t cm_secure_boot_set_vendor_boot_version(uint32_t vendor_patch_level,
-		uint32_t boot_patch_level);
+                                                uint32_t boot_patch_level);
 uint64_t cm_secure_boot_set_device_state(uint32_t state);
 uint64_t cm_secure_boot_set_boot_state(uint32_t state);
 uint64_t cm_secure_boot_get_root_of_trust(
-		SB_PARAM_ROOT_OF_TRUST_ST *root_of_trust);
+	SB_PARAM_ROOT_OF_TRUST_ST *root_of_trust);
 uint64_t cm_secure_boot_block_cmd(void);
 uint64_t cm_secure_boot_self_test(void);
 
-/*****************************************************************************/
-/* CM API functions for Random                                               */
-/*****************************************************************************/
-#define GET_RANDOM_WORD					(0)
+/*
+ ****************************************************************************
+ * CM API functions for Random
+ *****************************************************************************/
+#define GET_RANDOM_WORD	(0)
 
 uint64_t cm_get_random(uint8_t *random, uint32_t random_len);
 uint64_t cm_random_self_test(void);
 
-/*****************************************************************************/
-/* CM API functions for Keymanager                                           */
-/*****************************************************************************/
-#define KM_KW_MAX_SALT_LEN				(60)
-#define KM_KW_MAX_IV_LEN				(12)
-#define KM_KW_MAX_AAD_LEN				(32)
-#define KM_KW_MAX_KEY_LEN				(32)
-#define KM_KW_MAX_INPUT_LEN				(4096)
-#define KM_KW_MAX_TAG_LEN				(16)
+/*
+ ****************************************************************************
+ * CM API functions for Keymanager
+ *****************************************************************************/
+#define KM_KW_MAX_SALT_LEN	(60)
+#define KM_KW_MAX_IV_LEN	(12)
+#define KM_KW_MAX_AAD_LEN	(32)
+#define KM_KW_MAX_KEY_LEN	(32)
+#define KM_KW_MAX_INPUT_LEN	(4096)
+#define KM_KW_MAX_TAG_LEN	(16)
 
 /* define function number */
 enum {

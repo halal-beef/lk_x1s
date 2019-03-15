@@ -1,12 +1,12 @@
 /* Copyright (c) 2018 Samsung Electronics Co, Ltd.
-
+ *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
  * published by the Free Software Foundation.
-
+ *
  * Copyright@ Samsung Electronics Co. LTD
  * Manseok Kim <manseoks.kim@samsung.com>
-
+ *
  * Alternatively, Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -421,7 +421,7 @@ void dma_reg_set_perf_degradation_en(u32 id, u32 en)
 
 	val = en ? ~0 : 0;
 	dma_com_write_mask(id, DPU_DMA_PERFORMANCE_CON0,
-			val, DPU_DMA_DEGRADATION_EN);
+	                   val, DPU_DMA_DEGRADATION_EN);
 }
 
 void dma_reg_set_in_qos_lut(u32 id, u32 lut_id, u32 qos_t)
@@ -527,7 +527,6 @@ u32 dpp_reg_get_op_status(u32 id)
 void dpp_reg_set_sw_reset(u32 id)
 {
 	dpp_write_mask(id, DPP_ENABLE, ~0, DPP_SRSET);
-
 }
 
 int dpp_reg_wait_sw_reset_status(u32 id)
@@ -658,12 +657,12 @@ void dpp_reg_set_csc_coef(u32 id, u32 csc_std, u32 csc_rng)
 	dpp_write_mask(id, DPP_CSC_COEF4, val, mask);
 
 	dpp_dbg("---[CSC Type = %s_%s]---\n",
-		csc_std == 3 ? "DCI_P3" : "BT_2020",
-		csc_rng == 0 ? "LTD" : "FULL");
+	        csc_std == 3 ? "DCI_P3" : "BT_2020",
+	        csc_rng == 0 ? "LTD" : "FULL");
 	dpp_dbg("0x%3x  0x%3x  0x%3x\n", c00, c01, c02);
 	dpp_dbg("0x%3x  0x%3x  0x%3x\n", c10, c11, c12);
 	dpp_dbg("0x%3x  0x%3x  0x%3x\n", c20, c21, c22);
-#endif
+#endif /* if defined(SUPPORT_USER_COEF) */
 }
 
 void dpp_reg_set_csc_config(u32 id, u32 type)
@@ -686,7 +685,6 @@ void dpp_reg_set_csc_config(u32 id, u32 type)
 	dpp_reg_set_csc_type(id, csc_std, csc_rng, coef_mode);
 	if (coef_mode != CSC_COEF_HARDWIRED)
 		dpp_reg_set_csc_coef(id, csc_std, csc_rng);
-
 }
 
 /* [fmt] 0=ARGB8888, 1=NV12/NV21 */
@@ -762,7 +760,7 @@ void dpp_reg_set_h_coef(u32 id, u32 h_ratio)
 		for (j = 0; j < 8; j++) {
 			for (k = 0; k < 2; k++) {
 				dpp_write(id, DPP_H_COEF(i, j, k),
-						h_coef_8t[sc_ratio][i][j]);
+				          h_coef_8t[sc_ratio][i][j]);
 			}
 		}
 	}
@@ -791,7 +789,7 @@ void dpp_reg_set_v_coef(u32 id, u32 v_ratio)
 		for (j = 0; j < 4; j++) {
 			for (k = 0; k < 2; k++) {
 				dpp_write(id, DPP_V_COEF(i, j, k),
-						v_coef_4t[sc_ratio][i][j]);
+				          v_coef_4t[sc_ratio][i][j]);
 			}
 		}
 	}
@@ -873,7 +871,7 @@ void dpp_reg_set_scale_start_position(u32 id, u32 yh, u32 yv, u32 ch, u32 cv)
  *   yc_phase[3] : CV
  */
 void dpp_calc_recommend_initial_phase(u32 fmt_id,
-		u32 sw, u32 sh, u32 dw, u32 dh, u32 yc_phase[4])
+                                      u32 sw, u32 sh, u32 dw, u32 dh, u32 yc_phase[4])
 {
 	switch (fmt_id) {
 	/* RGB */
@@ -887,8 +885,8 @@ void dpp_calc_recommend_initial_phase(u32 fmt_id,
 	case 1:
 		yc_phase[0] = (((s64)sw - (s64)dw) * 0x100000) / (2 * dw);
 		yc_phase[1] = (((s64)sh - (s64)dh) * 0x100000) / (2 * dh);
-		yc_phase[2] = (((s64)sw - (s64)(2*dw)) * 0x100000) / (4 * dw);
-		yc_phase[3] = (((s64)sh - (s64)(2*dh)) * 0x100000) / (4 * dh);
+		yc_phase[2] = (((s64)sw - (s64)(2 * dw)) * 0x100000) / (4 * dw);
+		yc_phase[3] = (((s64)sh - (s64)(2 * dh)) * 0x100000) / (4 * dh);
 		break;
 	/* unknown format */
 	default:
@@ -1090,7 +1088,7 @@ int dpp_reg_set_format(u32 id, struct dpp_params_info *p)
 void dpp_reg_set_buf_addr(u32 id, struct dpp_params_info *p)
 {
 	dpp_dbg("dpp id : %d, y : %u, cb : %u, cr : %u\n", id,
-			p->addr[0], p->addr[1], p->addr[2]);
+	        p->addr[0], p->addr[1], p->addr[2]);
 
 	/* For AFBC stream, BASE_ADDR_C must be same with BASE_ADDR_Y */
 	if (p->is_comp == 0)
@@ -1127,7 +1125,7 @@ void dpp_reg_set_block_area(u32 id, struct dpp_params_info *p)
 	dma_reg_set_block_en(id, 1);
 
 	dpp_dbg("block x : %d, y : %d, w : %d, h : %d\n",
-			p->block.x, p->block.y, p->block.w, p->block.h);
+	        p->block.x, p->block.y, p->block.w, p->block.h);
 }
 
 void dpp_reg_set_plane_alpha(u32 id, u32 plane_alpha)
@@ -1169,7 +1167,7 @@ void dpp_reg_clear_irq(u32 id, u32 irq)
 }
 
 void dpp_constraints_params(struct dpp_size_constraints *vc,
-		struct dpp_img_format *vi)
+                            struct dpp_img_format *vi)
 {
 	u32 sz_align = 1;
 
@@ -1218,12 +1216,13 @@ int dpp_reg_wait_idle_status(int id, unsigned long timeout)
 		dma_status = dma_reg_get_op_status(id);
 
 		if ((dpp_status == OP_STATUS_IDLE)
-			&& (dma_status == OP_STATUS_IDLE))
+		    && (dma_status == OP_STATUS_IDLE))
 			break;
 
 		cnt--;
 		udelay(delay_time);
-	};
+	}
+	;
 
 	if (!cnt) {
 		if (dpp_status)
@@ -1269,7 +1268,7 @@ int dpp_reg_deinit(u32 id, bool reset)
 		dpp_reg_set_sw_reset(id);
 
 		if (dpp_reg_wait_sw_reset_status(id)
-			&& dma_reg_wait_sw_reset_status(id))
+		    && dma_reg_wait_sw_reset_status(id))
 			return -EBUSY;
 	}
 
