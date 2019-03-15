@@ -39,30 +39,30 @@
 #define S2MU004_REG_TEMP_C0		0x5E
 #define S2MU004_REG_TEMP_D0		0x60
 
-#define abs(x) (((x)<0) ? -(x):(x))
+#define abs(x) (((x) < 0) ? -(x) : (x))
 
-#define TABLE_SIZE	22
+#define TABLE_SIZE			22
 
 /* FG Accumulative rate - Default value(0x800)*/
-#define S2MU005_REG_OX45_VALUE_EVT2 0x08
-#define S2MU005_REG_OX44_VALUE_EVT2 0x00
+#define S2MU005_REG_OX45_VALUE_EVT2	0x08
+#define S2MU005_REG_OX44_VALUE_EVT2	0x00
 
-#define FG_POWER_CHECK_DELAY			1000
+#define FG_POWER_CHECK_DELAY		1000
 #define FG_BOOTABLE_VOL			3500
 
-#define FG_MODEL_DATA_VERSION 0x0 /* 0x1~0xE:data version, 0x0:default, 0xF:jig or corrupted */
-#define VAL_0E	0xD0
-#define VAL_0F	0x20
-#define VAL_10	0x34
-#define VAL_11	0x08
+#define FG_MODEL_DATA_VERSION		0x0 /* 0x1~0xE:data version, 0x0:default, 0xF:jig or corrupted */
+#define VAL_0E				0xD0
+#define VAL_0F				0x20
+#define VAL_10				0x34
+#define VAL_11				0x08
 
-#define VAL_45	0x8
-#define VAL_44	0x00
+#define VAL_45				0x8
+#define VAL_44				0x00
 
 void IIC_S2MU004_FG_EWrite(unsigned char ChipId,
-		unsigned char IicAddr, unsigned char IicData);
+                           unsigned char IicAddr, unsigned char IicData);
 void IIC_S2MU004_FG_ERead(unsigned char ChipId,
-		unsigned char IicAddr, unsigned char *IicData);
+                          unsigned char IicAddr, unsigned char *IicData);
 void IIC_S2MU004_FG_ESetport(void);
 
 void fg_init_s2mu004(void);

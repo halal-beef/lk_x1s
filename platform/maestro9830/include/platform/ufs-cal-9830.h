@@ -1,3 +1,15 @@
+/*
+ * Copyright@ Samsung Electronics Co. LTD
+ *
+ * This software is proprietary of Samsung Electronics.
+ *
+ * No part of this software, either material or conceptual may be copied or
+ * distributed, transmitted, transcribed, stored in a retrieval system or
+ * translated into any human or computer language in any form by any means,
+ * electronic, mechanical, manual or otherwise, or disclosed to third parties
+ * without the express written permission of Samsung Electronics.
+ *
+ */
 struct uic_pwr_mode {
 	u8 lane;
 	u8 gear;
@@ -18,7 +30,7 @@ enum {
 };
 
 struct ufs_cal_param {
-	void *host;		/* Host adaptor */
+	void *host;             /* Host adaptor */
 	u8 available_lane;
 	u8 connected_tx_lane;
 	u8 connected_rx_lane;

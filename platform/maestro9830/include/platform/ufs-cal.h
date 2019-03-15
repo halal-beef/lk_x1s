@@ -12,5 +12,4 @@
 #define __UFS_CAL_H__
 
 #include <platform/ufs-cal-9830.h>
-
 #endif	/* __UFS_CAL_H__ */

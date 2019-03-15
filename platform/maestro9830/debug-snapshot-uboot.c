@@ -49,18 +49,18 @@ struct dbg_snapshot_bl {
 struct reserve_mem cp_rmem;
 
 struct dbg_snapshot_bl static_dss_bl = {
-	.item[0] = {"header",		{0, 0}, 0},
-	.item[1] = {"log_kernel",	{0, 0}, 0},
-	.item[2] = {"log_platform",	{0, 0}, 0},
-	.item[3] = {"log_sfr",		{0, 0}, 0},
-	.item[4] = {"log_s2d",		{0, 0}, 0},
-	.item[5] = {"log_cachedump",	{0, 0}, 0},
-	.item[6] = {"log_etm",		{0, 0}, 0},
-	.item[7] = {"log_bcm",		{0, 0}, 0},
-	.item[8] = {"log_llc",		{0, 0}, 0},
-	.item[9] = {"log_dbgc",		{0, 0}, 0},
-	.item[10] = {"log_pstore",	{0, 0}, 0},
-	.item[11] = {"log_kevents",	{0, 0}, 0},
+	.item[0] = { "header",           { 0, 0 }, 0 },
+	.item[1] = { "log_kernel",       { 0, 0 }, 0 },
+	.item[2] = { "log_platform",     { 0, 0 }, 0 },
+	.item[3] = { "log_sfr",          { 0, 0 }, 0 },
+	.item[4] = { "log_s2d",          { 0, 0 }, 0 },
+	.item[5] = { "log_cachedump",    { 0, 0 }, 0 },
+	.item[6] = { "log_etm",          { 0, 0 }, 0 },
+	.item[7] = { "log_bcm",          { 0, 0 }, 0 },
+	.item[8] = { "log_llc",          { 0, 0 }, 0 },
+	.item[9] = { "log_dbgc",         { 0, 0 }, 0 },
+	.item[10] = { "log_pstore",      { 0, 0 }, 0 },
+	.item[11] = { "log_kevents",     { 0, 0 }, 0 },
 };
 
 struct dbg_snapshot_bl *dss_bl_p;
@@ -72,7 +72,7 @@ static int debug_snapshot_get_items(void)
 	int i;
 
 	if (readl(CONFIG_RAMDUMP_DSS_ITEM_INFO) == 0x01234567
-			&& readl(CONFIG_RAMDUMP_DSS_ITEM_INFO + 0x4) == 0x89ABCDEF) {
+	    && readl(CONFIG_RAMDUMP_DSS_ITEM_INFO + 0x4) == 0x89ABCDEF) {
 		dss_bl_p = (struct dbg_snapshot_bl *)CONFIG_RAMDUMP_DSS_ITEM_INFO;
 	} else {
 		load_boot_images();
@@ -87,7 +87,7 @@ static int debug_snapshot_get_items(void)
 			strncpy(path, DSS_RESERVE_PATH, sizeof(DSS_RESERVE_PATH));
 			strncat(path, "/", 1);
 			strncat(path, static_dss_bl.item[i].name,
-					strlen(static_dss_bl.item[i].name));
+			        strlen(static_dss_bl.item[i].name));
 
 			if (!get_fdt_val(path, "reg", (char *)ret)) {
 				static_dss_bl.item[i].rmem.paddr |= be32_to_cpu(ret[1]);
@@ -107,15 +107,16 @@ static int debug_snapshot_get_items(void)
 	}
 
 	printf("debug-snapshot kernel physical memory layout:(MAGIC:0x%lx)\n",
-			(unsigned long)readl(CONFIG_RAMDUMP_DSS_ITEM_INFO) << 32L |
-			(unsigned long)readl(CONFIG_RAMDUMP_DSS_ITEM_INFO + 0x4));
+	       (unsigned long)readl(CONFIG_RAMDUMP_DSS_ITEM_INFO) << 32L |
+	       (unsigned long)readl(CONFIG_RAMDUMP_DSS_ITEM_INFO + 0x4));
 
 	for (i = 0; i < ARRAY_SIZE(dss_bl_p->item); i++) {
-		if (dss_bl_p->item[i].enabled)
+		if (dss_bl_p->item[i].enabled) {
 			printf("%-15s: phys:0x%x / size:0x%x\n",
-					dss_bl_p->item[i].name,
-					dss_bl_p->item[i].rmem.paddr,
-					dss_bl_p->item[i].rmem.size);
+			       dss_bl_p->item[i].name,
+			       dss_bl_p->item[i].rmem.paddr,
+			       dss_bl_p->item[i].rmem.size);
+		}
 	}
 
 	return 0;
@@ -132,7 +133,7 @@ struct dss_item *debug_snapshot_get_item(const char *name)
 
 	for (i = 0; i < ARRAY_SIZE(dss_bl_p->item); i++) {
 		if (!strncmp(dss_bl_p->item[i].name, name, strlen(dss_bl_p->item[i].name))
-				&& dss_bl_p->item[i].enabled)
+		    && dss_bl_p->item[i].enabled)
 			return &dss_bl_p->item[i];
 	}
 
@@ -171,7 +172,7 @@ void debug_snapshot_fdt_init(void)
 
 int debug_snapshot_getvar_item(const char *name, char *response)
 {
-	char log_name[16] = {0, };
+	char log_name[16] = { 0, };
 	struct dss_item *item;
 
 	if (!strcmp(name, "dramsize")) {
@@ -184,20 +185,20 @@ int debug_snapshot_getvar_item(const char *name, char *response)
 
 	if (!strcmp(name, "cpmem")) {
 		if ((readl(CONFIG_RAMDUMP_DSS_ITEM_INFO) == 0x01234567) &&
-			(readl(CONFIG_RAMDUMP_DSS_ITEM_INFO + 0x4) == 0x89ABCDEF)) {
+		    (readl(CONFIG_RAMDUMP_DSS_ITEM_INFO + 0x4) == 0x89ABCDEF)) {
 			item = debug_snapshot_get_item("cpmem");
 			if (!item)
 				return -1;
 
 			sprintf(response, "%X, %X, %X", item->rmem.paddr,
-					item->rmem.size - 1,
-					item->rmem.paddr + item->rmem.size - 1);
+			        item->rmem.size - 1,
+			        item->rmem.paddr + item->rmem.size - 1);
 		} else {
 			if (cp_rmem.paddr == 0 || cp_rmem.size == 0)
 				return -1;
 
 			sprintf(response, "%X, %X, %X", cp_rmem.paddr, cp_rmem.size - 1,
-					cp_rmem.paddr + cp_rmem.size - 1);
+			        cp_rmem.paddr + cp_rmem.size - 1);
 		}
 		return 0;
 	}
@@ -208,7 +209,7 @@ int debug_snapshot_getvar_item(const char *name, char *response)
 			return -1;
 
 		sprintf(response, "%X, %X, %X", item->rmem.paddr, item->rmem.size - 1,
-			item->rmem.paddr + item->rmem.size - 1);
+		        item->rmem.paddr + item->rmem.size - 1);
 	}
 
 	snprintf(log_name, 16, "log_%s", name);
@@ -217,6 +218,6 @@ int debug_snapshot_getvar_item(const char *name, char *response)
 		return -1;
 
 	sprintf(response, "%X, %X, %X", item->rmem.paddr, item->rmem.size - 1,
-			item->rmem.paddr + item->rmem.size - 1);
+	        item->rmem.paddr + item->rmem.size - 1);
 	return 0;
 }

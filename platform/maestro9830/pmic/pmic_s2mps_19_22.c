@@ -69,7 +69,6 @@ void pmic_init(void)
 	speedy_read(CONFIG_SPEEDY0_BASE, S2MPS19_PM_ADDR, S2MPS19_PM_LDO16M_CTRL, &reg);
 	reg |= S2MPS_OUTPUT_ON_NORMAL;
 	speedy_write(CONFIG_SPEEDY0_BASE, S2MPS19_PM_ADDR, S2MPS19_PM_LDO16M_CTRL, reg);
-
 }
 
 void display_pmic_info(void)
@@ -142,8 +141,8 @@ void display_pmic_rtc_time(void)
 		speedy_read(CONFIG_SPEEDY0_BASE, S2MPS19_RTC_ADDR, (S2MPS19_RTC_SEC + i), &time[i]);
 
 	printf("RTC TIME: %d-%02d-%02d %02d:%02d:%02d(0x%02x)%s\n",
-		time[PMIC_RTC_YEAR] + 2000, time[PMIC_RTC_MONTH],
-		time[PMIC_RTC_DATE], time[PMIC_RTC_HOUR] & 0x1f, time[PMIC_RTC_MIN],
-		time[PMIC_RTC_SEC], time[PMIC_RTC_WEEK],
-		time[PMIC_RTC_HOUR] & (1 << 6) ? "PM" : "AM");
+	       time[PMIC_RTC_YEAR] + 2000, time[PMIC_RTC_MONTH],
+	       time[PMIC_RTC_DATE], time[PMIC_RTC_HOUR] & 0x1f, time[PMIC_RTC_MIN],
+	       time[PMIC_RTC_SEC], time[PMIC_RTC_WEEK],
+	       time[PMIC_RTC_HOUR] & (1 << 6) ? "PM" : "AM");
 }

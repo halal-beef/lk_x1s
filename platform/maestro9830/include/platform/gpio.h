@@ -14,20 +14,20 @@
 
 #ifndef __ASSEMBLY__
 struct exynos_gpio_bank {
-	unsigned int	con;
-	unsigned int	dat;
-	unsigned int	pull;
-	unsigned int	drv;
-	unsigned int	pdn_con;
-	unsigned int	pdn_pull;
-	unsigned char	res1[8];
+	unsigned int con;
+	unsigned int dat;
+	unsigned int pull;
+	unsigned int drv;
+	unsigned int pdn_con;
+	unsigned int pdn_pull;
+	unsigned char res1[8];
 };
 
 /* Pin configurations */
 #define GPIO_INPUT	0x0
 #define GPIO_OUTPUT	0x1
 #define GPIO_IRQ	0xf
-#define GPIO_FUNC(x)	(x)
+#define GPIO_FUNC(x) (x)
 
 /* Pull mode */
 #define GPIO_PULL_NONE	0x0
@@ -43,7 +43,7 @@ struct exynos_gpio_bank {
 #define GPIO_DRV_SLOW	0x1
 
 /* GPIO pins per bank  */
-#define GPIO_PER_BANK 8
+#define GPIO_PER_BANK	8
 
 /* functions */
 void exynos_gpio_cfg_pin(struct exynos_gpio_bank *bank, int gpio, int cfg);
@@ -55,11 +55,9 @@ void exynos_gpio_set_pull(struct exynos_gpio_bank *bank, int gpio, int mode);
 void exynos_gpio_set_drv(struct exynos_gpio_bank *bank, int gpio, int mode);
 void exynos_gpio_set_rate(struct exynos_gpio_bank *bank, int gpio, int mode);
 
-
 static inline unsigned long exynos_gpio_base(int nr)
 {
 	return 0;
 }
-
-#endif
-#endif
+#endif // ifndef __ASSEMBLY__
+#endif // ifndef __ASM_ARCH_GPIO_H

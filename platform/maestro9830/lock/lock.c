@@ -24,9 +24,9 @@ void lock(int state)
 	pit_access(ptn, PIT_OP_LOAD, (u64)env_val, 0);
 
 	/* The device should prompt users to warn them that
-	  they may encounter problems with unofficial images.
-	  After acknowledging, a factory data reset should be
-	  done to prevent unauthorized data access. */
+	 * they may encounter problems with unofficial images.
+	 * After acknowledging, a factory data reset should be
+	 * done to prevent unauthorized data access. */
 	if ((env_val[ENV_ID_LOCKED] == 1) && (state == 0)) {
 	}
 
@@ -63,7 +63,7 @@ void lock_critical(int state)
 	pit_access(ptn, PIT_OP_LOAD, (u64)env_val, 0);
 
 	/* Transitioning from locked to unlocked state should
-	  require a physical interaction with the device. */
+	 * require a physical interaction with the device. */
 	if ((env_val[ENV_ID_LOCKED_CRITICAL] == 1) && (state == 0)) {
 	}
 
@@ -76,9 +76,9 @@ void lock_critical(int state)
 int get_unlock_ability(void)
 {
 	/* If get_unlock_ability is "0" the user needs to boot
-	  to the home screen, go into the Settings > System > Developer
-	  options menu and enable the OEM unlocking option to set
-	  unlock_ability to: "1" */
+	 * to the home screen, go into the Settings > System > Developer
+	 * options menu and enable the OEM unlocking option to set
+	 * unlock_ability to: "1" */
 	int unlock_ability = 1;
 
 	return unlock_ability;

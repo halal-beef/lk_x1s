@@ -12,5 +12,4 @@
 #define __CHIP_ID_H__
 
 extern unsigned int s5p_chip_id[4];
-
 #endif	/* __CHIP_ID_H__ */

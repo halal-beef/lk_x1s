@@ -19,10 +19,10 @@
 
 typedef struct ExynosSlotInfo {
 	// Flag mean that the slot can bootable or not.
-	uint8_t bootable :1;
+	uint8_t bootable : 1;
 
 	// Set to true when the OS has successfully booted.
-	uint8_t boot_successful :1;
+	uint8_t boot_successful : 1;
 
 	// Priorty number range [0:15], with 15 meaning highest priortiy,
 	// 1 meaning lowest priority and 0 mean that the slot is unbootable.

@@ -13,8 +13,7 @@
 
 typedef enum {
 	ENV_ID_RAMDISK_SIZE = 0x0,
-	ENV_ID_LOCKED = 0x1,		/* 0:unlocked, 1:locked */
-	ENV_ID_LOCKED_CRITICAL = 0x2,	/* 0:unlocked, 1:locked */
+	ENV_ID_LOCKED = 0x1,            /* 0:unlocked, 1:locked */
+	ENV_ID_LOCKED_CRITICAL = 0x2,   /* 0:unlocked, 1:locked */
 } env_id_t;
-
 #endif	/* __ENVIRONMENT_H__ */

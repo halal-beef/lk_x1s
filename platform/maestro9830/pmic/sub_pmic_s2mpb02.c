@@ -137,7 +137,7 @@ void IIC_ESetport(void)
 }
 
 void IIC_EWrite(unsigned char ChipId,
-		unsigned char IicAddr, unsigned char IicData)
+                unsigned char IicAddr, unsigned char IicData)
 {
 	unsigned long i;
 
@@ -159,7 +159,7 @@ void IIC_EWrite(unsigned char ChipId,
 
 	/* write reg. addr. */
 	for (i = 8; i > 0; i--) {
-		if ((IicAddr >> (i-1)) & 0x0001)
+		if ((IicAddr >> (i - 1)) & 0x0001)
 			IIC_EHigh();
 		else
 			IIC_ELow();
@@ -170,7 +170,7 @@ void IIC_EWrite(unsigned char ChipId,
 
 	/* write reg. data. */
 	for (i = 8; i > 0; i--) {
-		if ((IicData >> (i-1)) & 0x0001)
+		if ((IicData >> (i - 1)) & 0x0001)
 			IIC_EHigh();
 		else
 			IIC_ELow();
@@ -183,7 +183,7 @@ void IIC_EWrite(unsigned char ChipId,
 }
 
 void IIC_ERead(unsigned char ChipId,
-		unsigned char IicAddr, unsigned char *IicData)
+               unsigned char IicAddr, unsigned char *IicData)
 {
 	unsigned long i, reg;
 	unsigned char data = 0;
@@ -206,7 +206,7 @@ void IIC_ERead(unsigned char ChipId,
 
 	/* write reg. addr. */
 	for (i = 8; i > 0; i--) {
-		if ((IicAddr >> (i-1)) & 0x0001)
+		if ((IicAddr >> (i - 1)) & 0x0001)
 			IIC_EHigh();
 		else
 			IIC_ELow();
@@ -254,7 +254,7 @@ void IIC_ERead(unsigned char ChipId,
 
 		reg = (reg >> IIC_GPIO_DAT_SHIFT) & 0x1;
 
-		data |= reg << (i-1);
+		data |= reg << (i - 1);
 	}
 
 	/* ACK */

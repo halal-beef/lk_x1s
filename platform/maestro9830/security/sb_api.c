@@ -14,8 +14,10 @@
 #include <platform/secure_boot.h>
 #include <dev/rpmb.h>
 
-/******************************************************************************/
-/* EL3 API */
+/*
+ *****************************************************************************
+ * EL3 API*/
+
 /******************************************************************************/
 uint32_t read_secure_chip(void)
 {
@@ -36,7 +38,7 @@ uint32_t el3_sss_hash_init(
 	FLUSH_DCACHE_RANGE(&info_hash, sizeof(HASH_INFO));
 
 	ret = exynos_smc(SMC_CMD_HASH, (uint64_t)&info_hash,
-			(uint64_t)ctx, SHA_INIT);
+	                 (uint64_t)ctx, SHA_INIT);
 
 	INV_DCACHE_RANGE(ctx, sizeof(struct ace_hash_ctx));
 
@@ -63,11 +65,11 @@ uint32_t el3_sss_hash_update(
 	if (done_flag) {
 		FLUSH_DCACHE_RANGE(addr, remain_size);
 		ret = exynos_smc(SMC_CMD_HASH, (uint64_t)&info_hash,
-				(uint64_t)ctx, SHA_UPDATE_REMAIN_SIZE);
+		                 (uint64_t)ctx, SHA_UPDATE_REMAIN_SIZE);
 	} else {
 		FLUSH_DCACHE_RANGE(addr, unit_size);
 		ret = exynos_smc(SMC_CMD_HASH, (uint64_t)&info_hash,
-				(uint64_t)ctx, SHA_UPDATE_UNIT_SIZE);
+		                 (uint64_t)ctx, SHA_UPDATE_UNIT_SIZE);
 	}
 	INV_DCACHE_RANGE(ctx, sizeof(struct ace_hash_ctx));
 
@@ -88,7 +90,7 @@ uint32_t el3_sss_hash_final(
 	FLUSH_DCACHE_RANGE(hash, SHA512_DIGEST_LEN);
 
 	ret = exynos_smc(SMC_CMD_HASH, (uint64_t)&info_hash,
-			(uint64_t)ctx, SHA_FINAL);
+	                 (uint64_t)ctx, SHA_FINAL);
 
 	INV_DCACHE_RANGE(hash, SHA512_DIGEST_LEN);
 
@@ -161,8 +163,10 @@ uint32_t el3_verify_signature_using_image(
 	return ret;
 }
 
-/******************************************************************************/
-/* LDFW API */
+/*
+ *****************************************************************************
+ * LDFW API*/
+
 /******************************************************************************/
 uint32_t cm_verify_signature_using_image(
 	uint64_t signed_img_ptr,
@@ -179,7 +183,7 @@ uint32_t cm_verify_signature_using_image(
 	FLUSH_DCACHE_RANGE(sign_field_ptr, sizeof(SB_V40_SIGN_FIELD));
 
 	ret = exynos_smc(SMC_AARCH64_PREFIX + SMC_CM_SECURE_BOOT,
-			SB_CHECK_SIGN_NWD, (uint64_t)&ctx, 0);
+	                 SB_CHECK_SIGN_NWD, (uint64_t)&ctx, 0);
 
 	return ret;
 }

@@ -9,7 +9,6 @@
  */
 
 #ifndef __PLATFORM_FDT_H__
-
 void merge_dto_to_main_dtb(void);
 int resize_dt(unsigned int sz);
 int make_fdt_node(const char *path, char *node);

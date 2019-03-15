@@ -1,3 +1,15 @@
+/*
+ * Copyright@ Samsung Electronics Co. LTD
+ *
+ * This software is proprietary of Samsung Electronics.
+ *
+ * No part of this software, either material or conceptual may be copied or
+ * distributed, transmitted, transcribed, stored in a retrieval system or
+ * translated into any human or computer language in any form by any means,
+ * electronic, mechanical, manual or otherwise, or disclosed to third parties
+ * without the express written permission of Samsung Electronics.
+ *
+ */
 #ifndef _EXYNOS9830_DFD_H
 #define _EXYNOS9830_DFD_H
 
@@ -23,15 +35,15 @@
 #define L2RSTDISABLE_LITTLE_CLR		(1 << 5)
 #define L1RSTDISABLE_LITTLE_CLR		(1 << 4)
 
-#define DFD_RST_DISABLE_EN		(L2RSTDISABLE_LITTLE_EN |	\
-					L1RSTDISABLE_LITTLE_EN |	\
-					L2RSTDISABLE_BIG_EN |		\
-					L1RSTDISABLE_BIG_EN)
+#define DFD_RST_DISABLE_EN		(L2RSTDISABLE_LITTLE_EN |       \
+	                                 L1RSTDISABLE_LITTLE_EN |        \
+	                                 L2RSTDISABLE_BIG_EN |           \
+	                                 L1RSTDISABLE_BIG_EN)
 
-#define DFD_RST_DISABLE_CLR		(L2RSTDISABLE_LITTLE_CLR |	\
-					L1RSTDISABLE_LITTLE_CLR |	\
-					L2RSTDISABLE_BIG_CLR |		\
-					L1RSTDISABLE_BIG_CLR)
+#define DFD_RST_DISABLE_CLR		(L2RSTDISABLE_LITTLE_CLR |      \
+	                                 L1RSTDISABLE_LITTLE_CLR |       \
+	                                 L2RSTDISABLE_BIG_CLR |          \
+	                                 L1RSTDISABLE_BIG_CLR)
 
 
 #define CPU_ON_PSCI_ID			(0xC4000003)
@@ -42,8 +54,8 @@
 #define L2_STATUS_LOCAL_PWR_CFG_MASK	(0x07)
 #define L2_STATUS_POWER_ON		(0x07)
 
-#define BIG_DUMP_PC_ADDRESS		(0x10940000)	/* CPU CLUSTER 1 */
-#define LITTLE_DUMP_PC_ADDRESS		(0x10930000)	/* CPU CLUSTER 0 */
+#define BIG_DUMP_PC_ADDRESS		(0x10940000)    /* CPU CLUSTER 1 */
+#define LITTLE_DUMP_PC_ADDRESS		(0x10930000)    /* CPU CLUSTER 0 */
 #define DUMP_GPR_OFFSET			(0x40)
 
 #define BIG_CORE_START			(4)
@@ -172,16 +184,17 @@ void dfd_display_core_stat(void);
 u32 dfd_get_pmudbg_stat(u32 cpu);
 void debug_snapshot_fdt_init(void);
 int debug_snapshot_getvar_item(const char *name, char *response);
+
 #else
-#define dfd_run_dump_gpr()			do { } while(0)
-#define dfd_set_dump_gpr(a)			do { } while(0)
-#define dfd_entry_dump_gpr()			do { } while(0)
-#define __dfd_dump_gpr(a, b, c)			do { } while(0)
-#define dfd_display_reboot_reason()		do { } while(0)
-#define dfd_display_core_stat()			do { } while(0)
-#define dfd_get_pmudbg_stat(a)			do { } while(0)
-#define debug_snapshot_fdt_init()		do { } while(0)
-#define debug_snapshot_getvar_item(a, b)	do { } while(0)
-#endif
+#define dfd_run_dump_gpr()			do { } while (0)
+#define dfd_set_dump_gpr(a)			do { } while (0)
+#define dfd_entry_dump_gpr()			do { } while (0)
+#define __dfd_dump_gpr(a, b, c)			do { } while (0)
+#define dfd_display_reboot_reason()		do { } while (0)
+#define dfd_display_core_stat()			do { } while (0)
+#define dfd_get_pmudbg_stat(a)			do { } while (0)
+#define debug_snapshot_fdt_init()		do { } while (0)
+#define debug_snapshot_getvar_item(a, b)	do { } while (0)
+#endif // ifdef CONFIG_RAMDUMP_GPR
 #endif //__ASSEMBLY__
-#endif
+#endif // ifndef _EXYNOS9830_DFD_H

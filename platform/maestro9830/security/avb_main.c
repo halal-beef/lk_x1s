@@ -24,7 +24,7 @@ uint32_t avb_main(const char *suffix, char *cmdline, char *verifiedbootstate)
 	uint32_t ret = 0;
 	uint32_t i = 0;
 	struct AvbOps *ops;
-	const char *partition_arr[] = {"boot", "dtbo", NULL};
+	const char *partition_arr[] = { "boot", "dtbo", NULL };
 	char buf[100];
 	char color[AVB_COLOR_MAX_SIZE];
 	AvbSlotVerifyData *ctx_ptr = NULL;
@@ -35,44 +35,42 @@ uint32_t avb_main(const char *suffix, char *cmdline, char *verifiedbootstate)
 
 	/* slot verify */
 	ret = avb_slot_verify(ops, partition_arr, suffix,
-			AVB_SLOT_VERIFY_FLAGS_ALLOW_VERIFICATION_ERROR,
-			AVB_HASHTREE_ERROR_MODE_RESTART_AND_INVALIDATE,
-			&ctx_ptr);
+	                      AVB_SLOT_VERIFY_FLAGS_ALLOW_VERIFICATION_ERROR,
+	                      AVB_HASHTREE_ERROR_MODE_RESTART_AND_INVALIDATE,
+	                      &ctx_ptr);
 	/* get color */
 	if (unlock) {
 		strncpy(color, "orange", AVB_COLOR_MAX_SIZE);
 	} else {
-		if (ret == AVB_SLOT_VERIFY_RESULT_ERROR_PUBLIC_KEY_REJECTED) {
+		if (ret == AVB_SLOT_VERIFY_RESULT_ERROR_PUBLIC_KEY_REJECTED)
 			strncpy(color, "yellow", AVB_COLOR_MAX_SIZE);
-		} else if (ret) {
+		else if (ret)
 			strncpy(color, "red", AVB_COLOR_MAX_SIZE);
-		} else {
+		else
 			strncpy(color, "green", AVB_COLOR_MAX_SIZE);
-		}
 	}
-	if (ret) {
+	if (ret)
 		snprintf(buf, 100, "[AVB 2.0 ERR] authentication fail [ret: 0x%X] (%s)\n", ret, color);
-	} else {
+	else
 		snprintf(buf, 100, "[AVB 2.0] authentication success (%s)\n", color);
-	}
 	strcat(verifiedbootstate, color);
 	printf(buf);
 	avb_print_lcd(buf);
 
 	/* AVB color policy */
 	if (!strncmp(color, "red", AVB_COLOR_MAX_SIZE))
-		__asm__ volatile("b	.");
+		__asm__ volatile ("b\t.");
 
 	/* block RPMB */
 	ret = block_RPMB_hmac();
-	if (ret) {
+	if (ret)
 		printf("[AVB 2.0 ERR] RPMB hmac ret: 0x%X\n", ret);
-	}
 
 	/* set cmdline */
 	if (ctx_ptr != NULL) {
 		i = 0;
-		while (ctx_ptr->cmdline[i++] != '\0');
+		while (ctx_ptr->cmdline[i++] != '\0')
+			;
 		memcpy(cmdline, ctx_ptr->cmdline, i);
 	}
 #if defined(CONFIG_AVB_DEBUG)
@@ -82,4 +80,4 @@ uint32_t avb_main(const char *suffix, char *cmdline, char *verifiedbootstate)
 
 	return ret;
 }
-#endif
+#endif /* if defined(CONFIG_USE_AVB20) */

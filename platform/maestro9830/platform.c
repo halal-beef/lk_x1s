@@ -41,17 +41,17 @@
 #include "acpm.h"
 #endif
 
-#define ARCH_TIMER_IRQ		30
+#define ARCH_TIMER_IRQ 30
 
 void speedy_gpio_init(void);
 void xbootldo_gpio_init(void);
 void fg_init_s2mu004(void);
 
-unsigned int s5p_chip_id[4] = {0x0, 0x0, 0x0, 0x0};
+unsigned int s5p_chip_id[4] = { 0x0, 0x0, 0x0, 0x0 };
 unsigned int charger_mode = 0;
 unsigned int board_id = CONFIG_BOARD_ID;
 unsigned int board_rev = 0;
-unsigned int dram_info[24] = {0, 0, 0, 0};
+unsigned int dram_info[24] = { 0, 0, 0, 0 };
 unsigned long long dram_size_info = 0;
 unsigned int secure_os_loaded = 0;
 
@@ -144,8 +144,8 @@ static void read_dram_info(void)
 
 #ifdef CONFIG_EXYNOS_BOOTLOADER_DISPLAY
 	print_lcd(FONT_WHITE, FONT_BLACK, "DRAM %lu GB %s %s %s M5=0x%02x M6=0x%02x M7=0x%02x M8=0x%02x",
-		dram_size_info,	type, rank_num, manufacturer,
-		M5, M6, M7, M8);
+	          dram_size_info, type, rank_num, manufacturer,
+	          M5, M6, M7, M8);
 #endif
 }
 
@@ -167,15 +167,15 @@ static void load_secure_payload(void)
 			 * Secure payload doesn't have to be loaded.
 			 */
 			if (!((rst_stat & (WARM_RESET | LITTLE_WDT_RESET)) &&
-				(dfd_en & EXYNOS9830_EDPCSR_DUMP_EN))) {
+			      (dfd_en & EXYNOS9830_EDPCSR_DUMP_EN))) {
 				ret = load_sp_image(boot_dev);
-				if (ret)
+				if (ret) {
 					/*
 					 * 0xFEED0002 : Signature check fail
 					 * 0xFEED0020 : Anti-rollback check fail
 					 */
 					printf("Fail to load Secure Payload!! [ret = 0x%lX]\n", ret);
-				else {
+				} else {
 					printf("Secure Payload is loaded successfully!\n");
 					secure_os_loaded = 1;
 				}
@@ -194,10 +194,11 @@ static void load_secure_payload(void)
 	}
 }
 
-#define EL3_MON_VERSION_STR_SIZE		(180)
+#define EL3_MON_VERSION_STR_SIZE (180)
+
 static void print_el3_monitor_version(void)
 {
-	char el3_mon_ver[EL3_MON_VERSION_STR_SIZE] = {0, };
+	char el3_mon_ver[EL3_MON_VERSION_STR_SIZE] = { 0, };
 
 	if (*(unsigned int *)DRAM_BASE == 0xabcdef) {
 		/* This booting is from eMMC/UFS. not T32 */
@@ -239,10 +240,10 @@ void platform_early_init(void)
 	printf("LK build date: %s, time: %s\n", __DATE__, __TIME__);
 
 	/*
-	arm_gic_init();
-	writel(1 << 8, EXYNOS9830_MCT_G_TCON);
-	arm_generic_timer_init(ARCH_TIMER_IRQ, 26000000);
-	*/
+	 * arm_gic_init();
+	 * writel(1 << 8, EXYNOS9830_MCT_G_TCON);
+	 * arm_generic_timer_init(ARCH_TIMER_IRQ, 26000000);
+	 */
 }
 
 static void print_acpm_version(void)
@@ -256,11 +257,11 @@ static void print_acpm_version(void)
 
 	/* Check ACPM STACK Magic */
 	if (readl(EXYNOS_ACPM_MAGIC) != ACPM_MAGIC_VALUE)
-		return ;
+		return;
 
 	build_info = (char *)EXYNOS_ACPM_APSHARE + APSHARE_BUILDINFO_OFFSET;
 	printf("ACPM: Framework's  version is %s %s\n", build_info,
-			build_info + BUILDINFO_ELEMENT_SIZE);
+	       build_info + BUILDINFO_ELEMENT_SIZE);
 
 	plugins = readl(EXYNOS_ACPM_APSHARE);
 	num_plugins = readl(EXYNOS_ACPM_APSHARE + 4);
@@ -271,11 +272,11 @@ static void print_acpm_version(void)
 			plugin_ops_address = readl(get_acpm_plugin_element(plugin, plugin_ops));
 			build_info = (char *)get_acpm_plugin_element(plugin_ops, info);
 			printf("ACPM: Plugin(id:%d) version is %s %s\n",
-					(int)readl(get_acpm_plugin_element(plugin, id)),
-					build_info, build_info + BUILDINFO_ELEMENT_SIZE);
+			       (int)readl(get_acpm_plugin_element(plugin, id)),
+			       build_info, build_info + BUILDINFO_ELEMENT_SIZE);
 		}
 	}
-#endif
+#endif /* ifdef EXYNOS_ACPM_BASE */
 }
 
 void platform_init(void)
@@ -294,8 +295,8 @@ void platform_init(void)
 #endif
 
 	/*
-	check_charger_connect();
-	*/
+	 * check_charger_connect();
+	 */
 
 	if (get_boot_device() == BOOT_UFS) {
 		printf("get_boot_device() == BOOT_UFS\n");
@@ -328,35 +329,35 @@ void platform_init(void)
 	if (*(unsigned int *)DRAM_BASE == 0xabcdef) {
 		/* read secure chip state */
 		if (read_secure_chip() == 0)
-			        printf("Secure boot is disabled (non-secure chip)\n");
+			printf("Secure boot is disabled (non-secure chip)\n");
 		else if (read_secure_chip() == 1)
-			        printf("Secure boot is enabled (test key)\n");
+			printf("Secure boot is enabled (test key)\n");
 		else if (read_secure_chip() == 2)
-			        printf("Secure boot is enabled (secure chip)\n");
+			printf("Secure boot is enabled (secure chip)\n");
 		else
-			        printf("Can not read secure chip state\n");
+			printf("Can not read secure chip state\n");
 
 		if (!init_keystorage())
 			printf("keystorage: init done successfully.\n");
 		else
 			printf("keystorage: init failed.\n");
 
-		if (!init_ldfws()) {
+		if (!init_ldfws())
 			printf("ldfw: init done successfully.\n");
-		} else {
+		else
 			printf("ldfw: init failed.\n");
-		}
+
 #if defined(CONFIG_USE_RPMB)
 		rpmb_key_programming();
 #if defined(CONFIG_USE_AVB20)
 		rpmb_load_boot_table();
 #endif
 #endif
-	ret = (u32)init_sp();
-	if (!ret)
-		printf("secure_payload: init done successfully.\n");
-	else
-		printf("secure_payload: init failed.\n");
+		ret = (u32)init_sp();
+		if (!ret)
+			printf("secure_payload: init done successfully.\n");
+		else
+			printf("secure_payload: init failed.\n");
 
 		print_el3_monitor_version();
 	}

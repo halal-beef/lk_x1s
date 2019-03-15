@@ -6,13 +6,10 @@
  */
 
 #ifdef __KERNEL__
-
 #ifndef __EXCITE__
 #include <asm/io.h>
 #endif
-
 #else
-
 #include "types.h"
 #ifndef __BOOT__
 #include "customfunctions.h"
@@ -21,13 +18,12 @@
 #include <string.h>
 #include "util.h"
 #endif
-
 #endif
 
 #include "phy-samsung-usb-cal.h"
 #include "phy-exynos-usbdp-gen2-reg.h"
 
-#define CDR_FBB_FINE_VAL		0x2
+#define CDR_FBB_FINE_VAL	0x2
 /* SoC Revision info */
 #define SOC_REVISION_EVT0	(0x00)
 #define SOC_REVISION_EVT1	(0x10)
@@ -82,7 +78,7 @@ int phy_exynos_usbdp_g2_rx_cdr_pll_lock(struct exynos_usbphy_info *info)
 }
 
 void phy_exynos_usbdp_g2_tune_each(struct exynos_usbphy_info *info, char *name,
-	u32 val)
+                                   u32 val)
 {
 	void __iomem *regs_base = info->regs_base;
 	u32 reg = 0;
@@ -94,8 +90,9 @@ void phy_exynos_usbdp_g2_tune_each(struct exynos_usbphy_info *info, char *name,
 		return;
 
 	if (!strcmp(name, "ssrx_sqhs_th")) {
-		/* RX squelch detect threshold level */
-		/* LN0 TX */
+		/*
+		 * RX squelch detect threshold level
+		 * LN0 TX*/
 		reg = usbdp_cal_reg_rd(regs_base + EXYNOS_USBDP_TRSV_26E_09B8);
 		reg &= USBDP_TRSV_26E_LN0_RX_SQHS_TH_CLR;
 		reg |= USBDP_TRSV_26E_LN0_RX_SQHS_TH(val);
@@ -105,7 +102,6 @@ void phy_exynos_usbdp_g2_tune_each(struct exynos_usbphy_info *info, char *name,
 		reg &= USBDP_TRSV_066E_LN2_RX_SQHS_TH_CLR;
 		reg |= USBDP_TRSV_066E_LN2_RX_SQHS_TH(val);
 		usbdp_cal_reg_wr(reg, regs_base + EXYNOS_USBDP_COM_TRSV_066E);
-
 	} else if (!strcmp(name, "ssrx_lfps_th")) {
 		/* lfps detect threshold control */
 		reg = usbdp_cal_reg_rd(regs_base + EXYNOS_USBDP_COM_TRSV_0270);
@@ -116,20 +112,18 @@ void phy_exynos_usbdp_g2_tune_each(struct exynos_usbphy_info *info, char *name,
 		reg &= USBDP_TRSV_0670_LN2_RX_LFPS_TH_CTRL_CLR;
 		reg |= USBDP_TRSV_0670_LN2_RX_LFPS_TH_CTRL(val);
 		usbdp_cal_reg_wr(reg, regs_base + EXYNOS_USBDP_COM_TRSV_0670);
-
 	} else if (!strcmp(name, "ssrx_mf_eq_en")) {
 		/* RX MF EQ Enable */
 		reg = usbdp_cal_reg_rd(regs_base + EXYNOS_USBDP_COM_TRSV_0241);
-		reg |= USBDP_TRSV_0241_LN0_RX_CTLE_RL_HF_HBR3(3); // 04.05
+		reg |= USBDP_TRSV_0241_LN0_RX_CTLE_RL_HF_HBR3(3);       // 04.05
 		reg |= USBDP_TRSV_0241_LN0_RX_CTLE_MF_BWD_EN;
-		reg &= USBDP_TRSV_0241_LN0_RX_CTLE_OC_DAC_PU_CLR; // 04.05
+		reg &= USBDP_TRSV_0241_LN0_RX_CTLE_OC_DAC_PU_CLR;       // 04.05
 		usbdp_cal_reg_wr(reg, regs_base + EXYNOS_USBDP_COM_TRSV_0241);
 		reg = usbdp_cal_reg_rd(regs_base + EXYNOS_USBDP_COM_TRSV_0641);
 		reg |= USBDP_TRSV_0641_LN2_RX_CTLE_RL_HF_HBR3(3);
 		reg |= USBDP_TRSV_0641_LN2_RX_CTLE_MF_BWD_EN;
 		reg &= USBDP_TRSV_0641_LN2_RX_CTLE_OC_DAC_PU_CLR;
 		usbdp_cal_reg_wr(reg, regs_base + EXYNOS_USBDP_COM_TRSV_0641);
-
 	} else if (!strcmp(name, "ssrx_mf_eq_ctrl_ss")) {
 		/* RX MF EQ CONTROL */
 		reg = usbdp_cal_reg_rd(regs_base + EXYNOS_USBDP_COM_TRSV_0311);
@@ -180,7 +174,6 @@ void phy_exynos_usbdp_g2_tune_each(struct exynos_usbphy_info *info, char *name,
 		reg &= USBDP_TRSV_0679_LN2_RX_SSLMS_C1_INIT_CLR;
 		reg |= USBDP_TRSV_0679_LN2_RX_SSLMS_C1_INIT(val);
 		usbdp_cal_reg_wr(reg, regs_base + EXYNOS_USBDP_COM_TRSV_0679);
-
 	} else if (!strcmp(name, "ssrx_dfe2_tap_ctrl")) {
 		/* RX DFE2 TAp CONTROL */
 		reg = usbdp_cal_reg_rd(regs_base + EXYNOS_USBDP_COM_TRSV_027A);
@@ -191,7 +184,6 @@ void phy_exynos_usbdp_g2_tune_each(struct exynos_usbphy_info *info, char *name,
 		reg &= USBDP_TRSV_067A_LN2_RX_SSLMS_C2_INIT_CLR;
 		reg |= USBDP_TRSV_067A_LN2_RX_SSLMS_C2_INIT(val);
 		usbdp_cal_reg_wr(reg, regs_base + EXYNOS_USBDP_COM_TRSV_067A);
-
 	} else if (!strcmp(name, "ssrx_dfe3_tap_ctrl")) {
 		/* RX DFE3 TAp CONTROL */
 		reg = usbdp_cal_reg_rd(regs_base + EXYNOS_USBDP_COM_TRSV_027B);
@@ -202,7 +194,6 @@ void phy_exynos_usbdp_g2_tune_each(struct exynos_usbphy_info *info, char *name,
 		reg &= USBDP_TRSV_067B_LN2_RX_SSLMS_C3_INIT_CLR;
 		reg |= USBDP_TRSV_067B_LN2_RX_SSLMS_C3_INIT(val);
 		usbdp_cal_reg_wr(reg, regs_base + EXYNOS_USBDP_COM_TRSV_067B);
-
 	} else if (!strcmp(name, "ssrx_dfe4_tap_ctrl")) {
 		/* RX DFE4 TAp CONTROL */
 		reg = usbdp_cal_reg_rd(regs_base + EXYNOS_USBDP_COM_TRSV_027C);
@@ -213,7 +204,6 @@ void phy_exynos_usbdp_g2_tune_each(struct exynos_usbphy_info *info, char *name,
 		reg &= USBDP_TRSV_067C_LN2_RX_SSLMS_C4_INIT_CLR;
 		reg |= USBDP_TRSV_067C_LN2_RX_SSLMS_C4_INIT(val);
 		usbdp_cal_reg_wr(reg, regs_base + EXYNOS_USBDP_COM_TRSV_067C);
-
 	} else if (!strcmp(name, "ssrx_dfe5_tap_ctrl")) {
 		/* RX DFE5 TAp CONTROL */
 		reg = usbdp_cal_reg_rd(regs_base + EXYNOS_USBDP_COM_TRSV_027D);
@@ -224,7 +214,6 @@ void phy_exynos_usbdp_g2_tune_each(struct exynos_usbphy_info *info, char *name,
 		reg &= USBDP_TRSV_067D_LN2_RX_SSLMS_C5_INIT_CLR;
 		reg |= USBDP_TRSV_067D_LN2_RX_SSLMS_C5_INIT(val);
 		usbdp_cal_reg_wr(reg, regs_base + EXYNOS_USBDP_COM_TRSV_067D);
-
 	} else if (!strcmp(name, "ssrx_term_cal")) {
 		/* RX termination calibration */
 		reg = usbdp_cal_reg_rd(regs_base + EXYNOS_USBDP_COM_TRSV_02BD);
@@ -237,7 +226,6 @@ void phy_exynos_usbdp_g2_tune_each(struct exynos_usbphy_info *info, char *name,
 		reg |= USBDP_TRSV_06BD_LN2_RX_RTERM_CTRL(val);
 		reg |= USBDP_TRSV_06BD_LN2_RX_RCAL_OPT_CODE(0x1);
 		usbdp_cal_reg_wr(reg, regs_base + EXYNOS_USBDP_COM_TRSV_06BD);
-
 	} else if (!strcmp(name, "sstx_amp")) {
 		/* TX Amplitude */
 		reg = usbdp_cal_reg_rd(regs_base + EXYNOS_USBDP_COM_TRSV_0404);
@@ -248,7 +236,6 @@ void phy_exynos_usbdp_g2_tune_each(struct exynos_usbphy_info *info, char *name,
 		reg &= USBDP_TRSV_0804_LN3_TX_DRV_LVL_CTRL_CLR;
 		reg |= USBDP_TRSV_0804_LN3_TX_DRV_LVL_CTRL(val);
 		usbdp_cal_reg_wr(reg, regs_base + EXYNOS_USBDP_COM_TRSV_0804);
-
 	} else if (!strcmp(name, "sstx_deemp")) {
 		/* TX de-emphasise */
 		reg = usbdp_cal_reg_rd(regs_base + EXYNOS_USBDP_COM_TRSV_0405);
@@ -259,7 +246,6 @@ void phy_exynos_usbdp_g2_tune_each(struct exynos_usbphy_info *info, char *name,
 		reg &= USBDP_TRSV_0805_LN3_TX_DRV_LVL_POST_CTRL_CLR;
 		reg |= USBDP_TRSV_0805_LN3_TX_DRV_LVL_POST_CTRL(val);
 		usbdp_cal_reg_wr(reg, regs_base + EXYNOS_USBDP_COM_TRSV_0805);
-
 	} else if (!strcmp(name, "sstx_pre_shoot")) {
 		/* TX pre shoot */
 		reg = usbdp_cal_reg_rd(regs_base + EXYNOS_USBDP_COM_TRSV_0406);
@@ -270,7 +256,6 @@ void phy_exynos_usbdp_g2_tune_each(struct exynos_usbphy_info *info, char *name,
 		reg &= USBDP_TRSV_0806_LN3_TX_DRV_PRE_LVL_CTRL_CLR;
 		reg |= USBDP_TRSV_0806_LN3_TX_DRV_PRE_LVL_CTRL(val);
 		usbdp_cal_reg_wr(reg, regs_base + EXYNOS_USBDP_COM_TRSV_0806);
-
 	} else if (!strcmp(name, "sstx_idrv_up")) {
 		/* TX idrv up */
 		if (get_chip_id_revision() > SOC_REVISION_EVT0) {
@@ -323,7 +308,6 @@ void phy_exynos_usbdp_g2_tune_each(struct exynos_usbphy_info *info, char *name,
 		reg &= USBDP_TRSV_0820_LN3_TX_RCAL_UP_CODE_CLR;
 		reg |= USBDP_TRSV_0820_LN3_TX_RCAL_UP_CODE(val);
 		usbdp_cal_reg_wr(reg, regs_base + EXYNOS_USBDP_COM_TRSV_0820);
-
 	} else if (!strcmp(name, "sstx_dn_term")) {
 		/* TX dn termination */
 		reg = usbdp_cal_reg_rd(regs_base + EXYNOS_USBDP_COM_TRSV_0420);
@@ -338,7 +322,6 @@ void phy_exynos_usbdp_g2_tune_each(struct exynos_usbphy_info *info, char *name,
 		reg = usbdp_cal_reg_rd(regs_base + EXYNOS_USBDP_TRSV_R2A6_0A98);
 		reg |= USBDP_TRSV_R2A6_LN0_RX_CDR_FBB_FINE_CTRL_SET(val);
 		usbdp_cal_reg_wr(reg, regs_base + EXYNOS_USBDP_TRSV_R2A6_0A98);
-
 	} else if (!strcmp(name, "fbb_hi")) {
 		reg = usbdp_cal_reg_rd(regs_base + EXYNOS_USBDP_COM_TRSV_A0a9c);
 		reg |= HI_FBB(val);
@@ -347,27 +330,25 @@ void phy_exynos_usbdp_g2_tune_each(struct exynos_usbphy_info *info, char *name,
 		reg = usbdp_cal_reg_rd(regs_base + EXYNOS_USBDP_COM_TRSV_A0a9c);
 		reg |= LO_FBB(val);
 		usbdp_cal_reg_wr(reg, regs_base + EXYNOS_USBDP_COM_TRSV_A0a9c);
-
 	}
 
 	/* 2018.05.18 CDR MF/HF/DFE post setting */
 	if ((!strcmp(name, "ssrx_mf_eq_ctrl_ss")) ||
-		(!strcmp(name, "ssrx_hf_eq_ctrl_ss")) ||
-			(!strcmp(name, "ssrx_mf_eq_ctrl_ssp")) ||
-			(!strcmp(name, "ssrx_hf_eq_ctrl_ssp")) ||
-			(!strcmp(name, "ssrx_dfe1_tap_ctrl"))) {
-				usbdp_cal_reg_wr(0x08, regs_base + 0x0a34);
-				usbdp_cal_reg_wr(0x08, regs_base + 0x1a34);
-				usbdp_cal_reg_wr(0x18, regs_base + 0x0a34);
-				usbdp_cal_reg_wr(0x18, regs_base + 0x1a34);
-				usbdp_cal_reg_wr(0x1e, regs_base + 0x0a34);
-				usbdp_cal_reg_wr(0x1e, regs_base + 0x1a34);
+	    (!strcmp(name, "ssrx_hf_eq_ctrl_ss")) ||
+	    (!strcmp(name, "ssrx_mf_eq_ctrl_ssp")) ||
+	    (!strcmp(name, "ssrx_hf_eq_ctrl_ssp")) ||
+	    (!strcmp(name, "ssrx_dfe1_tap_ctrl"))) {
+		usbdp_cal_reg_wr(0x08, regs_base + 0x0a34);
+		usbdp_cal_reg_wr(0x08, regs_base + 0x1a34);
+		usbdp_cal_reg_wr(0x18, regs_base + 0x0a34);
+		usbdp_cal_reg_wr(0x18, regs_base + 0x1a34);
+		usbdp_cal_reg_wr(0x1e, regs_base + 0x0a34);
+		usbdp_cal_reg_wr(0x1e, regs_base + 0x1a34);
 	}
 }
 
 void phy_exynos_g2_usbdp_tune(struct exynos_usbphy_info *info)
 {
-
 	u32 cnt = 0;
 
 	if (!info)
@@ -392,7 +373,6 @@ void phy_exynos_g2_usbdp_tune(struct exynos_usbphy_info *info)
 
 int phy_exynos_usbdp_g2_check_pll_lock(struct exynos_usbphy_info *info)
 {
-
 	void __iomem *regs_base = info->regs_base;
 	u8 reg0350;
 	//u8 reg0354;
@@ -485,7 +465,7 @@ static void phy_exynos_usbdp_g2_set_pcs(struct exynos_usbphy_info *info)
 	/* Change Elastic buffer threshold */
 	reg = usbdp_cal_reg_rd(regs_base + USBDP_GEN2_PCSREG_EBUF_PARAM);
 	reg &= ~(USBDPG2_PCS_NUM_INIT_BUFFERING_MSK |
-			USBDPG2_PCS_SKP_REMOVE_TH_MSK);
+	         USBDPG2_PCS_SKP_REMOVE_TH_MSK);
 	reg |= USBDPG2_PCS_SKP_REMOVE_TH_SET(0x1);
 	usbdp_cal_reg_wr(reg, regs_base + USBDP_GEN2_PCSREG_EBUF_PARAM);
 
@@ -515,7 +495,7 @@ static void phy_exynos_usbdp_g2_set_pcs(struct exynos_usbphy_info *info)
 	usbdp_cal_reg_wr(reg, regs_base + USBDP_GEN2_PCSREG_OUT_VEC_3);
 }
 
-#define SIGVAL_FILTER_VAL	0x0
+#define SIGVAL_FILTER_VAL 0x0
 
 void phy_exynos_usbdp_g2_enable(struct exynos_usbphy_info *info)
 {
@@ -1057,8 +1037,9 @@ void phy_exynos_usbdp_g2_enable(struct exynos_usbphy_info *info)
 
 	phy_exynos_usbdp_g2_set_pcs(info);
 
-	/* hot temp fail test : 0412 */
-	/* CDR FBB Control */
+	/*
+	 * hot temp fail test : 0412
+	 * CDR FBB Control*/
 	//reg = usbdp_cal_reg_rd(regs_base + EXYNOS_USBDP_TRSV_R2A2_0A88);
 	//reg |= USBDP_TRSV_R2A2_LN0_RX_CDR_FBB_MAN_SEL;
 	//usbdp_cal_reg_wr(reg, regs_base + EXYNOS_USBDP_TRSV_R2A2_0A88);
@@ -1223,16 +1204,14 @@ void phy_exynos_usbdp_g2_enable(struct exynos_usbphy_info *info)
 
 void phy_exynos_usbdp_g2_disable(struct exynos_usbphy_info *info)
 {
-
 }
 
 void phy_exynos_usbdp_g2_set_dp_lane(struct exynos_usbphy_info *info)
 {
-
 }
 
 void phy_exynos_usbdp_g2_set_dtb_mux(struct exynos_usbphy_info *info,
-	int mux_val)
+                                     int mux_val)
 {
 	void __iomem *regs_base = info->regs_base;
 

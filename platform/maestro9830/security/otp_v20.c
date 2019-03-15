@@ -28,8 +28,7 @@
 #include <string.h>
 #include <platform/otp_v20.h>
 
-typedef struct otp_data
-{
+typedef struct otp_data {
 	uint8_t key[BANK_SIZE_IN_BYTE]; /* 128B */
 	uint32_t key_len;
 	uint32_t checksum;
@@ -39,17 +38,17 @@ typedef struct otp_data
 } OTP_DATA_T __attribute__((__aligned__(CACHE_WRITEBACK_GRANULE)));
 
 static inline uint64_t exynos_cm_smc(uint64_t *cmd, uint64_t *arg1,
-				     uint64_t *arg2, uint64_t *arg3)
+                                     uint64_t *arg2, uint64_t *arg3)
 {
-	register uint64_t reg0 __asm__("x0") = *cmd;
-	register uint64_t reg1 __asm__("x1") = *arg1;
-	register uint64_t reg2 __asm__("x2") = *arg2;
-	register uint64_t reg3 __asm__("x3") = *arg3;
+	register uint64_t reg0 __asm__ ("x0") = *cmd;
+	register uint64_t reg1 __asm__ ("x1") = *arg1;
+	register uint64_t reg2 __asm__ ("x2") = *arg2;
+	register uint64_t reg3 __asm__ ("x3") = *arg3;
 
 	__asm__ volatile (
-		"smc	0\n"
-		: "+r"(reg0), "+r"(reg1), "+r"(reg2), "+r"(reg3)
-	);
+                "smc\t0\n"
+                : "+r"(reg0), "+r"(reg1), "+r"(reg2), "+r"(reg3)
+        );
 
 	*cmd = reg0;
 	*arg1 = reg1;
@@ -153,12 +152,12 @@ uint64_t cm_otp_read_chip_id(uint64_t *chip_id)
 	ret = exynos_cm_smc(&r0, &r1, &r2, &r3);
 	if (ret != RV_SUCCESS) {
 		printf("[OTP] CHIP_ID read failed: \
-		r0:0x%llx, r1:0x%llx, r2:0x%llx, r3:0x%llx\n", r0, r1, r2, r3);
+\t\tr0:0x%llx, r1:0x%llx, r2:0x%llx, r3:0x%llx\n", r0, r1, r2, r3);
 		return ret;
 	}
 
 	printf("[OTP] CHIP_ID read value: 0x%x%x\n",
-				(uint32_t)(r3 & 0x3FF), (uint32_t)r2);
+	       (uint32_t)(r3 & 0x3FF), (uint32_t)r2);
 
 	*chip_id = (((r3 & 0x3FF) << 32) | r2);
 
@@ -180,7 +179,7 @@ uint64_t cm_otp_sw_block_enable(void)
 	ret = exynos_cm_smc(&r0, &r1, &r2, &r3);
 	if (ret != RV_SUCCESS) {
 		printf("[OTP] OTP_SW_BLOCK enable failed: \
-		r0:0x%llx, r1:0x%llx, r2:0x%llx, r3:0x%llx\n", r0, r1, r2, r3);
+\t\tr0:0x%llx, r1:0x%llx, r2:0x%llx, r3:0x%llx\n", r0, r1, r2, r3);
 		return ret;
 	}
 
@@ -189,11 +188,13 @@ uint64_t cm_otp_sw_block_enable(void)
 	return RV_SUCCESS;
 }
 
-/*****************************************************************************/
-/* OTP functions for Secure Boot                                             */
+/*
+ ****************************************************************************
+ * OTP functions for Secure Boot*/
+
 /*****************************************************************************/
 uint64_t cm_otp_write_rom_sec_boot_key(uint8_t *rom_sec_boot_key_ptr,
-				       uint32_t rom_sec_boot_key_len)
+                                       uint32_t rom_sec_boot_key_len)
 {
 	uint64_t ret = RV_SUCCESS;
 	uint64_t r0, r1, r2, r3;
@@ -220,14 +221,14 @@ uint64_t cm_otp_write_rom_sec_boot_key(uint8_t *rom_sec_boot_key_ptr,
 	memcpy(otp_data.key, rom_sec_boot_key_ptr, rom_sec_boot_key_len);
 	otp_data.key_len = rom_sec_boot_key_len;
 	otp_data.checksum = cm_otp_get_checksum(rom_sec_boot_key_ptr,
-						rom_sec_boot_key_len);
+	                                        rom_sec_boot_key_len);
 
 	FLUSH_DCACHE_RANGE(&otp_data, sizeof(OTP_DATA_T));
 
 	ret = exynos_cm_smc(&r0, &r1, &r2, &r3);
 	if (ret != RV_SUCCESS) {
 		printf("[OTP] ROM_SECURE_BOOT_KEY program fail: \
-		r0:0x%llx, r1:0x%llx, r2:0x%llx, r3:0x%llx\n", r0, r1, r2, r3);
+\t\tr0:0x%llx, r1:0x%llx, r2:0x%llx, r3:0x%llx\n", r0, r1, r2, r3);
 		return ret;
 	}
 
@@ -237,7 +238,7 @@ uint64_t cm_otp_write_rom_sec_boot_key(uint8_t *rom_sec_boot_key_ptr,
 }
 
 uint64_t cm_otp_check_rom_sec_boot_key(uint8_t *rom_sec_boot_key_ptr,
-				       uint32_t rom_sec_boot_key_len)
+                                       uint32_t rom_sec_boot_key_len)
 {
 	uint64_t ret = RV_SUCCESS;
 	uint64_t r0, r1, r2, r3;
@@ -264,7 +265,7 @@ uint64_t cm_otp_check_rom_sec_boot_key(uint8_t *rom_sec_boot_key_ptr,
 	memcpy(otp_data.key, rom_sec_boot_key_ptr, rom_sec_boot_key_len);
 	otp_data.key_len = rom_sec_boot_key_len;
 	otp_data.checksum = cm_otp_get_checksum(rom_sec_boot_key_ptr,
-						rom_sec_boot_key_len);
+	                                        rom_sec_boot_key_len);
 
 	FLUSH_DCACHE_RANGE(&otp_data, sizeof(OTP_DATA_T));
 
@@ -277,7 +278,7 @@ uint64_t cm_otp_check_rom_sec_boot_key(uint8_t *rom_sec_boot_key_ptr,
 		printf("[OTP] ROM_SECURE_BOOT_KEY check: invalid key\n");
 	else
 		printf("[OTP] ROM_SECURE_BOOT_KEY check failed: \
-		r0:0x%llx, r1:0x%llx, r2:0x%llx, r3:0x%llx\n", r0, r1, r2, r3);
+\t\tr0:0x%llx, r1:0x%llx, r2:0x%llx, r3:0x%llx\n", r0, r1, r2, r3);
 
 	return ret;
 }
@@ -297,7 +298,7 @@ uint64_t cm_otp_write_use_rom_sec_boot_key(void)
 	ret = exynos_cm_smc(&r0, &r1, &r2, &r3);
 	if (ret != RV_SUCCESS) {
 		printf("[OTP] USE_ROM_SEC_BOOT program failed: \
-		r0:0x%llx, r1:0x%llx, r2:0x%llx, r3:0x%llx\n", r0, r1, r2, r3);
+\t\tr0:0x%llx, r1:0x%llx, r2:0x%llx, r3:0x%llx\n", r0, r1, r2, r3);
 		return ret;
 	}
 
@@ -321,7 +322,7 @@ uint64_t cm_otp_read_use_rom_sec_boot_key(uint64_t *output)
 	ret = exynos_cm_smc(&r0, &r1, &r2, &r3);
 	if (ret != RV_SUCCESS) {
 		printf("[OTP] USE_ROM_SEC_BOOT_KEY read failed: \
-		r0:0x%llx, r1:0x%llx, r2:0x%llx, r3:0x%llx\n", r0, r1, r2, r3);
+\t\tr0:0x%llx, r1:0x%llx, r2:0x%llx, r3:0x%llx\n", r0, r1, r2, r3);
 		return ret;
 	}
 
@@ -347,7 +348,7 @@ uint64_t cm_otp_write_ban_rom_sec_boot_key(void)
 	ret = exynos_cm_smc(&r0, &r1, &r2, &r3);
 	if (ret != RV_SUCCESS) {
 		printf("[OTP] BAN_ROM_SEC_BOOT_KEY program failed: \
-		r0:0x%llx, r1:0x%llx, r2:0x%llx, r3:0x%llx\n", r0, r1, r2, r3);
+\t\tr0:0x%llx, r1:0x%llx, r2:0x%llx, r3:0x%llx\n", r0, r1, r2, r3);
 		return r0;
 	}
 
@@ -371,7 +372,7 @@ uint64_t cm_otp_read_ban_rom_sec_boot_key(uint64_t *output)
 	ret = exynos_cm_smc(&r0, &r1, &r2, &r3);
 	if (ret != RV_SUCCESS) {
 		printf("[OTP] BAN_ROM_SEC_BOOT_KEY read failed: \
-		r0:0x%llx, r1:0x%llx, r2:0x%llx, r3:0x%llx\n", r0, r1, r2, r3);
+\t\tr0:0x%llx, r1:0x%llx, r2:0x%llx, r3:0x%llx\n", r0, r1, r2, r3);
 		return ret;
 	}
 
@@ -397,7 +398,7 @@ uint64_t cm_otp_write_enable_aes(void)
 	ret = exynos_cm_smc(&r0, &r1, &r2, &r3);
 	if (ret != RV_SUCCESS) {
 		printf("[OTP] ENABLE_AES program failed: \
-		r0:0x%llx, r1:0x%llx, r2:0x%llx, r3:0x%llx\n", r0, r1, r2, r3);
+\t\tr0:0x%llx, r1:0x%llx, r2:0x%llx, r3:0x%llx\n", r0, r1, r2, r3);
 		return ret;
 	}
 
@@ -421,7 +422,7 @@ uint64_t cm_otp_read_enable_aes(uint64_t *output)
 	ret = exynos_cm_smc(&r0, &r1, &r2, &r3);
 	if (ret != RV_SUCCESS) {
 		printf("[OTP] ENABLE_AES read failed: \
-		r0:0x%llx, r1:0x%llx, r2:0x%llx, r3:0x%llx\n", r0, r1, r2, r3);
+\t\tr0:0x%llx, r1:0x%llx, r2:0x%llx, r3:0x%llx\n", r0, r1, r2, r3);
 		return ret;
 	}
 
@@ -432,8 +433,10 @@ uint64_t cm_otp_read_enable_aes(uint64_t *output)
 	return RV_SUCCESS;
 }
 
-/*****************************************************************************/
-/* OTP functions for Anti-Rollback Protection                                */
+/*
+ ****************************************************************************
+ * OTP functions for Anti-Rollback Protection*/
+
 /*****************************************************************************/
 uint64_t cm_otp_write_enable_antirbk(void)
 {
@@ -450,7 +453,7 @@ uint64_t cm_otp_write_enable_antirbk(void)
 	ret = exynos_cm_smc(&r0, &r1, &r2, &r3);
 	if (ret != RV_SUCCESS) {
 		printf("[OTP] ENABLE_ANTIRBK program failed: \
-		r0:0x%llx, r1:0x%llx, r2:0x%llx, r3:0x%llx\n", r0, r1, r2, r3);
+\t\tr0:0x%llx, r1:0x%llx, r2:0x%llx, r3:0x%llx\n", r0, r1, r2, r3);
 		return ret;
 	}
 
@@ -474,7 +477,7 @@ uint64_t cm_otp_read_enable_antirbk(uint64_t *output)
 	ret = exynos_cm_smc(&r0, &r1, &r2, &r3);
 	if (ret != RV_SUCCESS) {
 		printf("[OTP] ENABLE_ANTIRBK read failed: \
-		r0:0x%llx, r1:0x%llx, r2:0x%llx, r3:0x%llx\n", r0, r1, r2, r3);
+\t\tr0:0x%llx, r1:0x%llx, r2:0x%llx, r3:0x%llx\n", r0, r1, r2, r3);
 		return ret;
 	}
 
@@ -486,7 +489,7 @@ uint64_t cm_otp_read_enable_antirbk(uint64_t *output)
 }
 
 uint64_t cm_otp_write_antirbk_non_sec_ap0(uint8_t *antirbk_ptr,
-					  uint32_t antirbk_len)
+                                          uint32_t antirbk_len)
 {
 	uint64_t ret = RV_SUCCESS;
 	uint64_t r0, r1, r2, r3;
@@ -519,7 +522,7 @@ uint64_t cm_otp_write_antirbk_non_sec_ap0(uint8_t *antirbk_ptr,
 	ret = exynos_cm_smc(&r0, &r1, &r2, &r3);
 	if (ret != RV_SUCCESS) {
 		printf("[OTP] ANTIRBK_NS_AP0 program failed: \
-		r0:0x%llx, r1:0x%llx, r2:0x%llx, r3:0x%llx\n", r0, r1, r2, r3);
+\t\tr0:0x%llx, r1:0x%llx, r2:0x%llx, r3:0x%llx\n", r0, r1, r2, r3);
 		return ret;
 	}
 
@@ -543,7 +546,7 @@ uint64_t cm_otp_read_antirbk_non_sec_ap0(uint64_t *antirbk)
 	ret = exynos_cm_smc(&r0, &r1, &r2, &r3);
 	if (ret != RV_SUCCESS) {
 		printf("[OTP] ANTIRBK_NS_AP0 read failed: \
-		r0:0x%llx, r1:0x%llx, r2:0x%llx, r3:0x%llx\n", r0, r1, r2, r3);
+\t\tr0:0x%llx, r1:0x%llx, r2:0x%llx, r3:0x%llx\n", r0, r1, r2, r3);
 		return ret;
 	}
 
@@ -575,7 +578,7 @@ uint64_t cm_otp_update_antirbk_non_sec_ap0(uint64_t new_count_dec)
 
 	if (new_count_dec < old_count_dec) {
 		printf("[OTP] ANTIRBK_NS_AP0 update invalid count: old: %lld, new: %lld\n", \
-		old_count_dec, new_count_dec);
+		       old_count_dec, new_count_dec);
 		return RV_OTP_UPDATE_RNTIRBK_NS_AP0_INVALID_COUNT2;
 	}
 
@@ -590,19 +593,19 @@ uint64_t cm_otp_update_antirbk_non_sec_ap0(uint64_t new_count_dec)
 			new_count_otp[byte_index] = 1 << 7;
 
 		ret = cm_otp_write_antirbk_non_sec_ap0(new_count_otp,
-			OTP_MAX_ANTIRBK_NS_AP0_LEN);
+		                                       OTP_MAX_ANTIRBK_NS_AP0_LEN);
 		if (ret != RV_SUCCESS)
 			return ret;
 
 		printf("[OTP] ANTIRBK_NS_AP0 update success: old: %lld, new: %lld\n", \
-		old_count_dec, new_count_dec);
+		       old_count_dec, new_count_dec);
 	}
 
 	return RV_SUCCESS;
 }
 
 uint64_t cm_otp_write_antirbk_non_sec_ap1(uint8_t *antirbk_ptr,
-					  uint32_t antirbk_len)
+                                          uint32_t antirbk_len)
 {
 	uint64_t ret = RV_SUCCESS;
 	uint64_t r0, r1, r2, r3;
@@ -635,7 +638,7 @@ uint64_t cm_otp_write_antirbk_non_sec_ap1(uint8_t *antirbk_ptr,
 	ret = exynos_cm_smc(&r0, &r1, &r2, &r3);
 	if (ret != RV_SUCCESS) {
 		printf("[OTP] ANTIRBK_NS_AP1 program failed: \
-		r0:0x%llx, r1:0x%llx, r2:0x%llx, r3:0x%llx\n", r0, r1, r2, r3);
+\t\tr0:0x%llx, r1:0x%llx, r2:0x%llx, r3:0x%llx\n", r0, r1, r2, r3);
 		return ret;
 	}
 
@@ -659,7 +662,7 @@ uint64_t cm_otp_read_antirbk_non_sec_ap1(uint64_t *antirbk)
 	ret = exynos_cm_smc(&r0, &r1, &r2, &r3);
 	if (ret != RV_SUCCESS) {
 		printf("[OTP] ANTIRBK_NS_AP1 read failed: \
-		r0:0x%llx, r1:0x%llx, r2:0x%llx, r3:0x%llx\n", r0, r1, r2, r3);
+\t\tr0:0x%llx, r1:0x%llx, r2:0x%llx, r3:0x%llx\n", r0, r1, r2, r3);
 		return ret;
 	}
 
@@ -685,7 +688,7 @@ uint64_t cm_otp_write_antirbk_sec_ap(uint64_t antirbk_sec)
 	ret = exynos_cm_smc(&r0, &r1, &r2, &r3);
 	if (ret != RV_SUCCESS) {
 		printf("[OTP] ANTIRBK_SEC_AP program failed: \
-		r0:0x%llx, r1:0x%llx, r2:0x%llx, r3:0x%llx\n", r0, r1, r2, r3);
+\t\tr0:0x%llx, r1:0x%llx, r2:0x%llx, r3:0x%llx\n", r0, r1, r2, r3);
 		return ret;
 	}
 
@@ -709,7 +712,7 @@ uint64_t cm_otp_read_antirbk_sec_ap(uint64_t *antirbk_sec)
 	ret = exynos_cm_smc(&r0, &r1, &r2, &r3);
 	if (ret != RV_SUCCESS) {
 		printf("[OTP] ANTIRBK_SEC_AP read failed: \
-		r0:0x%llx, r1:0x%llx, r2:0x%llx, r3:0x%llx\n", r0, r1, r2, r3);
+\t\tr0:0x%llx, r1:0x%llx, r2:0x%llx, r3:0x%llx\n", r0, r1, r2, r3);
 		return ret;
 	}
 
@@ -740,7 +743,7 @@ uint64_t cm_otp_update_antirbk_sec_ap(uint64_t new_count_dec)
 
 	if (new_count_dec < old_count_dec) {
 		printf("[OTP] ANTIRBK_SEC_AP update invalid count: old: %lld, new: %lld\n", \
-		old_count_dec, new_count_dec);
+		       old_count_dec, new_count_dec);
 		return RV_OTP_UPDATE_RNTIRBK_SEC_AP_INVALID_COUNT2;
 	}
 
@@ -752,7 +755,7 @@ uint64_t cm_otp_update_antirbk_sec_ap(uint64_t new_count_dec)
 			return ret;
 
 		printf("[OTP] ANTIRBK_SEC_AP update success: old: %lld, new: %lld\n", \
-		old_count_dec, new_count_dec);
+		       old_count_dec, new_count_dec);
 	}
 
 	return RV_SUCCESS;
@@ -773,7 +776,7 @@ uint64_t cm_otp_write_antirbk_sec_cp(uint64_t antirbk_sec)
 	ret = exynos_cm_smc(&r0, &r1, &r2, &r3);
 	if (ret != RV_SUCCESS) {
 		printf("[OTP] ANTIRBK_SEC_CP program failed: \
-		r0:0x%llx, r1:0x%llx, r2:0x%llx, r3:0x%llx\n", r0, r1, r2, r3);
+\t\tr0:0x%llx, r1:0x%llx, r2:0x%llx, r3:0x%llx\n", r0, r1, r2, r3);
 		return ret;
 	}
 
@@ -797,7 +800,7 @@ uint64_t cm_otp_read_antirbk_sec_cp(uint64_t *antirbk_sec)
 	ret = exynos_cm_smc(&r0, &r1, &r2, &r3);
 	if (ret != RV_SUCCESS) {
 		printf("[OTP] ANTIRBK_SEC_CP read failed: \
-		r0:0x%llx, r1:0x%llx, r2:0x%llx, r3:0x%llx\n", r0, r1, r2, r3);
+\t\tr0:0x%llx, r1:0x%llx, r2:0x%llx, r3:0x%llx\n", r0, r1, r2, r3);
 		return ret;
 	}
 
@@ -808,11 +811,13 @@ uint64_t cm_otp_read_antirbk_sec_cp(uint64_t *antirbk_sec)
 	return RV_SUCCESS;
 }
 
-/*****************************************************************************/
-/* OTP functions for Secure JTAG                                             */
+/*
+ ****************************************************************************
+ * OTP functions for Secure JTAG*/
+
 /*****************************************************************************/
 uint64_t cm_otp_write_sec_jtag_key(uint8_t *jtag_key_ptr,
-			       uint32_t jtag_key_len)
+                                   uint32_t jtag_key_len)
 {
 	uint64_t ret = RV_SUCCESS;
 	uint64_t r0, r1, r2, r3;
@@ -845,7 +850,7 @@ uint64_t cm_otp_write_sec_jtag_key(uint8_t *jtag_key_ptr,
 	ret = exynos_cm_smc(&r0, &r1, &r2, &r3);
 	if (ret != RV_SUCCESS) {
 		printf("[OTP] JTAG_KEY program failed: \
-		r0:0x%llx, r1:0x%llx, r2:0x%llx, r3:0x%llx\n", r0, r1, r2, r3);
+\t\tr0:0x%llx, r1:0x%llx, r2:0x%llx, r3:0x%llx\n", r0, r1, r2, r3);
 		return ret;
 	}
 
@@ -893,7 +898,7 @@ uint64_t cm_otp_check_sec_jtag_key(uint8_t *jtag_key_ptr, uint32_t jtag_key_len)
 		printf("[OTP] JTAG_KEY check: invalid key\n");
 	else
 		printf("[OTP] JTAG_KEY check failed: \
-		r0:0x%llx, r1:0x%llx, r2:0x%llx, r3:0x%llx\n", r0, r1, r2, r3);
+\t\tr0:0x%llx, r1:0x%llx, r2:0x%llx, r3:0x%llx\n", r0, r1, r2, r3);
 
 	return ret;
 }
@@ -913,7 +918,7 @@ uint64_t cm_otp_write_jtag_sw_lock(void)
 	ret = exynos_cm_smc(&r0, &r1, &r2, &r3);
 	if (ret != RV_SUCCESS) {
 		printf("[OTP] JTAG_SW_LOCK program failed: \
-		r0:0x%llx, r1:0x%llx, r2:0x%llx, r3:0x%llx\n", r0, r1, r2, r3);
+\t\tr0:0x%llx, r1:0x%llx, r2:0x%llx, r3:0x%llx\n", r0, r1, r2, r3);
 		return ret;
 	}
 
@@ -937,7 +942,7 @@ uint64_t cm_otp_read_jtag_sw_lock(uint64_t *output)
 	ret = exynos_cm_smc(&r0, &r1, &r2, &r3);
 	if (ret != RV_SUCCESS) {
 		printf("[OTP] JTAG_SW_LOCK read failed: \
-		r0:0x%llx, r1:0x%llx, r2:0x%llx, r3:0x%llx\n", r0, r1, r2, r3);
+\t\tr0:0x%llx, r1:0x%llx, r2:0x%llx, r3:0x%llx\n", r0, r1, r2, r3);
 		return ret;
 	}
 
@@ -948,11 +953,13 @@ uint64_t cm_otp_read_jtag_sw_lock(uint64_t *output)
 	return RV_SUCCESS;
 }
 
-/*****************************************************************************/
-/* OTP functions for customer specific key & flags                           */
+/*
+ ****************************************************************************
+ * OTP functions for customer specific key & flags*/
+
 /*****************************************************************************/
 uint64_t cm_otp_write_sw_custom_config1(uint8_t *sw_custom_config1_ptr,
-					uint32_t sw_custom_config1_len)
+                                        uint32_t sw_custom_config1_len)
 {
 	uint64_t ret = RV_SUCCESS;
 	uint64_t r0, r1, r2, r3;
@@ -979,14 +986,14 @@ uint64_t cm_otp_write_sw_custom_config1(uint8_t *sw_custom_config1_ptr,
 	memcpy(otp_data.key, sw_custom_config1_ptr, sw_custom_config1_len);
 	otp_data.key_len = sw_custom_config1_len;
 	otp_data.checksum = cm_otp_get_checksum(sw_custom_config1_ptr,
-						sw_custom_config1_len);
+	                                        sw_custom_config1_len);
 
 	FLUSH_DCACHE_RANGE(&otp_data, sizeof(OTP_DATA_T));
 
 	ret = exynos_cm_smc(&r0, &r1, &r2, &r3);
 	if (ret != RV_SUCCESS) {
 		printf("[OTP] SW_CUSTOM_CONFIG1 program failed: \
-		r0:0x%llx, r1:0x%llx, r2:0x%llx, r3:0x%llx\n", r0, r1, r2, r3);
+\t\tr0:0x%llx, r1:0x%llx, r2:0x%llx, r3:0x%llx\n", r0, r1, r2, r3);
 		return ret;
 	}
 
@@ -996,7 +1003,7 @@ uint64_t cm_otp_write_sw_custom_config1(uint8_t *sw_custom_config1_ptr,
 }
 
 uint64_t cm_otp_check_sw_custom_config1(uint8_t *sw_custom_config1_ptr,
-					uint32_t sw_custom_config1_len)
+                                        uint32_t sw_custom_config1_len)
 {
 	uint64_t ret = RV_SUCCESS;
 	uint64_t r0, r1, r2, r3;
@@ -1023,7 +1030,7 @@ uint64_t cm_otp_check_sw_custom_config1(uint8_t *sw_custom_config1_ptr,
 	memcpy(otp_data.key, sw_custom_config1_ptr, sw_custom_config1_len);
 	otp_data.key_len = sw_custom_config1_len;
 	otp_data.checksum = cm_otp_get_checksum(sw_custom_config1_ptr,
-						sw_custom_config1_len);
+	                                        sw_custom_config1_len);
 
 	FLUSH_DCACHE_RANGE(&otp_data, sizeof(OTP_DATA_T));
 
@@ -1036,7 +1043,7 @@ uint64_t cm_otp_check_sw_custom_config1(uint8_t *sw_custom_config1_ptr,
 		printf("[OTP] SW_CUSTOM_CONFIG1 check: invalid key\n");
 	else
 		printf("[OTP] SW_CUSTOM_CONFIG1 check failed: \
-		r0:0x%llx, r1:0x%llx, r2:0x%llx, r3:0x%llx\n", r0, r1, r2, r3);
+\t\tr0:0x%llx, r1:0x%llx, r2:0x%llx, r3:0x%llx\n", r0, r1, r2, r3);
 
 	return ret;
 }
@@ -1061,7 +1068,7 @@ uint64_t cm_otp_write_custom_flag(uint64_t index)
 	ret = exynos_cm_smc(&r0, &r1, &r2, &r3);
 	if (ret != RV_SUCCESS) {
 		printf("[OTP] CUSTOM_FLAG program failed: \
-		r0:0x%llx, r1:0x%llx, r2:0x%llx, r3:0x%llx\n", r0, r1, r2, r3);
+\t\tr0:0x%llx, r1:0x%llx, r2:0x%llx, r3:0x%llx\n", r0, r1, r2, r3);
 		return ret;
 	}
 
@@ -1090,7 +1097,7 @@ uint64_t cm_otp_read_custom_flag(uint64_t index, uint64_t *output)
 	ret = exynos_cm_smc(&r0, &r1, &r2, &r3);
 	if (ret != RV_SUCCESS) {
 		printf("[OTP] CUSTOM_FLAG read failed: \
-		r0:0x%llx, r1:0x%llx, r2:0x%llx, r3:0x%llx\n", r0, r1, r2, r3);
+\t\tr0:0x%llx, r1:0x%llx, r2:0x%llx, r3:0x%llx\n", r0, r1, r2, r3);
 		return r0;
 	}
 
@@ -1101,8 +1108,10 @@ uint64_t cm_otp_read_custom_flag(uint64_t index, uint64_t *output)
 	return RV_SUCCESS;
 }
 
-/*****************************************************************************/
-/* OTP functions for MCD use cases                                           */
+/*
+ ****************************************************************************
+ * OTP functions for MCD use cases*/
+
 /*****************************************************************************/
 uint64_t cm_otp_write_use_preorder(void)
 {
@@ -1119,7 +1128,7 @@ uint64_t cm_otp_write_use_preorder(void)
 	ret = exynos_cm_smc(&r0, &r1, &r2, &r3);
 	if (ret != RV_SUCCESS) {
 		printf("[OTP] USE_PREORDER_KEY program failed: \
-		r0:0x%llx, r1:0x%llx, r2:0x%llx, r3:0x%llx\n", r0, r1, r2, r3);
+\t\tr0:0x%llx, r1:0x%llx, r2:0x%llx, r3:0x%llx\n", r0, r1, r2, r3);
 		return ret;
 	}
 
@@ -1143,7 +1152,7 @@ uint64_t cm_otp_read_use_preorder(uint64_t *output)
 	ret = exynos_cm_smc(&r0, &r1, &r2, &r3);
 	if (ret != RV_SUCCESS) {
 		printf("[OTP] USE_PREORDER_KEY read failed: \
-		r0:0x%llx, r1:0x%llx, r2:0x%llx, r3:0x%llx\n", r0, r1, r2, r3);
+\t\tr0:0x%llx, r1:0x%llx, r2:0x%llx, r3:0x%llx\n", r0, r1, r2, r3);
 		return ret;
 	}
 
@@ -1169,7 +1178,7 @@ uint64_t cm_otp_write_preorder(uint64_t preorder)
 	ret = exynos_cm_smc(&r0, &r1, &r2, &r3);
 	if (ret != RV_SUCCESS) {
 		printf("[OTP] PREORDER program failed: \
-		r0:0x%llx, r1:0x%llx, r2:0x%llx, r3:0x%llx\n", r0, r1, r2, r3);
+\t\tr0:0x%llx, r1:0x%llx, r2:0x%llx, r3:0x%llx\n", r0, r1, r2, r3);
 		return ret;
 	}
 
@@ -1193,7 +1202,7 @@ uint64_t cm_otp_read_preorder(uint64_t *preorder)
 	ret = exynos_cm_smc(&r0, &r1, &r2, &r3);
 	if (ret != RV_SUCCESS) {
 		printf("[OTP] PREORDER read failed: \
-		r0:0x%llx, r1:0x%llx, r2:0x%llx, r3:0x%llx\n", r0, r1, r2, r3);
+\t\tr0:0x%llx, r1:0x%llx, r2:0x%llx, r3:0x%llx\n", r0, r1, r2, r3);
 		return ret;
 	}
 
@@ -1219,7 +1228,7 @@ uint64_t cm_otp_write_enable_modelid(void)
 	ret = exynos_cm_smc(&r0, &r1, &r2, &r3);
 	if (ret != RV_SUCCESS) {
 		printf("[OTP] ENABLE_MODEL_ID program failed: \
-		r0:0x%llx, r1:0x%llx, r2:0x%llx, r3:0x%llx\n", r0, r1, r2, r3);
+\t\tr0:0x%llx, r1:0x%llx, r2:0x%llx, r3:0x%llx\n", r0, r1, r2, r3);
 		return ret;
 	}
 
@@ -1243,7 +1252,7 @@ uint64_t cm_otp_read_enable_modelid(uint64_t *output)
 	ret = exynos_cm_smc(&r0, &r1, &r2, &r3);
 	if (ret != RV_SUCCESS) {
 		printf("[OTP] ENABLE_MODEL_ID read failed: \
-		r0:0x%llx, r1:0x%llx, r2:0x%llx, r3:0x%llx\n", r0, r1, r2, r3);
+\t\tr0:0x%llx, r1:0x%llx, r2:0x%llx, r3:0x%llx\n", r0, r1, r2, r3);
 		return ret;
 	}
 
@@ -1269,7 +1278,7 @@ uint64_t cm_otp_write_modelid(uint64_t model_id)
 	ret = exynos_cm_smc(&r0, &r1, &r2, &r3);
 	if (ret != RV_SUCCESS) {
 		printf("[OTP] MODEL_ID program failed: \
-		r0:0x%llx, r1:0x%llx, r2:0x%llx, r3:0x%llx\n", r0, r1, r2, r3);
+\t\tr0:0x%llx, r1:0x%llx, r2:0x%llx, r3:0x%llx\n", r0, r1, r2, r3);
 		return ret;
 	}
 
@@ -1293,7 +1302,7 @@ uint64_t cm_otp_read_modelid(uint64_t *model_id)
 	ret = exynos_cm_smc(&r0, &r1, &r2, &r3);
 	if (ret != RV_SUCCESS) {
 		printf("[OTP] MODEL_ID read failed: \
-		r0:0x%llx, r1:0x%llx, r2:0x%llx, r3:0x%llx\n", r0, r1, r2, r3);
+\t\tr0:0x%llx, r1:0x%llx, r2:0x%llx, r3:0x%llx\n", r0, r1, r2, r3);
 		return ret;
 	}
 
@@ -1321,7 +1330,7 @@ uint64_t cm_otp_write_commercial(void)
 		printf("[OTP] TEST bit set already!!\n");
 	} else if (ret != RV_SUCCESS) {
 		printf("[OTP] COMMERCIAL program failed: \
-		r0:0x%llx, r1:0x%llx, r2:0x%llx, r3:0x%llx\n", r0, r1, r2, r3);
+\t\tr0:0x%llx, r1:0x%llx, r2:0x%llx, r3:0x%llx\n", r0, r1, r2, r3);
 		return ret;
 	}
 
@@ -1345,7 +1354,7 @@ uint64_t cm_otp_read_commercial(uint64_t *output)
 	ret = exynos_cm_smc(&r0, &r1, &r2, &r3);
 	if (ret != RV_SUCCESS) {
 		printf("[OTP] COMMERCIAL read failed: \
-		r0:0x%llx, r1:0x%llx, r2:0x%llx, r3:0x%llx\n", r0, r1, r2, r3);
+\t\tr0:0x%llx, r1:0x%llx, r2:0x%llx, r3:0x%llx\n", r0, r1, r2, r3);
 		return ret;
 	}
 
@@ -1373,7 +1382,7 @@ uint64_t cm_otp_write_test(void)
 		printf("[OTP] COMMERCIAL bit set already!!\n");
 	} else if (ret != RV_SUCCESS) {
 		printf("[OTP] TEST program failed: \
-		r0:0x%llx, r1:0x%llx, r2:0x%llx, r3:0x%llx\n", r0, r1, r2, r3);
+\t\tr0:0x%llx, r1:0x%llx, r2:0x%llx, r3:0x%llx\n", r0, r1, r2, r3);
 		return ret;
 	}
 
@@ -1397,7 +1406,7 @@ uint64_t cm_otp_read_test(uint64_t *output)
 	ret = exynos_cm_smc(&r0, &r1, &r2, &r3);
 	if (ret != RV_SUCCESS) {
 		printf("[OTP] TEST read failed: \
-		r0:0x%llx, r1:0x%llx, r2:0x%llx, r3:0x%llx\n", r0, r1, r2, r3);
+\t\tr0:0x%llx, r1:0x%llx, r2:0x%llx, r3:0x%llx\n", r0, r1, r2, r3);
 		return ret;
 	}
 
@@ -1423,7 +1432,7 @@ uint64_t cm_otp_write_warranty(void)
 	ret = exynos_cm_smc(&r0, &r1, &r2, &r3);
 	if (ret != RV_SUCCESS) {
 		printf("[OTP] WARRANTY program failed: \
-		r0:0x%llx, r1:0x%llx, r2:0x%llx, r3:0x%llx\n", r0, r1, r2, r3);
+\t\tr0:0x%llx, r1:0x%llx, r2:0x%llx, r3:0x%llx\n", r0, r1, r2, r3);
 		return ret;
 	}
 
@@ -1447,7 +1456,7 @@ uint64_t cm_otp_read_warranty(uint64_t *output)
 	ret = exynos_cm_smc(&r0, &r1, &r2, &r3);
 	if (ret != RV_SUCCESS) {
 		printf("[OTP] WARRANTY read failed: \
-		r0:0x%llx, r1:0x%llx, r2:0x%llx, r3:0x%llx\n", r0, r1, r2, r3);
+\t\tr0:0x%llx, r1:0x%llx, r2:0x%llx, r3:0x%llx\n", r0, r1, r2, r3);
 		return ret;
 	}
 
@@ -1473,7 +1482,7 @@ uint64_t cm_otp_write_cp_disable(void)
 	ret = exynos_cm_smc(&r0, &r1, &r2, &r3);
 	if (ret != RV_SUCCESS) {
 		printf("[OTP] CP_DISABLE program failed: \
-		r0:0x%llx, r1:0x%llx, r2:0x%llx, r3:0x%llx\n", r0, r1, r2, r3);
+\t\tr0:0x%llx, r1:0x%llx, r2:0x%llx, r3:0x%llx\n", r0, r1, r2, r3);
 		return ret;
 	}
 
@@ -1482,9 +1491,8 @@ uint64_t cm_otp_write_cp_disable(void)
 	return RV_SUCCESS;
 }
 
-
 uint64_t cm_otp_enable_secure_boot(uint8_t *rom_sec_boot_key_ptr,
-				   uint32_t rom_sec_boot_key_len)
+                                   uint32_t rom_sec_boot_key_len)
 {
 	uint64_t ret = RV_SUCCESS;
 	uint64_t secure_boot_status = 0;
@@ -1501,7 +1509,7 @@ uint64_t cm_otp_enable_secure_boot(uint8_t *rom_sec_boot_key_ptr,
 	}
 
 	ret = cm_otp_write_rom_sec_boot_key(rom_sec_boot_key_ptr,
-					    rom_sec_boot_key_len);
+	                                    rom_sec_boot_key_len);
 	if (ret != RV_SUCCESS)
 		goto OUT;
 

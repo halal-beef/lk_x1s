@@ -14,6 +14,7 @@
 
 #define BUFFER_SIZE 10
 extern u32 ddi_id;
+
 void configure_ddi_id(void)
 {
 	char str[BUFFER_SIZE];
@@ -29,4 +30,3 @@ void configure_ddi_id(void)
 	printf("ddi_id (%s)\n", str);
 #endif
 }
-

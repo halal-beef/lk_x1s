@@ -18,13 +18,13 @@
 #include <platform/fastboot.h>
 #include <ufdt_overlay.h>
 
-#define BUFFER_SIZE 4096
-#define MASK_4GB (0xFFFFFFFF)
+#define BUFFER_SIZE	4096
+#define MASK_4GB	(0xFFFFFFFF)
 
 struct fdt_header *fdt_dtb;
 struct dt_table_header *dtbo_table;
 
-unsigned long simple_strtoul(const char *cp,char **endp,unsigned int base);
+unsigned long simple_strtoul(const char *cp, char **endp, unsigned int base);
 
 void merge_dto_to_main_dtb(void)
 {
@@ -44,7 +44,7 @@ void merge_dto_to_main_dtb(void)
 		return;
 	}
 	dt_entry = (struct dt_table_entry *)((unsigned long)dtbo_table
-			+ fdt32_to_cpu(dtbo_table->header_size));
+	                                     + fdt32_to_cpu(dtbo_table->header_size));
 
 	for (i = 0; i < fdt32_to_cpu(dtbo_table->dt_entry_count); i++, dt_entry++) {
 		u32 id = fdt32_to_cpu(dt_entry->id);
@@ -64,7 +64,7 @@ void merge_dto_to_main_dtb(void)
 
 	fdto = malloc(fdt32_to_cpu(dt_entry->dt_size));
 	memcpy((void *)fdto, (void *)((unsigned long)dtbo_table + fdt32_to_cpu(dt_entry->dt_offset)),
-			fdt32_to_cpu(dt_entry->dt_size));
+	       fdt32_to_cpu(dt_entry->dt_size));
 
 	ret = fdt_check_header(fdto);
 	if (ret < 0) {
@@ -73,7 +73,7 @@ void merge_dto_to_main_dtb(void)
 	}
 
 	merged_fdt = ufdt_apply_overlay(fdt_dtb, fdt_totalsize(fdt_dtb),
-			fdto, fdt_totalsize(fdto));
+	                                fdto, fdt_totalsize(fdto));
 	if (!merged_fdt)
 		goto fdto_magic_err;
 
@@ -117,13 +117,13 @@ int make_fdt_node(const char *path, char *node)
 
 	offset = fdt_path_offset(fdt_dtb, path);
 	if (offset < 0) {
-		printf ("libfdt fdt_path_offset(): %s\n", fdt_strerror(offset));
+		printf("libfdt fdt_path_offset(): %s\n", fdt_strerror(offset));
 		return 1;
 	}
 
 	ret = fdt_add_subnode(fdt_dtb, offset, node);
 	if (ret < 0) {
-		printf ("libfdt fdt_add_subnode(): %s\n", fdt_strerror(ret));
+		printf("libfdt fdt_add_subnode(): %s\n", fdt_strerror(ret));
 		return 1;
 	}
 
@@ -133,8 +133,8 @@ int make_fdt_node(const char *path, char *node)
 int get_fdt_val(const char *path, const char *property, char *retval)
 {
 	const char *np;
-	int  offset;
-	int  len, ret = 0;
+	int offset;
+	int len, ret = 0;
 
 	ret = fdt_check_header(fdt_dtb);
 	if (ret) {
@@ -227,5 +227,3 @@ void add_dt_memory_node(unsigned long base, unsigned int size)
 	sprintf(str, "/memory@%lx", base);
 	set_fdt_val(str, "device_type", "memory");
 }
-
-

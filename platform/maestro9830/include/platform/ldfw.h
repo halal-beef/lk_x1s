@@ -16,11 +16,11 @@
 #define EXYNOS_AP_MAGIC				(0x49534c53)
 
 #define EXYNOS9830_LDFW_NWD_ADDR		(0x88000000)
-#define EXYNOS9830_LDFW_PARTITION_SIZE		(1024 * 1024 * 5)	/* 5 MB */
+#define EXYNOS9830_LDFW_PARTITION_SIZE		(1024 * 1024 * 5)       /* 5 MB */
 #define EXYNOS_LDFW_MAGIC			(0x10adab1e)
 
-#define EXYNOS9830_SP_NWD_ADDR		(EXYNOS9830_LDFW_NWD_ADDR)
-#define EXYNOS9830_SP_PARTITION_SIZE		(1024 * 1024)		/* 1 MB */
+#define EXYNOS9830_SP_NWD_ADDR			(EXYNOS9830_LDFW_NWD_ADDR)
+#define EXYNOS9830_SP_PARTITION_SIZE		(1024 * 1024)           /* 1 MB */
 
 #define LDFW_DEBUG
 
@@ -28,15 +28,14 @@
 #define CHECK_ROLL_BACK_COUNT_FAIL		(0x20)
 
 #ifdef LDFW_DEBUG
-#define LDFW_INFO(format, arg...)		printf(format, ##arg)
-#define LDFW_WARN(format, arg...)		printf(format, ##arg)
-#define LDFW_ERR(format, arg...)		printf(format, ##arg)
+#define LDFW_INFO(format, arg ...)	printf(format, ## arg)
+#define LDFW_WARN(format, arg ...)	printf(format, ## arg)
+#define LDFW_ERR(format, arg ...)	printf(format, ## arg)
 #else
 #define LDFW_INFO(msg)
 #define LDFW_WARN(msg)
-#define LDFW_ERR(format, arg...)		printf(format, ##arg)
+#define LDFW_ERR(format, arg ...)	printf(format, ## arg)
 #endif
-
 
 
 #ifndef __ASSEMBLY__
@@ -51,6 +50,5 @@ enum {
 int init_ldfws(void);
 int init_keystorage(void);
 int init_sp(void);
-
 #endif	/* __ASSEMBLY__ */
 #endif	/* __LDFW_H_ */

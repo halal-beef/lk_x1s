@@ -36,8 +36,7 @@ struct fw_header {
 	char fw_name[16];
 };
 
-typedef struct
-{
+typedef struct {
 	uint32_t magic;
 	uint32_t version;
 	uint32_t header_len;
@@ -52,12 +51,11 @@ static u32 get_boot_device_info(void)
 {
 	u32 boot_device_info;
 
-	if (*(unsigned int *)DRAM_BASE != 0xabcdef) {
+	if (*(unsigned int *)DRAM_BASE != 0xabcdef)
 		/* Running on DRAM by TRACE32 */
 		boot_device_info = 0x0;
-	} else {
+	else
 		boot_device_info = find_second_boot();
-	}
 
 	return boot_device_info;
 }
@@ -68,15 +66,14 @@ static int is_usb_boot(void)
 	u32 boot_device_info = 0;
 
 	boot_device_info = get_boot_device_info();
-	if (!boot_device_info) {
+	if (!boot_device_info)
 		/* boot from T32 */
 		return 0;
-	}
 
-	if ((boot_device_info & 0xFF000000) != 0xCB000000) {
+	if ((boot_device_info & 0xFF000000) != 0xCB000000)
 		/* abnormal boot */
-		while (1) ;
-	}
+		while (1)
+			;
 
 	order = boot_device_info & 0xF;
 	switch ((boot_device_info >> (4 * order)) & 0xF) {
@@ -88,7 +85,6 @@ static int is_usb_boot(void)
 	}
 	return 0;
 }
-
 
 static int load_partition(u64 addr, u64 ch, u64 *size)
 {
@@ -121,12 +117,10 @@ static int load_partition(u64 addr, u64 ch, u64 *size)
 	if (OmPin == BOOT_UFS) {
 		if (ch == LDFW_PART)
 			LDFW_INFO("ldfw: booting device is UFS.\n");
-
 	} else if (OmPin == BOOT_MMCSD || OmPin == BOOT_EMMC || \
-			OmPin == BOOT_EMMC) {
+	           OmPin == BOOT_EMMC) {
 		if (ch == LDFW_PART)
 			LDFW_INFO("ldfw: booting device is eMMC.\n");
-
 	} else {
 		LDFW_INFO("%s: This booting device is not supported.\n", ch_name[ch]);
 		return -1;
@@ -139,13 +133,12 @@ static int load_partition(u64 addr, u64 ch, u64 *size)
 
 	if (ret != 1) {
 		LDFW_ERR("%s: there is no ldfw partition\n", ch_name[ch]);
-
 	} else {
 		*size = pit_get_length(ptn);
 		LDFW_INFO("%s: read whole partition from the storage\n", ch_name[ch]);
 	}
 
-	return ret == 1 ? 0:-1;
+	return ret == 1 ? 0 : -1;
 }
 
 int init_keystorage(void)
@@ -155,19 +148,17 @@ int init_keystorage(void)
 	u64 size = EXYNOS9830_KEYSTORAGE_PARTITION_SIZE;
 	SB_KEYSTORAGE_HEADER *header = NULL;
 
-	if (is_usb_boot()) {
+	if (is_usb_boot())
 		/* boot from iROM USB booting */
 		return 1;
-	}
 
 	if (load_partition(addr, KEYSTORAGE_PART, &size)) {
 		LDFW_ERR("keystorage: can not read keystorage from the storage\n");
 		return -1;
 	}
 
-	if (!size) {
+	if (!size)
 		LDFW_ERR("keystorage: partition size is invalid\n");
-	}
 
 	header = (SB_KEYSTORAGE_HEADER *)addr;
 	if (header->magic != EXYNOS_AP_MAGIC) {
@@ -194,7 +185,7 @@ int init_ldfws(void)
 	struct fw_header *fwh;
 	s64 ret;
 	u32 try, try_fail, i;
-	char name[17] = {0,};
+	char name[17] = { 0, };
 
 	if (is_usb_boot()) {
 		/* boot from iROM USB booting */
@@ -219,7 +210,7 @@ int init_ldfws(void)
 				break;
 			strncpy(name, fwh->fw_name, 16);
 			LDFW_INFO("ldfw: %dth ldfw's version 0x%x name : %s\n",
-				i, fwh->version, name);
+			          i, fwh->version, name);
 
 			/* to calculate real ldfw size */
 			size += (u64)fwh->size;
@@ -230,20 +221,20 @@ int init_ldfws(void)
 	LDFW_INFO("ldfw: init ldfw(s). whole ldfws size 0x%llx\n", size);
 	ret = init_ldfw(addr, size);
 
-	if (ret == -1)
+	if (ret == -1) {
 		LDFW_ERR("ldfw: It is dump_gpr state. It does not load ldfw.\n");
-	else if ((ret < 0) && (ret & CHECK_SIGNATURE_FAIL))
+	} else if ((ret < 0) && (ret & CHECK_SIGNATURE_FAIL)) {
 		LDFW_ERR("ldfw: signature of ldfw is corrupted.!\n");
-	else if ((ret < 0) && (ret & CHECK_ROLL_BACK_COUNT_FAIL))
+	} else if ((ret < 0) && (ret & CHECK_ROLL_BACK_COUNT_FAIL)) {
 		LDFW_ERR("ldfw: roll back count of ldfw is corrupted.!\n");
-	else if (!ret)
+	} else if (!ret) {
 		LDFW_WARN("ldfw: No ldfw is inited\n");
-	else {
+	} else {
 		try = ret & 0xffff;
 		try_fail = (ret >> 16) & 0xffff;
 		LDFW_INFO("ldfw: try to init %d ldfw(s). except %d ldfw " \
-			"%d ldfw(s) have been inited done.\n", \
-				try, try_fail, try - try_fail);
+		          "%d ldfw(s) have been inited done.\n", \
+		          try, try_fail, try - try_fail);
 	}
 
 	return 0;

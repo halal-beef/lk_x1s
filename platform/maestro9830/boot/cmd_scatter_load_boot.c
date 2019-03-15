@@ -23,7 +23,8 @@ int cmd_scatter_load_boot(int argc, const cmd_args *argv)
 	int ramdisk_offset;
 	int recovery_dtbo_offset;
 
-	if (argc != 6) goto usage;
+	if (argc != 6)
+		goto usage;
 
 	boot_addr = argv[1].u;
 	kernel_addr = argv[2].u;
@@ -40,9 +41,12 @@ int cmd_scatter_load_boot(int argc, const cmd_args *argv)
 	printf("recovery DTBO size: 0x%08x\n", b_hdr->recovery_dtbo_size);
 
 	kernel_offset = b_hdr->page_size;
-	ramdisk_offset = kernel_offset + ((b_hdr->kernel_size + b_hdr->page_size - 1) / b_hdr->page_size) * b_hdr->page_size;
-	dtb_offset = ramdisk_offset + ((b_hdr->ramdisk_size + b_hdr->page_size - 1) / b_hdr->page_size) * b_hdr->page_size;
-	recovery_dtbo_offset = dtb_offset + ((b_hdr->second_size + b_hdr->page_size - 1) / b_hdr->page_size) * b_hdr->page_size;
+	ramdisk_offset = kernel_offset + ((b_hdr->kernel_size + b_hdr->page_size - 1) / b_hdr->page_size) *
+	                 b_hdr->page_size;
+	dtb_offset = ramdisk_offset + ((b_hdr->ramdisk_size + b_hdr->page_size - 1) / b_hdr->page_size) *
+	             b_hdr->page_size;
+	recovery_dtbo_offset = dtb_offset + ((b_hdr->second_size + b_hdr->page_size - 1) / b_hdr->page_size) *
+	                       b_hdr->page_size;
 
 	if (kernel_addr)
 		memcpy((void *)kernel_addr, (const void *)(boot_addr + kernel_offset), (size_t)b_hdr->kernel_size);
@@ -51,7 +55,9 @@ int cmd_scatter_load_boot(int argc, const cmd_args *argv)
 	if (dtb_addr)
 		memcpy((void *)dtb_addr, (const void *)(boot_addr + dtb_offset), (size_t)b_hdr->second_size);
 	if (recovery_dtbo_addr)
-		memcpy((void *)recovery_dtbo_addr, (const void *)(boot_addr + recovery_dtbo_offset), (size_t)b_hdr->recovery_dtbo_size);
+		memcpy((void *)recovery_dtbo_addr,
+		       (const void *)(boot_addr + recovery_dtbo_offset),
+		       (size_t)b_hdr->recovery_dtbo_size);
 
 	return 0;
 
@@ -61,5 +67,7 @@ usage:
 }
 
 STATIC_COMMAND_START
-STATIC_COMMAND("scatter_load_boot", "scatter load kernel, ramdisk, dtb, recovery dtbo from boot/recovery.img", &cmd_scatter_load_boot)
+	STATIC_COMMAND("scatter_load_boot",
+	               "scatter load kernel, ramdisk, dtb, recovery dtbo from boot/recovery.img",
+	               &cmd_scatter_load_boot)
 STATIC_COMMAND_END(scatter_load_boot);

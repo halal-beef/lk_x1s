@@ -1,3 +1,15 @@
+/*
+ * Copyright@ Samsung Electronics Co. LTD
+ *
+ * This software is proprietary of Samsung Electronics.
+ *
+ * No part of this software, either material or conceptual may be copied or
+ * distributed, transmitted, transcribed, stored in a retrieval system or
+ * translated into any human or computer language in any form by any means,
+ * electronic, mechanical, manual or otherwise, or disclosed to third parties
+ * without the express written permission of Samsung Electronics.
+ *
+ */
 #include <debug.h>
 #include <reg.h>
 #include <sys/types.h>
@@ -121,7 +133,7 @@ static const char *power_mode_name[] = {
 	"SLEEP_HSI2ON",
 };
 
-#define DONE_INDEX                              (0x21444E45)
+#define DONE_INDEX (0x21444E45)
 static const char *access_type[] = {
 	"READ",
 	"WRITE",
@@ -156,7 +168,7 @@ static void print_cpu_seq_status(struct dbg_list *dbg)
 	for (j = 0; j < 2; j++) {
 		for (i = 0; i < 4; i++) {
 			printf("cpu%d:%s", i + (j << 2),
-					dbg->u8_data[i + (j << 2)] ? "on" : "off");
+			       dbg->u8_data[i + (j << 2)] ? "on" : "off");
 
 			if ((j == 1) && (i == 3))
 				printf("\n");
@@ -169,46 +181,45 @@ static void print_cpu_seq_status(struct dbg_list *dbg)
 static void print_pwr_seq_status(struct dbg_list *dbg)
 {
 	printf("%s%s - APSOC_SEQ_%s, MIF_SEQ_%s, CL0_%s, CL1_%s, CL2_%s\n",
-			FLEXPMU_DBG_LOG, dbg->name,
-			dbg->u8_data[0] ? "up" : "down",
-			dbg->u8_data[1] ? "up" : "down",
-			dbg->u8_data[4] ? "on" : "off",
-			dbg->u8_data[5] ? "on" : "off",
-			dbg->u8_data[6] ? "on" : "off");
+	       FLEXPMU_DBG_LOG, dbg->name,
+	       dbg->u8_data[0] ? "up" : "down",
+	       dbg->u8_data[1] ? "up" : "down",
+	       dbg->u8_data[4] ? "on" : "off",
+	       dbg->u8_data[5] ? "on" : "off",
+	       dbg->u8_data[6] ? "on" : "off");
 }
 
 static void print_running_sequencer(struct dbg_list *dbg)
 {
 	if (dbg->u32_data[0] < ARRAY_SIZE(up_sequencer))
 		printf("%s[UP] %s - %s\n", FLEXPMU_DBG_LOG, dbg->name,
-				up_sequencer[dbg->u32_data[0]]);
+		       up_sequencer[dbg->u32_data[0]]);
 	else
 		printf("%s[UP] %s - %u\n", FLEXPMU_DBG_LOG, dbg->name,
-				dbg->u32_data[0]);
+		       dbg->u32_data[0]);
 
 	if (dbg->u32_data[1] < ARRAY_SIZE(down_sequencer))
 		printf("%s[DOWN] %s - %s\n", FLEXPMU_DBG_LOG, dbg->name,
-				down_sequencer[dbg->u32_data[1]]);
+		       down_sequencer[dbg->u32_data[1]]);
 	else
 		printf("%s[DOWN] %s - %u\n", FLEXPMU_DBG_LOG, dbg->name,
-				dbg->u32_data[1]);
+		       dbg->u32_data[1]);
 }
 
 static void print_sequencer_info(struct dbg_list *dbg)
 {
-
 	if (dbg->u32_data[1] != DONE_INDEX) {
 		if (dbg->u32_data[0] < ARRAY_SIZE(access_type))
 			printf("%saccess_type: %s - %s, index: %u\n", FLEXPMU_DBG_LOG, dbg->name,
-					access_type[dbg->u32_data[0]],
-					dbg->u32_data[1]);
+			       access_type[dbg->u32_data[0]],
+			       dbg->u32_data[1]);
 		else
 			printf("%saccess_type: %s - %u, index: %u\n", FLEXPMU_DBG_LOG, dbg->name,
-					dbg->u32_data[0],
-					dbg->u32_data[1]);
+			       dbg->u32_data[0],
+			       dbg->u32_data[1]);
 	} else {
 		printf("%saccess_type: %s - %u, DONE\n", FLEXPMU_DBG_LOG, dbg->name,
-					dbg->u32_data[0]);
+		       dbg->u32_data[0]);
 	}
 }
 
@@ -254,7 +265,6 @@ static void print_sci_init_input_output(struct dbg_list *dbg)
 	printf("%ssci_init return: 0x%x\n", FLEXPMU_DBG_LOG, dbg->u32_data[0]);
 }
 
-
 static void print_sw_flag(struct dbg_list *dbg)
 {
 	int i;
@@ -263,7 +273,7 @@ static void print_sw_flag(struct dbg_list *dbg)
 
 	for (i = 0; i < 8; i++)
 		printf("cpu%d:%s, ",  i,
-				((dbg->u8_data[0] & (1 << i)) >> i) ? "out" : "in");
+		       ((dbg->u8_data[0] & (1 << i)) >> i) ? "out" : "in");
 	printf("\n");
 
 	printf("%sMIF REF_COUNT:%u\n", FLEXPMU_DBG_LOG, (unsigned int)dbg->u8_data[7]);
@@ -279,7 +289,7 @@ static void print_sw_flag(struct dbg_list *dbg)
 static void print_powermode_count(struct dbg_list *dbg)
 {
 	printf("%s%s - %u\n", FLEXPMU_DBG_LOG, dbg->name,
-			dbg->u32_data[1]);
+	       dbg->u32_data[1]);
 }
 
 static void print_last_powermode(struct dbg_list *dbg)
@@ -289,10 +299,10 @@ static void print_last_powermode(struct dbg_list *dbg)
 	} else {
 		if (dbg->u32_data[1] < ARRAY_SIZE(power_mode_name))
 			printf("%s%s - %s\n", FLEXPMU_DBG_LOG, dbg->name,
-					power_mode_name[dbg->u32_data[1]]);
+			       power_mode_name[dbg->u32_data[1]]);
 		else
 			printf("%s%s - %u\n", FLEXPMU_DBG_LOG, dbg->name,
-					dbg->u32_data[1]);
+			       dbg->u32_data[1]);
 	}
 }
 
@@ -353,25 +363,25 @@ static void print_pmudbg_registers(void)
 static void print_acpm_last_gpr(void)
 {
 	if (readl(EXYNOS9830_DUMP_GPR_BASE) == 0xAAAAAAAA)
-		return ;
+		return;
 
 	printf("ACPM Dump GPR\n");
 	printf("ACPM R0~R3  : %08x %08x %08x %08x\n", readl(EXYNOS9830_DUMP_GPR_BASE),
-						readl(EXYNOS9830_DUMP_GPR_BASE + 0x4),
-						readl(EXYNOS9830_DUMP_GPR_BASE + 0x8),
-						readl(EXYNOS9830_DUMP_GPR_BASE + 0xC));
+	       readl(EXYNOS9830_DUMP_GPR_BASE + 0x4),
+	       readl(EXYNOS9830_DUMP_GPR_BASE + 0x8),
+	       readl(EXYNOS9830_DUMP_GPR_BASE + 0xC));
 	printf("ACPM R4~R7  : %08x %08x %08x %08x\n", readl(EXYNOS9830_DUMP_GPR_BASE + 0x10),
-						readl(EXYNOS9830_DUMP_GPR_BASE + 0x14),
-						readl(EXYNOS9830_DUMP_GPR_BASE + 0x18),
-						readl(EXYNOS9830_DUMP_GPR_BASE + 0x1C));
+	       readl(EXYNOS9830_DUMP_GPR_BASE + 0x14),
+	       readl(EXYNOS9830_DUMP_GPR_BASE + 0x18),
+	       readl(EXYNOS9830_DUMP_GPR_BASE + 0x1C));
 	printf("ACPM R8~R11 : %08x %08x %08x %08x\n", readl(EXYNOS9830_DUMP_GPR_BASE + 0x20),
-						readl(EXYNOS9830_DUMP_GPR_BASE + 0x24),
-						readl(EXYNOS9830_DUMP_GPR_BASE + 0x28),
-						readl(EXYNOS9830_DUMP_GPR_BASE + 0x2C));
+	       readl(EXYNOS9830_DUMP_GPR_BASE + 0x24),
+	       readl(EXYNOS9830_DUMP_GPR_BASE + 0x28),
+	       readl(EXYNOS9830_DUMP_GPR_BASE + 0x2C));
 	printf("ACPM R12~R15: %08x %08x %08x %08x\n", readl(EXYNOS9830_DUMP_GPR_BASE + 0x30),
-						readl(EXYNOS9830_DUMP_GPR_BASE + 0x34),
-						readl(EXYNOS9830_DUMP_GPR_BASE + 0x38),
-						readl(EXYNOS9830_DUMP_GPR_BASE + 0x3C));
+	       readl(EXYNOS9830_DUMP_GPR_BASE + 0x34),
+	       readl(EXYNOS9830_DUMP_GPR_BASE + 0x38),
+	       readl(EXYNOS9830_DUMP_GPR_BASE + 0x3C));
 }
 
 void display_flexpmu_dbg(void)
