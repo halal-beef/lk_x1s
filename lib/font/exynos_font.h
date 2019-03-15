@@ -20,7 +20,7 @@
  * limitations under the License.
  */
 
-#ifndef __EYXNOS_FONT_H__
+#ifndef __EXYNOS_FONT_H__
 #define __EXYNOS_FONT_H__
 
 #define FONT_X 16
