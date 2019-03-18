@@ -21,6 +21,7 @@
 1	81920	0	recovery	0	0
 1	81920	0	misc	0	0
 1	40960	0	mnv	0	0
+1	1024	0	frp	0	0
 5	40960	0	efs	fixed	0
 0	24	1	fwbl1	0	0
 0	152	1	epbl	0	0
