@@ -86,7 +86,7 @@ int ufs_board_init(int host_index, struct ufs_host *ufs)
 	/*
 	 * power source changed compared with before
 	 * XBOOTLDO GPG1[0]*/
-	ufs->dev_pwr_addr = (void __iomem *)(0x10730000 + 0xc0);
+	ufs->dev_pwr_addr = (void __iomem *)(0x10730000 + 0xc4);
 	ufs->dev_pwr_shift = 0;
 
 	ufs->phy_iso_addr = (void __iomem *)(0x15860000 + 0x724);
@@ -109,6 +109,11 @@ int ufs_board_init(int host_index, struct ufs_host *ufs)
 	reg &= ~(0xFF);
 	reg |= 0x22;
 	*(volatile u32 *)0x13040040 = reg;
+
+	reg = *(volatile u32 *)0x107300c0;
+	reg &= ~(0x7);
+	reg |= 0x1;
+	*(volatile u32 *)0x107300c0 = reg;
 
 	return 0;
 }
