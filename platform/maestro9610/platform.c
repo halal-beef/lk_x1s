@@ -257,6 +257,7 @@ void platform_init(void)
 	load_secure_payload();
 
 	if (get_boot_device() == BOOT_UFS) {
+		ufs_alloc_memory();
 		ufs_init(2);
 		ret = ufs_set_configuration_descriptor();
 		if (ret == 1)
