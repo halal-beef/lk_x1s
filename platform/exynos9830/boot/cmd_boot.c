@@ -437,9 +437,9 @@ int cmd_boot(int argc, const cmd_args *argv)
 	/* notify EL3 Monitor end of bootloader */
 	exynos_smc(SMC_CMD_END_OF_BOOTLOADER, 0, 0, 0);
 
-	/*
-	 * before jumping to kernel. disble arch_timer
-	 * arm_generic_timer_disable();*/
+
+	/* before jumping to kernel. disble arch_timer */
+	arm_generic_timer_disable();
 
 	printf("Starting kernel...\n");
 	void (*kernel_entry)(int r0, int r1, int r2, int r3);
