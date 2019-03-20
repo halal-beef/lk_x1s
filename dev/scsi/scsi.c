@@ -697,6 +697,6 @@ void scsi_exit(struct list_node *lu_node, const char *prefix)
 
 	while ((dev = bio_get_with_prefix(prefix))) {
 		sdev = (scsi_device_t *)dev->private;
-		list_delete(&sdev->lu_node);
+		bio_unregister_device(&sdev->dev);
 	}
 }
