@@ -20,13 +20,7 @@ void pmic_init(void)
 	unsigned char reg;
 
 	speedy_init(CONFIG_SPEEDY0_BASE);
-
 	speedy_init(CONFIG_SPEEDY1_BASE);
-
-	/* PERI 32kHz on, AP 32kHz on */
-	speedy_read(CONFIG_SPEEDY0_BASE, S2MPS19_PM_ADDR, S2MPS19_PM_RTC_BUF, &reg);
-	reg |= (_32KHZPERI_EN | _32KHZAP_EN);
-	speedy_write(CONFIG_SPEEDY0_BASE, S2MPS19_PM_ADDR, S2MPS19_PM_RTC_BUF, reg);
 
 	/* Disable Manual Reset */
 	speedy_read(CONFIG_SPEEDY0_BASE, S2MPS19_PM_ADDR, S2MPS19_PM_CTRL1, &reg);
@@ -37,16 +31,6 @@ void pmic_init(void)
 	speedy_read(CONFIG_SPEEDY0_BASE, S2MPS19_PM_ADDR, S2MPS19_PM_CTRL3, &reg);
 	reg |= WRSTEN;
 	speedy_write(CONFIG_SPEEDY0_BASE, S2MPS19_PM_ADDR, S2MPS19_PM_CTRL3, reg);
-
-	/* Enable AP warm reset detection */
-	speedy_read(CONFIG_SPEEDY0_BASE, S2MPS19_PM_ADDR, S2MPS19_PM_CTRL3, &reg);
-	reg |= WRSTBIEN;
-	speedy_write(CONFIG_SPEEDY0_BASE, S2MPS19_PM_ADDR, S2MPS19_PM_CTRL3, reg);
-
-	/* Enable AP warm reset detection */
-	speedy_read(CONFIG_SPEEDY1_BASE, S2MPS22_PM_ADDR, S2MPS22_PM_CTRL1, &reg);
-	reg |= WRSTBIEN;
-	speedy_write(CONFIG_SPEEDY1_BASE, S2MPS22_PM_ADDR, S2MPS22_PM_CTRL1, reg);
 
 	/* LCD power */
 	speedy_read(CONFIG_SPEEDY0_BASE, S2MPS19_PM_ADDR, S2MPS19_PM_LDO3M_CTRL, &reg);
