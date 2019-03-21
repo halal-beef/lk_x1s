@@ -485,7 +485,7 @@ void dfd_run_post_processing(void)
 	}
 
 	dfd_set_dump_en_for_cacheop(0);
-	//llc_flush_disable();
+	llc_flush_disable();
 
 #ifdef SCAN2DRAM_SOLUTION
 	cmd.cmd_raw.id = PP_IPC_CMD_ID_RUN_ARR_TAG;

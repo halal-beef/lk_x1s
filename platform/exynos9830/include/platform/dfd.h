@@ -150,7 +150,7 @@ extern int debug_snapshot_getvar_item(const char *name, char *response);
 extern unsigned long debug_snapshot_get_item_paddr(const char *name);
 extern unsigned long debug_snapshot_get_item_size(const char *name);
 void debug_snapshot_boot_cnt(void);
-void llc_flush(void);
+void llc_flush(u32 invway);
 unsigned int clear_llc_init_state(void);
 
 #ifdef CONFIG_RAMDUMP_GPR
