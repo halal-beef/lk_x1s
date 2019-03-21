@@ -125,10 +125,11 @@
 //#define DEBUG_PRINT
 
 #define SCI_BASE			0x1A000000
-#define PM_SCI_CTL			(SCI_BASE + 0x140)
-#define PM_SCI_ST			(SCI_BASE + 0x144)
-#define LLCInv				(SCI_BASE + 0x048)
-#define CCMControl1			(SCI_BASE + 0x0A8)
+#define PM_SCI_CTL			(SCI_BASE + 0x2A8)
+#define PM_SCI_ST			(SCI_BASE + 0x2AC)
+#define LLCInv				(SCI_BASE + 0x548)
+#define CCMControl1			(SCI_BASE + 0x410)
+#define SB_LLC_STATUS			(SCI_BASE + 0xA0C)
 #define LLC_LOOP_TIMEOUT		(3000)
 
 //#define DEBUG_PRINT
@@ -559,7 +560,7 @@ void write_back_cache(void)
 	}
 }
 
-void llc_flush(void)
+void llc_flush(u32 invway)
 {
 	unsigned int w1;
 	unsigned int loop_cnt = 0;
@@ -572,29 +573,31 @@ void llc_flush(void)
 	}
 
 	/* clear invalidate bits,
-	 * .LlcInvInProgress[5] = 0x0, .LlcWrtBkInvReq[1] = 0x0,
+	 * .LlcWrtBkInvReq[1] = 0x0,
 	 * .LlcInvReq[0] = 0x0
-	 * .LlcInvRdy[6] = 0x1, write to clear
 	 */
 	w1 = readl(LLCInv);
 	w1 = w1 & ~((0x1 << 1) | (0x1 << 0));
-	w1 = w1 | (0x1 << 6);
 	writel(w1, LLCInv);
 
 	/* llc invalidate with write-back */
+
+	/* .LlcInvCache[2] = 0x1 */
 	w1 = readl(LLCInv);
 	w1 = w1 | (0x1 << 2);
-	/* .LlcInvCache[2] = 0x1 */
 	writel(w1, LLCInv);
+
+	/* .LlcInvWay[31:16] */
+	w1 = readl(LLCInv);
+	w1 &= ~(0xFFFF << 16);
+	w1 |= (invway << 16);
+	writel(w1, LLCInv);
+
+	/* .LlcWrtBkInvReq[1] = 1
+	 * .LlcInvReq[0] = 0x1 */
 	w1 = readl(LLCInv);
 	w1 = w1 | (0x1 << 1);
-	/* .LlcWrtBkInvReq[1] = 1 */
-	writel(w1, LLCInv);
-	w1 = readl(LLCInv);
-	w1 = w1 | (0x1 << 1);
-	/* .LlcWrtBkInvReq[1] = 1 */
 	w1 = w1 | (0x1 << 0);
-	/* .LlcInvReq[0] = 0x1 */
 	writel(w1, LLCInv);
 
 	do {
@@ -604,8 +607,8 @@ void llc_flush(void)
 			printf("timeout LLC invalidate with write-back\n");
 			return;
 		}
-		w1 = readl(LLCInv);
-	} while (w1 & (0x1 << 5)); /* LlcInvInProgress[5] = 0 */
+		w1 = readl(SB_LLC_STATUS);
+	} while (w1 & (0x1 << 0)); /* LlcInvInProgress[5] = 0 */
 
 	printf("Flushed LLC\n");
 
@@ -632,7 +635,7 @@ void llc_flush_disable(void)
 			return;
 		}
 		w1 = readl(PM_SCI_ST);
-	} while (w1 & (0x1 << 9));	/* .LLC_CLK_EN[9] = 0x0 */
+	} while (w1 & (0x1 << 11));	/* .LLC_CLK_EN[11] = 0x0 */
 
 	/* LLC power up */
 	w1 = readl(PM_SCI_CTL);
@@ -641,7 +644,7 @@ void llc_flush_disable(void)
 
 	loop_cnt = 0;
 
-	/* .Llc0ArrayPGTSTOUTO[4] = 0x0, Llc1ArrayPGTSTOUTO[6] = 0x0) */
+	/* .Llc0ArrayPGTSTOUTO[7] = 0x0, Llc1ArrayPGTSTOUTO[8] = 0x0) */
 	do {
 		udelay(1);
 		loop_cnt++;
@@ -650,10 +653,11 @@ void llc_flush_disable(void)
 			return;
 		}
 		w1 = readl(PM_SCI_ST);
-	} while ((w1 & (0x1 << 4)) || (w1 & (0x1 << 6)));
+	} while ((w1 & (0x1 << 7)) || (w1 & (0x1 << 8)));
 
 	/* llc flush */
-	llc_flush();
+	llc_flush(0xFF00);
+	llc_flush(0x00FF);
 
 	/* llc disable */
 	w1 = readl(CCMControl1);
@@ -671,7 +675,7 @@ void llc_flush_disable(void)
 			return;
 		}
 		w1 = readl(PM_SCI_ST);
-	} while (!(w1 & (0x3 << 7)));	/* .PMLlcArrDisRdy[8:7] = 0x3 */
+	} while (!(w1 & (0x3 << 9)));	/* .PMLlcArrDisRdy[10:9] = 0x3 */
 
 	w1 = readl(PM_SCI_CTL);
 	w1 = w1 | (0x1 << 15);		/* .LlcArrayPDE[15] = 0x1, Power Down enable set */
@@ -679,7 +683,7 @@ void llc_flush_disable(void)
 
 	loop_cnt = 0;
 
-	/* .Llc0ArrayPGTSTOUTA[3] = 0x1, Llc1ArrayPGTSTOUTA[5] = 0x1) */
+	/* .Llc0ArrayPGTSTOUTA[5] = 0x1, Llc1ArrayPGTSTOUTA[6] = 0x1) */
 	do {
 		udelay(1);
 		loop_cnt++;
@@ -688,9 +692,9 @@ void llc_flush_disable(void)
 			return;
 		}
 		w1 = readl(PM_SCI_ST);
-	} while (!(w1 & (0x1 << 3)) || !(w1 & (0x1 << 5)));
+	} while (!(w1 & (0x1 << 5)) || !(w1 & (0x1 << 6)));
 
-	/* .PMLlcArrDisRdy[8:7] = 0x3, write to clear */
-	w1 = w1 | (0x3 << 7);
+	/* .PMLlcArrDisRdy[10:9] = 0x3, write to clear */
+	w1 = w1 | (0x3 << 9);
 	writel(w1, PM_SCI_ST);
 }
