@@ -14,6 +14,8 @@ MODULE_SRCS += \
 	$(LOCAL_DIR)/fastboot/phy-exynos-usb3p1.c \
 	$(LOCAL_DIR)/fastboot/fastboot_cmd.c \
 	$(LOCAL_DIR)/fastboot/decompress_ext4.c \
+	$(LOCAL_DIR)/fastboot/pmucal_rae.c \
+	$(LOCAL_DIR)/fastboot/pmucal_local.c \
 	$(LOCAL_DIR)/boot/cmd_scatter_load_boot.c \
 	$(LOCAL_DIR)/boot/cmd_boot.c \
 	$(LOCAL_DIR)/boot/cmd_display.c \
