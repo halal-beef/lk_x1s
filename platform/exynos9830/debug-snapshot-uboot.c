@@ -192,7 +192,7 @@ void debug_snapshot_fdt_init(void)
 
 int debug_snapshot_getvar_item(const char *name, char *response)
 {
-	char log_name[16] = { 0, };
+	char log_name[32] = { 0, };
 	struct dss_item *item;
 
 	if (!strcmp(name, "dramsize")) {
@@ -232,7 +232,7 @@ int debug_snapshot_getvar_item(const char *name, char *response)
 		        item->rmem.paddr + item->rmem.size - 1);
 	}
 
-	snprintf(log_name, 16, "log_%s", name);
+	snprintf(log_name, sizeof(log_name), "log_%s", name);
 	item = debug_snapshot_get_item(log_name);
 	if (!item)
 		return -1;
