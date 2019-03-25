@@ -152,7 +152,7 @@ void dfd_display_core_stat(void)
 			printf("CLUSTER_OFF\n");
 			break;
 		default:
-			printf("Unknown: 0x%x\n", val);
+			printf("Unknown: 0x%x\n", ret);
 			break;
 		}
 
@@ -453,12 +453,12 @@ void dfd_run_post_processing(void)
 	printf("---------------------------------------------------------\n");
 	printf("Watchdog or Warm Reset Detected.\n");
 
+	cmd.cmd_raw.cmd = IPC_CMD_POST_PROCESSING;
 #ifdef SCAN2DRAM_SOLUTION
 	/* Initialization to use waiting for complete Dump GPR of other cores */
 	writel(0, CONFIG_RAMDUMP_DUMP_GPR_WAIT);
 	writel(0, CONFIG_RAMDUMP_WAKEUP_WAIT);
 
-	cmd.cmd_raw.cmd = IPC_CMD_POST_PROCESSING;
 	cmd.cmd_raw.id = PP_IPC_CMD_ID_START;
 	dfd_ipc_fill_buffer(&cmd, s2d_addr, s2d_size, 0);
 	ret = dfd_ipc_send_data_polling(&cmd);
