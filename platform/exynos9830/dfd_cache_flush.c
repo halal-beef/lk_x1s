@@ -368,7 +368,7 @@ static void dump_l2_operation(u64 core, u64 bank, u64 set, u64 way, u64 sector)
 	u64 dump_base;
 	u64 MESI;
 
-	dump_base = CORE_DUMP_ADDR + (set * WAY_END_L2*SECTOR_END_L2 +
+	dump_base = CORE_DUMP_ADDR + (set * WAY_END_L2 * SECTOR_END_L2 +
 			way * SECTOR_END_L2 + sector) * L2_LINE_RAW_DATA_SIZE;
 
 	l2tag0_reg.word = readl(dump_base + 0x0);
@@ -499,13 +499,13 @@ void write_back_cache(void)
 
 	printf("Big Cluster power %s(0x%x)\n", (l2core == 0xff) ? "Off. Skip flush." : "On", l2core);
 	write_back_l3_cache(l2core);
+	write_back_l2_cache(l2core);
 	for (i = 0; i < BIG_NR_CPUS; i++) {
 		cpu = BIG_CORE_START + i;
 
 		if (!(corepwr & (1 << i)))
 			continue;
 
-		write_back_l2_cache(i);
 		write_back_d_cache(i);
 
 		stat = readl(CONFIG_RAMDUMP_DUMP_GPR_WAIT);
