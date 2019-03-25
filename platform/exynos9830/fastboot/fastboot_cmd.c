@@ -30,6 +30,8 @@
 #include <dev/rpmb.h>
 #include <dev/scsi.h>
 
+#include "pmucal_local.h"
+
 #define FB_RESPONSE_BUFFER_SIZE 128
 
 unsigned int download_size;
@@ -531,6 +533,8 @@ int do_fastboot(int argc, const cmd_args *argv)
 
 	dprintf(ALWAYS, "This is do_fastboot\n");
 	print_lcd_update(FONT_GREEN, FONT_BLACK, "Entering fastboot mode.");
+
+	exynos_local_power_off();
 
 	printf("Initialization USB!!!!\n");
 
