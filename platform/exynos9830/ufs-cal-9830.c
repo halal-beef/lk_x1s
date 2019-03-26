@@ -239,6 +239,10 @@ static const struct ufs_cal_phy_cfg init_cfg_evt0[] = {
 	{0x104, 0x20, PMD_ALL, PHY_PMA_COMN, BRD_ALL},
 	{0xB90, 0x18, PMD_ALL, PHY_PMA_TRSV, BRD_ALL},
 
+
+	{0x9B8, 0x5E, PMD_ALL, PHY_PMA_TRSV, BRD_ALL},
+
+
 	{0x10C, 0x18, PMD_ALL, PHY_PMA_COMN, BRD_ALL},
 	{0x10C, 0x00, PMD_ALL, PHY_PMA_COMN, BRD_ALL},
 	{0x00, 0xC8, PMD_ALL, COMMON_WAIT, BRD_ALL},
