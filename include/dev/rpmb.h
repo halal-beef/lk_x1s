@@ -51,7 +51,7 @@
 
 /* error code for bootloader */
 #define RV_BOOT_RPMB_EXCEED_SMC_RETRY_CNT	0x80100
-
+#define RPMB_AUTHEN_KEY_ERROR		0x07
 /*
  * if the caller of this fucntion is executed on the cache enabled memory area
  * below definitions and macros should be defined

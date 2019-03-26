@@ -80,6 +80,7 @@ uint32_t table_init_state;
 struct boot_header bootHeader;
 struct persist_data persistentData[PERSIST_DATA_CNT];
 static u8 nonce[NONCE_SIZE];
+struct rpmb_packet packet;
 
 static void dump_packet(u8 * data, u32 len)
 {
@@ -1047,277 +1048,121 @@ out:
 	return ret;
 }
 #endif
-int do_rpmb(int argc, const cmd_args *argv)
+
+uint32_t read_write_counter(int dev_num)
 {
-#ifndef ENABLE_CM_NONCE
-	int i;
-#endif
-	ulong addr;
-	u32 *addrp = NULL;
-	uint rw;
-	int ret, start_blk, block_num, w_counter;
-	uint8_t rpmb_key[RPMB_KEY_LEN];
-	struct rpmb_packet packet;
-	int dev_num = argv[2].u;
-#ifdef USE_MMC0
-	struct mmc      *mmc= find_mmc_device(dev_num);
+	int ret;
 
-	if (!mmc && argv[1].str[0]!='t') goto usage;
-#endif
-
-	switch (argv[1].str[0]) {
-#ifdef USE_MMC0
-	case 'c':
-		ret = emmc_rpmb_close(mmc);;
-		if (ret == 0) dprintf(INFO, "RPMB partition CLOSE Success.!!\n");
-		else printf("RPMB partition CLOSE Failed.!!\n");
-		return 1;
-	case 'o':
-		ret = emmc_rpmb_open(mmc);
-		if (ret == 0) dprintf(INFO, "RPMB partition OPEN Success.!!\n");
-		else printf("RPMB partition OPEN Failed.!!\n");
-		return 1;
-#endif
-	case 'r':
-		rw = 0;		/* read case */
-		break;
-	case 'w':
-		rw = 1;		/* write case */
-		break;
-	default:
-		goto usage;
+	packet.request = 0x02;
+#ifdef ENABLE_CM_NONCE
+	memset(nonce, 0, NONCE_SIZE);
+	ret = cm_get_random(nonce, NONCE_SIZE);
+	if (ret != RV_SUCCESS) {
+		printf("RPMB: fail to get NONCE\n");
+		return ret;
 	}
-
-	memset((void *)&packet, 0, 512);
-
-	switch (argv[3].str[0]) {
-	case 'b':
-		if (argc == 7) {
-			addr = argv[6].u;
-			start_blk = argv[4].u;
-			block_num = argv[5].u;
-
-			/* RPMB block size is 512 Byte,
-			 *  But Data packet size is 256 Byte.
-			 */
-			block_num *= 2;
-		} else
-			goto usage;
-
-		if (rw) {
-			dprintf(INFO, "Authentication write (addr=%08lx, %d blocks)\n", addr, block_num);
-			dprintf(INFO, "--> Read write counter first <--\n");
-			packet.request = 0x02;
-
-#ifdef ENABLE_CM_NONCE
-			memset(nonce, 0, NONCE_SIZE);
-			ret = cm_get_random(nonce, NONCE_SIZE);
-			if (ret != RV_SUCCESS) {
-				printf("RPMB: fail to get NONCE\n");
-				return ret;
-			}
-			memcpy(packet.nonce, nonce, NONCE_SIZE);
+	memcpy(packet.nonce, nonce, NONCE_SIZE);
 #ifdef RPMB_DEBUG
-			dprintf(INFO, "RPMB: do_rpmb(w b) NONCE\n");
-			print_byte_to_hex(packet.nonce, NONCE_SIZE);
+	dprintf(INFO, "RPMB: read_write_counter NONCE\n");
+	print_byte_to_hex(packet.nonce, NONCE_SIZE);
 #endif
 #else
-			for (i = 0; i < 16; i++)
-				nonce[i] = packet.nonce[i] = i;
-#endif
-
-#ifdef USE_MMC0
-			emmc_rpmb_commands(dev_num, &packet);
-#else
-			ufs_rpmb_commands(dev_num, &packet);
-#endif
-			if(memcmp((u8 *)&packet.nonce, nonce, NONCE_SIZE)) {
-				printf(" do_rpmb(w b) NONCE compare fail\n");
-				return -1;
-			}
-			if (packet.result != 0){
-				printf("do_rpmb(w b) ufs_rpmb_commands result error = %d\n", packet.result );
-				return -1;
-			}
-
-			dprintf(INFO, "--> Write counter : %x\n", packet.write_counter);
-			w_counter = packet.write_counter;
-			memset((void *)&packet, 0, 512);
-
-			packet.request = 0x03;
-			packet.count = block_num;
-			packet.write_counter = w_counter;
-		} else {
-			dprintf(INFO, "Authentication read (addr=%08lx, %d blocks)\n", addr, block_num);
-			packet.request = 0x04;
-#ifdef USE_MMC0
-			packet.count = 0;
-#else
-			packet.count = block_num;
-#endif
-			addrp = (u32 *)(packet.data) + 1;
-			*addrp = block_num;
-#ifdef ENABLE_CM_NONCE
-			memset(nonce, 0, NONCE_SIZE);
-			ret = cm_get_random(nonce, NONCE_SIZE);
-			if (ret != RV_SUCCESS) {
-				printf("RPMB: fail to get NONCE\n");
-				return ret;
-			}
-			memcpy(packet.nonce, nonce, NONCE_SIZE);
-#ifdef RPMB_DEBUG
-			dprintf(INFO, "RPMB: do_rpmb(r b) NONCE\n");
-			print_byte_to_hex(packet.nonce, NONCE_SIZE);
-#endif
-#else
-			for (i = 0; i < 16; i++)
-				nonce[i] = packet.nonce[i] = i;
-#endif
-		}
-		addrp = (u32 *)(packet.data);
-		*addrp = addr;
-		packet.address = start_blk;
-#ifdef USE_MMC0
-		emmc_rpmb_commands(dev_num, &packet);
-#else
-		ufs_rpmb_commands(dev_num, &packet);
-#endif
-		if(memcmp(packet.nonce, nonce, NONCE_SIZE)) {
-			printf("do_rpmb(r b)NONCE compare fail\n");
-			return -1;
-		}
-		if (packet.result != 0){
-			printf("do_rpmb(r b) ufs_rpmb_commands result error = %d\n", packet.result );
-			return -1;
-		}
-		break;
-
-	case 'c':
-		if (rw)
-			goto usage;
-		packet.request = 0x02;
-#ifdef ENABLE_CM_NONCE
-		memset(nonce, 0, NONCE_SIZE);
-		ret = cm_get_random(nonce, NONCE_SIZE);
-		if (ret != RV_SUCCESS) {
-			printf("RPMB: fail to get NONCE\n");
-			return ret;
-		}
-		memcpy(packet.nonce, nonce, NONCE_SIZE);
-#ifdef RPMB_DEBUG
-		dprintf(INFO, "RPMB: do_rpmb(c) NONCE\n");
-		print_byte_to_hex(packet.nonce, NONCE_SIZE);
-#endif
-#else
-		for (i = 0; i < 16; i++)
-			nonce[i] = packet.nonce[i] = i;
+	for (i = 0; i < 16; i++)
+		nonce[i] = packet.nonce[i] = i;
 #endif
 #ifdef USE_MMC0
-		ret = emmc_rpmb_commands(dev_num, &packet);
+	ret = emmc_rpmb_commands(dev_num, &packet);
 #else
-		ret = ufs_rpmb_commands(dev_num, &packet);
+	ret = ufs_rpmb_commands(dev_num, &packet);
 #endif
-		if (ret < 0)
-			return ret;
+	if (ret != RV_SUCCESS)
+		return ret;
 
-		if(memcmp(packet.nonce, nonce, NONCE_SIZE)) {
-			printf("do_rpmb(c) NONCE compare fail\n");
-			return -1;
-		}
-		if (packet.result != 0){
-			printf("do_rpmb(c) ufs_rpmb_commands result error = %d\n", packet.result );
-			return -1;
-		}
-
-		break;
-
-	case 'k':
-		if (!rw)
-			goto usage;
-
-		if (argc == 5)
-			addr = argv[4].u;
-		else {
-			/*  RPMB key derivation */
-			dprintf(INFO, "RPMB key derivation\n");
-
-			ret = get_RPMB_key(RPMB_KEY_LEN, rpmb_key);
-			if (ret != RV_SUCCESS) {
-				printf("key derivation: fail: 0x%X\n", ret);
-				return ret;
-			}
-			dprintf(INFO, "key derivation: success\n");
-			dprintf(INFO, "key: ");
-			print_byte_to_hex(rpmb_key, RPMB_KEY_LEN);
-			dprintf(INFO, "\n");
-			addr = (ulong) rpmb_key;
-		}
-		memcpy(packet.Key_MAC, (void *)addr, 32);
-		packet.request = 0x01;
-#ifdef USE_MMC0
-		emmc_rpmb_commands(dev_num, &packet);
-#else
-		ufs_rpmb_commands(dev_num, &packet);
-#endif
-		if (packet.result != 0) {
-			printf("do_rpmb(k) ufs_rpmb_commands result error = %d\n", packet.result );
-			memset(rpmb_key, 0x0, RPMB_KEY_LEN);
-			memset(packet.Key_MAC, 0x0, RPMB_KEY_LEN);
-			return -1;
-		}
-		break;
-
-	default:
-		goto usage;
+	if(memcmp(packet.nonce, nonce, NONCE_SIZE)) {
+		printf("read_write_counter NONCE compare fail\n");
+		return -1;
 	}
-	return 1;
+	if (packet.result != 0){
+		printf("read_write_counter packet result error = %d\n", packet.result );
+		return packet.result;
+	}
+	return RV_SUCCESS;
+}
 
- usage:
-	return -1;
+uint32_t authentication_key_programming(int dev_num)
+{
+	int ret;
+
+	/*	RPMB key derivation */
+	dprintf(INFO, "RPMB key derivation\n");
+
+	ret = get_RPMB_key(RPMB_KEY_LEN, packet.Key_MAC);
+	if (ret != RV_SUCCESS) {
+		printf("key derivation: fail: 0x%X\n", ret);
+		return ret;
+	}
+	dprintf(INFO, "key derivation: success\n");
+
+	packet.request = 0x01;
+#ifdef USE_MMC0
+	emmc_rpmb_commands(dev_num, &packet);
+#else
+	ufs_rpmb_commands(dev_num, &packet);
+#endif
+
+	memset(packet.Key_MAC, 0x0, RPMB_KEY_LEN);
+	if (packet.result != 0) {
+		printf("authentication_key_programming ufs_rpmb_commands result error = %d\n", packet.result );
+		return -1;
+	}
+	return RV_SUCCESS;
 }
 
 void rpmb_key_programming(void)
 {
-	cmd_args argv[7];
 	int ret;
-
-	/* Read write counter */
 #ifdef USE_MMC0
-	argv[1].str = "open";
-	argv[2].u = 0;
-	ret = do_rpmb(7, argv);
-	argv[1].str = "read";
-	argv[2].u = 0;
-	argv[3].str = "counter";
+	int dev_num; = 0;
 #else
-	argv[1].str = "read";
-	argv[2].u = 0xC4;
-	argv[3].str = "counter";
+	int dev_num = 0xC4;
 #endif
-	ret = do_rpmb(7, argv);
-	if (ret < 0) {
-		/* key programming */
-		argv[1].str = "write";
-		argv[3].str = "key";
-		ret = do_rpmb(7, argv);
-		if (ret < 0) {
+
+#ifdef USE_MMC0
+	ret = emmc_rpmb_open(mmc);
+	if (ret == 0) dprintf(INFO, "RPMB partition OPEN Success.!!\n");
+	else printf("RPMB partition OPEN Failed.!!\n");
+#endif
+
+	// key program and set provision state
+	// if (ret == Authentication key not yet programmed (07h)) key programming and if it is ok set_rpmb_provision(1) if not,  set_rpmb_provision(0)
+	// if (ret == OK) set_rpmb_provision(1) already programmed
+	// if (ret == other error)	set_rpmb_provision(1) already programmed
+
+	ret = read_write_counter(dev_num);
+	if (ret == RPMB_AUTHEN_KEY_ERROR) {
+		ret = authentication_key_programming(dev_num);
+		if (ret == RV_SUCCESS) {
+			set_RPMB_provision(1);
+		}
+		else {
 			set_RPMB_provision(0);
 			printf("RPMB: ERR: key programming fail: 0x%x\n", ret);
 		}
-		else{
-			set_RPMB_provision(1);
-		}
-	} else {
+	}
+	else if (ret != RV_SUCCESS) {
+		set_RPMB_provision(1);
+		dprintf(INFO, "RPMB: Read write counter fail but key may already programmed\n");
+	}
+	else { //(ret == RV_SUCCESS)
 		set_RPMB_provision(1);
 		dprintf(INFO, "RPMB: key already programmed\n");
 	}
 
 #ifdef USE_MMC0
-	argv[1].str = "close";
-	argv[2].u = 0;
-	ret = do_rpmb(7, argv);
+	ret = emmc_rpmb_close(mmc);;
+	if (ret == RV_SUCCESS) dprintf(INFO, "RPMB partition CLOSE Success.!!\n");
+	else printf("RPMB partition CLOSE Failed.!!\n");
 #endif
-
 
 	ret = block_RPMB_key();
 	if (ret != RV_SUCCESS)
@@ -1488,7 +1333,7 @@ static int rpmb_init_table(void)
 
 	ret = rpmb_write_block(addr_base, 1, buf);
 
-	if (ret) {
+	if (ret != RV_SUCCESS) {
 		printf("RPMB : Header block write error!!!\n");
 		return ret;
 	}
@@ -1534,7 +1379,7 @@ static int rpmb_ri_check_magic(void)
 
 	ret = rpmb_read_block(addr, 1, buf);
 
-	if (ret) {
+	if (ret != RV_SUCCESS) {
 		printf("RPMB Header block read error\n");
 		return ret;
 	}
@@ -1609,7 +1454,7 @@ static int rpmb_update_table_block(uint32_t block, u8 *buf)
 
 	ret = rpmb_write_block(addr, 1, buf);
 
-	if (ret) {
+	if (ret != RV_SUCCESS) {
 		printf("RPMB: Update block #%d fail\n", addr);
 		return ret;
 	}
@@ -1631,7 +1476,7 @@ static int rpmb_load_rollback_index(void)
 		buf = (u8 *)&rollbackIndex[(RPMB_BLOCK_SIZE / sizeof(uint64_t)) * i];
 
 		ret = rpmb_read_block(addr + i, 1, buf);
-		if (ret) {
+		if (ret != RV_SUCCESS) {
 			printf("RPMB:RI blk #%d rd err\n", i + 1);
 			table_init_state = 0;
 			return ret;
@@ -1657,7 +1502,7 @@ static int rpmb_load_persistent_data(void)
 		buf = (u8 *)&persistentData[(RPMB_BLOCK_SIZE / PERSIST_DATA_LEN) * i];
 
 		ret = rpmb_read_block(addr + i, 1, buf);
-		if (ret) {
+		if (ret != RV_SUCCESS) {
 			printf("RPMB:Perst blk #%d rd err\n", i + 1);
 			table_init_state = 0;
 			return ret;
@@ -1675,21 +1520,21 @@ int rpmb_load_boot_table(void)
 
 	ret = rpmb_ri_check_magic();
 
-	if (ret) {
+	if (ret != RV_SUCCESS) {
 		printf("RPMB : RI check magic fail\n");
 		table_init_state = 0;
 		return ret;
 	}
 
 	ret = rpmb_load_rollback_index();
-	if (ret) {
+	if (ret != RV_SUCCESS) {
 		printf("RPMB : RI table load fail\n");
 		table_init_state = 0;
 		return ret;
 	}
 
 	ret = rpmb_load_persistent_data();
-	if (ret) {
+	if (ret != RV_SUCCESS) {
 		printf("RPMB : Perst data load fail\n");
 		table_init_state = 0;
 		return ret;
@@ -1738,7 +1583,7 @@ int rpmb_set_rollback_index(size_t loc, uint64_t rollback_index)
 
 	ret = rpmb_update_table_block(BOOT_RI_TABLE_BLOCK + block, buf);
 
-	if (ret) {
+	if (ret != RV_SUCCESS) {
 		printf("RPMB: set RI #%zd fail\n", loc);
 		return ret;
 	}
@@ -1854,7 +1699,7 @@ int rpmb_write_persistent_value(const char *name,
 
 	ret = rpmb_update_table_block(PERSIST_DATA_BLOCK + block, buf);
 
-	if (ret) {
+	if (ret != RV_SUCCESS) {
 		printf("RPMB: Perst data blk(%d) update fail\n", block);
 		return ret;
 	}
@@ -1894,7 +1739,7 @@ int rpmb_set_lock_state(uint32_t state)
 
 	ret = rpmb_update_table_block(0, buf);
 
-	if (ret) {
+	if (ret != RV_SUCCESS) {
 		printf("RPMB : Set LOCK state (%d) fail\n", state);
 		return ret;
 	}
