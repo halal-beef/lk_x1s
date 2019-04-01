@@ -404,8 +404,10 @@ int do_rpmb_test(int argc, char *argv[])
 }
 
 #ifdef USE_MMC0
-static int emmc_rpmb_commands(int dev_num, struct rpmb_packet *packet)
+static int emmc_rpmb_commands(struct rpmb_packet *packet)
 {
+	int dev_num = 0;
+
 	u8	*buf = NULL, *hmac = NULL, key[32];
 	int	ret = 0, i;
 	u32	addr, start_blk, blk_cnt;
@@ -637,7 +639,7 @@ static void ufs_upiu_report(struct rpmb_packet *packet, int sp_in_out)
 	printf("RPMB: Auth. %s response %x\n", in_out, packet->request);
 }
 
-static int ufs_rpmb_commands(int dev_num, struct rpmb_packet *packet)
+static int ufs_rpmb_commands(struct rpmb_packet *packet)
 {
 	u8 *buf = NULL;
 	u8 *hmac = NULL;
@@ -1049,7 +1051,7 @@ out:
 }
 #endif
 
-uint32_t read_write_counter(int dev_num)
+int read_write_counter(void)
 {
 	int ret;
 
@@ -1071,9 +1073,9 @@ uint32_t read_write_counter(int dev_num)
 		nonce[i] = packet.nonce[i] = i;
 #endif
 #ifdef USE_MMC0
-	ret = emmc_rpmb_commands(dev_num, &packet);
+	ret = emmc_rpmb_commands(&packet);
 #else
-	ret = ufs_rpmb_commands(dev_num, &packet);
+	ret = ufs_rpmb_commands(&packet);
 #endif
 	if (ret != RV_SUCCESS)
 		return ret;
@@ -1089,7 +1091,7 @@ uint32_t read_write_counter(int dev_num)
 	return RV_SUCCESS;
 }
 
-uint32_t authentication_key_programming(int dev_num)
+int authentication_key_programming(void)
 {
 	int ret;
 
@@ -1105,9 +1107,9 @@ uint32_t authentication_key_programming(int dev_num)
 
 	packet.request = 0x01;
 #ifdef USE_MMC0
-	emmc_rpmb_commands(dev_num, &packet);
+	emmc_rpmb_commands(&packet);
 #else
-	ufs_rpmb_commands(dev_num, &packet);
+	ufs_rpmb_commands(&packet);
 #endif
 
 	memset(packet.Key_MAC, 0x0, RPMB_KEY_LEN);
@@ -1121,11 +1123,6 @@ uint32_t authentication_key_programming(int dev_num)
 void rpmb_key_programming(void)
 {
 	int ret;
-#ifdef USE_MMC0
-	int dev_num; = 0;
-#else
-	int dev_num = 0xC4;
-#endif
 
 #ifdef USE_MMC0
 	ret = emmc_rpmb_open(mmc);
@@ -1138,9 +1135,9 @@ void rpmb_key_programming(void)
 	// if (ret == OK) set_rpmb_provision(1) already programmed
 	// if (ret == other error)	set_rpmb_provision(1) already programmed
 
-	ret = read_write_counter(dev_num);
+	ret = read_write_counter();
 	if (ret == RPMB_AUTHEN_KEY_ERROR) {
-		ret = authentication_key_programming(dev_num);
+		ret = authentication_key_programming();
 		if (ret == RV_SUCCESS) {
 			set_RPMB_provision(1);
 		}
@@ -1220,9 +1217,9 @@ static int rpmb_read_block(int addr, int blkcnt, u8 *buf)
 		packet.address = addr++;
 
 #ifdef USE_MMC0
-		ret = emmc_rpmb_commands(0, &packet);
+		ret = emmc_rpmb_commands(&packet);
 #else
-		ret = ufs_rpmb_commands(0, &packet);
+		ret = ufs_rpmb_commands(&packet);
 #endif
 		if(memcmp((u8 *)&packet.nonce, nonce, NONCE_SIZE)) {
 			printf("Authentication read NONCE compare fail\n");
@@ -1267,9 +1264,9 @@ static int rpmb_write_block(int addr, int blkcnt, u8 *buf)
 
 	packet.request = 0x02; // Read Write Counter
 #ifdef USE_MMC0
-	ret = emmc_rpmb_commands(0, &packet);
+	ret = emmc_rpmb_commands(&packet);
 #else
-	ret = ufs_rpmb_commands(0, &packet);
+	ret = ufs_rpmb_commands(&packet);
 #endif
 	if (ret != RV_SUCCESS) {
 		printf("RPMB : fail to read write coutner !!!\n");
@@ -1291,9 +1288,9 @@ static int rpmb_write_block(int addr, int blkcnt, u8 *buf)
 		packet.address = addr++;
 
 #ifdef USE_MMC0
-		ret = emmc_rpmb_commands(0, &packet);
+		ret = emmc_rpmb_commands(&packet);
 #else
-		ret = ufs_rpmb_commands(0, &packet);
+		ret = ufs_rpmb_commands(&packet);
 #endif
 		if(memcmp((u8 *)&packet.nonce, nonce, NONCE_SIZE)) {
 			printf("Authentication write NONCE compare fail\n");
