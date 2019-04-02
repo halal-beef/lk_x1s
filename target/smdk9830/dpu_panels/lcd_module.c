@@ -118,6 +118,14 @@ int cm_read_id(struct dsim_device *dsim)
 			id |= buf[i] << (i * 8);	/* LSB is right */
 			printf("id : 0x%08x\n", id);
 		}
+
+		/*
+		 * [ HACK : 2019-04-02 ]
+		 * use same value with PANEL_ID of [s6e3ha8_mipi_lcd.c]
+		 * remove following constant id value if value is confirmed
+		 */
+		id = 0x430491;
+
 		printf("Suceeded to read panel id : 0x%08x\n", id);
 		ddi_id = id;
 	}
