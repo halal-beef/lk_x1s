@@ -82,7 +82,7 @@ struct exynos_panel_info s6e3fa0_lcd_info = {
 	.dphy_pms.p = 3,
 	.dphy_pms.m = 127,
 	.dphy_pms.s = 0,
-	.cmd_underrun_lp_ref = 3022,
+	.cmd_underrun_cnt = {3022, },
 #endif
 	/* Maybe, width and height will be removed */
 	.width = 70,
