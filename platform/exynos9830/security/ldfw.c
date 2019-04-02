@@ -47,6 +47,12 @@ typedef struct {
 	uint32_t reserved[3];
 } SB_KEYSTORAGE_HEADER;
 
+enum _bin_list_by_usb {
+	SSP_DN_BY_USB,
+	LDFW_DN_BY_USB,
+	SP_DN_BY_USB
+};
+
 static u32 get_boot_device_info(void)
 {
 	u32 boot_device_info;
@@ -189,7 +195,7 @@ int init_ldfws(void)
 
 	if (is_usb_boot()) {
 		/* boot from iROM USB booting */
-		ret =  init_ldfw_by_usb(addr, size);
+		ret =  load_image_by_usb(LDFW_DN_BY_USB, addr, size);
 		if (ret) {
 			LDFW_INFO("spayload: read Spayload from USB with error # 0x%llx\n", (u64)ret);
 			return ret;
@@ -248,7 +254,7 @@ int init_sp(void)
 
 	if (is_usb_boot()) {
 		/* boot from iROM USB booting */
-		ret =  load_sp_by_usb(addr, size);
+		ret =  load_image_by_usb(SP_DN_BY_USB, addr, size);
 		if (ret) {
 			LDFW_INFO("spayload: read Spayload from USB with error # 0x%llx\n", ret);
 			return ret;
