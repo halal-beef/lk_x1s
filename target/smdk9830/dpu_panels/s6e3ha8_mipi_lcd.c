@@ -29,7 +29,7 @@
 #define DEFAULT_BRIGHTNESS 170
 
 /* PANEL_ID : ID3[23:16]-ID2[15:8]-ID1[7:0] */
-#define PANEL_ID       0x20802A /* value was confirmed when bringup */
+#define PANEL_ID       0x430491 /* value was confirmed when bringup */
 extern struct exynos_panel_info s6e3ha8_lcd_info;
 
 static int s6e3ha8_get_id(struct dsim_device *dsim)
