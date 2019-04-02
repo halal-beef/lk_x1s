@@ -53,15 +53,13 @@ struct exynos_panel_info s6e3ha8_lcd_info = {
 	.esc_clk = 20,
 
 	.dphy_pms = {2, 138, 2, 0x2762}, /* pmsk */
-	.cmd_underrun_lp_ref = {3022},
+	.cmd_underrun_cnt = {3022},
 
 	/* Maybe, width and height will be removed */
 	.width = 70,
 	.height = 121,
 
 	.fps = 60,
-	.mic_enabled = 0,
-	.mic_ver = 0,
 
 	.dsc = {1, 2, 2, 40, 720, 240},
 //	.dsc_enabled = 1,
@@ -97,7 +95,7 @@ void s6e3ha8_lcd_init(unsigned int id, struct exynos_panel_info *lcd)
 	if (dsim_wr_data(id, MIPI_DSI_DSC_PRA, (unsigned long)SEQ_DSC_EN[0], 0) < 0)
 		dsim_err("fail to write SEQ_DSC_EN command.\n");
 
-	switch (lcd->dsc_slice_num) {
+	switch (lcd->dsc.slice_num) {
 	case 2:
 		if (dsim_wr_data(id, MIPI_DSI_DSC_PPS, (unsigned long)SEQ_PPS_SLICE2,
 					ARRAY_SIZE(SEQ_PPS_SLICE2)) < 0)
