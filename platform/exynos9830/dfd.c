@@ -442,9 +442,9 @@ void dfd_run_post_processing(void)
 	};
 	u32 cpu, val, cpu_mask = 0;
 	int ret;
+#ifdef SCAN2DRAM_SOLUTION
 	struct dfd_ipc_cmd cmd;
 	u32 arr_addr = (u32)debug_snapshot_get_item_paddr("log_arrdumpreset");
-#ifdef SCAN2DRAM_SOLUTION
 	u32 s2d_addr = (u32)debug_snapshot_get_item_paddr("log_s2d");
 	u32 s2d_size = (u32)debug_snapshot_get_item_size("log_s2d");
 
@@ -453,8 +453,8 @@ void dfd_run_post_processing(void)
 	printf("---------------------------------------------------------\n");
 	printf("Watchdog or Warm Reset Detected.\n");
 
-	cmd.cmd_raw.cmd = IPC_CMD_POST_PROCESSING;
 #ifdef SCAN2DRAM_SOLUTION
+	cmd.cmd_raw.cmd = IPC_CMD_POST_PROCESSING;
 	/* Initialization to use waiting for complete Dump GPR of other cores */
 	writel(0, CONFIG_RAMDUMP_DUMP_GPR_WAIT);
 	writel(0, CONFIG_RAMDUMP_WAKEUP_WAIT);
@@ -517,13 +517,13 @@ void dfd_run_post_processing(void)
 	}
 
 	mdelay(100);
-
+#ifdef SCAN2DRAM_SOLUTION
 	//Send Postprocessing Command. ID value is RUN DUMP.
 	cmd.cmd_raw.id = PP_IPC_CMD_ID_RUN_DUMP;
 	dfd_ipc_fill_buffer(&cmd, arr_addr, cpu_mask, 0);
 	printf("Try to get Arraydump of power on cores - ");
 	printf("%s(0x%x)!\n", dfd_ipc_send_data_polling(&cmd) < 0 ? "Failed" : "Finish", cmd.buffer[1]);
-
+#endif
 	//when receiving ipc, cpu0 is running. Run cache flush
 	for (cpu = 0; cpu <= MID_CORE_LAST; cpu++) {
 		u32 val = readl(CONFIG_RAMDUMP_GPR_POWER_STAT + (cpu * REG_OFFSET));
