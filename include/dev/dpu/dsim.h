@@ -31,14 +31,21 @@
 
 #include <dev/dpu/decon_lcd.h>
 #include <dev/dpu/mipi_dsi_cmd.h>
+#include <platform/exynos9830.h>
 #include <platform/display_sfr.h>
 #include <platform/dpu_cal/regs-dsim.h>
+#include <platform/dpu_cal/dsim_cal.h>
 #include <target/dpu_io_ctrl.h>
 
+
+//#define ARRAY_SIZE(x) (sizeof(x) / sizeof((x)[0]))
+
 extern int dsim_log_level;
+
 /* TODO : add variable dsim drvdata */
 extern struct dsim_device *dsim0_for_decon;
 
+#define MAX_DSIM_CNT				2
 #define DSIM_DDI_ID_LEN			3
 
 #define DSIM_PIXEL_FORMAT_RGB24			0x3E
@@ -85,6 +92,7 @@ extern struct dsim_device *dsim0_for_decon;
 	(((q)->config_ops->op) ? ((q)->config_ops->op(args)) :		\
 	printf("%s: Operation("#op")isn't mapped\n", __func__))
 
+extern struct dsim_device *dsim_drvdata[MAX_DSIM_CNT];
 
 /* define video timer interrupt */
 enum {
@@ -168,13 +176,6 @@ struct dsim_pll_param {
 	u32 pll_freq; /* in/out parameter: Mhz */
 };
 
-struct dsim_clks {
-	u32 hs_clk;
-	u32 esc_clk;
-	u32 byte_clk;
-	u32 word_clk;
-};
-
 struct dphy_timing_value {
 	u32 bps;
 	u32 clk_prepare;
@@ -190,17 +191,13 @@ struct dphy_timing_value {
 };
 
 struct dsim_resources {
-	struct clk *pclk;
-	struct clk *dphy_esc;
-	struct clk *dphy_byte;
-	struct clk *rgb_vclk0;
-	struct clk *pclk_disp;
-	int lcd_power[2];
-	int lcd_reset;
-	int irq;
-	u32 regs;
-	u32 ss_regs;
-	u32 phy_regs;
+	//int lcd_power[2];
+	//int lcd_reset;
+	//int irq;
+	void __iomem *regs;
+	void __iomem *ss_regs;
+	void __iomem *phy_regs;
+	void __iomem *phy_regs_ex;
 };
 
 struct dsim_device {
@@ -219,8 +216,8 @@ struct dsim_device {
 	struct dsim_clks clks;
 	int total_underrun_cnt;
 
-	struct dphy_timing_value timing;
-	u32 reg_base;
+	//struct dphy_timing_value timing;
+	//u32 reg_base;
 	enum board_gpio_type board_type;
 	struct exynos_display_config *config_ops;
 };
@@ -259,9 +256,16 @@ int dsim_write_data(struct dsim_device *dsim, u32 id, unsigned long d0, u32 d1);
 int dsim_read_data(struct dsim_device *dsim, u32 id, u32 addr, u32 cnt, u8 *buf);
 int dsim_wait_for_cmd_done(struct dsim_device *dsim);
 
+#if 0
+int dsim_reset_panel(struct dsim_device *dsim);
+int dsim_set_panel_power(struct dsim_device *dsim, bool on);
+
+#endif
+void dsim_to_regs_param(struct dsim_device *dsim, struct dsim_regs *regs);
+
 static inline struct dsim_device *get_dsim_drvdata(u32 id)
 {
-	return dsim0_for_decon;
+	return dsim_drvdata[id];
 }
 
 static inline int dsim_rd_data(u32 id, u32 cmd_id, u32 addr, u32 size, u8 *buf)
@@ -301,34 +305,38 @@ static inline int dsim_wait_for_cmd_completion(u32 id)
 /* register access subroutines */
 static inline u32 dsim_read(u32 id, u32 reg_id)
 {
-	return readl(DSIM0_BASE_ADDR + reg_id);
+	struct dsim_device *dsim = get_dsim_drvdata(id);
+	return readl(dsim->res.regs + reg_id);
 }
 
 static inline u32 dsim_read_mask(u32 id, u32 reg_id, u32 mask)
 {
 	u32 val = dsim_read(id, reg_id);
-
 	val &= (mask);
 	return val;
 }
 
 static inline void dsim_write(u32 id, u32 reg_id, u32 val)
 {
-	writel(val, DSIM0_BASE_ADDR + reg_id);
+	struct dsim_device *dsim = get_dsim_drvdata(id);
+	writel(val, dsim->res.regs + reg_id);
 }
 
 static inline void dsim_write_mask(u32 id, u32 reg_id, u32 val, u32 mask)
 {
+	struct dsim_device *dsim = get_dsim_drvdata(id);
 	u32 old = dsim_read(id, reg_id);
 
 	val = (val & mask) | (old & ~mask);
-	writel(val, DSIM0_BASE_ADDR + reg_id);
+	writel(val, dsim->res.regs + reg_id);
 }
 
 /* DPHY register access subroutines */
 static inline u32 dsim_phy_read(u32 id, u32 reg_id)
 {
-	return readl(DPHY_BASE_ADDR + reg_id);
+	struct dsim_device *dsim = get_dsim_drvdata(id);
+
+	return readl(dsim->res.phy_regs + reg_id);
 }
 
 static inline u32 dsim_phy_read_mask(u32 id, u32 reg_id, u32 mask)
@@ -338,58 +346,39 @@ static inline u32 dsim_phy_read_mask(u32 id, u32 reg_id, u32 mask)
 	val &= (mask);
 	return val;
 }
+
+static inline void dsim_phy_extra_write(u32 id, u32 reg_id, u32 val)
+{
+	struct dsim_device *dsim = get_dsim_drvdata(id);
+
+	writel(val, dsim->res.phy_regs_ex + reg_id);
+}
+
 static inline void dsim_phy_write(u32 id, u32 reg_id, u32 val)
 {
-	writel(val, DPHY_BASE_ADDR + reg_id);
+	struct dsim_device *dsim = get_dsim_drvdata(id);
+
+	writel(val, dsim->res.phy_regs + reg_id);
 }
 
 static inline void dsim_phy_write_mask(u32 id, u32 reg_id, u32 val, u32 mask)
 {
+	struct dsim_device *dsim = get_dsim_drvdata(id);
 	u32 old = dsim_phy_read(id, reg_id);
 
 	val = (val & mask) | (old & ~mask);
-	writel(val, DPHY_BASE_ADDR + reg_id);
+	writel(val, dsim->res.phy_regs + reg_id);
+	/* printk("offset : 0x%8x, value : 0x%x\n", reg_id, val); */
 }
 
-/* FOR internel APIs list */
-int dsim_reg_init(u32 id, struct decon_lcd *lcd_info,
-			u32 data_lane_cnt, struct dsim_clks *clks);
-int dsim_reg_set_clocks(u32 id, struct dsim_clks *clks,
-			struct stdphy_pms *dphy_pms, u32 en);
-int dsim_reg_set_lanes(u32 id, u32 lanes, u32 en);
-void dsim_reg_set_int(u32 id, u32 en);
-u32 dsim_reg_rx_fifo_is_empty(u32 id);
-u32 dsim_reg_get_rx_fifo(u32 id);
-int dsim_reg_rx_err_handler(u32 id, u32 rx_fifo);
+/* FOR extern APIs list */
+int dsim_probe(u32 dev_id);
 void dsim_reg_sw_reset(u32 id);
-void dsim_reg_dphy_reset(u32 id);
-void dsim_reg_dphy_resetn(u32 id, u32 en);
-int dsim_reg_exit_ulps_and_start(u32 id, u32 ddi_type, u32 lanes);
-int dsim_reg_stop_and_enter_ulps(u32 id, u32 ddi_type, u32 lanes);
-void dsim_reg_start(u32 id);
-void dsim_reg_stop(u32 id, u32 lanes);
-void dsim_reg_wr_tx_payload(u32 id, u32 payload);
-u32 dsim_reg_header_fifo_is_empty(u32 id);
-void dsim_reg_clear_int(u32 id, u32 int_src);
-void dsim_reg_set_fifo_ctrl(u32 id, u32 cfg);
-void dsim_reg_enable_shadow_read(u32 id, u32 en);
-u32 dsim_reg_is_writable_fifo_state(u32 id);
-void dsim_reg_wr_tx_header(u32 id, u32 data_id, unsigned long data0, u32 data1, u32 bta_type);
-void dsim_set_bist(u32 id, u32 en);
-void dsim_reg_set_partial_update(u32 id, struct decon_lcd *lcd_info);
-void dsim_reg_set_bta_type(u32 id, u32 bta_type);
-void dsim_reg_set_num_of_transfer(u32 id, u32 num_of_transfer);
-
-void dsim_reg_function_reset(u32 id);
+int dsim_reg_set_clocks(u32 id, struct dsim_clks *clks,
+		struct stdphy_pms *dphy_pms, u32 en);
+int dsim_reg_set_lanes(u32 id, u32 lanes, u32 en);
+void dsim_reg_set_link_clock(u32 id, u32 en);
 void dsim_reg_set_esc_clk_on_lane(u32 id, u32 en, u32 lane);
 void dsim_reg_enable_word_clock(u32 id, u32 en);
-void dsim_reg_set_esc_clk_prescaler(u32 id, u32 en, u32 p);
-u32 dsim_reg_is_pll_stable(u32 id);
-void dsim_reg_set_link_clock(u32 id, u32 en);
-void dsim_reg_set_video_mode(u32 id, u32 mode);
-void dsim_reg_enable_shadow(u32 id, u32 en);
-
-/* FOR extern APIs list */
-extern int dsim_probe(u32 dev_id);
-
+void dpu_sysreg_dphy_reset(void __iomem *sysreg, u32 dsim_id, u32 rst);
 #endif /* __SAMSUNG_DSIM_H__ */

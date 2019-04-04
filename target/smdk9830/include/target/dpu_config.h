@@ -24,18 +24,38 @@
 #define __DISPLAY_CONFIG_H__
 
 /* Enable BOOTLOADER DISPLAY : call display function at platform.c */
-#undef CONFIG_EXYNOS_BOOTLOADER_DISPLAY
+#define CONFIG_EXYNOS_BOOTLOADER_DISPLAY
+
+/* Enable DSIM BIST FOR TEST : DSIM BIST CONFIG needs CONFIG_EXYNOS_BOOTLOADER_DISPLAY */
+//#define CONFIG_EXYNOS_DSIM_BIST
+#if defined(CONFIG_EXYNOS_DSIM_BIST)
+#define CONFIG_EXYNOS_BOOTLOADER_DISPLAY
+#endif
+
+/* Enable DMA BIST FOR TEST : DMA BIST CONFIG needs CONFIG_EXYNOS_BOOTLOADER_DISPLAY */
+//#define CONFIG_EXYNOS_DMA_BIST
+#if defined(CONFIG_EXYNOS_DMA_BIST)
+#define CONFIG_EXYNOS_BOOTLOADER_DISPLAY
+#endif
+
 /* Enable FONT : FONT CONFIG needs CONFIG_EXYNOS_BOOTLOADER_DISPLAY */
-#undef CONFIG_DISPLAY_DRAWFONT
+#define CONFIG_DISPLAY_DRAWFONT
+#if defined(CONFIG_DISPLAY_DRAWFONT)
+#define CONFIG_EXYNOS_BOOTLOADER_DISPLAY
+#endif
+
 /* Enable LOGO using PIT : FONT CONFIG needs CONFIG_EXYNOS_BOOTLOADER_DISPLAY */
-#define CONFIG_PIT
+//#define CONFIG_PIT
+#if defined(CONFIG_PIT)
+#define CONFIG_EXYNOS_BOOTLOADER_DISPLAY
+#endif
 
-#define CONFIG_DISPLAY_LOGO_BASE_ADDRESS	0xed000000
-#define CONFIG_DISPLAY_FONT_BASE_ADDRESS	0xee800000
-#define CONFIG_DISPLAY_TEMP_BASE_ADDRESS	0xf0000000
+#define CONFIG_DISPLAY_LOGO_BASE_ADDRESS	0xf9800000
+#define CONFIG_DISPLAY_FONT_BASE_ADDRESS	0xfac00000
+#define CONFIG_DISPLAY_TEMP_BASE_ADDRESS	0xfc000000
 
-#define LCD_WIDTH		1080
-#define LCD_HEIGHT		2246
+#define LCD_WIDTH		1440
+#define LCD_HEIGHT		2960
 
 
 /* =================================================== */
@@ -52,29 +72,28 @@
 #include <dev/dpu/decon.h>
 #include <platform/display_sfr.h>
 
-/* DECON Properties */
-static struct decon_dt_info decon_dt = {
-	.max_win	= 4,
-	.dft_win	= 0,	/* window for font should be top window, It means it's zero */
-	.dft_idma	= IDMA_G0,
-	.psr_mode	= 0,	/* 0: video mode, 1: DP command mode, 2: MIPI command mode */
-	.trig_mode	= 0,	/* 0: hw trigger, 1: sw trigger */
-	.dsi_mode	= 0,	/* 0: single dsi, 1: dual dsi */
-	.out_type	= 0,	/* 0: DSI, 1: eDP, 2:HDMI, 3: WB */
-	.out_idx	= 0,	/* 0: DSI0, 1: DSI1, 2: DSI2 */
-	.ss_regs	= DPU_SYSREG_BASE_ADDR,
-};
-
-/* TODO : add dsim_dt and parse function at dsim_drv */
-
-
-
 /* TODO : divide platform info and target info */
-#define NUM_OF_DPP	6
+//#define NUM_OF_DPP   6
+#define MAX_DPP_CNT	6
 #define LOGO_DPP	0
 #define FONT_DPP	1
 #define DFT_DSIM	0
 #define DFT_DECON	0
+
+
+/* DECON Properties */
+static struct decon_dt_info decon_dt = {
+	.max_win	= 6,
+	.dft_win	= 5,	/* window for font should be top window, It means it's zero */
+	.dft_ch		= LOGO_DPP,
+	.psr_mode	= 2,	/* 0: video mode, 1: DP command mode, 2: MIPI command mode */
+	.trig_mode	= 0,	/* 0: hw trigger, 1: sw trigger */
+	.dsi_mode	= 0,	/* 0: single dsi, 1: dual dsi */
+	.out_type	= 0,	/* 0: DSI, 1: eDP, 2:HDMI, 3: WB */
+	.out_idx	= 0,	/* 0: DSI0, 1: DSI1, 2: DSI2 */
+	.ss_regs	= (void __iomem *)DPU_SYSREG_BASE_ADDR,
+};
+/* TODO : add dsim_dt and parse function at dsim_drv */
 
 
 /* GET platdata API list */

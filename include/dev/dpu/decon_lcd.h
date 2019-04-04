@@ -38,7 +38,7 @@ enum decon_mic_comp_ratio {
 
 enum mic_ver {
 	MIC_VER_1_1,
-	MIC_VER_1_2,		/* as a default */
+	MIC_VER_1_2,
 	MIC_VER_2_0,
 };
 
@@ -46,6 +46,41 @@ enum type_of_ddi {
 	TYPE_OF_SM_DDI = 0,	/* Samsung Mobile: as a default */
 	TYPE_OF_MAGNA_DDI,	/* MAGNA */
 	TYPE_OF_NORMAL_DDI,	/* No Samsung and MAGNA */
+};
+
+#define MAX_RES_NUMBER		5
+#define HDR_CAPA_NUM		4
+
+struct lcd_res_info {
+	unsigned int width;
+	unsigned int height;
+	unsigned int dsc_en;
+	unsigned int dsc_width;
+	unsigned int dsc_height;
+};
+
+/* multi-resolution */
+struct lcd_mres_info {
+	unsigned int mres_en;
+	unsigned int mres_number;
+	struct lcd_res_info res_info[MAX_RES_NUMBER];
+};
+
+struct lcd_hdr_info {
+	unsigned int hdr_num;
+	unsigned int hdr_type[HDR_CAPA_NUM];
+	unsigned int hdr_max_luma;
+	unsigned int hdr_max_avg_luma;
+	unsigned int hdr_min_luma;
+};
+
+/*
+ * dec_sw : slice width in DDI side
+ * enc_sw : slice width in AP(DECON & DSIM) side
+ */
+struct dsc_slice {
+	unsigned int dsc_dec_sw[MAX_RES_NUMBER];
+	unsigned int dsc_enc_sw[MAX_RES_NUMBER];
 };
 
 struct stdphy_pms {
@@ -78,18 +113,22 @@ struct decon_lcd {
 	unsigned int fps;
 	unsigned int mic_enabled;
 	enum decon_mic_comp_ratio mic_ratio;
-	enum mic_ver mic_ver;
-
 	unsigned int dsc_enabled;
-	unsigned int dsc_slice;
 	unsigned int dsc_cnt;
 	unsigned int dsc_slice_num;
 	unsigned int dsc_slice_h;
-
+	unsigned int dsc_dec_sw;
+	unsigned int dsc_enc_sw;
+	enum mic_ver mic_ver;
 	enum type_of_ddi ddi_type;
 	unsigned int data_lane;
-	unsigned int cmd_underrun_lp_ref;
+	unsigned int cmd_underrun_lp_ref[MAX_RES_NUMBER];
 	unsigned int vt_compensation;
+	unsigned int mres_mode;
+	struct lcd_mres_info dt_lcd_mres;
+	struct lcd_hdr_info dt_lcd_hdr;
+	struct dsc_slice dt_dsc_slice;
+	unsigned int bpc;
 };
 
 struct decon_dsc {

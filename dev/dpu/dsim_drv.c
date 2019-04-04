@@ -22,7 +22,6 @@
 
 #include <malloc.h>
 #include <platform/delay.h>
-#include <platform/sfr.h>
 
 #include <dev/dpu/dsim.h>
 #include <dev/dpu/decon.h>
@@ -35,6 +34,8 @@
 int dsim_log_level = 6;
 
 struct dsim_device *dsim0_for_decon;
+struct dsim_device *dsim_drvdata[MAX_DSIM_CNT];
+
 
 static int dsim_get_interrupt_src(struct dsim_device *dsim, u32 reg_id, unsigned int timeout)
 {
@@ -176,10 +177,10 @@ int dsim_write_data(struct dsim_device *dsim, u32 id, unsigned long d0, u32 d1)
 
 	if ((dsim->state == DSIM_STATE_ON) && (ret == -ETIMEDOUT)) {
 		dsim_err("0x%08X, 0x%08X, 0x%08X, 0x%08X\n",
-				readl(dsim->reg_base + DSIM_DPHY_STATUS),
-				readl(dsim->reg_base + DSIM_INTSRC),
-				readl(dsim->reg_base + DSIM_FIFOCTRL),
-				readl(dsim->reg_base + DSIM_CMD_CONFIG));
+				readl(dsim->res.regs + DSIM_DPHY_STATUS),
+				readl(dsim->res.regs + DSIM_INTSRC),
+				readl(dsim->res.regs + DSIM_FIFOCTRL),
+				readl(dsim->res.regs + DSIM_CMD_CONFIG));
 	}
 
 	return ret;
@@ -278,7 +279,7 @@ static void dsim_d_phy_onoff(struct dsim_device *dsim,
 	call_config_ops(dsim, set_mipi_phy, enable);
 }
 
-static int dsim_get_gpios(struct dsim_device *dsim)
+int dsim_get_gpios(struct dsim_device *dsim)
 {
 	dsim_dbg("%s +\n", __func__);
 
@@ -289,7 +290,7 @@ static int dsim_get_gpios(struct dsim_device *dsim)
 	return 0;
 }
 
-static int dsim_reset_panel(struct dsim_device *dsim)
+int dsim_reset_panel(struct dsim_device *dsim)
 {
 	dsim_dbg("%s +\n", __func__);
 
@@ -300,7 +301,7 @@ static int dsim_reset_panel(struct dsim_device *dsim)
 	return 0;
 }
 
-static int dsim_set_panel_power(struct dsim_device *dsim, u32 on)
+int dsim_set_panel_power(struct dsim_device *dsim, u32 on)
 {
 	dsim_dbg("%s +\n", __func__);
 
@@ -353,7 +354,7 @@ void dpu_sysreg_set_dphy(u32 id, u32 sysreg)
 	val = 0; /*Selects reset from SYSREG_DISPAUD*/
 	writel(val, sysreg + DISP_DPU_MIPI_PHY_CON);
 }
-
+#if 0
 void dpu_sysreg_dphy_reset(u32 sysreg, u32 dsim_id, u32 rst)
 {
 	u32 old = readl(sysreg + DISP_DPU_MIPI_PHY_CON);
@@ -363,6 +364,7 @@ void dpu_sysreg_dphy_reset(u32 sysreg, u32 dsim_id, u32 rst)
 	val = (val & mask) | (old & ~mask);
 	writel(val, sysreg + DISP_DPU_MIPI_PHY_CON);
 }
+#endif
 
 static int dsim_disable(struct dsim_device *dsim)
 {
@@ -389,51 +391,25 @@ static int dsim_disable(struct dsim_device *dsim)
 static int dsim_enable(struct dsim_device *dsim)
 {
 	struct dsim_clks clks = {0};
+	enum dsim_state state;
+	bool panel_ctrl;
 	int ret = 0;
 
 	if (dsim->state == DSIM_STATE_ON)
 		return 0;
 
-	/* ss_reg set about dphy reset */
-	dpu_sysreg_set_dphy(dsim->id, dsim->res.ss_regs);
-
 	/* DPHY power on */
 	dsim_d_phy_onoff(dsim, 1);
-	/* choose osc clock for link */
-	dsim_reg_set_link_clock(dsim->id, 0);
-	/* Enable DPHY reset : DPHY reset start */
-	dpu_sysreg_dphy_reset(dsim->res.ss_regs, dsim->id, 0);
 
-	/* Panel power on */
-	dsim_set_panel_power(dsim, 1);
-
-	dsim_reg_sw_reset(dsim->id);
+	state = DSIM_STATE_ON;
+	panel_ctrl = (state == DSIM_STATE_ON) ? true : false;
 
 	dsim_device_to_clks(dsim, &clks);
 	clks_to_dsim_device(&clks, dsim);
-	dsim_reg_set_clocks(dsim->id, &dsim->clks, &dsim->lcd_info->dphy_pms, 1);
 
-	dsim_reg_set_lanes(dsim->id, dsim->data_lane, 1);
-
-	dpu_sysreg_dphy_reset(dsim->res.ss_regs, dsim->id, 1); /* Release DPHY reset */
-
-	dsim_reg_set_link_clock(dsim->id, 1);
-
-	dsim_reg_set_esc_clk_on_lane(dsim->id, 1, dsim->data_lane);
-	dsim_reg_enable_word_clock(dsim->id, 1);
-
-	if (dsim_reg_init(dsim->id, dsim->lcd_info, dsim->data_lane_cnt,
-				&dsim->clks) < 0) {
-		dsim_info("dsim_%d already enabled\n", dsim->id);
-		ret = -EBUSY;
-	} else {
-
-		dsim_info("dsim_%d enabled\n", dsim->id);
-		/* Panel reset should be set after LP-11 */
-		dsim_reset_panel(dsim);
-	}
-
+	dsim_reg_init(dsim->id, dsim->lcd_info, &dsim->clks, panel_ctrl);
 	dsim_reg_start(dsim->id);
+
 	dsim->state = DSIM_STATE_ON;
 
 	return ret;
@@ -456,6 +432,34 @@ struct decon_lcd *decon_get_lcd_info(void)
 
 	return dsim->panel_ops->get_lcd_info();
 }
+#if 0
+void dsim_to_regs_param(struct dsim_device *dsim, struct dsim_regs *regs)
+{
+	if (dsim->res.regs)
+		regs->regs = dsim->res.regs;
+	else
+		regs->regs = NULL;
+
+	if (dsim->res.phy_regs)
+		regs->phy_regs = dsim->res.phy_regs;
+	else
+		regs->phy_regs = NULL;
+
+	if (dsim->res.phy_regs_ex)
+		regs->phy_regs_ex = dsim->res.phy_regs_ex;
+	else
+		regs->phy_regs_ex = NULL;
+}
+#endif
+void dsim_dump(struct dsim_device *dsim)
+{
+	struct dsim_regs regs;
+
+	dsim_info("=== DSIM SFR DUMP ===\n");
+
+	dsim_to_regs_param(dsim, &regs);
+	__dsim_dump(dsim->id, &regs);
+}
 
 int dsim_probe(u32 dev_id)
 {
@@ -469,16 +473,21 @@ int dsim_probe(u32 dev_id)
 	}
 
 	/* Display configuration on U-BOOT */
+	/* TODO : check necessity of board type */
 	dsim->board_type = get_exynos_board_type();
 	dsim->config_ops = get_exynos_display_config();
 
 	dsim->id = dev_id;
-	if (!dsim->id)
+	if (dsim->id == 0) {
 		dsim0_for_decon = dsim;
-	else {
+		dsim_drvdata[dev_id] = dsim;
+	} else {
 		ret = -ENXIO;
 		goto err;
 	}
+	/* TODO : get_gpios is needed to change name,
+	 * here is a TE setting but TE setting may be moved to decon
+	 */
 	dsim_get_gpios(dsim);
 
 	dsim->lcd_info = common_get_lcd_info();
@@ -486,10 +495,12 @@ int dsim_probe(u32 dev_id)
 	dsim->data_lane_cnt = dsim->lcd_info->data_lane;
 	dsim_info("using data lane count(%d)\n", dsim->data_lane_cnt);
 
-	dsim->res.ss_regs = EXYNOS_SYSREG_DPU;
+	dsim->res.ss_regs = (void __iomem *)EXYNOS9830_SYSREG_DPU;
+	dsim->res.phy_regs = (void __iomem *)DPHY_BASE_ADDR;
+	dsim->res.phy_regs_ex = (void __iomem *)DPHY_EX_BASE_ADDR;
 
-	if (!dev_id)
-		dsim->res.regs = DSIM0_BASE_ADDR;
+	if (dsim->id == 0)
+		dsim->res.regs = (void __iomem *)DSIM0_BASE_ADDR;
 	else {
 		ret = -ENXIO;
 		goto err;
@@ -503,6 +514,7 @@ int dsim_probe(u32 dev_id)
 
 	dsim->state = DSIM_STATE_INIT;
 	dsim_enable(dsim);
+
 	dsim->cm_panel_ops = get_lcd_drv_ops();
 	if (!dsim->cm_panel_ops) {
 		dsim_err("dsim fail to get common panel operation\n");
@@ -521,11 +533,18 @@ int dsim_probe(u32 dev_id)
 
 	dsim->lcd_info = decon_get_lcd_info();
 	dsim_enable(dsim);
+#if defined(CONFIG_EXYNOS_DSIM_BIST)
+	/* TODO: This is for dsim BIST mode in zebu emulator. only for test*/
+	call_panel_ops(dsim, displayon, dsim);
+	dsim_reg_set_bist(dsim->id, true);
+	dsim_info("START DSIM BIST\n");
+#else
 	call_panel_ops(dsim, probe, dsim);
-
+#endif
 	dsim_info("dsim%d driver(%s mode) has been probed.\n", dsim->id,
 		dsim->lcd_info->mode == DECON_MIPI_COMMAND_MODE ? "cmd" : "video");
 
+	//dsim_dump(dsim);
 	return 0;
 
 err:
