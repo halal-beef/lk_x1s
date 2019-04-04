@@ -25,6 +25,8 @@
 
 #include <dev/dpu/decon_lcd.h>
 
+//#define ARRAY_SIZE(x) (sizeof(x) / sizeof((x)[0]))
+
 void s6e3fa0_lcd_init(unsigned int id, struct decon_lcd *lcd);
 void s6e3fa0_lcd_enable_exynos(unsigned int id);
 void s6e3fa0_lcd_disable_exynos(unsigned int id);
@@ -36,6 +38,12 @@ void nt36672a_lcd_enable_exynos(unsigned int id);
 void nt36672a_lcd_disable_exynos(unsigned int id);
 int nt36672a_lcd_gamma_ctrl(unsigned int id, unsigned int backlightlevel);
 int nt36672a_lcd_gamma_update(int id);
+
+void s6e3ha8_lcd_init(unsigned int id, struct decon_lcd *lcd);
+void s6e3ha8_lcd_enable_exynos(unsigned int id);
+void s6e3ha8_lcd_disable_exynos(unsigned int id);
+int s6e3ha8_lcd_gamma_ctrl(unsigned int id, unsigned int backlightlevel);
+int s6e3ha8_lcd_gamma_update(int id);
 
 struct decon_lcd *decon_get_lcd_info(void);
 struct dsim_lcd_driver *decon_get_panel_info(void);

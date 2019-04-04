@@ -31,13 +31,24 @@
 #include <target/dpu_config.h>
 
 int decon_log_level = 6;
-struct decon_device *decon0_drvdata;
 extern struct dsim_device *dsim0_for_decon;
+extern struct dpp_device *dpp_drvdata[MAX_DPP_CNT];
+struct decon_device *decon_drvdata[MAX_DECON_CNT];
 
 unsigned int win_fb0 = CONFIG_DISPLAY_FONT_BASE_ADDRESS;
 unsigned int win_fb1 = CONFIG_DISPLAY_LOGO_BASE_ADDRESS;
 
 /* ---------- CHECK FUNCTIONS ----------- */
+extern void dsim_dump(struct dsim_device *dsim);
+extern void dpp_dump(struct dpp_device *dpp);
+void decon_dump(struct decon_device *decon)
+{
+	void __iomem *base_regs = get_decon_drvdata(0)->res.regs;
+
+	__decon_dump(decon->id, decon->res.regs, base_regs,
+			decon->lcd_info->dsc_enabled);
+}
+
 void decon_to_psr_info(struct decon_device *decon, struct decon_mode_info *psr)
 {
 	psr->psr_mode = decon->dt->psr_mode;
@@ -58,7 +69,7 @@ void decon_to_init_param(struct decon_device *decon, struct decon_param *p)
 	p->nr_windows = decon->dt->max_win;
 	p->disp_ss_regs = decon->dt->ss_regs;
 
-	decon_dbg("%s: psr(%d) trig(%d) dsi(%d) out(%d) wins(%d) LCD[%d %d] disp_ss[%08x]\n",
+	decon_dbg("%s: psr(%d) trig(%d) dsi(%d) out(%d) wins(%d) LCD[%d %d] disp_ss[%p]\n",
 			__func__, p->psr.psr_mode, p->psr.trig_mode,
 			p->psr.dsi_mode, p->psr.out_type, p->nr_windows,
 			p->lcd_info->xres, p->lcd_info->yres, p->disp_ss_regs);
@@ -70,15 +81,18 @@ static void decon_parse_pdata(struct decon_device *decon, u32 dev_id)
 	struct decon_dt_info *dt = get_decon_pdata();
 
 	decon->id = dev_id;
+	decon->dt->max_win = dt->max_win;
+	decon->dt->dft_win = dt->dft_win;
+	decon->dt->dft_ch = dt->dft_ch;
 	decon->dt->psr_mode = dt->psr_mode;
 	decon->dt->trig_mode = dt->trig_mode;
 	decon->dt->dsi_mode = dt->dsi_mode;
-	decon->dt->max_win = dt->max_win;
-	decon->dt->dft_win = dt->dft_win;
-	decon->dt->dft_idma = dt->dft_idma;
 	decon->dt->out_idx = dt->out_idx;
 	decon->dt->out_type = dt->out_type;
 
+	decon->dt->dpp_cnt = dt->dpp_cnt;
+	decon->dt->dsim_cnt = dt->dsim_cnt;
+	decon->dt->decon_cnt = dt->decon_cnt;
 	decon_info("decon-%s: max win%d, %s mode, %s trigger\n",
 			decon->id ? "ext" : "int",
 			decon->dt->max_win,
@@ -104,14 +118,19 @@ void decon_show_buffer_update(struct decon_device *decon,
 
 	decon_to_psr_info(decon, &psr);
 
+	decon_reg_all_win_shadow_update_req(decon->id);
 	decon_reg_start(decon->id, &psr);
-	/* decon_reg_update_req_and_unmask(0, &psr); */
-
 	if (decon_reg_wait_update_done_and_mask(decon->id, &psr,
-				SHADOW_UPDATE_TIMEOUT) < 0)
+				SHADOW_UPDATE_TIMEOUT) < 0) {
 		decon_err("%s: wait_for_update_timeout\n", __func__);
-
-	decon_reg_set_trigger(decon->id, &psr, DECON_TRIG_DISABLE);
+#if defined(EXYNOS_DPU_DUMP)
+		decon_dump(decon);
+		dsim_dump(dsim_drvdata[0]);
+		dpp_dump(dpp_drvdata[0]);
+		dpp_dump(dpp_drvdata[1]);
+		dpp_dump(dpp_drvdata[2]);
+#endif
+	}
 }
 
 void decon_show_buffer(struct decon_device *decon,
@@ -123,14 +142,22 @@ void decon_show_buffer(struct decon_device *decon,
 
 	/* stop smmu before proceeding for buffer rendering */
 	/* TODO : make sysmmu ctrl to dpu io ctrl */
-	writel(0, SYSMMU_DPU1_BASE_ADDR);
+//	writel(0, SYSMMU_DPU0_BASE_ADDR);
+//	writel(0, SYSMMU_DPU1_BASE_ADDR);
+//	writel(0, SYSMMU_DPU2_BASE_ADDR);
 
 	decon_to_init_param(decon, &p);
 	decon_reg_init(decon->id, decon->dt->out_idx, &p);
 
+	/* window 5 config */
+	win_regs.wincon = wincon(0x8, 0xFF, 0xFF, 0xFF, DECON_BLENDING_NONE, decon->dt->dft_win);
 	/* common config */
 	win_regs.start_pos = win_start_pos(0, 0);
 	win_regs.end_pos = win_end_pos(0, 0, p.lcd_info->xres, p.lcd_info->yres);
+	decon_info("Display 1st window(%d) xres(%d) yres(%d) win_start_pos(%x) win_end_pos(%x)\n",
+			decon->dt->dft_win, p.lcd_info->xres, p.lcd_info->yres, win_regs.start_pos,
+			win_regs.end_pos);
+
 	win_regs.colormap = 0x0;
 	win_regs.pixel_count = p.lcd_info->xres * p.lcd_info->yres;
 	win_regs.whole_w = p.lcd_info->xres;
@@ -139,55 +166,53 @@ void decon_show_buffer(struct decon_device *decon,
 	win_regs.offset_y = 0;
 	win_regs.format = DECON_PIXEL_FORMAT_ARGB_8888;
 
-	/* window 0 dedicated config */
-	win_regs.wincon = wincon(0x8, 0xFF, 0xFF, 0xFF, DECON_BLENDING_NONE, decon->dt->dft_win);
-	win_regs.type = decon->dt->dft_idma;
+	win_regs.ch = LOGO_DPP;
 	win_regs.plane_alpha = 0;
 	win_regs.blend = DECON_BLENDING_NONE;
-
-	decon_info("Display 1st window xres(%d) yres(%d) win_start_pos(%x) win_end_pos(%x)\n",
-			p.lcd_info->xres, p.lcd_info->yres, win_regs.start_pos,
-			win_regs.end_pos);
-
 	decon_reg_set_window_control(decon->id, decon->dt->dft_win, &win_regs, false);
 
 #ifdef CONFIG_DISPLAY_DRAWFONT
-	/* window 1 dedicated config */
-	win_regs.wincon = wincon(0x8, 0xFF, 0xFF, 0xFF, DECON_BLENDING_NONE, 1);
+	/* window 4 config */
+	win_regs.wincon = wincon(0x8, 0xFF, 0xFF, 0xFF, DECON_BLENDING_COVERAGE, decon->dt->dft_win - 1);
+	/* common config */
+	win_regs.start_pos = win_start_pos(0, 0);
+	win_regs.end_pos = win_end_pos(0, 0, p.lcd_info->xres, p.lcd_info->yres);
+	decon_info("Display 2st window(%d) xres(%d) yres(%d) win_start_pos(%x) win_end_pos(%x)\n",
+			decon->dt->dft_win - 1, p.lcd_info->xres, p.lcd_info->yres, win_regs.start_pos,
+			win_regs.end_pos);
+
+	win_regs.colormap = 0x0;
+	win_regs.pixel_count = p.lcd_info->xres * p.lcd_info->yres;
+	win_regs.whole_w = p.lcd_info->xres;
+	win_regs.whole_h = p.lcd_info->yres;
+	win_regs.offset_x = 0;
+	win_regs.offset_y = 0;
+	win_regs.format = DECON_PIXEL_FORMAT_ARGB_8888;
+
 	/* TODO : add 2nd dft idma to dt data */
-	win_regs.type = IDMA_G1;
+	win_regs.ch = FONT_DPP;
 	win_regs.plane_alpha = 0xff;
 	win_regs.blend = DECON_BLENDING_COVERAGE;
 
-	decon_info("Display 2nd window xres(%d) yres(%d) win_start_pos(%x) win_end_pos(%x)\n",
-			p.lcd_info->xres, p.lcd_info->yres, win_regs.start_pos,
-			win_regs.end_pos);
-
 	/* TODO : add 2nd dft win to dt data */
-	decon_reg_set_window_control(decon->id, 1, &win_regs, false);
+	decon_reg_set_window_control(decon->id, decon->dt->dft_win - 1, &win_regs, false);
 #endif
+	/* disable irq and clear */
+	decon_reg_set_int(decon->id, &psr, 0);
 
 	/* shadow update request */
-	decon_reg_update_req_window(decon->id, decon->dt->dft_win);
-#ifdef CONFIG_DISPLAY_DRAWFONT
-	/* TODO : add 2nd dft win to dt data */
-	decon_reg_update_req_window(decon->id, 1);
-#endif
+	decon_reg_all_win_shadow_update_req(decon->id);
 
 	decon_to_psr_info(decon, &psr);
-
 	call_panel_ops(dsim, displayon, dsim);
-
 	decon_reg_start(decon->id, &psr);
-	/* TODO : check unmask */
-	/* decon_reg_update_req_and_unmask(0, &psr); */
+
+	/* Enable irq and clear */
 	decon_reg_set_int(decon->id, &psr, 1);
 
 	if (decon_reg_wait_update_done_and_mask(decon->id, &psr,
 				SHADOW_UPDATE_TIMEOUT) < 0)
 		decon_err("%s: wait_for_update_timeout\n", __func__);
-
-	decon_reg_set_trigger(decon->id, &psr, DECON_TRIG_DISABLE);
 }
 
 void decon_show_color_map(struct decon_device *decon,
@@ -201,24 +226,22 @@ void decon_show_color_map(struct decon_device *decon,
 	decon_to_init_param(decon, &p);
 	decon_reg_init(decon->id, decon->dt->out_idx, &p);
 
+
+	/* window config */
+	win_regs.wincon = wincon(0x8, 0xFF, 0xFF, 0xFF, DECON_BLENDING_NONE, decon->dt->dft_win);
 	/* common config */
 	win_regs.start_pos = win_start_pos(0, 0);
 	win_regs.end_pos = win_end_pos(0, 0, p.lcd_info->xres, p.lcd_info->yres);
+	decon_info("Colormap xres %d yres %d win_start_pos %x win_end_pos %x\n",
+			p.lcd_info->xres, p.lcd_info->yres, win_regs.start_pos,
+			win_regs.end_pos);
 	win_regs.colormap = 0xff0000;
 	win_regs.pixel_count = p.lcd_info->xres * p.lcd_info->yres;
 	win_regs.whole_w = p.lcd_info->xres;
 	win_regs.whole_h = p.lcd_info->yres;
 	win_regs.offset_x = 0;
 	win_regs.offset_y = 0;
-	win_regs.type = decon->dt->dft_idma;
-
-	/* window 0 dedicated config */
-	win_regs.wincon = wincon(0x8, 0xFF, 0xFF, 0xFF, DECON_BLENDING_NONE, decon->dt->dft_win);
-
-	decon_info("Colormap xres %d yres %d win_start_pos %x win_end_pos %x\n",
-			p.lcd_info->xres, p.lcd_info->yres, win_regs.start_pos,
-			win_regs.end_pos);
-
+	win_regs.ch = LOGO_DPP;
 	decon_info("pixel_count(%d), whole_w(%d), whole_h(%d), x(%d), y(%d)\n",
 			win_regs.pixel_count, win_regs.whole_w,
 			win_regs.whole_h, win_regs.offset_x,
@@ -226,22 +249,22 @@ void decon_show_color_map(struct decon_device *decon,
 
 	decon_reg_set_window_control(decon->id, decon->dt->dft_win, &win_regs, true);
 
+	/* disable irq and clear */
+	decon_reg_set_int(decon->id, &psr, 0);
+
 	/* shadow update request */
-	decon_reg_update_req_window(decon->id, decon->dt->dft_win);
+	decon_reg_all_win_shadow_update_req(decon->id);
+
 	decon_to_psr_info(decon, &psr);
-
 	call_panel_ops(dsim, displayon, dsim);
-
 	decon_reg_start(decon->id, &psr);
-	decon_reg_update_req_and_unmask(0, &psr);
 
+	/* Enable irq and clear */
 	decon_reg_set_int(decon->id, &psr, 1);
 
 	if (decon_reg_wait_update_done_and_mask(decon->id, &psr,
 				SHADOW_UPDATE_TIMEOUT) < 0)
 		decon_err("%s: wait_for_update_timeout\n", __func__);
-
-	decon_reg_set_trigger(decon->id, &psr, DECON_TRIG_DISABLE);
 }
 
 /* --------- DRIVER INITIALIZATION ---------- */
@@ -249,6 +272,7 @@ static int decon_probe(u32 dev_id)
 {
 	struct decon_device *decon;
 	struct dsim_device *dsim;
+	struct decon_lcd *lcd_info = decon_get_lcd_info();
 
 	if (dev_id > DFT_DECON) {
 		decon_err("does not support (%u) decon device\n", dev_id);
@@ -267,20 +291,32 @@ static int decon_probe(u32 dev_id)
 		free(decon);
 		return -ENOMEM;
 	}
-
 	decon_parse_pdata(decon, dev_id);
+	decon->lcd_info = lcd_info;
 
 	/* TODO : move to dt data */
-	decon->res.regs = DECON0_BASE_ADDR;
-	decon0_drvdata = decon;
-	dsim = dsim0_for_decon;
+	decon->res.regs = (void __iomem *)DECON0_BASE_ADDR;
+	decon->res.ss_regs = (void __iomem *)DPU_SYSREG_BASE_ADDR;
+
+	decon_drvdata[dev_id] = decon;
+	dsim = dsim_drvdata[0];
 
 	if (WINMAP > 0) {
 		decon_show_color_map(decon, dsim);
+#if defined(EXYNOS_DPU_DUMP)
+		decon_dump(decon);
+		dsim_dump(dsim);
+#endif
 		return 0;
 	}
 
 	decon_show_buffer(decon, dsim, LUT_COLOR_1);
+#if defined(EXYNOS_DPU_DUMP)
+	decon_dump(decon);
+	dsim_dump(dsim_drvdata[0]);
+	dpp_dump(dpp_drvdata[LOGO_DPP]);
+	dpp_dump(dpp_drvdata[FONT_DPP]);
+#endif
 	decon->state = DECON_STATE_ON;
 	decon_info("decon%d registered successfully\n", decon->id);
 	return 0;
@@ -288,19 +324,20 @@ static int decon_probe(u32 dev_id)
 
 void decon_string_update(void)
 {
-	struct decon_device *decon = decon0_drvdata;
+	struct decon_device *decon = decon_drvdata[0];
 	struct dsim_device *dsim = dsim0_for_decon;
 	if (decon != NULL && dsim != NULL && !WINMAP
 		&& decon->state == DECON_STATE_ON)
 		decon_show_buffer_update(decon, dsim, LUT_COLOR_1);
 }
 
-extern void dpp_reg_configure_params(u32 id, struct dpp_params_info *p);
 int decon_resize_align(unsigned int xsize, unsigned int ysize)
 {
 	struct dpp_params_info p;
-	struct decon_device *decon = decon0_drvdata;
+	struct decon_device *decon = decon_drvdata[0];
 	struct decon_window_regs win_regs = {0};
+	unsigned long attr = 0;
+
 
 	/* dpp */
 	p.src.x = 0;
@@ -320,8 +357,11 @@ int decon_resize_align(unsigned int xsize, unsigned int ysize)
 	p.is_scale = false;
 
 	p.is_block = false;
-
-	dpp_reg_configure_params(0, &p);
+	/* Each bit indicates DPP attribute */
+	/* 0:AFBC 1:BLOCK 2:FLIP 3:ROT 4:CSC 5:SCALE 6:HDR 7:HDR10 */
+	/* 16:IDMA 17:ODMA 18:DPP */
+	attr = 0x50087; /* DPP/IDMA/HDR10/FLIP/BLOCK/AFBC */
+	dpp_reg_configure_params(0, &p, attr);
 
 	/* decon */
 	/* common config */
@@ -337,7 +377,7 @@ int decon_resize_align(unsigned int xsize, unsigned int ysize)
 
 	/* window 0 dedicated config */
 	win_regs.wincon = wincon(0x8, 0xFF, 0xFF, 0xFF, DECON_BLENDING_NONE, decon->dt->dft_win);
-	win_regs.type = IDMA_G0;
+	win_regs.ch = LOGO_DPP;
 	win_regs.plane_alpha = 0;
 	win_regs.blend = DECON_BLENDING_NONE;
 
@@ -364,7 +404,7 @@ int display_drv_init(void)
 	}
 
 	/* DPP0 G0 for logo framebuffer */
-	ret = dpp_probe(LOGO_DPP, win_fb1);
+	ret = dpp_probe(LOGO_DPP, win_fb0);
 	if (ret < 0) {
 		decon_err("dpp%d probe was failed\n", LOGO_DPP);
 		return ret;
@@ -372,9 +412,9 @@ int display_drv_init(void)
 
 #ifdef CONFIG_DISPLAY_DRAWFONT
 	/* DPP1 G1 for font framebuffer */
-	ret = dpp_probe(FONT_DPP, win_fb0);
+	ret = dpp_probe(FONT_DPP, win_fb1);
 	if (ret < 0) {
-		decon_err("dpp%d probe was failed\n", LOGO_DPP);
+		decon_err("dpp%d probe was failed\n", FONT_DPP);
 		return ret;
 	}
 #endif
