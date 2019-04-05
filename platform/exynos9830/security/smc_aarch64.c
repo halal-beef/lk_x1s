@@ -73,6 +73,12 @@ int load_keystorage(u64 addr, u64 size)
 	                  addr, size, 0);
 }
 
+int load_ssp(u64 addr, u64 size)
+{
+	return exynos_smc(SMC_CMD_LOAD_SSP,
+	                  addr, size, 0);
+}
+
 int init_ldfw(u64 addr, u64 size)
 {
 	return exynos_smc(SMC_CMD_LOAD_LDFW,
