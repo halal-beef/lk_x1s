@@ -447,10 +447,14 @@ int cmd_boot(int argc, const cmd_args *argv)
 	load_boot_images();
 
 #if defined(CONFIG_USE_AVB20)
+#if defined(CONFIG_AVB_ABUPDATE)
 	if (ab_current_slot())
 		avb_main("_b", cmdline, verifiedbootstate);
 	else
 		avb_main("_a", cmdline, verifiedbootstate);
+#else
+	avb_main("", cmdline, verifiedbootstate);
+#endif
 #endif
 
 	configure_dtb();
