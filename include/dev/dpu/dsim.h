@@ -29,7 +29,7 @@
 #include <errno.h>
 #include <platform/delay.h>
 
-#include <dev/dpu/decon_lcd.h>
+#include <dev/dpu/exynos_panel.h>
 #include <dev/dpu/mipi_dsi_cmd.h>
 #include <platform/exynos9830.h>
 #include <platform/display_sfr.h>
@@ -210,8 +210,8 @@ struct dsim_device {
 
 	struct dsim_lcd_driver *panel_ops;
 	struct lcd_driver *cm_panel_ops;
-	struct decon_lcd *lcd_info;
-	//struct decon_lcd lcd_info;
+	struct exynos_panel_info *lcd_info;
+	//struct exynos_panel_info lcd_info;
 
 	struct dsim_clks clks;
 	int total_underrun_cnt;
@@ -245,7 +245,7 @@ struct lcd_driver {
 
 struct dsim_lcd_driver {
 	int	(*get_id)(struct dsim_device *dsim);
-	struct decon_lcd *(*get_lcd_info)(void);
+	struct exynos_panel_info *(*get_lcd_info)(void);
 	int	(*probe)(struct dsim_device *dsim);
 	int	(*suspend)(struct dsim_device *dsim);
 	int	(*displayon)(struct dsim_device *dsim);
@@ -256,11 +256,9 @@ int dsim_write_data(struct dsim_device *dsim, u32 id, unsigned long d0, u32 d1);
 int dsim_read_data(struct dsim_device *dsim, u32 id, u32 addr, u32 cnt, u8 *buf);
 int dsim_wait_for_cmd_done(struct dsim_device *dsim);
 
-#if 0
 int dsim_reset_panel(struct dsim_device *dsim);
-int dsim_set_panel_power(struct dsim_device *dsim, bool on);
+int dsim_set_panel_power(struct dsim_device *dsim, u32 on);
 
-#endif
 void dsim_to_regs_param(struct dsim_device *dsim, struct dsim_regs *regs);
 
 static inline struct dsim_device *get_dsim_drvdata(u32 id)

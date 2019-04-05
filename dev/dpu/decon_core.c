@@ -46,7 +46,7 @@ void decon_dump(struct decon_device *decon)
 	void __iomem *base_regs = get_decon_drvdata(0)->res.regs;
 
 	__decon_dump(decon->id, decon->res.regs, base_regs,
-			decon->lcd_info->dsc_enabled);
+			decon->lcd_info->dsc.en);
 }
 
 void decon_to_psr_info(struct decon_device *decon, struct decon_mode_info *psr)
@@ -59,7 +59,7 @@ void decon_to_psr_info(struct decon_device *decon, struct decon_mode_info *psr)
 
 void decon_to_init_param(struct decon_device *decon, struct decon_param *p)
 {
-	struct decon_lcd *lcd_info = decon_get_lcd_info();
+	struct exynos_panel_info *lcd_info = decon_get_lcd_info();
 
 	p->lcd_info = lcd_info;
 	p->psr.psr_mode = decon->dt->psr_mode;
@@ -272,7 +272,7 @@ static int decon_probe(u32 dev_id)
 {
 	struct decon_device *decon;
 	struct dsim_device *dsim;
-	struct decon_lcd *lcd_info = decon_get_lcd_info();
+	struct exynos_panel_info *lcd_info = decon_get_lcd_info();
 
 	if (dev_id > DFT_DECON) {
 		decon_err("does not support (%u) decon device\n", dev_id);

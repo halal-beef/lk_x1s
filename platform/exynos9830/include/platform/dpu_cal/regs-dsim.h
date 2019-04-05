@@ -26,8 +26,8 @@
 #define DISP_DPU_MIPI_PHY_CON			0x0008
 /* _v : [0,1] */
 #define SEL_RESET_DPHY_MASK(_v)			(0x1 << (4 + (_v)))
-#define M_RESETN_M4S4_MODULE_MASK		(0x1 << 1)
-#define M_RESETN_M4S4_TOP_MASK			(0x1 << 0)
+#define M_RESETN_M4M4_MODULE_MASK		(0x1 << 1)
+#define M_RESETN_M4M4_TOP_MASK			(0x1 << 0)
 
 #define DSIM_VERSION					(0x0)
 
@@ -42,6 +42,7 @@
 
 #define DSIM_LINK_STATUS1				(0xc)
 #define DSIM_LINK_STATUS1_CMD_MODE_STATUS_GET(x)	((x >> 26) & 0x1)
+#define DSIM_LINK_STATUS1_CMD_TRANSF_CNT_GET(x)		((x >> 0) & 0x1ffffff)
 
 #define DSIM_STATUS_IDLE				0
 #define DSIM_STATUS_ACTIVE				1
@@ -130,17 +131,6 @@
 #define DSIM_RESOL_HOZVAL_GET(_v)			(((_v) >> 0) & 0x1fff)
 
 /* Main display Vporch register */
-#if defined(CONFIG_SOC_EXYNOS9820_EVT0)
-#define DSIM_VPORCH					(0x40)
-#define DSIM_VPORCH_VFP_CMD_ALLOW(_x)			((_x) << 24)
-#define DSIM_VPORCH_VFP_CMD_ALLOW_MASK			(0xff << 24)
-#define DSIM_VPORCH_STABLE_VFP(_x)			((_x) << 16)
-#define DSIM_VPORCH_STABLE_VFP_MASK			(0xff << 16)
-#define DSIM_VPORCH_VFP_TOTAL(_x)			((_x) << 8)
-#define DSIM_VPORCH_VFP_TOTAL_MASK			(0xff << 8)
-#define DSIM_VPORCH_VBP(_x)				((_x) << 0)
-#define DSIM_VPORCH_VBP_MASK				(0xff << 0)
-#else
 #define DSIM_VPORCH					(0x104)
 #define DSIM_VPORCH_VFP_TOTAL(_x)			((_x) << 16)
 #define DSIM_VPORCH_VFP_TOTAL_MASK			(0xffff << 16)
@@ -151,7 +141,6 @@
 #define DSIM_VPORCH_VFP_CMD_ALLOW_MASK			(0xffff << 16)
 #define DSIM_VPORCH_STABLE_VFP(_x)			((_x) << 0)
 #define DSIM_VPORCH_STABLE_VFP_MASK			(0xffff << 0)
-#endif
 
 /* Main display Hporch register */
 #define DSIM_HPORCH					(0x44)
@@ -426,44 +415,32 @@
 #define	DSIM_SA_CRC_RESULT_LN3_MASK			(0xffff << 0)
 #define DSIM_SA_CRC_RESULT_LN3_GET(x)			(((x) >> 0) & 0xffff)
 
-#if !defined(CONFIG_SOC_EXYNOS9820_EVT0)
 #define DSIM_OPTION_SUITE				(0x010C)
 #define	DSIM_OPTION_SUITE_UPDT_EN_MASK			(0x1 << 0)
-#endif
 
 /*
  * DPHY  registers
  */
 
-/* MK */
-#define DCPHY_TOP_M4S4				0x0000
-#define DCPHY_MOD_M4S0				0x1000
+/* 2020 */
+#define DCPHY_TOP_M4S0				0x0100
+#define DCPHY_MOD_M4S0				0x0900
 
 
 /* DPHY BIAS setting */
 #define DSIM_PHY_BIAS_CON(_id)			(0x0000 + (4 * (_id)))
 
 /* DPHY PLL setting */
-#define DSIM_PHY_PLL_CON(_id)			(0x0100 + (4 * (_id)))
-#define DSIM_PHY_PLL_CON0			(0x0100)
-#define DSIM_PHY_PLL_CON1			(0x0104)
-#define DSIM_PHY_PLL_CON2			(0x0108)
-#define DSIM_PHY_PLL_CON3			(0x010C)
-#define DSIM_PHY_PLL_CON4			(0x0110)
-#define DSIM_PHY_PLL_CON5			(0x0114)
-#define DSIM_PHY_PLL_CON6			(0x0118)
-#define DSIM_PHY_PLL_CON7			(0x011C)
-#if defined(CONFIG_SOC_EXYNOS9820_EVT0)
-#define DSIM_PHY_PLL_STAT0			(0x0120)
-#else
-#define DSIM_PHY_PLL_CON8			(0x0120)
-#define DSIM_PHY_PLL_STAT0			(0x0140)
-
-#define DSIM_PHY_PLL_CON2_USE_SDW_MASK		(0x1 << 15)
-
-#define DSIM_PHY_PLL_CON8_PLL_STB_CNT(x)	((x) << 0)
-#define DSIM_PHY_PLL_CON8_PLL_STB_CNT_MASK	(0xffff << 0)
-#endif
+#define DSIM_PHY_PLL_CON(_id)			(0x0000 + (4 * (_id)))
+#define DSIM_PHY_PLL_CON0			(0x0000)
+#define DSIM_PHY_PLL_CON1			(0x0004)
+#define DSIM_PHY_PLL_CON2			(0x0008)
+#define DSIM_PHY_PLL_CON3			(0x000C)
+#define DSIM_PHY_PLL_CON4			(0x0010)
+#define DSIM_PHY_PLL_CON5			(0x0014)
+#define DSIM_PHY_PLL_CON6			(0x0018)
+#define DSIM_PHY_PLL_CON7			(0x001C)
+#define DSIM_PHY_PLL_CON8			(0x0020)
 
 /* PLL_CON0 */
 #define DSIM_PHY_PLL_EN(_x)			(((_x) & 0x1) << 12)
@@ -478,6 +455,7 @@
 #define DSIM_PHY_PMS_K_MASK			(0xffff << 0)
 
 /* PLL_CON2 */
+#define DSIM_PHY_USE_SDW_MASK			(0x1 << 15)
 #define DSIM_PHY_PMS_M(_x)			(((_x) & 0x3ff) << 0)
 #define DSIM_PHY_PMS_M_MASK			(0x3ff << 0)
 
@@ -515,13 +493,18 @@
 /* PLL_CON7 */
 #define DSIM_PHY_PLL_LOCK_CNT(_x)		(((_x) & 0xffff) << 0)
 #define DSIM_PHY_PLL_LOCK_CNT_MASK		(0xffff << 0)
+/* PLL_CON8 */
+#define DSIM_PHY_PLL_STB_CNT(x)			((x) << 0)
+#define DSIM_PHY_PLL_STB_CNT_MASK		(0xffff << 0)
+
 /* PLL_STAT0 */
+#define DSIM_PHY_PLL_STAT0			(0x0040)
 #define DSIM_PHY_PLL_LOCK_GET(x)		(((x) >> 0) & 0x1)
 
 /* master clock lane General Control Register : GNR */
-#define DSIM_PHY_MC_GNR_CON(_id)		(0x0300 + (4 * (_id)))
-#define DSIM_PHY_MC_GNR_CON0			(0x0300)
-#define DSIM_PHY_MC_GNR_CON1			(0x0304)
+#define DSIM_PHY_MC_GNR_CON(_id)		(0x0200 + (4 * (_id)))
+#define DSIM_PHY_MC_GNR_CON0			(0x0200)
+#define DSIM_PHY_MC_GNR_CON1			(0x0204)
 /* GNR0 */
 #define DSIM_PHY_PHY_READY			(0x1 << 1)
 #define DSIM_PHY_PHY_READY_GET(x)		(((x) >> 1) & 0x1)
@@ -532,81 +515,78 @@
 
 
 /* master clock lane Analog Block Control Register : ANA */
-#define DSIM_PHY_MC_ANA_CON(_id)		(0x0308 + (4 * (_id)))
-#define DSIM_PHY_MC_ANA_CON0			(0x0308)
-#define DSIM_PHY_MC_ANA_CON1			(0x030C)
-#if !defined(CONFIG_SOC_EXYNOS9820_EVT0)
-#define DSIM_PHY_MC_ANA_CON2			(0x0310)
-#endif
-
+#define DSIM_PHY_MC_ANA_CON(_id)		(0x0208 + (4 * (_id)))
+#define DSIM_PHY_MC_ANA_CON0			(0x0208)
+#define DSIM_PHY_MC_ANA_CON1			(0x020C)
+/* ANA_CON0 */
 #define DSIM_PHY_EDGE_CON_EN			(0x1 << 8)
 #define DSIM_PHY_RES_UP(_x)			(((_x) & 0xf) << 4)
 #define DSIM_PHY_RES_UP_MASK			(0xf << 4)
 #define DSIM_PHY_RES_DN(_x)			(((_x) & 0xf) << 0)
 #define DSIM_PHY_RES_DN_MASK			(0xf << 0)
-
-#define DSIM_PHY_DPDN_SWAP(_x)			(((_x) & 0x) << 12)
+/* ANA_CON1 */
+#define DSIM_PHY_DPDN_SWAP(_x)			(((_x) & 0x1) << 12)
 #define DSIM_PHY_DPDN_SWAP_MASK			(0x1 << 12)
 
 
 /* master clock lane setting */
-#define DSIM_PHY_MC_TIME_CON0			(0x0330)
-#define DSIM_PHY_MC_TIME_CON1			(0x0334)
-#define DSIM_PHY_MC_TIME_CON2			(0x0338)
-#define DSIM_PHY_MC_TIME_CON3			(0x033C)
-#define DSIM_PHY_MC_TIME_CON4			(0x0340)
-#define DSIM_PHY_MC_DATA_CON0			(0x0344)
-#define DSIM_PHY_MC_DESKEW_CON0			(0x0350)
+#define DSIM_PHY_MC_TIME_CON0			(0x0230)
+#define DSIM_PHY_MC_TIME_CON1			(0x0234)
+#define DSIM_PHY_MC_TIME_CON2			(0x0238)
+#define DSIM_PHY_MC_TIME_CON3			(0x023C)
+#define DSIM_PHY_MC_TIME_CON4			(0x0240)
+#define DSIM_PHY_MC_DATA_CON0			(0x0244)
+#define DSIM_PHY_MC_DESKEW_CON0			(0x0250)
 
 /*
  * master data lane setting : D0 ~ D3
  * D0~D2 : COMBO
  * D3    : DPHY
  */
-#define DSIM_PHY_MD_GNR_CON0(_x)		(0x0400 + (0x100 * (_x)))
-#define DSIM_PHY_MD_GNR_CON1(_x)		(0x0404 + (0x100 * (_x)))
-#define DSIM_PHY_MD_ANA_CON0(_x)		(0x0408 + (0x100 * (_x)))
-#define DSIM_PHY_MD_ANA_CON1(_x)		(0x040C + (0x100 * (_x)))
-#define DSIM_PHY_MD_ANA_CON2(_x)		(0x0410 + (0x100 * (_x)))
-#define DSIM_PHY_MD_ANA_CON3(_x)		(0x0414 + (0x100 * (_x)))
-#define DSIM_PHY_MD_TIME_CON0(_x)		(0x0430 + (0x100 * (_x)))
-#define DSIM_PHY_MD_TIME_CON1(_x)		(0x0434 + (0x100 * (_x)))
-#define DSIM_PHY_MD_TIME_CON2(_x)		(0x0438 + (0x100 * (_x)))
-#define DSIM_PHY_MD_TIME_CON3(_x)		(0x043C + (0x100 * (_x)))
-#define DSIM_PHY_MD_TIME_CON4(_x)		(0x0440 + (0x100 * (_x)))
-#define DSIM_PHY_MD_DATA_CON0(_x)		(0x0444 + (0x100 * (_x)))
+#define DSIM_PHY_MD_GNR_CON0(_x)		(0x0300 + (0x100 * (_x)))
+#define DSIM_PHY_MD_GNR_CON1(_x)		(0x0304 + (0x100 * (_x)))
+#define DSIM_PHY_MD_ANA_CON0(_x)		(0x0308 + (0x100 * (_x)))
+#define DSIM_PHY_MD_ANA_CON1(_x)		(0x030C + (0x100 * (_x)))
+#define DSIM_PHY_MD_ANA_CON2(_x)		(0x0310 + (0x100 * (_x)))
+#define DSIM_PHY_MD_ANA_CON3(_x)		(0x0314 + (0x100 * (_x)))
+#define DSIM_PHY_MD_TIME_CON0(_x)		(0x0330 + (0x100 * (_x)))
+#define DSIM_PHY_MD_TIME_CON1(_x)		(0x0334 + (0x100 * (_x)))
+#define DSIM_PHY_MD_TIME_CON2(_x)		(0x0338 + (0x100 * (_x)))
+#define DSIM_PHY_MD_TIME_CON3(_x)		(0x033C + (0x100 * (_x)))
+#define DSIM_PHY_MD_TIME_CON4(_x)		(0x0340 + (0x100 * (_x)))
+#define DSIM_PHY_MD_DATA_CON0(_x)		(0x0344 + (0x100 * (_x)))
 
 /* master data lane(COMBO) setting : D0 */
-#define DSIM_PHY_MD0_TIME_CON0			(0x0430)
-#define DSIM_PHY_MD0_TIME_CON1			(0x0434)
-#define DSIM_PHY_MD0_TIME_CON2			(0x0438)
-#define DSIM_PHY_MD0_TIME_CON3			(0x043C)
-#define DSIM_PHY_MD0_TIME_CON4			(0x0440)
-#define DSIM_PHY_MD0_DATA_CON0			(0x0444)
+#define DSIM_PHY_MD0_TIME_CON0			(0x0330)
+#define DSIM_PHY_MD0_TIME_CON1			(0x0334)
+#define DSIM_PHY_MD0_TIME_CON2			(0x0338)
+#define DSIM_PHY_MD0_TIME_CON3			(0x033C)
+#define DSIM_PHY_MD0_TIME_CON4			(0x0340)
+#define DSIM_PHY_MD0_DATA_CON0			(0x0344)
 
 /* master data lane(COMBO) setting : D1 */
-#define DSIM_PHY_MD1_TIME_CON0			(0x0530)
-#define DSIM_PHY_MD1_TIME_CON1			(0x0534)
-#define DSIM_PHY_MD1_TIME_CON2			(0x0538)
-#define DSIM_PHY_MD1_TIME_CON3			(0x053C)
-#define DSIM_PHY_MD1_TIME_CON4			(0x0540)
-#define DSIM_PHY_MD1_DATA_CON0			(0x0544)
+#define DSIM_PHY_MD1_TIME_CON0			(0x0430)
+#define DSIM_PHY_MD1_TIME_CON1			(0x0434)
+#define DSIM_PHY_MD1_TIME_CON2			(0x0438)
+#define DSIM_PHY_MD1_TIME_CON3			(0x043C)
+#define DSIM_PHY_MD1_TIME_CON4			(0x0440)
+#define DSIM_PHY_MD1_DATA_CON0			(0x0444)
 
 /* master data lane(COMBO) setting : D2 */
-#define DSIM_PHY_MD2_TIME_CON0			(0x0630)
-#define DSIM_PHY_MD2_TIME_CON1			(0x0634)
-#define DSIM_PHY_MD2_TIME_CON2			(0x0638)
-#define DSIM_PHY_MD2_TIME_CON3			(0x063C)
-#define DSIM_PHY_MD2_TIME_CON4			(0x0640)
-#define DSIM_PHY_MD2_DATA_CON0			(0x0644)
+#define DSIM_PHY_MD2_TIME_CON0			(0x0530)
+#define DSIM_PHY_MD2_TIME_CON1			(0x0534)
+#define DSIM_PHY_MD2_TIME_CON2			(0x0538)
+#define DSIM_PHY_MD2_TIME_CON3			(0x053C)
+#define DSIM_PHY_MD2_TIME_CON4			(0x0540)
+#define DSIM_PHY_MD2_DATA_CON0			(0x0544)
 
 /* master data lane setting : D3 */
-#define DSIM_PHY_MD3_TIME_CON0			(0x0730)
-#define DSIM_PHY_MD3_TIME_CON1			(0x0734)
-#define DSIM_PHY_MD3_TIME_CON2			(0x0738)
-#define DSIM_PHY_MD3_TIME_CON3			(0x073C)
-#define DSIM_PHY_MD3_TIME_CON4			(0x0740)
-#define DSIM_PHY_MD3_DATA_CON0			(0x0744)
+#define DSIM_PHY_MD3_TIME_CON0			(0x0630)
+#define DSIM_PHY_MD3_TIME_CON1			(0x0634)
+#define DSIM_PHY_MD3_TIME_CON2			(0x0638)
+#define DSIM_PHY_MD3_TIME_CON3			(0x063C)
+#define DSIM_PHY_MD3_TIME_CON4			(0x0640)
+#define DSIM_PHY_MD3_DATA_CON0			(0x0644)
 
 
 /* macros for DPHY timing controls */
@@ -634,6 +614,7 @@
 /* MC/MD_TIME_CON2 */
 #define DSIM_PHY_THS_EXIT(_x)			(((_x) & 0xff) << 8)
 #define DSIM_PHY_THS_EXIT_MASK			(0xff << 8)
+/* MC case */
 #define DSIM_PHY_TCLK_TRAIL(_x)			(((_x) & 0xff) << 0)
 #define DSIM_PHY_TCLK_TRAIL_MASK		(0xff << 0)
 /* MD case */

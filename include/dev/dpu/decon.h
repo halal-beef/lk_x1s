@@ -25,7 +25,7 @@
 
 #include <stdio.h>
 #include <errno.h>
-#include <dev/dpu/decon_lcd.h>
+#include <dev/dpu/exynos_panel.h>
 #include <dev/dpu/dsim.h>
 #include <dev/dpu/mipi_dsi_cmd.h>
 #include <platform/exynos9830.h>
@@ -221,6 +221,14 @@ enum dpp_csc_eq {
 	CSC_BT_709 = 1,
 	CSC_BT_2020 = 2,
 	CSC_DCI_P3 = 3,
+	CSC_BT_601_625 = 4,
+	CSC_BT_601_625_UNADJUSTED = 5,
+	CSC_BT_601_525 = 6,
+	CSC_BT_601_525_UNADJUSTED = 7,
+	CSC_BT_2020_CONSTANT_LUMINANCE = 8,
+	CSC_BT_470M = 9,
+	CSC_FILM = 10,
+	CSC_ADOBE_RGB = 11,
 	CSC_STANDARD_UNSPECIFIED = 63,
 	/* eq_mode : 3bits [8:6] */
 	CSC_RANGE_SHIFT = 6,
@@ -235,10 +243,27 @@ enum dpp_comp_src {
 	DPP_COMP_SRC_GPU
 };
 
+enum dpp_comp_type {
+	COMP_TYPE_NONE = 0,
+	COMP_TYPE_AFBC,
+	COMP_TYPE_SBWC,
+	COMP_TYPE_CSET,
+};
+
 enum dpp_hdr_standard {
 	DPP_HDR_OFF = 0,
 	DPP_HDR_ST2084,
 	DPP_HDR_HLG,
+};
+
+enum decon_color_mode {
+	HAL_COLOR_MODE_NATIVE = 0,
+	HAL_COLOR_MODE_NUM_MAX,
+};
+
+struct decon_color_mode_info {
+	int index;
+	u32 color_mode;
 };
 
 struct decon_clocks {
@@ -274,6 +299,8 @@ struct dpp_params {
 	enum dpp_csc_eq eq_mode;
 	enum dpp_comp_src comp_src;
 	enum dpp_hdr_standard hdr_std;
+	u32 min_luminance;
+	u32 max_luminance;
 };
 
 struct decon_frame {
@@ -291,6 +318,8 @@ struct decon_win_config {
 		DECON_WIN_STATE_COLOR,
 		DECON_WIN_STATE_BUFFER,
 		DECON_WIN_STATE_UPDATE,
+		DECON_WIN_STATE_CURSOR,
+		DECON_WIN_STATE_MRESOL = 0x10000,
 	} state;
 
 	/* Reusability:This struct is used for IDMA and ODMA */
@@ -303,12 +332,12 @@ struct decon_win_config {
 			int				plane_alpha;
 			enum decon_blending		blending;
 			/*
-			 * TODO: idma_type will be changed to channel number in the future.
+			 * TODO: channel will be changed to channel number in the future.
 			 *
-			 * Although the variable name is idma_type, it indicates
+			 * Although the variable name is channel, it indicates
 			 * DPP channel number currently.
 			 */
-			enum decon_idma_type		idma_type;
+			u32				channel;
 			enum decon_pixel_format		format;
 			struct dpp_params		dpp_parm;
 			/* no read area of IDMA */
@@ -349,12 +378,34 @@ struct decon_reg_data {
 	struct decon_rect up_region;
 	/* protected contents playback */
 	bool protection[MAX_DECON_WIN + 1];
+	/* cursor async */
+	bool is_cursor_win[MAX_DECON_WIN];
+	int cursor_win;
+
+	bool mres_update;
+	u32 lcd_width;
+	u32 lcd_height;
+	int mres_idx;
 };
 
 struct decon_win_config_data {
 	int	retire_fence;
 	int	fd_odma;
 	struct decon_win_config config[MAX_DECON_WIN + 1];
+};
+
+enum hwc_ver {
+	HWC_INIT = 0,
+	HWC_1_0 = 1,
+	HWC_2_0 = 2,
+};
+
+struct decon_disp_info {
+	enum hwc_ver ver;
+	enum decon_psr_mode psr_mode;
+	struct lcd_mres_info mres_info;
+	u32 chip_ver;
+	unsigned char reverved[128];
 };
 
 struct dpu_size_info {
@@ -382,6 +433,7 @@ struct decon_dt_info {
 	unsigned int dpp_cnt;
 	unsigned int dsim_cnt;
 	unsigned int decon_cnt;
+	int chip_ver;
 
 	void __iomem *ss_regs; /* TODO : check */
 };
@@ -392,7 +444,7 @@ struct decon_device {
 	struct decon_dt_info *dt;
 	struct decon_win *win[MAX_DECON_WIN];
 	struct decon_resources res;
-	struct decon_lcd *lcd_info;
+	struct exynos_panel_info *lcd_info;
 };
 
 /* TODO : add num of decon */
@@ -527,7 +579,7 @@ int decon_intersection(struct decon_rect *r1,
 bool is_decon_rect_differ(struct decon_rect *r1, struct decon_rect *r2);
 bool is_rgb32(int format);
 bool is_scaling(struct decon_win_config *config);
-bool is_full(struct decon_rect *r, struct decon_lcd *lcd);
+bool is_full(struct decon_rect *r, struct exynos_panel_info *lcd);
 bool is_decon_opaque_format(int format);
 //void __iomem *dpu_get_sysreg_addr(void);
 //void size_t dpu_get_sysreg_addr(void);
