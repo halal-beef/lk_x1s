@@ -19,6 +19,7 @@
 
 int init_ldfw(u64 addr, u64 size);
 int load_keystorage(u64 addr, u64 size);
+int load_ssp(u64 addr, u64 size);
 
 struct fw_header {
 	unsigned int magic;  /* Should be ‘0x10adab1e’ */
@@ -110,6 +111,8 @@ static int load_partition(u64 addr, u64 ch, u64 *size)
 		ptn = pit_get_part_info("keystorage");
 	} else if (ch == TZSW_PART) {
 		ptn = pit_get_part_info("tzsw");
+	} else if (ch == SSP_PART) {
+		ptn = pit_get_part_info("ssp");
 	} else {
 		printf("Invalid ch\n");
 		return -1;
@@ -180,6 +183,33 @@ int init_keystorage(void)
 		LDFW_INFO("keystorage: It is successfully loaded.\n");
 	else
 		LDFW_INFO("keystorage: [SB_ERR] ret = [0x%X]\n", ret);
+
+	return ret;
+}
+
+int init_ssp(void)
+{
+	int ret = 0;
+	u64 addr = EXYNOS9830_SSP_NWD_ADDR;
+	u64 size = EXYNOS9830_SSP_PARTITION_SIZE;
+
+	if (is_usb_boot())
+		/* boot from iROM USB booting */
+		return 1;
+
+	if (load_partition(addr, SSP_PART, &size)) {
+		LDFW_ERR("ssp: can not read ssp from the storage\n");
+		return -1;
+	}
+
+	if (!size)
+		LDFW_ERR("ssp: partition size is invalid\n");
+
+	ret = load_ssp(addr, size);
+	if (ret == 0)
+		LDFW_INFO("ssp: It is successfully loaded.\n");
+	else
+		LDFW_INFO("ssp: loading fail, ret = [0x%X]\n", ret);
 
 	return ret;
 }

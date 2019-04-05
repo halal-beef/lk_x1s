@@ -369,6 +369,11 @@ void platform_init(void)
 		else
 			printf("keystorage: init failed.\n");
 
+		if (!init_ssp())
+			printf("ssp: init done successfully.\n");
+		else
+			printf("ssp: init failed.\n");
+
 		if (!init_ldfws())
 			printf("ldfw: init done successfully.\n");
 		else

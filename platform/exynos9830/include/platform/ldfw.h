@@ -19,6 +19,9 @@
 #define EXYNOS9830_LDFW_PARTITION_SIZE		(1024 * 1024 * 5)       /* 5 MB */
 #define EXYNOS_LDFW_MAGIC			(0x10adab1e)
 
+#define EXYNOS9830_SSP_NWD_ADDR			(EXYNOS9830_LDFW_NWD_ADDR)
+#define EXYNOS9830_SSP_PARTITION_SIZE		(1024 * 512)
+
 #define EXYNOS9830_SP_NWD_ADDR			(EXYNOS9830_LDFW_NWD_ADDR)
 #define EXYNOS9830_SP_PARTITION_SIZE		(1024 * 1024)           /* 1 MB */
 
@@ -50,5 +53,6 @@ enum {
 int init_ldfws(void);
 int init_keystorage(void);
 int init_sp(void);
+int init_ssp(void);
 #endif	/* __ASSEMBLY__ */
 #endif	/* __LDFW_H_ */
