@@ -109,7 +109,7 @@ void display_tmu_info(void)
 		rising_threshold &= ~(EXYNOS9830_TMU_CURRENT_TEMP_MASK << 16);
 		rising_threshold |= trip_code << 16;
 		writel(rising_threshold, tmu_base[i] + EXYNOS9830_TMU_TEMP_RISE7_6_REG(main_sensor));
-		writel((0x1 << 7), tmu_base[i] + EXYNOS9830_TMU_INTEN_REG(i));
+		writel((0x1 << 7), tmu_base[i] + EXYNOS9830_TMU_INTEN_REG(main_sensor));
 
 		/* enable CORE_EN */
 		ctrl |= (0x1 << 12);
