@@ -7,7 +7,6 @@
 #include <lib/font_display.h>
 #include <pit.h>
 #include <platform/sfr.h>
-#include <platform/ab_update.h>
 #include <platform/environment.h>
 #include <platform/dfd.h>
 #include <dev/boot.h>
