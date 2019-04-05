@@ -129,6 +129,9 @@
 #define RAMDUMP_REBOOT_WDT				0x3
 #define RAMDUMP_REBOOT_PANIC				0x4
 
+/* AVB2.0 */
+#define CONFIG_USE_AVB20
+#define CONFIG_AVB_HW_HASH
 
 #define BOOT_BASE					0x94000000
 #define KERNEL_BASE					0x80080000
