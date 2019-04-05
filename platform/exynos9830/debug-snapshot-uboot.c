@@ -18,7 +18,7 @@
 #include <dev/boot.h>
 #include <platform/sfr.h>
 #include <platform/sizes.h>
-#include <platform/ab_update.h>
+#include <lib/ab_update.h>
 #include <platform/dfd.h>
 #include <platform/fdt.h>
 

@@ -17,8 +17,8 @@
 #include <debug.h>
 #include <stdlib.h>
 #include <pit.h>
-#include <platform/ab_update.h>
-#include <platform/bootloader_message.h>
+#include <lib/ab_update.h>
+#include <lib/bootloader_message.h>
 
 int ab_set_active(int slot)
 {

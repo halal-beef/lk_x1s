@@ -23,7 +23,7 @@
 #include <platform/sfr.h>
 #include <platform/ldfw.h>
 #include <platform/charger.h>
-#include <platform/ab_update.h>
+#include <lib/ab_update.h>
 #include <platform/secure_boot.h>
 #include <platform/sizes.h>
 #include <platform/fastboot.h>

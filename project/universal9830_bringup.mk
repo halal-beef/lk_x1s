@@ -20,6 +20,7 @@ MODULE_DEPS += \
 	lib/cksum \
 	lib/fdt \
 	lib/ufdt \
+	lib/ab_update \
 	dev/scsi \
 	dev/rpmb \
 	dev/boot \

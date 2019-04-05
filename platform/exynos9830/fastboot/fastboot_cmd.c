@@ -23,7 +23,7 @@
 #include <platform/sfr.h>
 #include <platform/smc.h>
 #include <platform/lock.h>
-#include <platform/ab_update.h>
+#include <lib/ab_update.h>
 #include <platform/environment.h>
 #include <platform/dfd.h>
 #include <dev/boot.h>
