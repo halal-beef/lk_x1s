@@ -1612,6 +1612,7 @@ static int ufs_identify_bootlun(struct ufs_host *ufs)
 	}
 
 	for (i = 0; i < 8; i++) {
+		ufs_query_params[DESC_R_UNIT_DESC][3] = i;
 		res = ufs_utp_query_process(ufs, DESC_R_UNIT_DESC, i);
 		if (res)
 			goto end;
