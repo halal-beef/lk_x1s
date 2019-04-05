@@ -15,7 +15,11 @@
 #include <dev/rpmb.h>
 #include <string.h>
 
+#if defined(CONFIG_AVB_LCD_LOG)
 void avb_print_lcd(const char *str);
+#else
+void avb_print_lcd(const char *str) {};
+#endif
 
 #if defined(CONFIG_USE_AVB20)
 uint32_t avb_main(const char *suffix, char *cmdline, char *verifiedbootstate)
