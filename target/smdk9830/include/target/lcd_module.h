@@ -28,6 +28,6 @@ int cm_fill_id(struct dsim_device *dsim);
 int cm_read_id(struct dsim_device *dsim);
 struct dsim_lcd_driver *cm_get_panel_info(struct dsim_device *dsim);
 struct lcd_driver *get_lcd_drv_ops(void);
-struct decon_lcd *common_get_lcd_info(void);
+struct exynos_panel_info *common_get_lcd_info(void);
 
 #endif /*__LCD_MODULE_H__ */

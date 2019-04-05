@@ -37,7 +37,7 @@
 
 #define CONFIG_DECON_LCD_CMD_MODE
 
-struct decon_lcd s6e3ha8_lcd_info = {
+struct exynos_panel_info s6e3ha8_lcd_info = {
 	.mode = DECON_MIPI_COMMAND_MODE,
 	.vfp = S6E3HA8_CMD_VFP,
 	.vbp = S6E3HA8_CMD_VBP,
@@ -63,23 +63,24 @@ struct decon_lcd s6e3ha8_lcd_info = {
 	.mic_enabled = 0,
 	.mic_ver = 0,
 
-	.dsc_enabled = 1,
-	.dsc_slice_num = 2,
-	.dsc_cnt = 2,
-	.dsc_slice_h = 40,
+	.dsc = {1, 2, 2, 40, 720, 240},
+//	.dsc_enabled = 1,
+//	.dsc_slice_num = 2,
+//	.dsc_cnt = 2,
+//	.dsc_slice_h = 40,
+//	.dsc_enc_sw = 240;
+//	.dsc_dec_sw = 720;
 	.data_lane = 4,
-	.dsc_enc_sw = 240;
-	.dsc_dec_sw = 720;
 };
 
 #if 0
-struct decon_lcd *decon_get_lcd_info(void)
+struct exynos_panel_info *decon_get_lcd_info(void)
 {
 	return &s6e3ha8_lcd_info;
 }
 #endif
 
-void s6e3ha8_lcd_init(unsigned int id, struct decon_lcd *lcd)
+void s6e3ha8_lcd_init(unsigned int id, struct exynos_panel_info *lcd)
 {
 	dsim_dbg("%s +\n", __func__);
 

@@ -213,7 +213,6 @@ int dsim_read_data(struct dsim_device *dsim, u32 id, u32 addr, u32 cnt, u8 *buf)
 				id, addr);
 		return -ETIMEDOUT;
 	}
-
 	do {
 		rx_fifo = dsim_reg_get_rx_fifo(dsim->id);
 
@@ -359,7 +358,7 @@ void dpu_sysreg_dphy_reset(u32 sysreg, u32 dsim_id, u32 rst)
 {
 	u32 old = readl(sysreg + DISP_DPU_MIPI_PHY_CON);
 	u32 val = rst ? ~0 : 0;
-	u32 mask = M_RESETN_M4S4_TOP_MASK;
+	u32 mask = M_RESETN_M4M4_TOP_MASK;
 
 	val = (val & mask) | (old & ~mask);
 	writel(val, sysreg + DISP_DPU_MIPI_PHY_CON);
@@ -395,7 +394,7 @@ static int dsim_enable(struct dsim_device *dsim)
 	bool panel_ctrl;
 	int ret = 0;
 
-	if (dsim->state == DSIM_STATE_ON)
+	if (dsim->state == DSIM_STATE_ON) 
 		return 0;
 
 	/* DPHY power on */
@@ -415,7 +414,7 @@ static int dsim_enable(struct dsim_device *dsim)
 	return ret;
 }
 
-struct decon_lcd *decon_get_lcd_info(void)
+struct exynos_panel_info *decon_get_lcd_info(void)
 {
 	struct dsim_device *dsim;
 	if (dsim0_for_decon)
@@ -432,7 +431,7 @@ struct decon_lcd *decon_get_lcd_info(void)
 
 	return dsim->panel_ops->get_lcd_info();
 }
-#if 0
+#if 1
 void dsim_to_regs_param(struct dsim_device *dsim, struct dsim_regs *regs)
 {
 	if (dsim->res.regs)
@@ -544,7 +543,6 @@ int dsim_probe(u32 dev_id)
 	dsim_info("dsim%d driver(%s mode) has been probed.\n", dsim->id,
 		dsim->lcd_info->mode == DECON_MIPI_COMMAND_MODE ? "cmd" : "video");
 
-	//dsim_dump(dsim);
 	return 0;
 
 err:

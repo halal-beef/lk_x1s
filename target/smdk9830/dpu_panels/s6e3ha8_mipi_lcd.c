@@ -21,7 +21,7 @@
  */
 
 #include <dev/dpu/lcd_ctrl.h>
-#include <dev/dpu/decon_lcd.h>
+#include <dev/dpu/exynos_panel.h>
 #include <dev/dpu/dsim.h>
 
 #define MAX_BRIGHTNESS 255
@@ -30,7 +30,7 @@
 
 /* PANEL_ID : ID3[23:16]-ID2[15:8]-ID1[7:0] */
 #define PANEL_ID       0x20802A /* value was confirmed when bringup */
-extern struct decon_lcd s6e3ha8_lcd_info;
+extern struct exynos_panel_info s6e3ha8_lcd_info;
 
 static int s6e3ha8_get_id(struct dsim_device *dsim)
 {
@@ -38,7 +38,7 @@ static int s6e3ha8_get_id(struct dsim_device *dsim)
 	return PANEL_ID;
 }
 
-static struct decon_lcd *s6e3ha8_get_lcd_info(void)
+static struct exynos_panel_info *s6e3ha8_get_lcd_info(void)
 {
 	return &s6e3ha8_lcd_info;
 }

@@ -37,7 +37,8 @@ void dpp_dump(struct dpp_device *dpp)
 
 static void dpp_get_params(struct dpp_device *dpp, struct dpp_params_info *p,  unsigned long addr)
 {
-	struct decon_lcd *lcd_info = decon_get_lcd_info();
+	struct exynos_panel_info *lcd_info = decon_get_lcd_info();
+
 	p->src.x = 0;
 	p->src.y = 0;
 	p->src.w = lcd_info->xres;
@@ -52,6 +53,12 @@ static void dpp_get_params(struct dpp_device *dpp, struct dpp_params_info *p,  u
 	p->dst.f_w = lcd_info->xres;
 	p->dst.f_h = lcd_info->yres;
 
+	p->format = DECON_PIXEL_FORMAT_BGRA_8888;
+	p->addr[0] = addr;
+	p->addr[1] = 0x0;
+	p->addr[2] = 0x0;
+	p->addr[3] = 0x0;
+
 	if (dpp->id == 0) {
 		/* dpp 0 is for logo */
 		p->rot = DPP_ROT_NORMAL;
@@ -62,25 +69,64 @@ static void dpp_get_params(struct dpp_device *dpp, struct dpp_params_info *p,  u
 		/* dpp 2 is for font */
 		p->rot = DPP_ROT_NORMAL;
 	}
+
 	p->hdr = 0;
 	p->min_luminance = 0;
 	p->max_luminance = 0;
-	p->is_4p = false;
-	p->y_2b_strd = 0;
-	p->c_2b_strd = 0;
+	p->is_block = false;
 	p->is_comp = false;
 	p->is_scale = false;
-	p->is_block = false;
-
-	p->format = DECON_PIXEL_FORMAT_ARGB_8888;
-	p->addr[0] = addr;
-	p->addr[1] = 0x0;
-	p->addr[2] = 0x0;
-	p->addr[3] = 0x0;
-	p->eq_mode = CSC_BT_601;
 
 	p->h_ratio = (p->src.w << 20) / p->dst.w;
 	p->v_ratio = (p->src.h << 20) / p->dst.h;
+
+#if 0
+	p->eq_mode = CSC_BT_601;
+	p->hdr = config->dpp_parm.hdr_std;
+	p->max_luminance = config->dpp_parm.max_luminance;
+	p->min_luminance = config->dpp_parm.min_luminance;
+	p->yhd_y2_strd = 0;
+	p->ypl_c2_strd = 0;
+	p->chd_strd = 0;
+	p->cpl_strd = 0;
+
+	/*
+        * buffer and base_addr relationship in SBWC (cf. 8+2)
+        * <buffer fd> fd[0]: Y-payload / fd[1]: C-payload
+        * <base addr> [0]-Y8:Y_HD / [1]-C8:Y_PL / [2]-Y2:C_HD / [3]-C2:C_PL
+        *  [1] -> [3] C-payload
+        *  [0] -> [1] Y-payload
+        *         [0] Y-header : [1] + Y_PL_SIZE
+        *         [2] C-header : [3] + C_PL_SIZE
+        *
+        * TODO :
+        * replace PL/HD SIZE & STRIDE macro of videodev2_exynos_media.h
+        */
+	if (is_rotation(config)) {
+		src_w = p->src.h;
+		src_h = p->src.w;
+	} else {
+		src_w = p->src.w;
+		src_h = p->src.h;
+	}
+	dst_w = p->dst.w;
+	dst_h = p->dst.h;
+
+	p->h_ratio = (src_w << 20) / dst_w;
+	p->v_ratio = (src_h << 20) / dst_h;
+
+	if ((p->h_ratio != (1 << 20)) || (p->v_ratio != (1 << 20)))
+		p->is_scale = true;
+	else
+		p->is_scale = false;
+
+	if ((config->dpp_parm.rot != DPP_ROT_NORMAL) || (p->is_scale) ||
+			IS_YUV(fmt_info) || (p->block.w < res->blk_w.min) ||
+			(p->block.h < res->blk_h.min))
+		p->is_block = false;
+	else
+		p->is_block = true;
+#endif
 }
 
 /*
@@ -139,11 +185,11 @@ static void dpp_parse_dt(unsigned int id, struct dpp_device *dpp)
 		dpp_info("dpp-%d's attr is (0x%08x)\n", dpp->id, (u32)dpp->attr);
 		break;
 	case 1:
-		dpp->attr = 0x500FF;
+		dpp->attr = 0x50087;
 		dpp_info("dpp-%d's attr is (0x%08x)\n", dpp->id, (u32)dpp->attr);
 		break;
 	case 2:
-		dpp->attr = 0x50087;
+		dpp->attr = 0x50096;
 		dpp_info("dpp-%d's attr is (0x%08x)\n", dpp->id, (u32)dpp->attr);
 		break;
 	default:
@@ -199,6 +245,7 @@ int dpp_probe(unsigned int id, u32 addr)
 	struct dpp_device *dpp;
 	int ret = 0;
 
+	dpp_info("%s\n", __func__);
 	dpp = calloc(1, sizeof(struct dpp_device));
 	if (!dpp) {
 		/* dpp_err("Failed to allocate local dpp mem\n"); */

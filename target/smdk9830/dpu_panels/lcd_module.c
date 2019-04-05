@@ -43,7 +43,7 @@
 
 #define CONFIG_DECON_LCD_VIDEO_MODE
 
-struct decon_lcd common_lcd_info = {
+struct exynos_panel_info common_lcd_info = {
 #if defined(CONFIG_DECON_LCD_VIDEO_MODE)
 	.mode = DECON_VIDEO_MODE,
 	.vfp = S6E3FA0_VDO_VFP,
@@ -85,17 +85,18 @@ struct decon_lcd common_lcd_info = {
 	.height = 121,
 
 	.fps = 60,
-	.mic_enabled = 0,
-	.mic_ver = 0,
+//	.mic_enabled = 0,
+//	.mic_ver = 0,
 
-	.dsc_enabled = 0,
-	.dsc_slice_num = 0,
-	.dsc_cnt = 0,
-	.dsc_slice_h = 40,
+	.dsc = {0, 0, 0, 40, 720, 240},
+//	.dsc_enabled = 0,
+//	.dsc_slice_num = 0,
+//	.dsc_cnt = 0,
+//	.dsc_slice_h = 40,
 	.data_lane = 4,
 };
 
-struct decon_lcd *common_get_lcd_info(void)
+struct exynos_panel_info *common_get_lcd_info(void)
 {
 	return &common_lcd_info;
 }
