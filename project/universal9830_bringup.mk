@@ -21,6 +21,7 @@ MODULE_DEPS += \
 	lib/fdt \
 	lib/ufdt \
 	lib/ab_update \
+	lib/lock \
 	dev/scsi \
 	dev/rpmb \
 	dev/boot \
