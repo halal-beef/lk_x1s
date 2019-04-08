@@ -15,6 +15,7 @@
 #include <libfdt.h>
 #include <lib/bio.h>
 #include <lib/console.h>
+#include <lib/fastboot.h>
 #include <part_gpt.h>
 #include <dev/boot.h>
 #include <dev/rpmb.h>
@@ -26,7 +27,6 @@
 #include <lib/ab_update.h>
 #include <platform/secure_boot.h>
 #include <platform/sizes.h>
-#include <platform/fastboot.h>
 #include <platform/bootimg.h>
 #include <platform/fdt.h>
 #include <platform/chip_id.h>

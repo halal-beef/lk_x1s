@@ -10,9 +10,8 @@
 #include <platform/environment.h>
 #include <platform/dfd.h>
 #include <dev/boot.h>
-
-#include "pmucal_common.h"
-#include "pmucal_rae.h"
+#include <dev/pmucal_common.h>
+#include <dev/pmucal_rae.h>
 
 /**
  * A global index for pmucal_rae_handle_seq.

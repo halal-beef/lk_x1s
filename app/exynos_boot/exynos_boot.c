@@ -12,9 +12,9 @@
 #include <reg.h>
 #include <app.h>
 #include <lib/console.h>
+#include <lib/fastboot.h>
 #include <platform/sfr.h>
 #include <platform/charger.h>
-#include <platform/fastboot.h>
 #include <platform/dfd.h>
 #include <platform/gpio.h>
 #include <dev/boot.h>

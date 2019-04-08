@@ -18,9 +18,9 @@
 #include <string.h>
 #include <stdio.h>
 #include <lib/console.h>
+#include <lib/fastboot.h>
 #include <platform/sfr.h>
 #include <platform/dfd.h>
-#include <platform/fastboot.h>
 
 #if 0
 #define DBG_ENV_NAME "dbg_test"
