@@ -28,7 +28,7 @@ uint32_t avb_main(const char *suffix, char *cmdline, char *verifiedbootstate)
 	uint32_t ret = 0;
 	uint32_t i = 0;
 	struct AvbOps *ops;
-	const char *partition_arr[] = { "boot", "dtbo", NULL };
+	const char *partition_arr[] = { "boot", NULL };
 	char buf[100];
 	char color[AVB_COLOR_MAX_SIZE];
 	AvbSlotVerifyData *ctx_ptr = NULL;
