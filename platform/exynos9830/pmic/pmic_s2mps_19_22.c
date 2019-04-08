@@ -11,9 +11,9 @@
 #include <debug.h>
 #include <sys/types.h>
 #include <platform/sfr.h>
-#include <platform/speedy_multi.h>
 #include <platform/delay.h>
 #include <platform/pmic_s2mps_19_22.h>
+#include <dev/speedy_multi.h>
 
 void pmic_init(void)
 {

@@ -28,4 +28,5 @@ MODULE_DEPS += \
 	dev/boot \
 	dev/dpu \
 	dev/adc \
-	dev/pmucal
+	dev/pmucal \
+	dev/speedy
