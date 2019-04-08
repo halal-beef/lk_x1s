@@ -45,6 +45,12 @@ void s6e3ha8_lcd_disable_exynos(unsigned int id);
 int s6e3ha8_lcd_gamma_ctrl(unsigned int id, unsigned int backlightlevel);
 int s6e3ha8_lcd_gamma_update(int id);
 
+void s6e3ha9_lcd_init(unsigned int id, struct exynos_panel_info *lcd);
+void s6e3ha9_lcd_enable_exynos(unsigned int id);
+void s6e3ha9_lcd_disable_exynos(unsigned int id);
+int s6e3ha9_lcd_gamma_ctrl(unsigned int id, unsigned int backlightlevel);
+int s6e3ha9_lcd_gamma_update(int id);
+
 struct exynos_panel_info *decon_get_lcd_info(void);
 struct dsim_lcd_driver *decon_get_panel_info(void);
 
