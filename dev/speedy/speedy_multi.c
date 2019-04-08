@@ -12,7 +12,7 @@
 #include <reg.h>
 #include <sys/types.h>
 #include <platform/delay.h>
-#include <platform/speedy_multi.h>
+#include <dev/speedy_multi.h>
 
 static void speedy_set_enable(unsigned int SPEEDY_BASE)
 {
