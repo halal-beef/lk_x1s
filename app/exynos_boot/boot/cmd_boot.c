@@ -66,7 +66,9 @@ static int bootargs_init(void)
 	u32 cur = 0;
 	u32 is_val = 0;
 	char bootargs[BUFFER_SIZE];
-	int len2;
+	char bootargs_ext[BUFFER_SIZE];
+	int len_bootargs;
+	int len_bootargs_ext;
 	const char *np;
 	int noff;
 	int ret;
@@ -77,16 +79,46 @@ static int bootargs_init(void)
 		return ret;
 	}
 
+	memset(bootargs, 0, BUFFER_SIZE);
+	memset(bootargs_ext, 0, BUFFER_SIZE);
+
 	noff = fdt_path_offset(fdt_dtb, "/chosen");
 	if (noff >= 0) {
-		np = fdt_getprop(fdt_dtb, noff, "bootargs", &len2);
-		if (len2 >= 0) {
-			memset(bootargs, 0, BUFFER_SIZE);
-			memcpy(bootargs, np, len2);
+		np = fdt_getprop(fdt_dtb, noff, "bootargs", &len_bootargs);
+		if (len_bootargs >= 0) {
+			memcpy(bootargs, np, len_bootargs);
 		}
+		np = fdt_getprop(fdt_dtb, noff, "bootargs_ext", &len_bootargs_ext);
+		if (len_bootargs_ext >= 0) {
+			memcpy(bootargs_ext, np, len_bootargs_ext);
+		}
+
 	}
 
 	printf("\ndefault bootargs: %s\n", bootargs);
+
+	len = strlen(bootargs_ext);
+	for (i = 0; i < len; i++) {
+		if (bootargs_ext[i] == '=') {
+			prop[prop_cnt].prop[cur++] = '\0';
+			is_val = 1;
+			cur = 0;
+		} else if (bootargs_ext[i] == ' ') {
+			prop[prop_cnt].val[cur++] = '\0';
+			is_val = 0;
+			cur = 0;
+			prop_cnt++;
+		} else {
+			if (is_val)
+				prop[prop_cnt].val[cur++] = bootargs_ext[i];
+			else
+				prop[prop_cnt].prop[cur++] = bootargs_ext[i];
+		}
+	}
+
+	cur = 0;
+	is_val = 0;
+	prop_cnt++;
 
 	len = strlen(bootargs);
 	for (i = 0; i < len; i++) {
@@ -337,6 +369,7 @@ static void configure_dtb(void)
 		add_dt_memory_node(DRAM_BASE2 + i, SIZE_500MB);
 	}
 
+	set_bootargs();
 mem_node_out:
 
 	sprintf(str, "<0x%x>", RAMDISK_BASE);
