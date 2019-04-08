@@ -15,7 +15,7 @@
 #include <debug.h>
 #include <string.h>
 #include <platform/chip_id.h>
-#include "fastboot.h"
+#include <lib/fastboot.h>
 
 #define CONFIG_BOARD_NAME			"CONFIG_BOARD_NAME"
 /* String 0 is the language id */

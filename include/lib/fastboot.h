@@ -14,11 +14,12 @@
 #ifndef FASTBOOT_H
 #define FASTBOOT_H
 
+#include <lib/console.h>
+
 #ifndef NULL
 #define NULL 0
 #endif
 
-#include "usb_type.h"
 /* From fastboot client.. */
 #define FASTBOOT_INTERFACE_CLASS     0xff
 #define FASTBOOT_INTERFACE_SUB_CLASS 0x42
@@ -269,7 +270,7 @@ extern int fastboot_flash_read_ext(fastboot_ptentry *ptn,
   flash_read_ext(ptn, 0, offset, data, bytes)
 extern int fastboot_flash_write(fastboot_ptentry *ptn, unsigned extra_per_page,
 				const void *data, unsigned bytes);
-
+int do_fastboot(int argc, const cmd_args *argv);
 
 #endif /* FASTBOOT_H */
 

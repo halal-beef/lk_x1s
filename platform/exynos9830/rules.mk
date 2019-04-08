@@ -10,12 +10,8 @@ MODULE_SRCS += \
 	$(LOCAL_DIR)/delay.c \
 	$(LOCAL_DIR)/ufs.c \
 	$(LOCAL_DIR)/ufs-cal-9830.c \
-	$(LOCAL_DIR)/fastboot/usbd3-ss.c \
-	$(LOCAL_DIR)/fastboot/phy-exynos-usb3p1.c \
-	$(LOCAL_DIR)/fastboot/fastboot_cmd.c \
-	$(LOCAL_DIR)/fastboot/decompress_ext4.c \
-	$(LOCAL_DIR)/fastboot/pmucal_rae.c \
-	$(LOCAL_DIR)/fastboot/pmucal_local.c \
+	$(LOCAL_DIR)/usb/usbd3-ss.c \
+	$(LOCAL_DIR)/usb/phy-exynos-usb3p1.c \
 	$(LOCAL_DIR)/security/smc_aarch64.c \
 	$(LOCAL_DIR)/security/ldfw.c \
 	$(LOCAL_DIR)/security/avb_ops.c \

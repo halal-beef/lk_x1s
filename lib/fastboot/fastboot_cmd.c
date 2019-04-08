@@ -18,7 +18,7 @@
 #include <err.h>
 #include <lib/console.h>
 #include <lib/font_display.h>
-#include "fastboot.h"
+#include <lib/fastboot.h>
 #include <pit.h>
 #include <platform/sfr.h>
 #include <platform/smc.h>
@@ -29,8 +29,7 @@
 #include <dev/boot.h>
 #include <dev/rpmb.h>
 #include <dev/scsi.h>
-
-#include "pmucal_local.h"
+#include <dev/pmucal_local.h>
 
 #define FB_RESPONSE_BUFFER_SIZE 128
 
