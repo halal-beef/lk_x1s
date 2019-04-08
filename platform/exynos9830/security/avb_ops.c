@@ -198,7 +198,12 @@ static AvbIOResult exynos_read_rollback_index(AvbOps *ops,
 {
 	AvbIOResult ret = AVB_IO_RESULT_OK;
 
+#if defined(CONFIG_USE_RPMB)
 	ret = rpmb_get_rollback_index(rollback_index_location, out_rollback_index);
+#else
+	*out_rollback_index = 0;
+	printf("RP index is read as 0. RPMB was disabled.\n");
+#endif
 
 	return ret;
 }
@@ -209,7 +214,11 @@ static AvbIOResult exynos_write_rollback_index(AvbOps *ops,
 {
 	AvbIOResult ret = AVB_IO_RESULT_OK;
 
+#if defined(CONFIG_USE_RPMB)
 	ret = rpmb_set_rollback_index(rollback_index_location, rollback_index);
+#else
+	printf("RP index is not written. RPMB was disabled.\n");
+#endif
 
 	return ret;
 }
