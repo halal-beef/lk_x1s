@@ -19,6 +19,7 @@
 #include <platform/secure_boot.h>
 #include <platform/smc.h>
 #include <dev/rpmb.h>
+#include <platform/sfr.h>
 
 #define CMD_STRING_MAX_SIZE	60
 #define AVB_PRELOAD_BASE	0xA0000000
