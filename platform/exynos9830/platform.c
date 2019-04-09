@@ -176,51 +176,6 @@ static void read_dram_info(void)
 #endif
 }
 
-static void load_secure_payload(void)
-{
-	unsigned long ret = 0;
-	unsigned int boot_dev = 0;
-	unsigned int dfd_en = readl(EXYNOS9830_POWER_RESET_SEQUENCER_CONFIGURATION);
-	unsigned int rst_stat = readl(EXYNOS9830_POWER_RST_STAT);
-
-	if (*(unsigned int *)DRAM_BASE != 0xabcdef) {
-		printf("Running on DRAM by TRACE32: skip load_secure_payload()\n");
-	} else {
-		if (is_first_boot()) {
-			boot_dev = get_boot_device();
-
-			/*
-			 * In case WARM Reset/Watchdog Reset and DumpGPR is enabled,
-			 * Secure payload doesn't have to be loaded.
-			 */
-			if (!((rst_stat & (WARM_RESET | LITTLE_WDT_RESET)) &&
-			      (dfd_en & EXYNOS9830_EDPCSR_DUMP_EN))) {
-				ret = load_sp_image(boot_dev);
-				if (ret) {
-					/*
-					 * 0xFEED0002 : Signature check fail
-					 * 0xFEED0020 : Anti-rollback check fail
-					 */
-					printf("Fail to load Secure Payload!! [ret = 0x%lX]\n", ret);
-				} else {
-					printf("Secure Payload is loaded successfully!\n");
-					secure_os_loaded = 1;
-				}
-			}
-
-			/*
-			 * If boot device is eMMC, emmc_endbootop() should be
-			 * implemented because secure payload is the last image
-			 * in boot partition.
-			 */
-			if (boot_dev == BOOT_EMMC)
-				emmc_endbootop();
-		} else {
-			/* second_boot = 1; */
-		}
-	}
-}
-
 #define EL3_MON_VERSION_STR_SIZE (180)
 
 static void print_el3_monitor_version(void)
@@ -354,6 +309,10 @@ void platform_init(void)
 	dfd_display_reboot_reason();
 	dfd_display_core_stat();
 	if (*(unsigned int *)DRAM_BASE == 0xabcdef) {
+		unsigned int dfd_en =
+			readl(EXYNOS9830_POWER_RESET_SEQUENCER_CONFIGURATION);
+		unsigned int rst_stat = readl(EXYNOS9830_POWER_RST_STAT);
+
 		/* read secure chip state */
 		if (read_secure_chip() == 0)
 			printf("Secure boot is disabled (non-secure chip)\n");
@@ -363,6 +322,13 @@ void platform_init(void)
 			printf("Secure boot is enabled (secure chip)\n");
 		else
 			printf("Can not read secure chip state\n");
+
+		if ((rst_stat & (WARM_RESET | LITTLE_WDT_RESET)) &&
+		      (dfd_en & EXYNOS9830_EDPCSR_DUMP_EN)) {
+			/* in case of dumpgpr, do not load ldfw/sp */
+			printf("Dumpgpr mode. do not load ldfw/sp .\n");
+			goto by_dumpgpr_out;
+		}
 
 		if (!init_keystorage())
 			printf("keystorage: init done successfully.\n");
@@ -391,6 +357,7 @@ void platform_init(void)
 		else
 			printf("secure_payload: init failed.\n");
 
+by_dumpgpr_out:
 		print_el3_monitor_version();
 	}
 
