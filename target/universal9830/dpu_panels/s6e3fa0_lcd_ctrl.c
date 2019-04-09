@@ -47,7 +47,7 @@
 
 #define CONFIG_DECON_LCD_VIDEO_MODE
 
-struct decon_lcd s6e3fa0_lcd_info = {
+struct exynos_panel_info s6e3fa0_lcd_info = {
 #if defined(CONFIG_DECON_LCD_VIDEO_MODE)
 	.mode = DECON_VIDEO_MODE,
 	.vfp = S6E3FA0_VDO_VFP,
@@ -89,24 +89,23 @@ struct decon_lcd s6e3fa0_lcd_info = {
 	.height = 121,
 
 	.fps = 60,
-	.mic_enabled = 0,
-	.mic_ver = 0,
 
-	.dsc_enabled = 0,
-	.dsc_slice_num = 0,
-	.dsc_cnt = 0,
-	.dsc_slice_h = 40,
+	.dsc = {0, 0, 0, 40, 720, 240},
+//	.dsc_enabled = 0,
+//	.dsc_slice_num = 0,
+//	.dsc_cnt = 0,
+//	.dsc_slice_h = 40,
 	.data_lane = 4,
 };
 
 #if 0
-struct decon_lcd *decon_get_lcd_info(void)
+struct exynos_panel_info *decon_get_lcd_info(void)
 {
 	return &s6e3fa0_lcd_info;
 }
 #endif
 
-void s6e3fa0_lcd_init(unsigned int id, struct decon_lcd *lcd)
+void s6e3fa0_lcd_init(unsigned int id, struct exynos_panel_info *lcd)
 {
 	if (dsim_wr_data(id, MIPI_DSI_DCS_LONG_WRITE,
 	                 (unsigned long)SEQ_TEST_KEY_ON_F0,

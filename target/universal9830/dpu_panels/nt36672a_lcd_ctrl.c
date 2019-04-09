@@ -37,7 +37,7 @@
 #define NT36672A_HORIZONTAL	1080
 #define NT36672A_VERTICAL	2246
 
-struct decon_lcd nt36672a_lcd_info = {
+struct exynos_panel_info nt36672a_lcd_info = {
 	.mode = DECON_VIDEO_MODE,
 	.vfp = NT36672A_VIDEO_VFP,
 	.vbp = NT36672A_VIDEO_VBP,
@@ -59,18 +59,17 @@ struct decon_lcd nt36672a_lcd_info = {
 	.height = 120,
 
 	.fps = 60,
-	.mic_enabled = 0,
-	.mic_ver = 0,
 
-	.dsc_enabled = 0,
-	.dsc_slice_num = 0,
-	.dsc_cnt = 0,
-	.dsc_slice_h = 40,
+	.dsc = {0, 0, 0, 40, 720, 240},
+//	.dsc_enabled = 0,
+//	.dsc_slice_num = 0,
+//	.dsc_cnt = 0,
+//	.dsc_slice_h = 40,
 	.data_lane = 4,
 };
 
 #if 0
-struct decon_lcd *decon_get_lcd_info(void)
+struct exynos_panel_info *decon_get_lcd_info(void)
 {
 	return &nt36672a_lcd_info;
 }
@@ -83,7 +82,7 @@ struct decon_lcd *decon_get_lcd_info(void)
  *	- mic : if mic is enabled, MIC_ENABLE command must be sent
  *	- mode : LCD init sequence depends on command or video mode
  */
-void nt36672a_lcd_init(unsigned int id, struct decon_lcd *lcd)
+void nt36672a_lcd_init(unsigned int id, struct exynos_panel_info *lcd)
 {
 	mdelay(12);
 
