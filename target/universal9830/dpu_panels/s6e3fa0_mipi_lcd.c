@@ -21,21 +21,21 @@
  */
 
 #include <dev/dpu/lcd_ctrl.h>
-#include <dev/dpu/decon_lcd.h>
+#include <dev/dpu/exynos_panel.h>
 #include <dev/dpu/dsim.h>
 
 #define MAX_BRIGHTNESS		255
 #define MIN_BRIGHTNESS		0
 #define DEFAULT_BRIGHTNESS	0
 
-extern struct decon_lcd s6e3fa0_lcd_info;
+extern struct exynos_panel_info s6e3fa0_lcd_info;
 
 static int s6e3fa0_get_id(struct dsim_device *dsim)
 {
 	return 0xff244040; /* s6e3fa0 */
 }
 
-static struct decon_lcd *s6e3fa0_get_lcd_info(void)
+static struct exynos_panel_info *s6e3fa0_get_lcd_info(void)
 {
 	dsim_info("%s\n", __func__);
 	return &s6e3fa0_lcd_info;

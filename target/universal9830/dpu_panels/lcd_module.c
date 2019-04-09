@@ -24,36 +24,29 @@
 
 #define GAMMA_PARAM_SIZE	26
 
-#define S6E3FA0_CMD_VBP		10
-#define S6E3FA0_CMD_VFP		3
-#define S6E3FA0_CMD_VSA		1
-#define S6E3FA0_CMD_HBP		2
-#define S6E3FA0_CMD_HFP		2
-#define S6E3FA0_CMD_HSA		2
+#define S6E3HA9_CMD_VBP		15
+#define S6E3HA9_CMD_VFP		1
+#define S6E3HA9_CMD_VSA		1
+#define S6E3HA9_CMD_HBP		1
+#define S6E3HA9_CMD_HFP		1
+#define S6E3HA9_CMD_HSA		1
 
-#define S6E3FA0_VDO_VBP		2
-#define S6E3FA0_VDO_VFP		20
-#define S6E3FA0_VDO_VSA		2
-#define S6E3FA0_VDO_HBP		20
-#define S6E3FA0_VDO_HFP		20
-#define S6E3FA0_VDO_HSA		20
-
-#define S6E3FA0_HORIZONTAL	1080
-#define S6E3FA0_VERTICAL	1920
+#define S6E3HA9_HORIZONTAL	1440
+#define S6E3HA9_VERTICAL	3040
 
 #define CONFIG_DECON_LCD_VIDEO_MODE
 
-struct decon_lcd common_lcd_info = {
+struct exynos_panel_info common_lcd_info = {
 #if defined(CONFIG_DECON_LCD_VIDEO_MODE)
 	.mode = DECON_VIDEO_MODE,
-	.vfp = S6E3FA0_VDO_VFP,
-	.vbp = S6E3FA0_VDO_VBP,
-	.hfp = S6E3FA0_VDO_HFP,
-	.hbp = S6E3FA0_VDO_HBP,
-	.vsa = S6E3FA0_VDO_VSA,
-	.hsa = S6E3FA0_VDO_HSA,
-	.xres = S6E3FA0_HORIZONTAL,
-	.yres = S6E3FA0_VERTICAL,
+	.vfp = S6E3HA9_CMD_VFP,
+	.vbp = S6E3HA9_CMD_VBP,
+	.hfp = S6E3HA9_CMD_HFP,
+	.hbp = S6E3HA9_CMD_HBP,
+	.vsa = S6E3HA9_CMD_VSA,
+	.hsa = S6E3HA9_CMD_HSA,
+	.xres = S6E3HA9_HORIZONTAL,
+	.yres = S6E3HA9_VERTICAL,
 
 	/* Mhz */
 	.hs_clk = 1100,
@@ -85,27 +78,28 @@ struct decon_lcd common_lcd_info = {
 	.height = 121,
 
 	.fps = 60,
-	.mic_enabled = 0,
-	.mic_ver = 0,
 
-	.dsc_enabled = 0,
-	.dsc_slice_num = 0,
-	.dsc_cnt = 0,
-	.dsc_slice_h = 40,
+	.dsc = {1, 2, 2, 40, 720, 240},
+//	.dsc_enabled = 0,
+//	.dsc_slice_num = 0,
+//	.dsc_cnt = 0,
+//	.dsc_slice_h = 40,
 	.data_lane = 4,
 };
 
-struct decon_lcd *common_get_lcd_info(void)
+struct exynos_panel_info *common_get_lcd_info(void)
 {
 	return &common_lcd_info;
 }
 
 extern struct dsim_lcd_driver s6e3fa0_mipi_lcd_driver;
 extern struct dsim_lcd_driver nt36672a_mipi_lcd_driver;
+extern struct dsim_lcd_driver s6e3ha9_mipi_lcd_driver;
 
 struct dsim_lcd_driver *panel_list[NUM_OF_VERIFIED_PANEL] = {
 	&s6e3fa0_mipi_lcd_driver,
 	&nt36672a_mipi_lcd_driver,
+	&s6e3ha9_mipi_lcd_driver,
 };
 
 /* fill panel id to panel_ids arrary from panel driver each */
@@ -141,7 +135,8 @@ int cm_read_id(struct dsim_device *dsim)
 	} else {
 		for (i = 0; i < 4; i++) {
 			//id |= buf[i] << (24 - i * 8);	/* LSB is left */
-			id |= buf[i] << (i * 8);        /* LSB is right */
+			if (i != 3)
+				id |= buf[i] << (i * 8);        /* LSB is right */
 			printf("id : 0x%08x\n", id);
 		}
 		printf("Suceeded to read panel id : 0x%08x\n", id);
