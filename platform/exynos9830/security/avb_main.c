@@ -16,9 +16,9 @@
 #include <string.h>
 
 #if defined(CONFIG_AVB_LCD_LOG)
-void avb_print_lcd(const char *str);
+void avb_print_lcd(const char *str, char *color);
 #else
-void avb_print_lcd(const char *str) {};
+void avb_print_lcd(const char *str, char *color) {};
 #endif
 
 #if defined(CONFIG_USE_AVB20)
@@ -59,7 +59,7 @@ uint32_t avb_main(const char *suffix, char *cmdline, char *verifiedbootstate)
 		snprintf(buf, 100, "[AVB 2.0] authentication success (%s)\n", color);
 	strcat(verifiedbootstate, color);
 	printf(buf);
-	avb_print_lcd(buf);
+	avb_print_lcd(buf, color);
 
 	/* AVB color policy */
 	if (!strncmp(color, "red", AVB_COLOR_MAX_SIZE))
