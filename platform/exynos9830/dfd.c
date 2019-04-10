@@ -295,14 +295,14 @@ void dfd_secondary_cpu_cache_flush(u32 cpu)
 {
 	u32 val;
 
-	if (cpu >= BIG_CORE_START && cpu <= BIG_CORE_LAST)
-		wfi();
-
 	do {
 		val = readl(CONFIG_RAMDUMP_WAKEUP_WAIT);
 		if (val & (1 << cpu))
 			break;
 	} while (1);
+
+	if (cpu >= BIG_CORE_START && cpu <= BIG_CORE_LAST)
+		goto off;
 
 	/* Get Cache Flush Level */
 	val = readl(CONFIG_RAMDUMP_GPR_POWER_STAT + (cpu * REG_OFFSET));
@@ -498,12 +498,9 @@ void dfd_run_post_processing(void)
 	//Wake up secondary CPUs.
 	for (cpu = 0; cpu < NR_CPUS; cpu++) {
 		val = readl(CONFIG_RAMDUMP_GPR_POWER_STAT + (cpu * REG_OFFSET));
-		if (val == FLUSH_SKIP) {
-			printf("Core%d: Skip wake up due to power off or panic before reset.\n", cpu);
-			continue;
-		}
+		if (val != FLUSH_SKIP)
+			cpu_mask |= (1 << cpu);
 
-		cpu_mask |= (1 << cpu);
 		if (cpu == 0)
 			continue;
 
@@ -526,10 +523,6 @@ void dfd_run_post_processing(void)
 #endif
 	//when receiving ipc, cpu0 is running. Run cache flush
 	for (cpu = 0; cpu <= MID_CORE_LAST; cpu++) {
-		u32 val = readl(CONFIG_RAMDUMP_GPR_POWER_STAT + (cpu * REG_OFFSET));
-		if (val == FLUSH_SKIP)
-			continue;
-
 		val = readl(CONFIG_RAMDUMP_WAKEUP_WAIT);
 		writel(val | (1 << cpu), CONFIG_RAMDUMP_WAKEUP_WAIT);
 		if (cpu == 0)
@@ -558,8 +551,7 @@ done:
 
 void dfd_get_dbgc_version(void)
 {
-	u32 flag, reg, bound = 100;
-	u32 val1, val2, val3;
+	u32 flag, reg;
 	char *str;
 	struct dfd_ipc_cmd cmd;
 
@@ -576,25 +568,9 @@ retry:
 		str[DBGC_VERSION_LEN - 1] = '\0';
 		printf("DBGCORE: VERSION: %s\n", str);
 	} else if (flag == 0xDB9CDEAD) {
-		reg = readl(EXYNOS9830_POWER_BASE + DBGCORE_CPU_IN);
-		if (reg & DBGCORE_IN_SLEEP)
-			return;
-
 		printf("DBGCORE: locked up. retry boot dbgcore.\n");
-		do {
-			pmu_clr_bit_atomic(DBGCORE_CPU_CONFIGURATION, 0);
-			mdelay(10);
-			pmu_set_bit_atomic(DBGCORE_CPU_CONFIGURATION, 0);
-			val1 = readl(EXYNOS9830_POWER_BASE + DBGCORE_CPU_STATES);
-			val2 = readl(EXYNOS9830_POWER_BASE + DBGCORE_CPU_IN);
-			val3 = readl(EXYNOS9830_POWER_BASE + DBGCORE_CPU_OUT);
-			if ((val1 == DBGCORE_STATE_UP) && (val2 == DBGCORE_IN_SLEEP) &&
-					(val3 & DBGCORE_OUT_RESET))
-				break;
-		} while (--bound);
-		if (!bound)
-			printf("DBGCORE: state:0x%x, in:0x%x, out:0x%x\n", val1, val2, val3);
-
+		pmu_clr_bit_atomic(DBGCORE_CPU_CONFIGURATION, 0);
+		mdelay(10);
 		goto retry;
 	} else {
 		printf("DBGCORE: boot fail!\n");

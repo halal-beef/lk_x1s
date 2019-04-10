@@ -508,6 +508,8 @@ void write_back_cache(void)
 
 		write_back_d_cache(i);
 
+		stat = readl(CONFIG_RAMDUMP_WAKEUP_WAIT);
+		writel(stat | (1 << cpu), CONFIG_RAMDUMP_WAKEUP_WAIT);
 		stat = readl(CONFIG_RAMDUMP_DUMP_GPR_WAIT);
 		writel((stat | (1 << cpu)), CONFIG_RAMDUMP_DUMP_GPR_WAIT);
 		printf("Core%d: finished Cache Flush level:%d (0x%x)\n", cpu,
