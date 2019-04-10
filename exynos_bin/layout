@@ -7,7 +7,6 @@
 0	8192	0	ldfw	0	0
 0	16	0	keystorage	0	0
 0	2048	0	tzsw	0	0
-0	128	0	vbmeta	0	0
 0	1024	0	ssp	0	0
 0	4096	0	harx	0	0
 0	4096	0	harx_rkp	0	0
@@ -22,6 +21,7 @@
 1	81920	0	misc	0	0
 1	40960	0	mnv	0	0
 1	1024	0	frp	0	0
+1	128	0	vbmeta	0	0
 5	40960	0	efs	fixed	0
 0	24	1	fwbl1	0	0
 0	152	1	epbl	0	0
