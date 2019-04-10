@@ -29,12 +29,9 @@
 #define RESET_SEQUENCER_OFFSET		(0x500)
 #define DBGCORE_CPU_CONFIGURATION	(0x2e80)
 #define DBGCORE_CPU_STATES		(0x2e88)
-#define DBGCORE_STATE_DOWN		(0x80)
 #define DBGCORE_STATE_UP		(0x10)
 #define DBGCORE_CPU_IN			(0x2ea4)
-#define DBGCORE_IN_SLEEP		(0x2)
 #define DBGCORE_CPU_OUT			(0x2ea0)
-#define DBGCORE_OUT_RESET		(0x1)
 
 #define DUMP_EN_BIT			(0)
 #define DUMP_EN				(1 << DUMP_EN_BIT)
