@@ -20,8 +20,13 @@ MODULE_DEPS += \
 	lib/cksum \
 	lib/fdt \
 	lib/ufdt \
+	lib/ab_update \
+	lib/lock \
+	lib/fastboot \
 	dev/scsi \
 	dev/rpmb \
 	dev/boot \
 	dev/dpu \
-	dev/adc
+	dev/adc \
+	dev/pmucal \
+	dev/speedy
