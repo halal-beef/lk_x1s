@@ -32,6 +32,7 @@
 #define FONT_GREEN		0xFF00FF00
 #define FONT_BLUE		0xFF0000FF
 #define FONT_YELLOW		0xFFFFFF00
+#define FONT_ORANGE		0xFFFFA000
 
 /* Fill a frame buffer with characters */
 int fill_fb_string(u32 *fb_buf, u32 x_pos, u8 *str, u32 font_color, u32 bg_color);
