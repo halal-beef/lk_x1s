@@ -664,3 +664,28 @@ void set_debug_level_by_env(void)
 	}
 #endif
 }
+
+void avb_print_lcd(const char *str, char *color)
+{
+	uint32_t font_color;
+
+	switch (color[0]) {
+	case 'o':
+		font_color = FONT_ORANGE;
+		break;
+	case 'y':
+		font_color = FONT_YELLOW;
+		break;
+	case 'r':
+		font_color = FONT_RED;
+		break;
+	case 'g':
+		font_color = FONT_GREEN;
+		break;
+	default:
+		print_lcd_update(FONT_WHITE, FONT_BLACK,
+				"%s : color parsing fail\n", __func__);
+		return;
+	}
+	print_lcd_update(font_color, FONT_BLACK, str);
+}
