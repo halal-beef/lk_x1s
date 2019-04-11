@@ -250,17 +250,6 @@ int fb_do_flash(const char *cmd_buffer)
 	char buf[FB_RESPONSE_BUFFER_SIZE];
 	char *response = (char *)(((unsigned long)buf + 8) & ~0x07);
 
-	if (is_first_boot()) {
-		uint32_t lock_state;
-		rpmb_get_lock_state(&lock_state);
-		printf("Lock state: %d\n", lock_state);
-		if (lock_state) {
-			sprintf(response, "FAILDevice is locked");
-			fastboot_tx_status(response, strlen(response), FASTBOOT_TX_ASYNC);
-			return 1;
-		}
-	}
-
 	dprintf(ALWAYS, "flash\n");
 
 	flash_using_pit((char *)cmd_buffer + 6, response,
