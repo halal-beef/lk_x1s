@@ -520,9 +520,6 @@ static status_t scsi_scan_common(scsi_device_t *sdev, u32 i,
 	memcpy(&sdev->revision[0], &g_buf[32], 8);
 	sdev->revision[11] = '\0';
 
-	printf("[SCSI] LU%u\t%s\t%s\t%s\n", sdev->lun, sdev->vendor,
-			sdev->product, sdev->revision);
-
 	/* Clear Unit Attention Condition per device */
 	ret = scsi_mode_sense(&sdev->dev);
 	if (ret < 0) {
@@ -592,6 +589,9 @@ status_t scsi_scan(scsi_device_t *sdev, u32 wlun, u32 dev_num, exec_t *func,
 			block_size = get_dword_le(&g_buf[4]);
 			block_count = get_dword_le(&g_buf[0]) + 1;
 
+			printf("[SCSI] LU%u\t%s\t%s\t%s\t%u\n", sdev->lun, sdev->vendor,
+					sdev->product, sdev->revision, block_count);
+
 #ifdef CONFIG_EXYNOS_BOOTLOADER_DISPLAY
 			capacity = ((block_size * block_count) / 1024 / 1024);
 
@@ -614,6 +614,9 @@ status_t scsi_scan(scsi_device_t *sdev, u32 wlun, u32 dev_num, exec_t *func,
 			block_size = !strcmp(name_s, "rpmb") ?
 						RPMB_MSG_DATA_SIZE: 4096;
 			block_count = 0xFFFFFFFF;
+
+			printf("[SCSI] LU%u\t%s\t%s\t%s\n", sdev->lun, sdev->vendor,
+					sdev->product, sdev->revision);
 		}
 
 		bio_initialize_bdev(&sdev->dev,
