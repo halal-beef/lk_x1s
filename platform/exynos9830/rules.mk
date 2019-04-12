@@ -34,7 +34,9 @@ MODULE_SRCS += \
 	$(LOCAL_DIR)/fdt.c \
 	$(LOCAL_DIR)/flexpmu_dbg.c \
 	$(LOCAL_DIR)/tmu.c \
-	$(LOCAL_DIR)/chg_max77705.c
+	$(LOCAL_DIR)/chg_max77705.c \
+	$(LOCAL_DIR)/mmc.c \
+	$(LOCAL_DIR)/dw_mmc.c
 
 MODULE_DEPS += \
     dev/interrupt/arm_gic \

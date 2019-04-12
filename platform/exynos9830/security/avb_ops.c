@@ -52,6 +52,8 @@ static AvbIOResult exynos_read_from_partition(AvbOps *ops,
 	boot_dev = get_boot_device();
 	if (boot_dev == BOOT_UFS) {
 		name = "scsi0";
+	} else if (boot_dev == BOOT_EMMC) {
+		name = "mmc0";
 	} else {
 		printf("Boot device: 0x%x. Unsupported boot device!\n", boot_dev);
 		return AVB_IO_RESULT_ERROR_IO;

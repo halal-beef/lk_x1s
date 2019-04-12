@@ -29,4 +29,5 @@ MODULE_DEPS += \
 	dev/dpu \
 	dev/adc \
 	dev/pmucal \
-	dev/speedy
+	dev/speedy \
+	dev/mmc
