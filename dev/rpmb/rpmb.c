@@ -1268,6 +1268,10 @@ static int rpmb_write_block(int addr, int blkcnt, u8 *buf)
 #else
 	ret = ufs_rpmb_commands(&packet);
 #endif
+	if(memcmp((u8 *)&packet.nonce, nonce, NONCE_SIZE)) {
+		printf("Authentication write NONCE compare fail\n");
+		return -1;
+	}
 	if (ret != RV_SUCCESS) {
 		printf("RPMB : fail to read write coutner !!!\n");
 		return ret;
@@ -1292,10 +1296,6 @@ static int rpmb_write_block(int addr, int blkcnt, u8 *buf)
 #else
 		ret = ufs_rpmb_commands(&packet);
 #endif
-		if(memcmp((u8 *)&packet.nonce, nonce, NONCE_SIZE)) {
-			printf("Authentication write NONCE compare fail\n");
-			return -1;
-		}
 		if (ret != RV_SUCCESS) {
 			printf("RPMB: write block (%d) fail !!!\n", packet.address);
 			return ret;
