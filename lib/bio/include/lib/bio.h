@@ -62,6 +62,7 @@ typedef struct bdev {
 
     uint8_t erase_byte;
 
+    uint32_t erase_size;
     uint32_t flags;
 
     /* function pointers */

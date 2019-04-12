@@ -257,7 +257,7 @@ static int pit_access_emmc(struct pit_entry *ptn, int op, u64 addr, u32 size)
 		 * In these casee, we need to do partial write.
 		 */
 		dev = bio_open(str);
-		ret = pit_erase_emmc(dev, blkstart, blknum);
+		blks = dev->new_erase(dev, blkstart, blknum);
 		bio_close(dev);
 		break;
 	case PIT_OP_LOAD:	/* load */
