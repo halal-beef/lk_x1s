@@ -365,6 +365,7 @@ static uint bio_new_read(struct bdev *dev, void *_buf, bnum_t _block, uint count
 
 	} while (1);
 
+
 	/* handle partial last block */
 	if (((count - block_read) % native_block_size) != 0) {
 		if (dev->new_read_native(dev, temp, block / native_block_size, 1))
@@ -477,13 +478,17 @@ static uint bio_new_erase(struct bdev *dev, bnum_t _block, uint count)
 	uint block_erased = 0;
 	uint native_block_size = dev->block_size / USER_BLOCK_SIZE;
 	uint block_per_time;
+	uint erase_size;
 	ssize_t byte_size;
 	ssize_t byte_offset;
 	STACKBUF_DMA_ALIGN(temp, dev->block_size);
 	/*uint max_blkcnt = (dev->max_blkcnt_per_cmd) ? dev->max_blkcnt_per_cmd : 32;*/
 	uint p_cnt;
 
-
+	if (dev->erase_size)
+		erase_size = dev->erase_size / USER_BLOCK_SIZE;
+	else
+		erase_size = native_block_size;
 	/*
 	 * handle partial first block
 	 *
@@ -512,9 +517,15 @@ static uint bio_new_erase(struct bdev *dev, bnum_t _block, uint count)
 		block += native_block_size;
 	}
 
-#if 1
+	memset(temp, 0, dev->block_size);
+	while (block % erase_size != 0 &&
+		(block_erased + native_block_size) <= count) {
+		dev->new_write_native(dev, temp, block/native_block_size, 1);
+		block += native_block_size;
+		block_erased += native_block_size;
+	}
 	block_per_time = count - block_erased;
-	block_per_time = (block_per_time / native_block_size) * native_block_size;
+	block_per_time = (block_per_time / erase_size) * erase_size;
 	if (block_per_time) {
 		if (dev->new_erase_native(dev, block / native_block_size,
 					block_per_time / native_block_size))
@@ -527,56 +538,13 @@ static uint bio_new_erase(struct bdev *dev, bnum_t _block, uint count)
 	/* All the blocks consumed */
 	if (_block + count == block)
 		goto end;
-#else
-	/*
-	 * Currently, UFS has a capability to erase data as much as 256GB
-	 * with one descriptor, whereas eMMC has no limitation on it
-	 * because it uses a kind of range method.
-	 * However, now we just limit the capability to 256GB
-	 * because mobile storage products hasn't yet had huge capacity
-	 * more than 256GB. If the time comes later, you should do
-	 * further works on here and there including either MMC or UFS driver.
-	 */
-	max_blkcnt = 0x80000;
 
-	/* Loop with 256GB */
-	do {
-		block_per_time = count - block_written;
-		if (block_per_time) {
-			if (block_per_time >= max_blkcnt)
-				block_per_time = max_blkcnt;
-		} else
-			goto end;
-
-		if (dev->new_erase_native(dev, block / native_block_size,
-					block_per_time / native_block_size))
-			goto end;
-
-		block_erased += block_per_time;
-		block += block_per_time;
-
-	} while (1);
-
-	max_blkcnt = (dev->max_blkcnt_per_cmd) ? dev->max_blkcnt_per_cmd : 32;
-
-	/* Loop */
-	do {
-		block_per_time = count - block_written;
-		if (block_per_time) {
-			if (block_per_time >= max_blkcnt)
-				block_per_time = max_blkcnt;
-		} else
-			goto end;
-
-		if (dev->new_erase_native(dev, block / native_block_size,
-					block_per_time / native_block_size))
-			goto end;
-
-		block_erased += block_per_time;
-		block += block_per_time;
-
-	} while (1);
-#endif
+	memset(temp, 0, dev->block_size);
+	while ((block_erased + native_block_size) <= count){
+		dev->new_write_native(dev, temp, block/native_block_size, 1);
+		block += native_block_size;
+		block_erased += native_block_size;
+	}
 
 	/* handle partial last block */
 	if (((count - block_erased) % native_block_size) != 0) {
