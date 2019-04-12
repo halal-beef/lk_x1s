@@ -443,7 +443,11 @@ int load_boot_images(void)
 
 	argv[1].u = BOOT_BASE;
 	argv[2].u = KERNEL_BASE;
+#if defined(CONFIG_RAMDISK_IN_BOOT)
+	argv[3].u = RAMDISK_BASE;
+#else
 	argv[3].u = 0;
+#endif
 #if defined(CONFIG_DTB_IN_BOOT)
 	argv[4].u = DT_BASE;
 #else
