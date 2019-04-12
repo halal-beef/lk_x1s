@@ -24,6 +24,7 @@ MODULE_DEPS += \
 	lib/lock \
 	lib/fastboot \
 	dev/scsi \
+	dev/mmc \
 	dev/rpmb \
 	dev/boot \
 	dev/dpu \

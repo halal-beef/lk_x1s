@@ -32,6 +32,7 @@
 #include <platform/chip_id.h>
 #include <pit.h>
 #include <dev/scsi.h>
+#include <dev/mmc.h>
 
 /* Memory node */
 #define SIZE_2GB		(0x80000000)
@@ -522,6 +523,10 @@ int cmd_boot(int argc, const cmd_args *argv)
 	 * Even with its failure, subsequential operations should be executed.
 	 */
 	scsi_do_ssu();
+
+	/* power off sd slot before starting kernel */
+	printf("mmc_power_off\n");
+	mmc_power_set(2, 0);
 
 	if (readl(EXYNOS9830_POWER_SYSIP_DAT0) == REBOOT_MODE_RECOVERY ||
 	    readl(EXYNOS9830_POWER_SYSIP_DAT0) == REBOOT_MODE_FACTORY)

@@ -31,6 +31,7 @@
 #include "flexpmu_dbg.h"
 #include <platform/tmu.h>
 #include <platform/chg_max77705.h>
+#include <dev/mmc.h>
 
 #include <lib/font_display.h>
 #include <lib/logo_display.h>
@@ -288,6 +289,13 @@ void platform_init(void)
 		if (ret == 1)
 			ufs_init(2);
 	}
+
+	/*
+	 * Initialize mmc for all channel.
+	 * Sometimes need mmc device when it is not boot device.
+	 * So always call mmc_init().
+	 */
+	mmc_init();
 	pit_init();
 	debug_snapshot_fdt_init();
 #ifdef CONFIG_EXYNOS_BOOTLOADER_DISPLAY
