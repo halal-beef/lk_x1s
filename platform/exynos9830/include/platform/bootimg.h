@@ -11,6 +11,8 @@
 #ifndef _BOOT_IMAGE_H_
 #define _BOOT_IMAGE_H_
 
+#include <target/board_info.h>
+
 typedef struct boot_img_hdr boot_img_hdr;
 
 #define BOOT_MAGIC		"ANDROID!"
@@ -19,6 +21,34 @@ typedef struct boot_img_hdr boot_img_hdr;
 #define BOOT_ARGS_SIZE		512
 #define BOOT_EXTRA_ARGS_SIZE	1024
 
+#ifdef BOOT_IMG_HDR_V2
+struct boot_img_hdr
+{
+	uint8_t magic[BOOT_MAGIC_SIZE];
+	uint32_t kernel_size;  /* size in bytes */
+	uint32_t kernel_addr;  /* physical load addr */
+
+	uint32_t ramdisk_size; /* size in bytes */
+	uint32_t ramdisk_addr; /* physical load addr */
+
+	uint32_t second_size;  /* size in bytes */
+	uint32_t second_addr;  /* physical load addr */
+
+	uint32_t tags_addr;    /* physical addr for kernel tags */
+	uint32_t page_size;    /* flash page size we assume */
+	uint32_t header_version;
+	uint32_t os_version;
+	uint8_t name[BOOT_NAME_SIZE]; /* asciiz product name */
+	uint8_t cmdline[BOOT_ARGS_SIZE];
+	uint32_t id[8]; /* timestamp / checksum / sha1 / etc */
+	uint8_t extra_cmdline[BOOT_EXTRA_ARGS_SIZE];
+	uint32_t recovery_dtbo_size;   /* size of recovery dtbo image */
+	uint64_t recovery_dtbo_offset; /* offset in boot image */
+	uint32_t header_size;   /* size of boot image header in bytes */
+	uint32_t dtb_size;   /* size of dtb image */
+	uint64_t dtb_addr; /* physical load address */
+} __attribute__((packed));
+#else
 struct boot_img_hdr {
 	uint8_t magic[BOOT_MAGIC_SIZE];
 
@@ -56,4 +86,5 @@ struct boot_img_hdr {
 	unsigned long long recovery_dtbo_offset;
 	unsigned header_size;
 } __attribute__((packed));
+#endif
 #endif /* _BOOT_IMAGE_H_ */
