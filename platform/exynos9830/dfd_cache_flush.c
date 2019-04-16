@@ -36,10 +36,31 @@
 #define L2TAG0_PA_39_17_MASK		(u64)0x01FFFFFC
 #define DL1TAG0_PA_39_12_MASK		(u64)0x0FFFFFFF
 
+#define IL1TAG_RAMID			0x00
+#define IL1TAG_INDEX_END		0x80
+#define IL1TAG_WAY_END			0x04
+#define IL1TAG_DATA_END			0x01
+
+#define IL1DATA_RAMID			0x01
+#define IL1DATA_INDEX_END		0x800
+#define IL1DATA_WAY_END			0x04
+#define IL1DATA_DATA_END		0x02
+
+#define FE_BIG_TLB_PTE_RAMID		0x05
+#define FE_BIG_TLB_PTE_INDEX_END	0x100
+#define FE_BIG_TLB_PTE_WAY_END		0x01
+#define FE_BIG_TLB_PTE_DATA_END		0x02
+
+#define TBW_L2TLB_RAMID			0x00
+#define TBW_L2TLB_INDEX_END		0x400
+#define TBW_L2TLB_WAY_END		0x04
+#define TBW_L2TLB_DATA_END		0x04
+
 #define L3_BANK_NUM			0x02
 #define L3_SUBBANK_NUM			0x04
 #define L3_BANK_WIDTH			0x02
 #define L3_TAG_SECTORS_CONCATENATE	0x02
+#define L3_TAG_WAYS_CONCATENATE		0x02
 #define L3_TAG_SIZE			12
 #define L3_DATA_SIZE			64
 #define L3_SET_INDEX_ADDR_LSB		8
@@ -69,24 +90,39 @@
 #define OFFSET_STEP_WIDTH_D		0x03
 
 #define L3CACHE_DUMP_ADDR		(u32)debug_snapshot_get_item_paddr("log_arrdumpreset")
-#define L3CACHE_DUMP_SIZE		(u64)0x00500000
+#define L3CACHE_DUMP_SIZE		(u64)0x00460000
 #define L3CACHE_TAG_SIZE		(u64)(L3_BANK_NUM * L3_SUBBANK_NUM * SET_END_L3 * \
-					WAY_END_L3 / L3_TAG_SECTORS_CONCATENATE * SECTOR_END_L3* L3_TAG_SIZE)
+					WAY_END_L3 / L3_TAG_WAYS_CONCATENATE * L3_TAG_SIZE)
 #define L3CACHE_DATA_DUMP_ADDR		(u64)(L3CACHE_DUMP_ADDR + L3CACHE_TAG_SIZE)
 
 #define L2CACHE_DUMP_ADDR		(u64)(L3CACHE_DUMP_ADDR + L3CACHE_DUMP_SIZE)
-#define L2_TAG_DATA_SIZE		8
-#define L2_LINE_RAW_DATA_SIZE		72
+#define L2_TAG_SIZE			8
+#define L2_DATA_SIZE			64
+#define L2CACHE_TAG_SIZE		(u64)(BANK_END_L2 * SET_END_L2 * WAY_END_L2) * L2_TAG_SIZE
+#define L2CACHE_DATA_SIZE		(u64)(BANK_END_L2 * SET_END_L2 * WAY_END_L2 * SECTOR_END_L2) * L2_DATA_SIZE
+#define L2CACHE_DATA_DUMP_ADDR		(u64)(L2CACHE_DUMP_ADDR + L2CACHE_TAG_SIZE)
 
-#define CORE_DUMP_ADDR			(u64)(L3CACHE_DUMP_ADDR + L3CACHE_DUMP_SIZE)
-#define ADDITIONAL_CORE_DUMP_SIZE	(204800)
-#define CORE_DUMP_SIZE			(1378 * 1024)
+#define CORE_DUMP_ADDR			(u64)(L2CACHE_DUMP_ADDR + L2CACHE_TAG_SIZE + L2CACHE_DATA_SIZE)
+#define BTLB_SIZE			(u64)(512 * 1 * 4 * 4)
+#define L2TLB_SIZE			(u64)(TBW_L2TLB_INDEX_END * TBW_L2TLB_WAY_END * TBW_L2TLB_DATA_END * 4)
+#define IL1TAG_SIZE			(u64)(IL1TAG_INDEX_END * IL1TAG_WAY_END * IL1TAG_DATA_END * 4)
+#define IL1DATA_SIZE			(u64)(IL1DATA_INDEX_END * IL1DATA_WAY_END * IL1DATA_DATA_END * 4)
+
+#define CORE_DUMP_SIZE			(u64)(L1DATA_RAW_SIZE + L2TLB_SIZE + IL1TAG_SIZE + \
+						IL1DATA_SIZE + 257 * 1024 + BTLB_SIZE)
 
 #define DL1_TAG_DATA_SIZE		8
 #define DL1_LINE_RAW_DATA_SIZE		72
 
-#define L2DATA_RAW_SIZE			(u64)(SET_END_L2 * WAY_END_L2 * L2_LINE_RAW_DATA_SIZE)
 #define L1DATA_RAW_SIZE			(u64)(SET_END_D * WAY_END_D * DL1_LINE_RAW_DATA_SIZE)
+
+#define AN_DUMP_ADDR			(L3CACHE_DUMP_ADDR + (8 * 1024 * 1024))
+#define AN_CORE_DUMP_SIZE		(128 * 1024)
+
+#define ENYO_DUMP_ADDR			(AN_DUMP_ADDR + AN_CORE_DUMP_SIZE * LITTLE_NR_CPUS)
+//#define ENYO_CORE_DUMP_SIZE		(1734656)
+#define ENYO_CORE_DUMP_SIZE		(1552384) // wo l1btb, l1ghb, bpiq, l2victim
+//#define DEBUG_PRINT
 
 #define SCI_BASE			0x1A000000
 #define PM_SCI_CTL			(SCI_BASE + 0x140)
@@ -284,24 +320,26 @@ static void dump_l3_operation(u64 bank, u64 subbank, u64 set, u64 way, u64 secto
 	u64 dump_base;
 	u64 MOESI;
 
-	dump_base = L3CACHE_DUMP_ADDR + bank * L3_SUBBANK_NUM *
-			SET_END_L3 * WAY_END_L3 * L3_TAG_SIZE;
-	dump_base += subbank * SET_END_L3 * WAY_END_L3 * L3_TAG_SIZE;
-	dump_base += set * WAY_END_L3 * L3_TAG_SIZE;
-	dump_base += way * L3_TAG_SIZE;
+	dump_base = L3CACHE_DUMP_ADDR+bank * L3_SUBBANK_NUM * SET_END_L3 *
+					WAY_END_L3 / L3_TAG_WAYS_CONCATENATE * L3_TAG_SIZE;
+	dump_base += subbank * SET_END_L3 * WAY_END_L3 / L3_TAG_WAYS_CONCATENATE * L3_TAG_SIZE;
+	dump_base += set * WAY_END_L3 / L3_TAG_WAYS_CONCATENATE * L3_TAG_SIZE;
+	dump_base += way / L3_TAG_WAYS_CONCATENATE * L3_TAG_SIZE;
 
 	l3_tag_raw_data0 = readl(dump_base + 0x0);
 	l3_tag_raw_data1 = readl(dump_base + 0x4);
 	l3_tag_raw_data2 = readl(dump_base + 0x8);
 
 	l3tag_reg.ll_word = 0;
-	if(sector == 0) {
+	if ((way % 2) == 0)
 	    l3tag_reg.ll_word = ((l3_tag_raw_data1 & 0x1fff) << 32) | l3_tag_raw_data0;
-	    MOESI=l3tag_reg.bits.MOESI0;
-	} else {
+	else
 	    l3tag_reg.ll_word = ((l3_tag_raw_data2 & 0x3ffffff) << 19)| (l3_tag_raw_data1 >> 13);
-	    MOESI=l3tag_reg.bits.MOESI1;
-	}
+
+	if (sector == 0)
+		MOESI = l3tag_reg.bits.MOESI0;
+	else
+		MOESI = l3tag_reg.bits.MOESI1;
 
 	/* determine writeback */
 	if (!(((MOESI & (MOESI_VALID | MOESI_MODIFIED)) == (MOESI_VALID | MOESI_MODIFIED))
@@ -368,8 +406,8 @@ static void dump_l2_operation(u64 core, u64 bank, u64 set, u64 way, u64 sector)
 	u64 dump_base;
 	u64 MESI;
 
-	dump_base = CORE_DUMP_ADDR + (set * WAY_END_L2 * SECTOR_END_L2 +
-			way * SECTOR_END_L2 + sector) * L2_LINE_RAW_DATA_SIZE;
+	dump_base = L2CACHE_DUMP_ADDR +
+			(bank * SET_END_L2 * WAY_END_L2 + set * WAY_END_L2 + way) * L2_TAG_SIZE;
 
 	l2tag0_reg.word = readl(dump_base + 0x0);
 	l2tag1_reg.word = readl(dump_base + 0x4);
@@ -390,11 +428,14 @@ static void dump_l2_operation(u64 core, u64 bank, u64 set, u64 way, u64 sector)
 		((u64) l2tag0_reg.bits.PA_9_7 << OFFSET_WIDTH_L2) |
 		((u64) sector << 6);
 
+	dump_base = L2CACHE_DATA_DUMP_ADDR + (bank * SET_END_L2 * WAY_END_L2 * SECTOR_END_L2 +
+			set * WAY_END_L2 * SECTOR_END_L2 + way * SECTOR_END_L2 + sector) * L2_DATA_SIZE;
+
 	for (u32 offset = 0; offset < OFFSET_END_L2; offset += OFFSET_STEP_NUM_L2) {
-		u32 l2data0 = readl(dump_base + L2_TAG_DATA_SIZE + offset + 0x0);
-		u32 l2data1 = readl(dump_base + L2_TAG_DATA_SIZE + offset + 0x4);
-		u32 l2data2 = readl(dump_base + L2_TAG_DATA_SIZE + offset + 0x8);
-		u32 l2data3 = readl(dump_base + L2_TAG_DATA_SIZE + offset + 0xc);
+		u32 l2data0 = readl(dump_base + offset + 0x0);
+		u32 l2data1 = readl(dump_base + offset + 0x4);
+		u32 l2data2 = readl(dump_base + offset + 0x8);
+		u32 l2data3 = readl(dump_base + offset + 0xc);
 		u64 l2addr = l2addr_full + offset;
 #ifdef DEBUG_PRINT
 		printf("[L2] PA:0x%016llx: 0x%08x 0x%08x 0x%08x 0x%08x (set:0x%x, way:0x%x)\n",
@@ -434,8 +475,8 @@ static void write_back_d_cache_operation(u32 core, u64 set, u64 way)
 	u64 daddr_full;
 	u64 dump_base;
 
-	dump_base = CORE_DUMP_ADDR + CORE_DUMP_SIZE * core + L2DATA_RAW_SIZE +
-			(set * WAY_END_D + way) * DL1_LINE_RAW_DATA_SIZE;
+	dump_base = CORE_DUMP_ADDR + CORE_DUMP_SIZE * core +
+		(set * WAY_END_D + way) * DL1_LINE_RAW_DATA_SIZE;
 
 	dl1tag0_reg.word = readl(dump_base + 0x0);
 	dl1tag1_reg.word = readl(dump_base + 0x4);
