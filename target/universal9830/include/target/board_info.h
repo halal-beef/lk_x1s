@@ -16,7 +16,9 @@
 #define CONFIG_UFS_BOARD_TYPE	1      /* smdk : 0, universal : 1 */
 
 #define CONFIG_USE_RPMB
-//#define CONFIG_DTB_IN_BOOT
+
+#define BOOT_IMG_HDR_V2
+#define CONFIG_DTB_IN_BOOT
 #define CONFIG_RAMDISK_IN_BOOT
 
 #endif /*__BOARD_INFO_H__ */
