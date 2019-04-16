@@ -33,6 +33,7 @@
 #include <lk/init.h>
 
 #define LOCAL_TRACE 0
+#define BYTE_TO_BLOCK(x) (((x - 1) >> 9) + 1)
 
 static struct {
     struct list_node list;
@@ -472,6 +473,169 @@ end:
 	return block_written;
 }
 
+static uint bio_new_byte_read(struct bdev *dev, void *_buf, bnum_t _block, uint size)
+{
+	uint8_t *buf = (uint8_t *)_buf;
+	bnum_t block = _block;	/*start block address*/
+	uint native_block_size = dev->block_size / USER_BLOCK_SIZE; /*ufs = 8 */
+	uint block_per_time;
+	uint count = BYTE_TO_BLOCK(size); /* size to block*/
+	uint block_read = count;
+	uint rsize = size;
+	ssize_t byte_size;
+	ssize_t byte_offset;
+	STACKBUF_DMA_ALIGN(temp, dev->block_size);
+	uint max_blkcnt = (dev->max_blkcnt_per_cmd) ? dev->max_blkcnt_per_cmd : 32;
+	uint p_cnt;
+
+
+	/* Not support for cache alignment */
+	if ((dev->flags & BIO_FLAG_CACHE_ALIGNED_READS) &&
+			(IS_ALIGNED((size_t)buf, CACHE_LINE) == false)) {
+		printf("Not support for cache alignement !!\n");
+		goto end;
+	}
+
+	/*
+	 * handle partial first block
+	 *
+	 * Each device driver's maximum size can exist when it executes
+	 * a read command. So we determine what the size is and
+	 * should use less and equal than the size
+	 * every time we issue a read command
+	 */
+	if (((block % native_block_size) != 0) || count < native_block_size) {
+		/* Read one native block */
+		block = (block / native_block_size) * native_block_size;
+		if (dev->new_read_native(dev, temp, block / native_block_size, 1))
+			goto end;
+
+		/* Copy to original buffer */
+		byte_offset = (_block - block) * USER_BLOCK_SIZE;
+		p_cnt = MIN(count, block + native_block_size - _block);
+		byte_size = MIN(size, p_cnt * USER_BLOCK_SIZE);
+		memcpy(buf, temp + byte_offset, byte_size);
+
+		block = _block;
+		block_read -= p_cnt;
+		buf += byte_size;
+		block += p_cnt;
+		rsize -= byte_size;
+	}
+
+	while (block_read >= native_block_size) {
+		block_per_time = (((block_read > max_blkcnt ? max_blkcnt : block_read)
+					/ native_block_size) * native_block_size);
+
+		if (dev->new_read_native(dev, buf, block / native_block_size,
+					block_per_time / native_block_size))
+			goto end;
+
+		block_read -= block_per_time;
+		buf += block_per_time * USER_BLOCK_SIZE;
+		block += block_per_time;
+		rsize -= block_per_time * USER_BLOCK_SIZE;
+	}
+
+	/* handle partial last block */
+	if (block_read) {
+		if (dev->new_read_native(dev, temp, block / native_block_size, 1))
+			goto end;
+		memcpy(buf, temp, rsize);
+		block_read -= 1;
+		rsize = 0;
+	}
+end:
+	return count - block_read;
+}
+
+static uint bio_new_byte_write(struct bdev *dev, const void *_buf, bnum_t _block, uint size)
+{
+	uint8_t *buf = (uint8_t *)_buf;
+	bnum_t block = _block;
+	uint native_block_size = dev->block_size / USER_BLOCK_SIZE;
+	uint block_per_time;
+	uint count = BYTE_TO_BLOCK(size);
+	uint block_written = count;
+	uint wsize = size;
+	ssize_t byte_size;
+	ssize_t byte_offset;
+	STACKBUF_DMA_ALIGN(temp, dev->block_size);
+	uint max_blkcnt = (dev->max_blkcnt_per_cmd) ? dev->max_blkcnt_per_cmd : 32;
+	uint p_cnt;
+
+
+	/* Not support for cache alignment */
+	if ((dev->flags & BIO_FLAG_CACHE_ALIGNED_WRITES) &&
+			(IS_ALIGNED((size_t)buf, CACHE_LINE) == false)) {
+		printf("Not support for cache alignement !!\n");
+		goto end;
+	}
+
+	/*
+	 * handle partial first block
+	 *
+	 * Each device driver's maximum size can exist when it executes
+	 * a write command. So we determine what the size is and
+	 * should use less and equal than the size
+	 * every time we issue a write command
+	 */
+	if ((block % native_block_size) != 0) {
+		/* Read one native block */
+		block = (block / native_block_size) * native_block_size;
+		if (dev->new_read_native(dev, temp, block / native_block_size, 1))
+			goto end;
+
+		/* Modity temporal buffer */
+		byte_offset = (_block - block) * USER_BLOCK_SIZE;
+		p_cnt = MIN(count, block + native_block_size - _block);
+		byte_size = MIN(size, p_cnt * USER_BLOCK_SIZE);
+		memcpy(temp + byte_offset, buf, byte_size);
+
+		/* Write one native block */
+		if (dev->new_write_native(dev, temp, block / native_block_size, 1))
+			goto end;
+
+		block = _block;
+		block_written -= p_cnt;
+		buf += byte_size;
+		block += p_cnt;
+		wsize -= byte_size;
+	}
+
+	while (block_written >= native_block_size) {
+		block_per_time = (((block_written > max_blkcnt ? max_blkcnt : block_written)
+					/ native_block_size) * native_block_size);
+
+		if (dev->new_write_native(dev, buf, block / native_block_size, block_per_time / native_block_size))
+			goto end;
+
+		block_written -= block_per_time;
+		buf += block_per_time * USER_BLOCK_SIZE;
+		block += block_per_time;
+		wsize -= block_per_time * USER_BLOCK_SIZE;
+	}
+
+	/* handle partial last block */
+	if (block_written) {
+		/* Read one native block */
+		if (dev->new_read_native(dev, temp, block / native_block_size, 1))
+			goto end;
+
+		/* Modity temporal buffer */
+		memcpy(temp, buf, wsize);
+
+		/* Write one native block */
+		if (dev->new_write_native(dev, temp, block / native_block_size, 1))
+			goto end;
+
+		block_written -= 1;
+		wsize = 0;
+	}
+end:
+	return (count - block_written);
+}
+
 static uint bio_new_erase(struct bdev *dev, bnum_t _block, uint count)
 {
 	bnum_t block = _block;
@@ -835,6 +999,8 @@ void bio_initialize_bdev(bdev_t *dev,
     dev->new_read = bio_new_read;
     dev->new_write = bio_new_write;
     dev->new_erase = bio_new_erase;
+    dev->new_byte_read = bio_new_byte_read;
+    dev->new_byte_write = bio_new_byte_write;
     dev->close = NULL;
 }
 
