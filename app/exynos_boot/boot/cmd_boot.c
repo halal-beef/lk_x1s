@@ -328,6 +328,20 @@ static void configure_dtb(void)
 	merge_dto_to_main_dtb();
 	resize_dt(SZ_4K);
 
+	if (readl(EXYNOS9830_POWER_SYSIP_DAT0) == REBOOT_MODE_RECOVERY) {
+		sprintf(str, "<0x%x>", RAMDISK_BASE);
+		set_fdt_val("/chosen", "linux,initrd-start", str);
+
+		sprintf(str, "<0x%x>", RAMDISK_BASE + b_hdr->ramdisk_size);
+		set_fdt_val("/chosen", "linux,initrd-end", str);
+	} else if (readl(EXYNOS9830_POWER_SYSIP_DAT0) == REBOOT_MODE_FACTORY) {
+		noff = fdt_path_offset (fdt_dtb, "/chosen");
+		np = fdt_getprop(fdt_dtb, noff, "bootargs", &len);
+		snprintf(str, BUFFER_SIZE, "%s %s", np, "androidboot.mode=factory");
+		fdt_setprop(fdt_dtb, noff, "bootargs", str, strlen(str) + 1);
+		printf("Enter factory mode...");
+	}
+
 	/* Secure memories are carved-out in case of EVT1 */
 	/*
 	 * 1st DRAM node
@@ -400,6 +414,16 @@ mem_node_out:
 		fdt_setprop(fdt_dtb, noff, "bootargs", str, strlen(str) + 1);
 	}
 #endif
+	if (readl(EXYNOS9830_POWER_SYSIP_DAT0) == REBOOT_MODE_RECOVERY) {
+		/* Set bootargs for recovery mode */
+		remove_string_from_bootargs("skip_initramfs ");
+		remove_string_from_bootargs("ro init=/init ");
+
+		noff = fdt_path_offset (fdt_dtb, "/chosen");
+		np = fdt_getprop(fdt_dtb, noff, "bootargs", &len);
+		snprintf(str, BUFFER_SIZE, "%s %s", np, "root=/dev/ram0");
+		fdt_setprop(fdt_dtb, noff, "bootargs", str, strlen(str) + 1);
+	}
 
 	printf("\nbootargs\n");
 	noff = fdt_path_offset(fdt_dtb, "/chosen");
@@ -417,13 +441,24 @@ int load_boot_images(void)
 	struct pit_entry *ptn;
 	cmd_args argv[6];
 
-	ptn = pit_get_part_info("boot");
-	if (ptn == 0) {
-		printf("Partition 'boot' does not exist\n");
-		return -1;
+	if (readl(EXYNOS9830_POWER_SYSIP_DAT0) == REBOOT_MODE_RECOVERY || readl(EXYNOS9830_POWER_SYSIP_DAT0) == REBOOT_MODE_FACTORY) {
+		ptn = pit_get_part_info("recovery");
+		if (ptn == 0) {
+			printf("Partition 'recovery' does not exist\n");
+			return -1;
+		} else {
+			pit_access(ptn, PIT_OP_LOAD, (u64)BOOT_BASE, 0);
+		}
 	} else {
-		pit_access(ptn, PIT_OP_LOAD, (u64)BOOT_BASE, 0);
+		ptn = pit_get_part_info("boot");
+		if (ptn == 0) {
+			printf("Partition 'boot' does not exist\n");
+			return -1;
+		} else {
+			pit_access(ptn, PIT_OP_LOAD, (u64)BOOT_BASE, 0);
+		}
 	}
+
 #ifndef CONFIG_DTB_IN_BOOT
 	ptn = pit_get_part_info("dtb");
 	if (ptn == 0) {
