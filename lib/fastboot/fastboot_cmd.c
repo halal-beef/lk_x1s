@@ -250,6 +250,19 @@ int fb_do_flash(const char *cmd_buffer)
 	char buf[FB_RESPONSE_BUFFER_SIZE];
 	char *response = (char *)(((unsigned long)buf + 8) & ~0x07);
 
+#if defined(CONFIG_CHECK_LOCK_STATE) || defined(CONFIG_USE_RPMB)
+	if (is_first_boot()) {
+		uint32_t lock_state;
+		rpmb_get_lock_state(&lock_state);
+		printf("Lock state: %d\n", lock_state);
+		if (lock_state) {
+			sprintf(response, "FAILDevice is locked");
+			fastboot_tx_status(response, strlen(response), FASTBOOT_TX_ASYNC);
+			return 1;
+		}
+	}
+#endif
+
 	dprintf(ALWAYS, "flash\n");
 
 	flash_using_pit((char *)cmd_buffer + 6, response,
@@ -393,6 +406,7 @@ int fb_do_flashing(const char *cmd_buffer)
 	char *response = (char *)(((unsigned long)buf + 8) & ~0x07);
 
 	sprintf(response, "OKAY");
+#if defined(CONFIG_USE_RPMB)
 	if (!strcmp(cmd_buffer + 9, "lock")) {
 		printf("Lock this device.\n");
 		print_lcd_update(FONT_GREEN, FONT_BLACK, "Lock this device.");
@@ -422,7 +436,7 @@ int fb_do_flashing(const char *cmd_buffer)
 	} else {
 		sprintf(response, "FAILunsupported command");
 	}
-
+#endif
 	fastboot_tx_status(response, strlen(response), FASTBOOT_TX_ASYNC);
 
 	return 0;
