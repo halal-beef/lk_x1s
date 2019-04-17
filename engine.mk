@@ -60,6 +60,7 @@ GLOBAL_COMPILEFLAGS += -W -Wall -Wno-multichar -Wno-unused-parameter -Wno-unused
 GLOBAL_COMPILEFLAGS += -mstrict-align
 GLOBAL_COMPILEFLAGS += -fno-common
 GLOBAL_COMPILEFLAGS += -fno-builtin
+GLOBAL_COMPILEFLAGS += -fno-delete-null-pointer-checks
 GLOBAL_COMPILEFLAGS += -D__UFS_CAL_LK__
 GLOBAL_CFLAGS := --std=gnu11 -Werror-implicit-function-declaration -Wstrict-prototypes -Wwrite-strings
 GLOBAL_CFLAGS += -Werror
