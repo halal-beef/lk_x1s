@@ -514,7 +514,7 @@ void dfd_run_post_processing(void)
 	}
 
 	mdelay(100);
-#ifdef SCAN2DRAM_SOLUTION
+#if 0
 	//Send Postprocessing Command. ID value is RUN DUMP.
 	cmd.cmd_raw.id = PP_IPC_CMD_ID_RUN_DUMP;
 	dfd_ipc_fill_buffer(&cmd, arr_addr, cpu_mask, 0);
