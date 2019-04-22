@@ -13,7 +13,7 @@
 #ifndef _EXYNOS9830_DFD_H
 #define _EXYNOS9830_DFD_H
 
-#undef SCAN2DRAM_SOLUTION
+#define SCAN2DRAM_SOLUTION
 
 #define NR_CPUS				(8)
 #define BIG_NR_CPUS			(2)
