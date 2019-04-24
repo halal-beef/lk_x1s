@@ -514,7 +514,7 @@ int cmd_boot(int argc, const cmd_args *argv)
 #endif
 
 	configure_dtb();
-	/* configure_ddi_id(); */
+	configure_ddi_id();
 
 	printf("scsi_do_ssu\n");
 	/*

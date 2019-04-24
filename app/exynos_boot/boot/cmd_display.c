@@ -23,7 +23,7 @@ void configure_ddi_id(void)
 
 	memset(str, 0, sizeof(str));
 	sprintf(str, "<0x%x>", ddi_id);
-	set_fdt_val("/dsim", "ddi_id", str);
+	set_fdt_val("/panel_0", "ddi_id", str);
 #if 0
 	/* the path(node) name, /dsim is same with /dsim@0x148E0000 */
 	get_fdt_val("/dsim", "ddi_id", (char *)str);
