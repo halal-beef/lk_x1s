@@ -485,7 +485,9 @@ static uint bio_new_erase(struct bdev *dev, bnum_t _block, uint count)
 	/*uint max_blkcnt = (dev->max_blkcnt_per_cmd) ? dev->max_blkcnt_per_cmd : 32;*/
 	uint p_cnt;
 
-	if (dev->erase_size)
+	if (dev->erase_size &&
+		dev->erase_size > native_block_size &&
+		dev->erase_size % native_block_size == 0)
 		erase_size = dev->erase_size / USER_BLOCK_SIZE;
 	else
 		erase_size = native_block_size;
@@ -779,6 +781,7 @@ void bio_initialize_bdev(bdev_t *dev,
     dev->geometry_count = geometry_count;
     dev->geometry = geometry;
     dev->erase_byte = 0;
+    dev->erase_size = 0;
     dev->ref = 0;
     dev->flags = flags;
 
