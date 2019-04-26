@@ -16,6 +16,7 @@
 #include <dev/ufs.h>
 #include <dev/ufs_provision.h>
 #include <platform/delay.h>
+#include <platform/mmu/barrier.h>
 #include <platform/exynos9830.h>
 
 #define	SCSI_MAX_INITIATOR	1
@@ -843,6 +844,7 @@ static int ufs_utp_cmd_process(struct ufs_host *ufs, scm * pscm)
 	if (r != 0)
 		goto end;
 
+	wmb();
 	/* Submit a command */
 	__utp_send(ufs, type);
 
@@ -875,6 +877,7 @@ static int ufs_utp_nop_process(struct ufs_host *ufs)
 	 */
 	__utp_init(ufs, 0);
 
+	wmb();
 	/* Submit a command */
 	__utp_send(ufs, type);
 
@@ -909,6 +912,7 @@ static int ufs_utp_query_process(struct ufs_host *ufs, query_index qry, u32 lun)
 	if (r != 0)
 		goto end;
 
+	wmb();
 	/* Submit a command */
 	__utp_send(ufs, type);
 
