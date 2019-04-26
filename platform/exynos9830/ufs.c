@@ -10,6 +10,7 @@
 
 #include <reg.h>
 #include <dev/ufs.h>
+#include <platform/sfr.h>
 
 struct ufs_host;
 
@@ -66,7 +67,8 @@ void ufs_set_unipro_clk(struct ufs_host *ufs)
 int ufs_board_init(int host_index, struct ufs_host *ufs)
 {
 	u32 reg;
-
+	unsigned int rst_stat = readl(EXYNOS9830_POWER_RST_STAT);
+	unsigned int dfd_en = readl(EXYNOS9830_POWER_RESET_SEQUENCER_CONFIGURATION);
 	//u32 err;
 
 	if (host_index) {
@@ -114,6 +116,14 @@ int ufs_board_init(int host_index, struct ufs_host *ufs)
 	reg &= ~(0x7);
 	reg |= 0x1;
 	*(volatile u32 *)0x107300c0 = reg;
+
+	if (!((rst_stat & (WARM_RESET | LITTLE_WDT_RESET)) &&
+			dfd_en & EXYNOS9830_EDPCSR_DUMP_EN)) {
+		/* Enable UFS IO cache coherency in SYSREG */
+		reg = *(volatile u32 *)0x13020700;
+		reg |= ((1 << 22) | (1<<23));
+		*(volatile u32 *)0x13020700 = reg;
+	}
 
 	return 0;
 }
