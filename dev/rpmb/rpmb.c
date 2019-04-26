@@ -134,9 +134,6 @@ uint32_t get_RPMB_key(size_t key_len, uint8_t * rpmb_key)
 	uint32_t retry_cnt = 0;
 	uint32_t ret = RV_SUCCESS;
 
-#ifdef CACHE_ENABLED
-	CACHE_CLEAN_INVALIDATE(rpmb_key, key_len);
-#endif
 	do {
 		if (++retry_cnt > MAX_SMC_RETRY_CNT) {
 			ret = RV_BOOT_RPMB_EXCEED_SMC_RETRY_CNT;
@@ -216,8 +213,8 @@ uint32_t get_RPMB_hmac(const uint8_t * input_data, size_t input_len, uint8_t * o
 	rpmb_data.output_data = (uint64_t)output_data;
 
 #ifdef CACHE_ENABLED
+	CACHE_CLEAN(&rpmb_data, sizeof(rpmb_data));
 	CACHE_CLEAN(input_data, input_len);
-	CACHE_CLEAN_INVALIDATE(output_data, RPMB_HMAC_LEN);
 #endif
 
 	/* call REK-based KBKDF in CryptoManager F/W with smc */
@@ -1063,6 +1060,9 @@ int read_write_counter(void)
 		printf("RPMB: fail to get NONCE\n");
 		return ret;
 	}
+#ifdef CACHE_ENABLED
+	CACHE_CLEAN_INVALIDATE(nonce, NONCE_SIZE);
+#endif
 	memcpy(packet.nonce, nonce, NONCE_SIZE);
 #ifdef RPMB_DEBUG
 	dprintf(INFO, "RPMB: read_write_counter NONCE\n");
@@ -1198,6 +1198,9 @@ static int rpmb_read_block(int addr, int blkcnt, u8 *buf)
 			printf("RPMB: fail to get NONCE\n");
 			return ret;
 		}
+#ifdef CACHE_ENABLED
+		CACHE_CLEAN_INVALIDATE(nonce, NONCE_SIZE);
+#endif
 		memcpy(packet.nonce, nonce, NONCE_SIZE);
 #ifdef RPMB_DEBUG
 		dprintf(INFO, "RPMB: rpmb_read_block NONCE\n");
