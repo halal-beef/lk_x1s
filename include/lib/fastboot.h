@@ -272,5 +272,10 @@ extern int fastboot_flash_write(fastboot_ptentry *ptn, unsigned extra_per_page,
 				const void *data, unsigned bytes);
 int do_fastboot(int argc, const cmd_args *argv);
 
+#define SYSREG_USB_BASE			0x10a20000
+#define USB_SHARABLE_OFFSET		(0x704)
+#define USB_SHARABLE_SHIFT		(1)
+
+void exynos_usb_cci_control(int on_off);
 #endif /* FASTBOOT_H */
 

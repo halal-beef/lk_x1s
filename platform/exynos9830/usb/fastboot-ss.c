@@ -107,6 +107,23 @@ int fboot_usb_int_hndlr(void)
 	return exynos_udc_int_hndlr();
 }
 
+void exynos_usb_cci_control(int on_off)
+{
+	u32 reg;
+
+	reg = readl(SYSREG_USB_BASE + USB_SHARABLE_OFFSET);
+
+	if (on_off) {
+		dprintf(ALWAYS, "USB CCI unit is enabled.\n");
+		reg |= (0x3 << USB_SHARABLE_SHIFT);
+	} else {
+		dprintf(ALWAYS, "USB CCI unit is disabled.\n");
+		reg &= ~(0x3 << USB_SHARABLE_SHIFT);
+	}
+
+	writel(reg, SYSREG_USB_BASE + USB_SHARABLE_OFFSET);
+}
+
 /*
  * Handles board specific usb protocol exchanges
  * Returns 0 on success
@@ -121,6 +138,9 @@ int fastboot_poll(void)
 
 	/* dprintf(ALWAYS, "DEBUG: %s is called.\n", __FUNCTION__); */
 	if (!exynos_usb_wait_cable_insert() && !is_fastboot) {
+		/* Enable CCI unit for USB */
+		exynos_usb_cci_control(1);
+
 		exynos_usbctl_init();
 		exynos_usbc_activate();
 		is_fastboot = 1;
