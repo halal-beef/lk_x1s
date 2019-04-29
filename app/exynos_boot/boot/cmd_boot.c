@@ -329,6 +329,10 @@ static void configure_dtb(void)
 	merge_dto_to_main_dtb();
 	resize_dt(SZ_4K);
 
+	/* Disable CCI unit for USB */
+	exynos_usb_cci_control(0);
+
+
 	if (readl(EXYNOS9830_POWER_SYSIP_DAT0) == REBOOT_MODE_RECOVERY) {
 		sprintf(str, "<0x%x>", RAMDISK_BASE);
 		set_fdt_val("/chosen", "linux,initrd-start", str);
