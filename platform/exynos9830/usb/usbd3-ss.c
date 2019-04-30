@@ -15,6 +15,7 @@
 #include <platform/delay.h>
 #include "usb.h"
 #include "usbd3-ss.h"
+#include <platform/mmu/barrier.h>
 
 #undef USBD3_DBG
 #ifdef USBD3_DBG
@@ -850,6 +851,8 @@ static int exynos_usb_start_ep_xfer(USBDEV3_EP_DIR_e eEpDir, u8 ucEpNum, u64 uTr
 
 	writel(virt_to_phys((void *)uTrbAddr), uEpPar1Addr);
 	writel(0, uEpPar0Addr);
+
+	wmb();
 
 	usbdev3_depcmd.data = 0;
 	usbdev3_depcmd.b.cmd_type = DEPCMD_CMD_START_XFER;
