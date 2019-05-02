@@ -26,6 +26,7 @@
 #include <lib/ab_update.h>
 #include <platform/environment.h>
 #include <platform/dfd.h>
+#include <platform/mmu/mmu_func.h>
 #include <dev/boot.h>
 #include <dev/rpmb.h>
 #include <dev/scsi.h>
@@ -292,6 +293,8 @@ int fb_do_reboot(const char *cmd_buffer)
 		writel(CONFIG_RAMDUMP_MODE, CONFIG_RAMDUMP_SCRATCH);
 	else
 		writel(0, CONFIG_RAMDUMP_SCRATCH);
+
+	clean_invalidate_dcache_range(CONFIG_RAMDUMP_SCRATCH, CONFIG_RAMDUMP_SCRATCH + 64);
 
 	writel(0x2, EXYNOS9830_POWER_SYSTEM_CONFIGURATION);
 
