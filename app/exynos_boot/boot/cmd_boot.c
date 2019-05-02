@@ -30,6 +30,7 @@
 #include <platform/bootimg.h>
 #include <platform/fdt.h>
 #include <platform/chip_id.h>
+#include <platform/mmu/mmu_func.h>
 #include <pit.h>
 #include <dev/scsi.h>
 #include <dev/mmc.h>
@@ -541,6 +542,9 @@ int cmd_boot(int argc, const cmd_args *argv)
 
 	/* before jumping to kernel. disble arch_timer */
 	arm_generic_timer_disable();
+
+	clean_invalidate_dcache_all();
+	disable_mmu_dcache();
 
 	printf("Starting kernel...\n");
 	void (*kernel_entry)(int r0, int r1, int r2, int r3);

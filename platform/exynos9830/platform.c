@@ -31,6 +31,7 @@
 #include "flexpmu_dbg.h"
 #include <platform/tmu.h>
 #include <platform/chg_max77705.h>
+#include <platform/mmu/mmu_func.h>
 #include <dev/mmc.h>
 
 #include <lib/font_display.h>
@@ -209,6 +210,16 @@ void arm_generic_timer_disable(void)
 
 void platform_early_init(void)
 {
+	unsigned int rst_stat = readl(EXYNOS9830_POWER_RST_STAT);
+	unsigned int dfd_en = readl(EXYNOS9830_POWER_RESET_SEQUENCER_CONFIGURATION);
+
+	if (!((rst_stat & (WARM_RESET | LITTLE_WDT_RESET)) &&
+			dfd_en & EXYNOS9830_EDPCSR_DUMP_EN)) {
+		invalidate_dcache_all();
+		cpu_common_init();
+		clean_invalidate_dcache_all();
+	}
+
 	read_chip_id();
 
 	speedy_gpio_init();

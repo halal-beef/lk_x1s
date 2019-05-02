@@ -36,7 +36,9 @@ MODULE_SRCS += \
 	$(LOCAL_DIR)/tmu.c \
 	$(LOCAL_DIR)/chg_max77705.c \
 	$(LOCAL_DIR)/mmc.c \
-	$(LOCAL_DIR)/dw_mmc.c
+	$(LOCAL_DIR)/dw_mmc.c \
+	$(LOCAL_DIR)/mmu/cpu_a.S \
+	$(LOCAL_DIR)/mmu/mmu.c
 
 MODULE_DEPS += \
     dev/interrupt/arm_gic \
