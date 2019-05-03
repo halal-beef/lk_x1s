@@ -17,8 +17,10 @@
  *****************************************************************************/
 #define VIRT_TO_PHYS(_virt_addr_) ((uint64_t)(_virt_addr_))
 
-#define FLUSH_DCACHE_RANGE(addr, length)
-#define INV_DCACHE_RANGE(addr, length)
+#define CM_FLUSH_DCACHE_RANGE(addr, length) \
+	clean_dcache_range((unsigned long long)addr, (unsigned long long)(addr + length))
+#define CM_INV_DCACHE_RANGE(addr, length) \
+	invalidate_dcache_range((unsigned long long)addr, (unsigned long long)(addr + length))
 
 #define CACHE_WRITEBACK_SHIFT	6
 #define CACHE_WRITEBACK_GRANULE	(1 << CACHE_WRITEBACK_SHIFT)
