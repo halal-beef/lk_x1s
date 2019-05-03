@@ -176,6 +176,7 @@ static AvbIOResult exynos_validate_vbmeta_public_key(AvbOps *ops,
 	AvbIOResult ret = AVB_IO_RESULT_OK;
 	uint8_t buf[SB_MAX_PUBKEY_LEN] __attribute__((__aligned__(CACHE_WRITEBACK_GRANULE_128)));
 
+	FLUSH_DCACHE_RANGE(buf, public_key_length);
 	ret = exynos_smc((SMC_AARCH64_PREFIX | SMC_CM_SECURE_BOOT), SB_GET_AVB_KEY,
 	                 (uint64_t)buf, public_key_length);
 	if (ret) {
