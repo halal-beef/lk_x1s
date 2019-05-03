@@ -63,8 +63,10 @@
  * Cache macro
  * This macro must be implemented if it is environment using cache.
  */
-#define FLUSH_DCACHE_RANGE(addr, length)
-#define INV_DCACHE_RANGE(addr, length)
+#define FLUSH_DCACHE_RANGE(addr, length) \
+	clean_dcache_range((unsigned long long)addr, (unsigned long long)(addr + length))
+#define INV_DCACHE_RANGE(addr, length) \
+	invalidate_dcache_range((unsigned long long)addr, (unsigned long long)(addr + length))
 
 /*
  *****************************************************************************

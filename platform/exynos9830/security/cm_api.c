@@ -12,6 +12,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <platform/cm_api.h>
+#include <platform/mmu/mmu_func.h>
 
 static inline uint64_t exynos_cm_smc(uint64_t *cmd, uint64_t *arg1,
                                      uint64_t *arg2, uint64_t *arg3)
@@ -51,7 +52,7 @@ uint64_t cm_secure_boot_set_pubkey(
 
 	printf("[CM] set publick_key: start\n");
 
-	FLUSH_DCACHE_RANGE(pub_key_ptr, pub_key_len);
+	CM_FLUSH_DCACHE_RANGE(pub_key_ptr, pub_key_len);
 
 	ret = exynos_cm_smc(&r0, &r1, &r2, &r3);
 	if (ret != RV_SUCCESS) {
@@ -279,7 +280,7 @@ uint64_t cm_km_wrap_key_with_kek(
 	r2 = VIRT_TO_PHYS(ctx);
 	r3 = 0;
 
-	FLUSH_DCACHE_RANGE(ctx, sizeof(CM_KW_CTX_T));
+	CM_FLUSH_DCACHE_RANGE(ctx, sizeof(CM_KW_CTX_T));
 
 	ret = exynos_cm_smc(&r0, &r1, &r2, &r3);
 	if (ret != RV_SUCCESS) {
@@ -288,7 +289,7 @@ uint64_t cm_km_wrap_key_with_kek(
 		return ret;
 	}
 
-	INV_DCACHE_RANGE(ctx, sizeof(CM_KW_CTX_T));
+	CM_INV_DCACHE_RANGE(ctx, sizeof(CM_KW_CTX_T));
 
 	printf("[CM] wrap/unwrap key: success\n");
 

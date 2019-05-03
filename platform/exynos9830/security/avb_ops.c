@@ -20,6 +20,7 @@
 #include <platform/smc.h>
 #include <dev/rpmb.h>
 #include <platform/sfr.h>
+#include <platform/mmu/mmu_func.h>
 
 #define CMD_STRING_MAX_SIZE	60
 #define AVB_PRELOAD_BASE	0xA0000000
@@ -183,7 +184,7 @@ static AvbIOResult exynos_validate_vbmeta_public_key(AvbOps *ops,
 		goto out;
 	}
 
-	INV_DCACHE_RANGE(buf, public_key_length)
+	INV_DCACHE_RANGE(buf, public_key_length);
 	* out_is_trusted = !memcmp(buf, public_key_data, public_key_length);
 	if (*out_is_trusted == false) {
 		printf("[AVB 2.0 ERR] AVB pubkey is not matched with vbmeta\n");
