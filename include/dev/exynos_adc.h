@@ -41,7 +41,7 @@
 #define ADC_INT_EN		(0x10)
 #define ADC_INT_STATUS		(0x14)
 #define ADC_DEBUG_DATA		(0x1C)
-#define ADC_BASE_ADDR		(0x11C30000)
+#define ADC_BASE_ADDR		(0x15C40000)
 
 #define ADC_SOFT_RESET		(1u << 2)
 #define ADC_NON_SOFT_RESET	(1u << 1)

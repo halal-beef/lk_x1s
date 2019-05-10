@@ -17,6 +17,7 @@
 #include <lib/fastboot.h>
 #include <platform/fdt.h>
 #include <ufdt_overlay.h>
+#include <lib/font_display.h>
 
 #define BUFFER_SIZE	4096
 #define MASK_4GB	(0xFFFFFFFF)
@@ -52,12 +53,14 @@ void merge_dto_to_main_dtb(void)
 
 		if ((id == board_id) && (rev == board_rev)) {
 			printf("DTBO: id: 0x%x, rev: 0x%x\n", id, rev);
+			print_lcd_update(FONT_YELLOW, FONT_BLACK, "DTBO: id: 0x%x, rev: 0x%x\n", id, rev);
 			break;
 		}
 	}
 
 	if (i == fdt32_to_cpu(dtbo_table->dt_entry_count)) {
 		printf("DTBO: Not found dtbo of board_rev 0x%x.\n", board_rev);
+		print_lcd_update(FONT_RED, FONT_BLACK, "DTBO: Not found dtbo of board_rev 0x%x.\n", board_rev);
 		do_fastboot(0, 0);
 		return;
 	}
