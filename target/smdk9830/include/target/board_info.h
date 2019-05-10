@@ -19,6 +19,7 @@
 
 #define CONFIG_DTB_IN_BOOT
 #define CONFIG_RAMDISK_IN_BOOT
+#define CONFIG_GET_B_REV_FROM_ADC
 
 #endif /*__BOARD_INFO_H__ */
 
