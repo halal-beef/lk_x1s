@@ -8,20 +8,19 @@
  * to third parties without the express written permission of Samsung Electronics.
  */
 
-#ifndef __BOARD_INFO_H__
-#define __BOARD_INFO_H__
+#ifndef __B_REV_GPIO_H__
 
-#define CONFIG_BOARD_ID		0x10
-#define CONFIG_SUB_PMIC_S2DOS05
-#define CONFIG_UFS_BOARD_TYPE	1      /* smdk : 0, universal : 1 */
+#define B_REV_GPIO_LINES	1
 
-#define CONFIG_USE_RPMB
+/*
+	HW_REV_M - 0: Advanced, 1: Mass
+ */
 
-#define BOOT_IMG_HDR_V2
-#define CONFIG_DTB_IN_BOOT
-#define CONFIG_RAMDISK_IN_BOOT
+struct b_rev_gpio_info b_rev_gpio[B_REV_GPIO_LINES] = {
+	{
+		.bank = (struct exynos_gpio_bank *) EXYNOS9830_GPC0CON,
+		.bit = 3,
+	},
+};
 
-#define CONFIG_GET_B_REV_FROM_ADC
-#define CONFIG_GET_B_REV_FROM_GPIO
-
-#endif /*__BOARD_INFO_H__ */
+#endif /*__B_REV_GPIO_H__*/
