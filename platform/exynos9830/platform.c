@@ -38,6 +38,17 @@
 #include <lib/logo_display.h>
 #include <target/dpu_config.h>
 #include <stdio.h>
+#include <platform/b_rev.h>
+
+#ifdef CONFIG_GET_B_REV_FROM_ADC
+#include <dev/exynos_adc.h>
+#include <target/b_rev_adc.h>
+#endif
+
+#ifdef CONFIG_GET_B_REV_FROM_GPIO
+#include <platform/gpio.h>
+#include <target/b_rev_gpio.h>
+#endif
 
 #ifdef EXYNOS_ACPM_BASE
 #include "acpm.h"
@@ -57,6 +68,75 @@ unsigned int dram_info[24] = { 0, 0, 0, 0 };
 unsigned long long dram_size_info = 0;
 unsigned int secure_os_loaded = 0;
 
+
+#ifdef CONFIG_GET_B_REV_FROM_ADC
+int get_board_rev_adc(int *sh)
+{
+	int i, j;
+	int rev = 0;
+	*sh = 0;
+	int hit_cnt = 0;
+	for (i = 0; i < B_REV_ADC_LINES; i++) {
+		int adc_v = exynos_adc_read_raw(b_rev_adc[i].ch);
+		for (j = 0; j < b_rev_adc[i].levels;j++) {
+			int min = b_rev_adc[i].table[j] - b_rev_adc[i].dt;
+			int max = b_rev_adc[i].table[j] + b_rev_adc[i].dt;
+			if (adc_v >= min && adc_v <= max) {
+				rev = j <<  *sh;
+				*sh += b_rev_adc[i].bits;
+				hit_cnt++;
+				continue;
+			}
+		}
+	}
+
+	if (hit_cnt != B_REV_ADC_LINES)
+		return -1;
+	return rev;
+}
+#endif
+
+#ifdef CONFIG_GET_B_REV_FROM_GPIO
+int get_board_rev_gpio(void)
+{
+	int i;
+	int rev = 0;
+	struct exynos_gpio_bank *bank;
+	for (i = 0; i < B_REV_GPIO_LINES; i++) {
+		int gpio = b_rev_gpio[i].bit;
+		bank = b_rev_gpio[i].bank;
+		exynos_gpio_cfg_pin(bank, gpio, GPIO_INPUT);
+		exynos_gpio_set_pull(bank, gpio, GPIO_PULL_NONE);
+		rev |= (exynos_gpio_get_value(bank, gpio) & 0x1) << i;
+	}
+	return rev;
+
+}
+#endif
+
+void get_board_rev(void)
+{
+#if defined(CONFIG_GET_B_REV_FROM_ADC) || defined(CONFIG_GET_B_REV_FROM_GPIO)
+	int shift = 0;
+	int value = 0;
+#endif
+#ifdef CONFIG_GET_B_REV_FROM_ADC
+	value = get_board_rev_adc(&shift);
+	if (value < 0) {
+		board_rev = 0xffffffff;
+		return;
+	}
+	board_rev |= (unsigned int) value;
+#endif
+#ifdef CONFIG_GET_B_REV_FROM_GPIO
+	value = get_board_rev_gpio();
+	if (value < 0) {
+		board_rev = 0xffffffff;
+		return;
+	}
+	board_rev |= (unsigned int) value << shift;
+#endif
+}
 unsigned int get_charger_mode(void)
 {
 	return charger_mode;
@@ -287,6 +367,7 @@ void platform_init(void)
 #else
 	sub_pmic_s2mpb02_init();
 #endif
+	get_board_rev();
 
 	/*
 	 * check_charger_connect();
