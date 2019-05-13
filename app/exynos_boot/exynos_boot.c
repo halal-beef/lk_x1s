@@ -17,6 +17,7 @@
 #include <platform/charger.h>
 #include <platform/dfd.h>
 #include <platform/gpio.h>
+#include <platform/smc.h>
 #include <dev/boot.h>
 
 int cmd_boot(int argc, const cmd_args *argv);
@@ -41,10 +42,12 @@ static void exynos_boot_task(const struct app_descriptor *app, void *args)
 	if (!is_first_boot() ||
 			(rst_stat & (WARM_RESET | LITTLE_WDT_RESET | BIG_WDT_RESET))) {
 		dfd_run_post_processing();
+		sdm_encrypt_secdram();
 		goto ramdump;
 	}
 	if ((readl(CONFIG_RAMDUMP_SCRATCH) == CONFIG_RAMDUMP_MODE) &&
 		get_charger_mode() == 0) {
+		sdm_encrypt_secdram();
 		goto ramdump;
 	}
 	if (!val)
