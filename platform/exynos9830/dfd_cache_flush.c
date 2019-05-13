@@ -467,6 +467,8 @@ static void write_back_l2_cache(int core)
 			for (way = 0; way < WAY_END_L2; way++)
 				for (sector = 0; sector < SECTOR_END_L2; sector++)
 					dump_l2_operation(core, bank, set, way, sector);
+
+	dumpgpr_flush_secdram(1, core);
 }
 
 static void write_back_d_cache_operation(u32 core, u64 set, u64 way)
@@ -507,6 +509,8 @@ static void write_back_d_cache_operation(u32 core, u64 set, u64 way)
 		writel(data0, daddr + 0x0);
 		writel(data1, daddr + 0x4);
 	}
+
+	dumpgpr_flush_secdram(0, core);
 }
 
 static void write_back_d_cache(int core)
