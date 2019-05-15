@@ -31,7 +31,7 @@ static int ufs_bootlun_enable(int enable);
 */
 static struct ufs_host *_ufs[SCSI_MAX_INITIATOR] = { NULL, };
 static int _ufs_curr_host = 0;
-
+static int ufs_number_of_lus = 0;
 
 /* Array index of ufs_query_params */
 typedef enum {
@@ -1926,6 +1926,11 @@ status_t ufs_init(int mode)
 	ufs_lu_list.prev = 0;
 	ufs_lu_list.next = 0;
 
+	for (i = 0; i < SCSI_MAX_DEVICE; i++) {
+		if (stUnitDescrConfigParam[i].bLUEnable)
+			ufs_number_of_lus++;
+	}
+
 	for (i = 0; i < SCSI_MAX_INITIATOR; i++) {
 		/* Initialize host */
 		r = ufs_init_host(i, _ufs[i]);
@@ -1949,7 +1954,7 @@ status_t ufs_init(int mode)
 			goto out;
 
 		/* SCSI device enumeration */
-		scsi_scan(ufs_dev[i], 0, SCSI_MAX_DEVICE, scsi_exec, NULL, 128, &ufs_lu_list);
+		scsi_scan(ufs_dev[i], 0, ufs_number_of_lus, scsi_exec, NULL, 128, &ufs_lu_list);
 		if (r)
 			goto out;
 		scsi_scan(&ufs_dev_rpmb, 0x44, 0, scsi_exec, "rpmb", 128, &ufs_lu_list);
