@@ -23,6 +23,7 @@ MODULE_DEPS += \
 	lib/ab_update \
 	lib/lock \
 	lib/fastboot \
+	lib/block \
 	dev/scsi \
 	dev/mmc \
 	dev/rpmb \
