@@ -150,14 +150,20 @@ int cm_read_id(struct dsim_device *dsim)
 struct dsim_lcd_driver *cm_get_panel_info(struct dsim_device *dsim)
 {
 	int i;
+	int pre_defined_id = 0;
+	int read_id = 0;
 
 	cm_read_id(dsim);
 
+	read_id = dsim->cm_panel_ops->id & 0xff00ff;
 	for (i = 0; i < NUM_OF_VERIFIED_PANEL; i++) {
 		if (dsim->cm_panel_ops->panel_ids[i] == 0)
 			break;
-		else if (dsim->cm_panel_ops->panel_ids[i] == dsim->cm_panel_ops->id)
-			return panel_list[i];
+		else {
+			pre_defined_id = dsim->cm_panel_ops->panel_ids[i] & 0xff00ff;
+			if (pre_defined_id == read_id)
+				return panel_list[i];
+		}
 	}
 
 	return NULL;
