@@ -414,7 +414,7 @@ static int __utp_write_query_ucd(struct ufs_host *ufs, query_index qry)
 	hdr->flags = UPIU_CMD_FLAGS_NONE;
 	hdr->tag = 0;					/* Only tag #0 is used */
 	hdr->function = ufs_query_params[qry][0];	/* Query Function */
-	if (hdr->function == UPIU_QUERY_OPCODE_WRITE_DESC)
+	if (hdr->function == UFS_STD_WRITE_REQ)
 		hdr->datalength = cpu_to_be16(data_len);
 
 	/* Transaction Specific Fields */
@@ -422,10 +422,10 @@ static int __utp_write_query_ucd(struct ufs_host *ufs, query_index qry)
 	tsf[1] = ufs_query_params[qry][2];		/* IDN */
 	tsf[2] = ufs_query_params[qry][3];		/* INDEX */
 	tsf[3] = ufs_query_params[qry][4];		/* SELECTOR */
-	if (hdr->function == UPIU_QUERY_OPCODE_WRITE_DESC) {
+	if (hdr->function == UFS_STD_WRITE_REQ) {
 		info = cpu_to_be16(data_len);
 		memcpy(&tsf[6], &info, sizeof(u16));
-	} else if (hdr->function == UPIU_QUERY_OPCODE_READ_DESC) {
+	} else if (hdr->function == UFS_STD_READ_REQ) {
 		info = cpu_to_be16(UPIU_DATA_SIZE);
 		memcpy(&tsf[6], &info, sizeof(u16));
 	}
@@ -1885,7 +1885,6 @@ int ufs_set_configuration_descriptor(void)
 		}
 
 		u_delay(1000*1000);
-		break;
 	}
 
 	/* in case of UFS provisioning execution */
