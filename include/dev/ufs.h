@@ -15,6 +15,9 @@
 #include <dev/scsi.h>
 #include <platform/ufs-cal-9830.h>
 
+#define RET_SUCCESS		0	/* 0 = Success */
+#define RET_FAILURE		1	/* 1 = Failure */
+
 #define be16_to_cpu(x) \
 	((((x) & 0xff00) >> 8) | \
 	 (((x) & 0x00ff) << 8))
@@ -44,6 +47,20 @@
 #ifdef SCSI_UFS_DEBUG
 #define debug printf
 #endif
+
+#define ___swab16(x) \
+	((((x) & 0xff00) >> 8) | \
+	 (((x) & 0x00ff) << 8))
+
+#define ___swab32(x) \
+	((u32)( \
+		(((u32)(x) & (u32)0x000000ffUL) << 24) | \
+		(((u32)(x) & (u32)0x0000ff00UL) <<  8) | \
+		(((u32)(x) & (u32)0x00ff0000UL) >>  8) | \
+		(((u32)(x) & (u32)0xff000000UL) >> 24)))
+
+#define __be32_to_cpu(x) \
+	___swab32(x)
 
 #define MAX_CDB_SIZE		16
 #define ALIGNED_UPIU_SIZE	1024
