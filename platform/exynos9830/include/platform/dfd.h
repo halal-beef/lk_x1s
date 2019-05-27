@@ -160,7 +160,7 @@ void dfd_display_rst_stat(void);
 void dfd_display_core_stat(void);
 u64 cpu_boot(u64 id, u64 cpu, u64 fn);
 void dfd_run_post_processing(void);
-void write_back_cache(void);
+void write_back_cache(int cpu);
 void dfd_set_dump_en_for_cacheop(int en);
 void dfd_get_dbgc_version(void);
 void llc_flush_disable(void);
@@ -181,7 +181,7 @@ inline static void dfd_run_post_processing(void)
 {
 }
 
-inline static void write_back_cache(void)
+inline static void write_back_cache(int cpu)
 {
 }
 

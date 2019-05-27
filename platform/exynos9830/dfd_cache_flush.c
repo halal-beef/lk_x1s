@@ -525,43 +525,31 @@ static void write_back_d_cache(int core)
 			write_back_d_cache_operation(core, set, way);
 }
 
-void write_back_cache(void)
+static bool common_cache_flush = false;
+void write_back_cache(int cpu)
 {
-	u32 i, cpu;
-	int corepwr = 0;
-	int l2core = 0xff;
 	u32 stat = 0;
+	u32 cpu_offset = cpu - BIG_CORE_START;
 
-	for (i = 0; i < BIG_NR_CPUS; i++) {
-		cpu = BIG_CORE_START + i;
-		stat = readl(CONFIG_RAMDUMP_GPR_POWER_STAT + (cpu * REG_OFFSET));
-		if (stat == FLUSH_SKIP)
-			continue;
+	stat = readl(CONFIG_RAMDUMP_GPR_POWER_STAT + (cpu * REG_OFFSET));
+	if (stat == FLUSH_SKIP)
+		goto finish;
 
-			corepwr |= (1 << i);
-			if (l2core == 0xff)
-				l2core = i;
+	if (cpu == BIG_CORE_START) {
+		write_back_l3_cache(cpu_offset);
+		write_back_l2_cache(cpu_offset);
+		common_cache_flush = true;
+	} else {
+		if (!common_cache_flush) {
+			write_back_l3_cache(cpu_offset);
+			write_back_l2_cache(cpu_offset);
+			common_cache_flush = true;
+		}
 	}
-
-	printf("Big Cluster power %s(0x%x)\n", (l2core == 0xff) ? "Off. Skip flush." : "On", l2core);
-	write_back_l3_cache(l2core);
-	write_back_l2_cache(l2core);
-	for (i = 0; i < BIG_NR_CPUS; i++) {
-		cpu = BIG_CORE_START + i;
-
-		if (!(corepwr & (1 << i)))
-			continue;
-
-		write_back_d_cache(i);
-
-		stat = readl(CONFIG_RAMDUMP_WAKEUP_WAIT);
-		writel(stat | (1 << cpu), CONFIG_RAMDUMP_WAKEUP_WAIT);
-		stat = readl(CONFIG_RAMDUMP_DUMP_GPR_WAIT);
-		writel((stat | (1 << cpu)), CONFIG_RAMDUMP_DUMP_GPR_WAIT);
-		printf("Core%d: finished Cache Flush level:%d (0x%x)\n", cpu,
-				readl(CONFIG_RAMDUMP_GPR_POWER_STAT + (cpu * REG_OFFSET)),
-				readl(CONFIG_RAMDUMP_DUMP_GPR_WAIT));
-	}
+	write_back_d_cache(cpu_offset);
+finish:
+	stat = readl(CONFIG_RAMDUMP_DUMP_GPR_WAIT);
+	writel((stat | (1 << cpu)), CONFIG_RAMDUMP_DUMP_GPR_WAIT);
 }
 
 void llc_flush(u32 invway)

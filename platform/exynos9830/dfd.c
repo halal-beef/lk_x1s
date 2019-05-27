@@ -155,9 +155,6 @@ void dfd_display_core_stat(void)
 			printf("Unknown: 0x%x\n", ret);
 			break;
 		}
-
-		/* clear IRAM core stat to run next booting naturally */
-		writel(HOTPLUG, CORE_STAT + (val * REG_OFFSET));
 	}
 
 	printf("Core stat at previous(KERNEL)\n");
@@ -236,14 +233,13 @@ void dfd_set_dump_en_for_cacheop(int en)
 static void dfd_set_cache_flush_level(void)
 {
 	int cpu, little_on = -1, big_on = -1;
-	u64 val, stat, ret;
+	u64 val, stat;
 	u64 *cpu_reg;
 
 	for (cpu = 0; cpu < NR_CPUS; cpu++) {
 		u32 offset = cpu * REG_OFFSET;
 		cpu_reg = (u64 *)(CONFIG_RAMDUMP_COREREG + ((u64)cpu * COREREG_OFFSET));
-		ret = readl(CONFIG_RAMDUMP_CORE_PANIC_STAT + offset);
-		if (!cpu_reg[POWER_STATE] || ret == RAMDUMP_SIGN_PANIC) {
+		if (!cpu_reg[POWER_STATE]) {
 			stat = FLUSH_SKIP;
 		} else {
 			if (cpu <= MID_CORE_LAST)
@@ -337,33 +333,28 @@ off:
 	}
 }
 
-static void dfd_run_cache_flush(void)
+static void get_sec_info(bool on)
 {
-	s64 sec_area_length = exynos_smc(SMC_CMD_GET_SOC_INFO,
-			SOC_INFO_TYPE_SEC_DRAM_SIZE, 0, 0);
-	sec_area_base = exynos_smc(SMC_CMD_GET_SOC_INFO,
-			SOC_INFO_TYPE_SEC_DRAM_BASE, 0, 0);
-#ifdef DEBUG_PRINT
-	printf("sec_area_length = %x\n", sec_area_length);
-	printf("sec_area_base = %x\n", sec_area_base);
-#endif
-	if (sec_area_base == ERROR_INVALID_TYPE) {
-		printf("get secure memory base addr error!!\n");
-		while (1)
-			wfi();
-	}
+	if (on) {
+		s64 sec_area_length = exynos_smc(SMC_CMD_GET_SOC_INFO,
+				SOC_INFO_TYPE_SEC_DRAM_SIZE, 0, 0);
+		sec_area_base = exynos_smc(SMC_CMD_GET_SOC_INFO,
+				SOC_INFO_TYPE_SEC_DRAM_BASE, 0, 0);
 
-	if (sec_area_length == ERROR_INVALID_TYPE) {
-		printf("get secure memory size error!!\n");
-		while (1)
-			wfi();
-	}
-	sec_area_end = sec_area_base + sec_area_length - 1;
-	/* Dump cache and flush of BIG */
-	write_back_cache();
+		if (sec_area_base == ERROR_INVALID_TYPE) {
+			printf("get secure memory base addr error!!\n");
+			return;
+		}
 
-	sec_area_base = 0;
-	sec_area_end = 0;
+		if (sec_area_length == ERROR_INVALID_TYPE) {
+			printf("get secure memory size error!!\n");
+			return;
+		}
+		sec_area_end = sec_area_base + sec_area_length - 1;
+	} else {
+		sec_area_base = 0;
+		sec_area_end = 0;
+	}
 }
 
 static void dfd_ipc_read_buffer(void *dest, const void *src, int len)
@@ -484,7 +475,6 @@ void dfd_run_post_processing(void)
 		goto finish;
 	}
 
-	dfd_set_dump_en_for_cacheop(0);
 	llc_flush_disable();
 
 #ifdef SCAN2DRAM_SOLUTION
@@ -514,6 +504,7 @@ void dfd_run_post_processing(void)
 	}
 
 	mdelay(100);
+
 #if 0
 	//Send Postprocessing Command. ID value is RUN DUMP.
 	cmd.cmd_raw.id = PP_IPC_CMD_ID_RUN_DUMP;
@@ -521,12 +512,16 @@ void dfd_run_post_processing(void)
 	printf("Try to get Arraydump of power on cores - ");
 	printf("%s(0x%x)!\n", dfd_ipc_send_data_polling(&cmd) < 0 ? "Failed" : "Finish", cmd.buffer[1]);
 #endif
+	get_sec_info(true);
 	//when receiving ipc, cpu0 is running. Run cache flush
-	for (cpu = 0; cpu <= MID_CORE_LAST; cpu++) {
+	for (cpu = 0; cpu < NR_CPUS; cpu++) {
 		val = readl(CONFIG_RAMDUMP_WAKEUP_WAIT);
 		writel(val | (1 << cpu), CONFIG_RAMDUMP_WAKEUP_WAIT);
 		if (cpu == 0)
 			dfd_secondary_cpu_cache_flush(cpu);
+
+		if (cpu >= BIG_CORE_START && cpu <= BIG_CORE_LAST)
+			write_back_cache(cpu);
 
 		if (!dfd_wait_complete(cpu)) {
 			printf("Core%d: ERR wait timeout.\n", cpu);
@@ -537,8 +532,7 @@ void dfd_run_post_processing(void)
 		(readl(CONFIG_RAMDUMP_GPR_POWER_STAT + (cpu * REG_OFFSET))),
 		readl(CONFIG_RAMDUMP_DUMP_GPR_WAIT));
 	}
-	/* CacheFlush for big cluster */
-	dfd_run_cache_flush();
+	get_sec_info(false);
 finish:
 #ifdef SCAN2DRAM_SOLUTION
 	cmd.cmd_raw.id = PP_IPC_CMD_ID_FINISH;
