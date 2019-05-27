@@ -232,7 +232,7 @@ int debug_snapshot_getvar_item(const char *name, char *response)
 		        item->rmem.paddr + item->rmem.size - 1);
 	}
 
-	snprintf(log_name, sizeof(log_name), "log_%s", name);
+	snprintf(log_name, sizeof(log_name) - 1, "log_%s", name);
 	item = debug_snapshot_get_item(log_name);
 	if (!item)
 		return -1;
