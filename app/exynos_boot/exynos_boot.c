@@ -41,7 +41,7 @@ static void exynos_boot_task(const struct app_descriptor *app, void *args)
 	val = exynos_gpio_get_value(bank, gpio);
 	if (!is_first_boot() ||
 			(rst_stat & (WARM_RESET | LITTLE_WDT_RESET | BIG_WDT_RESET))) {
-		dfd_run_post_processing();
+		dfd_set_dump_en_for_cacheop(0);
 		sdm_encrypt_secdram();
 		goto ramdump;
 	}
