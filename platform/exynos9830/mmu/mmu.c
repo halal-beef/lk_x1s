@@ -406,7 +406,9 @@ static void s5e9830_mmu_table_init(void)
 	set_tt_entry((u64 *)0x10000000, (u64 *)0x1FFFFFFF, (u64 *)0x10000000, TT_PERI);
 	set_tt_entry((u64 *)0x80000000, (u64 *)0xF97FFFFF, (u64 *)0x80000000, TT_RAM);
 	set_tt_entry((u64 *)0xF9800000, (u64 *)0xFD3FFFFF, (u64 *)0xF9800000, TT_NONCACHEBLE);
-	set_tt_entry((u64 *)0xFD400000, (u64 *)0xFFFFFFFF, (u64 *)0xFD400000, TT_RAM);
+	set_tt_entry((u64 *)0xFD400000, (u64 *)0xFD8FFFFF, (u64 *)0xFD400000, TT_RAM);
+	set_tt_entry((u64 *)0xFD900000, (u64 *)0xFDAFFFFF, (u64 *)0xFD900000, TT_NONCACHEBLE);
+	set_tt_entry((u64 *)0xFDB00000, (u64 *)0xFFFFFFFF, (u64 *)0xFDB00000, TT_RAM);
 	set_tt_entry((u64 *)0x880000000, (u64 *)0xAFFFFFFFF, (u64 *)0x880000000, TT_RAM);
 }
 

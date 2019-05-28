@@ -163,7 +163,6 @@ int debug_store_ramdump(void)
 
 	/* Reset device for normal booting */
 	writel(0, CONFIG_RAMDUMP_SCRATCH);
-	clean_invalidate_dcache_range(CONFIG_RAMDUMP_SCRATCH, CONFIG_RAMDUMP_SCRATCH + 64);
 
 	writel(0x2, EXYNOS9830_POWER_SYSTEM_CONFIGURATION);
 
