@@ -87,26 +87,30 @@ void dfd_display_reboot_reason(void)
 
 	switch (ret) {
 	case RAMDUMP_SIGN_PANIC:
-		printf("retboot reason: 0x%x - Kernel PANIC\n", ret);
+		printf("reboot reason: 0x%x - Kernel PANIC\n", ret);
 		print_lcd_update(FONT_YELLOW, FONT_RED, "0x%x - Kernel PANIC", ret);
 		dfd_display_panic_reason();
 		break;
 	case RAMDUMP_SIGN_NORMAL_REBOOT:
-		printf("retboot reason: 0x%x - User Reboot(S/W Reboot)\n", ret);
+		printf("reboot reason: 0x%x - User Reboot(S/W Reboot)\n", ret);
 		print_lcd_update(FONT_WHITE, FONT_BLACK, "0x%x - User Reboot(S/W Reboot)", ret);
 		break;
+	case RAMDUMP_SIGN_BL_REBOOT:
+		printf("reboot resaon: 0x%x - BL Reboot(S/W Reboot)\n", ret);
+		print_lcd_update(FONT_WHITE, FONT_BLACK, "0x%x - BL Reboot(S/W Reboot)", ret);
+		break;
 	case RAMDUMP_SIGN_FORCE_REBOOT:
-		printf("retboot reason: 0x%x - Forced Reboot(S/W Reboot)\n", ret);
+		printf("reboot reason: 0x%x - Forced Reboot(S/W Reboot)\n", ret);
 		print_lcd_update(FONT_WHITE, FONT_BLUE, "0x%x - Forced Reboot(S/W Reboot)", ret);
 		break;
 	case RAMDUMP_SIGN_SAFE_FAULT:
-		printf("retboot reason: 0x%x - Safe Kernel PANIC\n", ret);
+		printf("reboot reason: 0x%x - Safe Kernel PANIC\n", ret);
 		print_lcd_update(FONT_YELLOW, FONT_RED, "0x%x - Safe Kernel PANIC", ret);
 		dfd_display_panic_reason();
 		break;
 	case RAMDUMP_SIGN_RESET:
 	default:
-		printf("retboot reason: 0x%x - Power/Emergency Reset\n", ret);
+		printf("reboot reason: 0x%x - Power/Emergency Reset\n", ret);
 		print_lcd_update(FONT_YELLOW, FONT_RED, "0x%x - Power/Emergency Reset", ret);
 		break;
 	}
