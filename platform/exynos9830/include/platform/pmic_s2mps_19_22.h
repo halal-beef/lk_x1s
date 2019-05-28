@@ -101,5 +101,6 @@ enum {
 void pmic_init(void);
 void display_pmic_info(void);
 void display_pmic_rtc_time(void);
+int get_pmic_rtc_time(char *buf);
 
 #endif /*__S2MPS_19_22_PMIC_H__*/

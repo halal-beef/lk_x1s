@@ -27,6 +27,7 @@
 #include <platform/environment.h>
 #include <platform/dfd.h>
 #include <platform/mmu/mmu_func.h>
+#include <platform/dss_store_ramdump.h>
 #include <dev/boot.h>
 #include <dev/rpmb.h>
 #include <dev/scsi.h>
@@ -155,6 +156,8 @@ int fb_do_getvar(const char *cmd_buffer)
 			sprintf(response + 4, "%d", ab_slot_retry_count(slot));
 	} else if (!memcmp(cmd_buffer + 7, "has-slot", strlen("has-slot"))) {
 		sprintf(response + 4, "no");
+	} else if (!memcmp(cmd_buffer + 7, "str_ram", strlen("str_ram"))) {
+		debug_store_ramdump_getvar(cmd_buffer + 15, response + 4);
 	} else {
 		debug_snapshot_getvar_item(cmd_buffer + 7, response + 4);
 	}
@@ -337,21 +340,26 @@ int fb_do_download(const char *cmd_buffer)
 
 static void start_ramdump(void *buf)
 {
-	struct fastboot_ramdump_hdr *hdr = buf;
+	struct fastboot_ramdump_hdr hdr = *(struct fastboot_ramdump_hdr *)buf;
 	static uint32_t ramdump_cnt = 0;
 
-	printf("\nramdump start address is [0x%lx]\n", hdr->base);
-	printf("ramdump size is [0x%lx]\n", hdr->size);
-	printf("version is [0x%lx]\n", hdr->version);
+	printf("\nramdump start address is [0x%lx]\n", hdr.base);
+	printf("ramdump size is [0x%lx]\n", hdr.size);
+	printf("version is [0x%lx]\n", hdr.version);
 
-	if (hdr->version != 2)
+	if (hdr.version != 2)
 		printf("you are using wrong version of fastboot!!!\n");
 
 	/* dont't generate DECERR even if permission failure of ASP occurs */
 	if (ramdump_cnt++ == 0)
 		set_tzasc_action(0);
 
-	if (!fastboot_tx_mem(hdr->base, hdr->size))
+	if (debug_store_ramdump_redirection(&hdr)) {
+		printf("Failed ramdump~! \n");
+		return;
+	}
+
+	if (!fastboot_tx_mem(hdr.base, hdr.size))
 		printf("Failed ramdump~! \n");
 	else
 		printf("Finished ramdump~! \n");
@@ -451,6 +459,27 @@ int fb_do_flashing(const char *cmd_buffer)
 	return 0;
 }
 
+int fb_do_oem(const char *cmd_buffer)
+{
+	char buf[FB_RESPONSE_BUFFER_SIZE];
+	char *response = (char *)(((unsigned long)buf + 8) & ~0x07);
+
+	if (!strncmp(cmd_buffer + 4, "str_ram", 7)) {
+		if (!debug_store_ramdump_oem(cmd_buffer + 12))
+			sprintf(response, "OKAY");
+		else
+			sprintf(response, "FAILunsupported command");
+
+		fastboot_tx_status(response, strlen(response), FASTBOOT_TX_ASYNC);
+	} else {
+		printf("Unsupported oem command!\n");
+		sprintf(response, "FAILunsupported command");
+		fastboot_tx_status(response, strlen(response), FASTBOOT_TX_ASYNC);
+	}
+
+	return 0;
+}
+
 struct cmd_fastboot cmd_list[] = {
 	{ "reboot", fb_do_reboot },
 	{ "flash:", fb_do_flash },
@@ -460,6 +489,7 @@ struct cmd_fastboot cmd_list[] = {
 	{ "getvar:", fb_do_getvar },
 	{ "set_active:", fb_do_set_active },
 	{ "flashing", fb_do_flashing },
+	{ "oem", fb_do_oem},
 };
 
 static int rx_handler(const unsigned char *buffer, unsigned int buffer_size)

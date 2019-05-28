@@ -18,6 +18,7 @@
 #include <platform/dfd.h>
 #include <platform/gpio.h>
 #include <platform/smc.h>
+#include <platform/dss_store_ramdump.h>
 #include <dev/boot.h>
 
 int cmd_boot(int argc, const cmd_args *argv);
@@ -67,6 +68,7 @@ ramdump:
 #ifdef RAMDUMP_MODE_OFF
 	cmd_boot(0, 0);
 #else
+	debug_store_ramdump();
 	do_fastboot(0, 0);
 #endif
 	return;
