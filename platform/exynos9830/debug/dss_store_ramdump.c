@@ -66,10 +66,20 @@ int debug_store_ramdump(void)
 	u64 dram_size;
 	u64 dram_write_size;
 	u64 dram_ptr;
+	u32 reboot_reason;
 	int ret = 0;
 
 	if (!g_is_enabled) {
 		printf("%s: Store Ramdump is off\n", __func__);
+		goto store_out;
+	}
+
+	reboot_reason = readl(CONFIG_RAMDUMP_REASON);
+	if (reboot_reason == RAMDUMP_SIGN_BL_REBOOT) {
+		printf("%s: Bootloader Reboot, Skip saving remdump\n", __func__);
+
+		/* reset reboot reason */
+		writel(0, CONFIG_RAMDUMP_REASON);
 		goto store_out;
 	}
 
