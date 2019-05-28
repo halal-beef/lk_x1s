@@ -434,9 +434,9 @@ void dfd_run_post_processing(void)
 	int ret;
 #ifdef SCAN2DRAM_SOLUTION
 	struct dfd_ipc_cmd cmd;
-	u32 arr_addr = (u32)debug_snapshot_get_item_paddr("log_arrdumpreset");
-	u32 s2d_addr = (u32)debug_snapshot_get_item_paddr("log_s2d");
-	u32 s2d_size = (u32)debug_snapshot_get_item_size("log_s2d");
+	u32 arr_addr = (u32)dbg_snapshot_get_item_paddr("log_arrdumpreset");
+	u32 s2d_addr = (u32)dbg_snapshot_get_item_paddr("log_s2d");
+	u32 s2d_size = (u32)dbg_snapshot_get_item_size("log_s2d");
 
 	memset(&cmd, 0, sizeof(struct dfd_ipc_cmd));
 #endif
@@ -575,8 +575,8 @@ retry:
 	dfd_ipc_send_data_polling(&cmd);
 
 	cmd.cmd_raw.cmd = IPC_CMD_DEBUG_LOG_INFO;
-	dfd_ipc_fill_buffer(&cmd, debug_snapshot_get_item_paddr("log_dbgc"),
-			debug_snapshot_get_item_size("log_dbgc"), 0);
+	dfd_ipc_fill_buffer(&cmd, dbg_snapshot_get_item_paddr("log_dbgc"),
+			dbg_snapshot_get_item_size("log_dbgc"), 0);
 	dfd_ipc_send_data_polling(&cmd);
 }
 

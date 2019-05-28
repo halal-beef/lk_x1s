@@ -89,7 +89,7 @@
 #define OFFSET_STEP_NUM_D		0x08
 #define OFFSET_STEP_WIDTH_D		0x03
 
-#define L3CACHE_DUMP_ADDR		(u32)debug_snapshot_get_item_paddr("log_arrdumpreset")
+#define L3CACHE_DUMP_ADDR		(u32)dbg_snapshot_get_item_paddr("log_arrdumpreset")
 #define L3CACHE_DUMP_SIZE		(u64)0x00460000
 #define L3CACHE_TAG_SIZE		(u64)(L3_BANK_NUM * L3_SUBBANK_NUM * SET_END_L3 * \
 					WAY_END_L3 / L3_TAG_WAYS_CONCATENATE * L3_TAG_SIZE)

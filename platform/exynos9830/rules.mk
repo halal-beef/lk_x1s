@@ -22,15 +22,10 @@ MODULE_SRCS += \
 	$(LOCAL_DIR)/pmic/pmic_s2mps_19_22.c \
 	$(LOCAL_DIR)/pmic/sub_pmic_s2mpb02.c \
 	$(LOCAL_DIR)/gpio_init.S \
-	$(LOCAL_DIR)/dfd.c \
-	$(LOCAL_DIR)/dfd_cache_flush.c \
-	$(LOCAL_DIR)/dfd_asm_helper.S \
 	$(LOCAL_DIR)/gpio.c \
 	$(LOCAL_DIR)/dpu_cal/decon_reg.c \
 	$(LOCAL_DIR)/dpu_cal/dpp_reg.c \
 	$(LOCAL_DIR)/dpu_cal/dsim_reg.c \
-	$(LOCAL_DIR)/debug-snapshot-uboot.c \
-	$(LOCAL_DIR)/dfd_verify.c \
 	$(LOCAL_DIR)/fdt.c \
 	$(LOCAL_DIR)/flexpmu_dbg.c \
 	$(LOCAL_DIR)/tmu.c \
@@ -38,7 +33,12 @@ MODULE_SRCS += \
 	$(LOCAL_DIR)/mmc.c \
 	$(LOCAL_DIR)/dw_mmc.c \
 	$(LOCAL_DIR)/mmu/cpu_a.S \
-	$(LOCAL_DIR)/mmu/mmu.c
+	$(LOCAL_DIR)/mmu/mmu.c \
+	$(LOCAL_DIR)/debug/dfd.c \
+	$(LOCAL_DIR)/debug/dfd_cache_flush.c \
+	$(LOCAL_DIR)/debug/dfd_asm_helper.S \
+	$(LOCAL_DIR)/debug/dfd_verify.c \
+	$(LOCAL_DIR)/debug/dss.c
 
 MODULE_DEPS += \
     dev/interrupt/arm_gic \
