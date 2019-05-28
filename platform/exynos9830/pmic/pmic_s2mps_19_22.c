@@ -144,3 +144,32 @@ void display_pmic_rtc_time(void)
 	       time[PMIC_RTC_SEC], time[PMIC_RTC_WEEK],
 	       time[PMIC_RTC_HOUR] & (1 << 6) ? "PM" : "AM");
 }
+
+int get_pmic_rtc_time(char *buf)
+{
+	int i;
+	u8 tmp;
+	u8 time[NR_PMIC_RTC_CNT_REGS];
+
+	speedy_read(CONFIG_SPEEDY0_BASE, S2MPS19_RTC_ADDR, S2MPS19_RTC_UPDATE, &tmp);
+	tmp |= 0x1;
+	speedy_write(CONFIG_SPEEDY0_BASE, S2MPS19_RTC_ADDR, S2MPS19_RTC_UPDATE, tmp);
+	udelay(40);
+
+
+	for (i = 0; i < NR_PMIC_RTC_CNT_REGS; i++)
+		speedy_read(CONFIG_SPEEDY0_BASE, S2MPS19_RTC_ADDR, (S2MPS19_RTC_SEC + i), &time[i]);
+
+	printf("RTC TIME: %d-%02d-%02d %02d:%02d:%02d(0x%02x)%s\n",
+	       time[PMIC_RTC_YEAR] + 2000, time[PMIC_RTC_MONTH],
+	       time[PMIC_RTC_DATE], time[PMIC_RTC_HOUR] & 0x1f, time[PMIC_RTC_MIN],
+	       time[PMIC_RTC_SEC], time[PMIC_RTC_WEEK],
+	       time[PMIC_RTC_HOUR] & (1 << 6) ? "PM" : "AM");
+
+	sprintf(buf, "%04d%02d%02d%02d%02d%02d%s",
+		time[PMIC_RTC_YEAR] + 2000, time[PMIC_RTC_MONTH],
+		time[PMIC_RTC_DATE], time[PMIC_RTC_HOUR] & 0x1f, time[PMIC_RTC_MIN],
+		time[PMIC_RTC_SEC], time[PMIC_RTC_HOUR] & (1 << 6) ? "PM" : "AM");
+
+	return 0;
+}
