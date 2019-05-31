@@ -146,11 +146,11 @@ static inline int ufs_init_cal(struct ufs_host *ufs, int idx)
 		ufs->cal_param->board = BRD_SMDK;
 
 	ufs->cal_param->evt_ver = (readl(0x10000010) >> 20) & 0xf;
-	printf("ufs->cal_param->evt_ver is EVT%d!!!\n", ufs->cal_param->evt_ver);
+	printf("UFS EVT version %d\n", ufs->cal_param->evt_ver);
 
 	ret = ufs_cal_init(ufs->cal_param, idx);
 	if (ret != UFS_CAL_NO_ERROR) {
-		printf("ufs_init_cal failed with %d!!!\n", ret);
+		printf("UFS Init failed with %d\n", ret);
 		return ERR_GENERIC;
 	}
 
@@ -402,12 +402,19 @@ static void __utp_write_cmd_ucd(struct ufs_host *ufs)
 static int __utp_write_query_ucd(struct ufs_host *ufs, query_index qry)
 {
 	int r = 0;
+	int lun;
 
 	struct ufs_upiu *cmd_ptr = &ufs->cmd_desc_addr->command_upiu;
 	struct ufs_upiu_header *hdr = &cmd_ptr->header;
 	u8 *tsf = cmd_ptr->tsf;
-	u16 data_len = MIN(0x90, UPIU_DATA_SIZE);		//
+	u16 data_len;
 	u32 info;
+
+	/* setup data segment length */
+	ufs->data_seg_len = ufs->device_desc.bUD0BaseOffset
+		+ (8 * ufs->device_desc.bUDConfigPlength);
+
+	data_len = MIN(ufs->data_seg_len, UPIU_DATA_SIZE);
 
 	/* header */
 	hdr->type = UPIU_TRANSACTION_QUERY_REQ;
@@ -422,6 +429,7 @@ static int __utp_write_query_ucd(struct ufs_host *ufs, query_index qry)
 	tsf[1] = ufs_query_params[qry][2];		/* IDN */
 	tsf[2] = ufs_query_params[qry][3];		/* INDEX */
 	tsf[3] = ufs_query_params[qry][4];		/* SELECTOR */
+
 	if (hdr->function == UFS_STD_WRITE_REQ) {
 		info = cpu_to_be16(data_len);
 		memcpy(&tsf[6], &info, sizeof(u16));
@@ -429,6 +437,7 @@ static int __utp_write_query_ucd(struct ufs_host *ufs, query_index qry)
 		info = cpu_to_be16(UPIU_DATA_SIZE);
 		memcpy(&tsf[6], &info, sizeof(u16));
 	}
+
 	if (tsf[0] == UPIU_QUERY_OPCODE_WRITE_ATTR) {
 		info = cpu_to_be32(ufs->attributes.arry[tsf[1]]);
 		memcpy(&tsf[8], &info, sizeof(u32));
@@ -436,8 +445,36 @@ static int __utp_write_query_ucd(struct ufs_host *ufs, query_index qry)
 		tsf[11] = (u8)ufs->flags.arry[tsf[1]];
 
 	/* Data */
-	if (tsf[0] == UPIU_QUERY_OPCODE_WRITE_DESC)
-		memcpy(cmd_ptr->data, &ufs->config_desc, data_len);
+	if (tsf[0] == UPIU_QUERY_OPCODE_WRITE_DESC) {
+		if (tsf[1] == UPIU_DESC_ID_CONFIGURATION) {
+			if (!ufs->device_desc.bUDConfigPlength || !ufs->device_desc.bUD0BaseOffset) {
+				printf("UFS err during setup congif_desc, device_desc.bUD0BaseOffset : %d, device_desc.bUDConfigPlength : %d\n",
+					ufs->device_desc.bUD0BaseOffset, ufs->device_desc.bUDConfigPlength);
+				return RET_FAILURE;
+			}
+
+			/* setup config desc header */
+			memcpy(cmd_ptr->data, &ufs->config_desc.header, ufs->device_desc.bUD0BaseOffset);
+
+			/* setup config desc param of each LU */
+			for (lun = 0; lun < 8; lun++)
+				memcpy(cmd_ptr->data + ufs->device_desc.bUD0BaseOffset + lun*ufs->device_desc.bUDConfigPlength,
+					&ufs->config_desc.unit[lun], ufs->device_desc.bUDConfigPlength);
+
+			printf("UFS_QUERY_WRITE_DESC_CONFIG, len : %02x\n", data_len);
+#ifdef SCSI_UFS_DEBUG
+			u32 i;
+			printf("==== ufs configuration descriptor setup ====\n");
+			for (i = 0; i < UPIU_DATA_SIZE/4; i++) {
+				printf("  0x%02x", cmd_ptr->data[i]);
+				if (((i + 1) % 32) == 0)
+					printf("\n");
+			}
+			printf("\n==========================================\n");
+#endif
+		} else
+			memcpy(cmd_ptr->data, &ufs->config_desc, data_len);
+	}
 
 	return r;
 }
@@ -696,7 +733,7 @@ static void __utp_query_read_info(struct ufs_host *ufs, u8 idn)
 	u8 *data = resp_ptr->data;
 	void *dst = NULL;
 	size_t len = 0;
-
+	int lun;
 
 	switch (idn) {
 	case UPIU_DESC_ID_UNIT:
@@ -709,18 +746,49 @@ static void __utp_query_read_info(struct ufs_host *ufs, u8 idn)
 		break;
 	case UPIU_DESC_ID_CONFIGURATION:
 		dst = &ufs->config_desc;
-		len = MIN(data[0], 0x90);	// TODO: 90??
+		ufs->data_seg_len = ufs->device_desc.bUD0BaseOffset
+			+ 8*ufs->device_desc.bUDConfigPlength;
+		len = MIN(data[0], ufs->data_seg_len);
+
+		if (!ufs->device_desc.bUDConfigPlength || !ufs->device_desc.bUD0BaseOffset) {
+			printf("UFS err during update congif_desc, device_desc.bUD0BaseOffset : %d, device_desc.bUDConfigPlength : %d\n",
+				ufs->device_desc.bUD0BaseOffset, ufs->device_desc.bUDConfigPlength);
+			return;
+		}
 		break;
 	case UPIU_DESC_ID_GEOMETRY:
 		dst = &ufs->geometry_desc;
 		len = MIN(data[0], sizeof(struct ufs_geometry_desc));
 		break;
 	default:
-		//
 		break;
 	}
-	if (dst)
-		memcpy(dst, resp_ptr->data, len);
+
+	if (dst) {
+		if (idn == UPIU_DESC_ID_CONFIGURATION) {
+			/* update config desc header */
+			memcpy(&ufs->config_desc.header, resp_ptr->data, ufs->device_desc.bUD0BaseOffset);
+			/* update config desc param of each LU */
+			for (lun = 0; lun < 8; lun++)
+				memcpy(&ufs->config_desc.unit[lun],
+				resp_ptr->data + ufs->device_desc.bUD0BaseOffset
+						+ (lun * ufs->device_desc.bUDConfigPlength),
+				ufs->device_desc.bUDConfigPlength);
+
+#ifdef SCSI_UFS_DEBUG
+			u32 i;
+			printf("==== ufs configuration descriptor response ====\n");
+			for (i = 0; i < UPIU_DATA_SIZE/4; i++) {
+				printf("  0x%08x", ___swab32(ufs->cmd_desc_addr->response_upiu.data[i]));
+				if (((i + 1) % 8) == 0)
+					printf("\n");
+			}
+			printf("\n==========================================\n");
+#endif
+
+		} else
+			memcpy(dst, resp_ptr->data, len);
+	}
 }
 
 static void __utp_query_get_data(struct ufs_host *ufs, query_index qry)
@@ -795,10 +863,10 @@ static int __utp_check_result(struct ufs_host *ufs)
 				pscm->sense_buf[10], pscm->sense_buf[11], pscm->sense_buf[12], pscm->sense_buf[13], pscm->sense_buf[14],
 				pscm->sense_buf[15], pscm->sense_buf[16], pscm->sense_buf[17]);
 	} else if (hdr->type == UPIU_TRANSACTION_QUERY_RSP)
-		printf("QUERY Response(%02x) : ", hdr->response);
+		printf("UFS QUERY Response(%02x) : ", hdr->response);
 
 	/* Show Reponse */
-	printf("UFS: %s for type 0x%02x\n", resp_msg[hdr->response], hdr->type);
+	printf("%s for type 0x%02x\n", resp_msg[hdr->response], hdr->type);
 
 	/* Return non-zero if target failure */
 	if (hdr->response != 0)
@@ -841,8 +909,10 @@ static int ufs_utp_cmd_process(struct ufs_host *ufs, scm * pscm)
 
 	/* Describe all descriptors */
 	r = __utp_write_cmd_all_descs(ufs);
-	if (r != 0)
+	if (r != 0) {
+		printf("UFS upt write cmd desc error: %d\n", r);
 		goto end;
+	}
 
 	wmb();
 	/* Submit a command */
@@ -850,13 +920,17 @@ static int ufs_utp_cmd_process(struct ufs_host *ufs, scm * pscm)
 
 	/* Wait for response */
 	r = __utp_wait_for_response(ufs, type);
-	if (r != 0)
+	if (r != 0) {
+		printf("UFS upt cmd response error : %d\n", r);
 		goto end;
+	}
 
 	/* Get and check result */
 	r = __utp_check_result(ufs);
-	if (r != 0)
+	if (r != 0) {
+		printf("UFS utp check result error: %d\n", r);
 		goto end;
+	}
 end:
 	return r;
 }
@@ -883,13 +957,17 @@ static int ufs_utp_nop_process(struct ufs_host *ufs)
 
 	/* Wait for response */
 	r = __utp_wait_for_response(ufs, type);
-	if (r != 0)
+	if (r != 0) {
+		printf("UFS upt nop response error: %d\n", r);
 		goto end;
+	}
 
 	/* Get and check result */
 	r = __utp_check_result(ufs);
-	if (r != 0)
+	if (r != 0) {
+		printf("UFS upt nop check result error: %d\n", r);
 		goto end;
+	}
 
 end:
 	return r;
@@ -909,22 +987,28 @@ static int ufs_utp_query_process(struct ufs_host *ufs, query_index qry, u32 lun)
 
 	/* Describe all descriptors */
 	r = __utp_write_query_all_descs(ufs, qry);
-	if (r != 0)
+	if (r != 0) {
+		printf("UFS upt write query desc  error : %d\n", r);
 		goto end;
+	}
 
 	wmb();
 	/* Submit a command */
 	__utp_send(ufs, type);
 
 	/* Wait for response */
-	__utp_wait_for_response(ufs, type);
-	if (r != 0)
+	r = __utp_wait_for_response(ufs, type);
+	if (r != 0) {
+		printf("UFS upt query response error: %d\n", r);
 		goto end;
+	}
 
 	/* Get and check result */
 	r = __utp_check_result(ufs);
-	if (r != 0)
+	if (r != 0) {
+		printf("UFS upt check result error: %d\n", r);
 		goto end;
+	}
 
 	__utp_query_get_data(ufs, qry);
 
@@ -967,28 +1051,52 @@ static int ufs_bootlun_enable(int enable)
 	return ufs_utp_query_process(ufs, qry, 0);
 }
 
-void ufs_edit_config_desc(u32 lun, u32 enable, u32 bootlun, u32 writeprotect, u32 type, u32 capacity)
+/*
+ * ufs_edit_config_desc - Prepare config descriptor for provisioning
+ *
+ * @capacity(Mbyte) : dNumAllocUnits = CEILING((LUCapacity(byte) * CapacityAdjFactor) / (bAllocationUnitSize * dSegmentSize * 512))
+ * We use 2048 for dUnmalocUnits calculation. 2048 = Mbyte(1024 * 1024) / 512
+ */
+int ufs_edit_config_desc(u32 lun, u32 enable, u32 bootlun, u32 writeprotect, u32 type, u32 capacity)
 {
 	int i;
 	u32 sum = 0;
-	int res;
+	int res = 0;
+	u32 dExtendedUFSFeaturesSupport;
 	struct ufs_host *ufs = get_cur_ufs_host();
 
-	if (!ufs || (lun > 7 && (lun & (0x1 << 7))))
-		return;
+	if (!ufs || (lun > 7 && (lun & (0x1 << 7)))) {
+		printf("UFS Edit there is no lun for provisioning\n");
+		return RET_SUCCESS;
+	}
 
 	ufs->lun = 0;
 
 	res = ufs_utp_query_process(ufs, DESC_R_DEVICE_DESC, 1);
 	if (res) {
 		printf("UFS Edit Read Device Desc Error: %d", res);
-		return;
+		return res;
 	}
 
 	res = ufs_utp_query_process(ufs, DESC_R_GEOMETRY_DESC, 1);
 	if (res) {
-		printf("UFS EditRead Geomerty Desc Error: %d", res);
-		return;
+		printf("UFS Edit Read Geomerty Desc Error: %d", res);
+		return res;
+	}
+
+	/* set turbo write configuration */
+	dExtendedUFSFeaturesSupport = ___swab32(ufs->device_desc.dExtendedUFSFeaturesSupport);
+	if (dExtendedUFSFeaturesSupport & 0x100) {
+		ufs->support_tw = 1;
+		printf("UFS device supports turbo write feature\n");
+
+		if (!ufs->geometry_desc.bSupportedTurboWriteBufferUserSpaceReductionTypes) {
+			printf("UFS doesn't support no user space reduction, provision fail\n");
+			return RET_FAILURE;
+		}
+	} else {
+		ufs->support_tw = 0;
+		printf("UFS device doesn't support turbo write feature, 0x%x\n", dExtendedUFSFeaturesSupport);
 	}
 
 	ufs->config_desc.unit[lun].bLUEnable = enable;
@@ -999,6 +1107,7 @@ void ufs_edit_config_desc(u32 lun, u32 enable, u32 bootlun, u32 writeprotect, u3
 	ufs->config_desc.unit[lun].bLogicalBlockSize = LU_conf->unit[lun].bLogicalBlockSize;
 	ufs->config_desc.unit[lun].bProvisioningType =  LU_conf->unit[lun].bProvisioningType;  //Discard: 02h, Erase: 03h
 	ufs->config_desc.unit[lun].wContextCapabilities = LU_conf->unit[lun].wContextCapabilities;
+	ufs->config_desc.unit[lun].dLUNumTurboWriteBufferAllocUnits = LU_conf->unit[lun].dLUNumTurboWriteBufferAllocUnits;
 
 	if (capacity) {
 		if (bootlun) {
@@ -1025,7 +1134,9 @@ void ufs_edit_config_desc(u32 lun, u32 enable, u32 bootlun, u32 writeprotect, u3
 		}
 	}
 
-	ufs->config_desc.header.bLength = LU_conf->header.bLength;
+	/* set bLength calculated by bUD0BaseOffset and bUDConfigPlength */
+	ufs->config_desc.header.bLength = ufs->device_desc.bUD0BaseOffset
+		+ (8 * ufs->device_desc.bUDConfigPlength);
 	ufs->config_desc.header.bDescriptorType = LU_conf->header.bDescriptorType;
 	ufs->config_desc.header.bConfDescContinue = LU_conf->header.bConfDescContinue;
 	ufs->config_desc.header.bBootEnable = LU_conf->header.bBootEnable;
@@ -1035,6 +1146,18 @@ void ufs_edit_config_desc(u32 lun, u32 enable, u32 bootlun, u32 writeprotect, u3
 	ufs->config_desc.header.bSecureRemovalType = LU_conf->header.bSecureRemovalType;
 	ufs->config_desc.header.bInitActiveICCLevel = LU_conf->header.bInitActiveICCLevel;
 	ufs->config_desc.header.wPeriodicRTCUpdate = LU_conf->header.wPeriodicRTCUpdate;
+
+	if (ufs->support_tw) {
+		ufs->config_desc.header.bTurboWriteBufferNoUserSpaceReductionEn = LU_conf->header.bTurboWriteBufferNoUserSpaceReductionEn;
+		ufs->config_desc.header.bTurboWriteBufferType = ufs->geometry_desc.bSupportedTurboWriteBufferTypes;
+		/* set turbo write buffer size same as geometry_desc.dTurboWriteBufferMaxNAllocUnits */
+		if (lun == 0) {
+			ufs->config_desc.unit[lun].dLUNumTurboWriteBufferAllocUnits = ufs->geometry_desc.dTurboWriteBufferMaxNAllocUnits;
+			printf("ufs->geometry_desc.dTurboWriteBufferMaxNAllocUnits : 0x%x\n", ufs->geometry_desc.dTurboWriteBufferMaxNAllocUnits);
+		}
+	}
+
+	return RET_SUCCESS;
 }
 
 static int ufs_mphy_unipro_setting(struct ufs_host *ufs, struct ufs_uic_cmd *uic_cmd_list)
@@ -1433,10 +1556,10 @@ static int ufs_ref_clk_setup(struct ufs_host *ufs)
 
 	res = ufs_utp_query_process(ufs, ATTR_R_REFCLKFREQ, 0);
 	if (res) {
-		printf("[UFS] read ref clk failed\n");
+		printf("UFS read ref clk failed\n");
 		return res;
 	} else {
-		printf("[UFS] ref clk setting is %x\n", ufs->attributes.arry[UPIU_ATTR_ID_REFCLKFREQ]);
+		printf("UFS ref clk setting is %x\n", ufs->attributes.arry[UPIU_ATTR_ID_REFCLKFREQ]);
 	}
 
 	if (ufs->attributes.arry[UPIU_ATTR_ID_REFCLKFREQ] != 0x1) {
@@ -1454,8 +1577,10 @@ static int ufs_init_interface(struct ufs_host *ufs)
 	struct uic_pwr_mode *pmd = &ufs->pmd_cxt;
 	int res = -1;
 
-	if (ufs_pre_setup(ufs))
+	if (ufs_pre_setup(ufs)) {
+		printf("UFS %d ufs_pre_setup error!\n", ufs->host_index);
 		goto out;
+	}
 
 	ufs_pre_vendor_setup(ufs);
 
@@ -1484,6 +1609,8 @@ static int ufs_init_interface(struct ufs_host *ufs)
 	if (ufs_post_link(ufs))
 		goto out;
 
+	printf("UFS link established\n");
+
 	/* 5. update active lanes */
 	if (ufs_update_active_lane(ufs))
 		goto out;
@@ -1495,9 +1622,13 @@ static int ufs_init_interface(struct ufs_host *ufs)
 	if (ufs_end_boot_mode(ufs))
 		goto out;
 
+	printf("UFS device initialized\n");
+
 	/* 8. Check a number of connected lanes */
-	if (ufs_check_2lane(ufs))
+	if (ufs_check_2lane(ufs)) {
+		printf("UFS check 2lane Fail\n");
 		goto out;
+	}
 
 	/* 9. pre pmc */
 	pmd->gear = UFS_GEAR;
@@ -1682,6 +1813,7 @@ int ufs_check_config_desc(void)
 	int lun = 0;
 	u32 sum = 0;
 	int boot_lun_en, res;
+	u32 dExtendedUFSFeaturesSupport;
 
 	struct ufs_host *ufs = get_cur_ufs_host();
 
@@ -1707,13 +1839,21 @@ int ufs_check_config_desc(void)
 		printf("UFS Check Read Config Desc Error: %d", res);
 		return 0;
 	}
+
 	res = ufs_utp_query_process(ufs, ATTR_R_BOOTLUNEN, 0);
 	if (res) {
 		printf("UFS Check Read BootlunEn Attr Error: %d", res);
 		return 0;
 	}
 
-	if (ufs->config_desc.header.bLength != LU_conf->header.bLength)
+	dExtendedUFSFeaturesSupport = ___swab32(ufs->device_desc.dExtendedUFSFeaturesSupport);
+	if (dExtendedUFSFeaturesSupport & 0x100) {
+		printf("UFS supports TW feature, 0x%x\n", ufs->device_desc.dExtendedUFSFeaturesSupport);
+		ufs->support_tw = 1;
+	}
+
+	if (ufs->config_desc.header.bLength != (ufs->device_desc.bUD0BaseOffset
+				+ (8 * ufs->device_desc.bUDConfigPlength)))
 		printf("UFS_Config_Desc_Header bLength error\n");
 	else if (ufs->config_desc.header.bDescriptorType != LU_conf->header.bDescriptorType)
 		printf("UFS_Config_Desc_Header bDescriptorType error\n");
@@ -1733,6 +1873,23 @@ int ufs_check_config_desc(void)
 		printf("UFS_Config_Desc_Header bInitActiveICCLevel error\n");
 	else if (ufs->config_desc.header.wPeriodicRTCUpdate != LU_conf->header.wPeriodicRTCUpdate)
 		printf("UFS_Config_Desc_Header wPeriodicRTCUpdate error\n");
+
+	if (ufs->support_tw) {
+		if (ufs->config_desc.header.bTurboWriteBufferNoUserSpaceReductionEn
+				!= LU_conf->header.bTurboWriteBufferNoUserSpaceReductionEn) {
+			printf("UFS_Config_Desc_Header bTurboWriteBufferNoUserSpaceReductionEn error\n");
+			goto error;
+		}
+
+		if (ufs->config_desc.header.bTurboWriteBufferType
+				!= ufs->geometry_desc.bSupportedTurboWriteBufferTypes)
+			printf("UFS_Config_Desc_Header bTurboWriteBufferType error\n");
+		if (ufs->config_desc.unit[0].dLUNumTurboWriteBufferAllocUnits
+				!= ufs->geometry_desc.dTurboWriteBufferMaxNAllocUnits)
+			printf("dLUNumTurboWriteBufferAllocUnits error at LU%d  %d, %d\n",
+				lun, ufs->geometry_desc.dTurboWriteBufferMaxNAllocUnits,
+				ufs->config_desc.unit[0].dLUNumTurboWriteBufferAllocUnits);
+	}
 
 	for (lun = 7; lun >= 0; lun--) {
 		sum += ___swab32(ufs->config_desc.unit[lun].dNumAllocUnits);
@@ -1812,6 +1969,14 @@ int ufs_check_config_desc(void)
 			printf("wContextCapabilities error at LU%d  %d, %d\n",
 				lun, LU_conf->unit[lun].wContextCapabilities, ufs->config_desc.unit[lun].wContextCapabilities);
 			goto error;
+		}
+
+		if (ufs->support_tw && (lun != 0)) {
+			if (LU_conf->unit[lun].dLUNumTurboWriteBufferAllocUnits != ufs->config_desc.unit[lun].dLUNumTurboWriteBufferAllocUnits) {
+				printf("dLUNumTurboWriteBufferAllocUnits error at LU%d	%d, %d\n",
+					lun, LU_conf->unit[lun].dLUNumTurboWriteBufferAllocUnits, ufs->config_desc.unit[lun].dLUNumTurboWriteBufferAllocUnits);
+				goto error;
+			}
 		}
 	}
 
@@ -1996,7 +2161,7 @@ void print_ufs_information(void)
 			printf("\n");
 	}
 	printf("======UFS_Config_Desc_Header==========\n");
-	printf("0x%x 0x%x 0x%x 0x%x 0x%x 0x%x 0x%x 0x%x 0x%x 0x%x\n",
+	printf("0x%x 0x%x 0x%x 0x%x 0x%x 0x%x 0x%x 0x%x 0x%x 0x%x 0x%x 0x%x\n",
 		ufs->config_desc.header.bLength,
 		ufs->config_desc.header.bDescriptorType,
 		ufs->config_desc.header.bConfDescContinue,
@@ -2006,12 +2171,14 @@ void print_ufs_information(void)
 		ufs->config_desc.header.bHighPriorityLUN,
 		ufs->config_desc.header.bSecureRemovalType,
 		ufs->config_desc.header.bInitActiveICCLevel,
-		ufs->config_desc.header.wPeriodicRTCUpdate);
+		ufs->config_desc.header.wPeriodicRTCUpdate,
+		ufs->config_desc.header.bTurboWriteBufferNoUserSpaceReductionEn,
+		ufs->config_desc.header.bTurboWriteBufferType);
 
 	for (i  = 0; i < 8 ; i++) {
 		printf("======UFS_Unit_Desc_Param LU %d==========\n", i);
-		printf("0x%x 0x%x 0x%x 0x%x 0x%x 0x%x 0x%x 0x%x 0x%x\n",
-			ufs->config_desc.unit[i].bLUEnable,
+		printf("LU%d : 0x%x 0x%x 0x%x 0x%x 0x%x 0x%x 0x%x 0x%x 0x%x 0x%x\n",
+			i, ufs->config_desc.unit[i].bLUEnable,
 			ufs->config_desc.unit[i].bBootLunID,
 			ufs->config_desc.unit[i].bLUWriteProtect,
 			ufs->config_desc.unit[i].bMemoryType,
@@ -2019,7 +2186,8 @@ void print_ufs_information(void)
 			ufs->config_desc.unit[i].bDataReliability,
 			ufs->config_desc.unit[i].bLogicalBlockSize,
 			ufs->config_desc.unit[i].bProvisioningType,
-			ufs->config_desc.unit[i].wContextCapabilities);
+			ufs->config_desc.unit[i].wContextCapabilities,
+			ufs->config_desc.unit[i].dLUNumTurboWriteBufferAllocUnits);
 	}
 	printf("----------------------------------------------------------------------\n");
 }
@@ -2048,37 +2216,43 @@ int ufs_set_configuration_descriptor(void)
 
 	while (ufs_check_config_desc() == RET_FAILURE) {
 		if (retry_count == retry) {
-			printf("[UFS] LU config: FAIL !!!\n");
+			printf("UFS LU config: FAIL !!!\n");
 			print_ufs_information();
 			break;
 		}
 		ret = 0;
-		printf("[UFS] LU config: trying %d...\n", retry++);
+		printf("UFS LU config: trying %d...\n", retry++);
 
 		for (lun = 7; lun >= 0; lun--) {
-			ufs_edit_config_desc(lun,
+			ret = ufs_edit_config_desc(lun,
 				LU_conf->unit[lun].bLUEnable,
 				LU_conf->unit[lun].bBootLunID,
 				LU_conf->unit[lun].bLUWriteProtect,
 				LU_conf->unit[lun].bMemoryType,
 				LU_conf->unit[lun].dNumAllocUnits);
 
-			if (ret == 2) {
-				printf("[UFS] LU config: can't edit config descriptor !!!\n");
-				goto fail;
+			if (ret) {
+				printf("UFS configuration setup is failed with err: %d\n", ret);
+				return RET_FAILURE;
 			}
 		}
 
 		ret = ufs_utp_query_process(ufs, DESC_W_CONFIG_DESC, 0);
 		if (ret) {
-			printf("[UFS] LU config: Descriptor write query fail with %d!!!\n", ret);
+			printf("UFS LU config: Descriptor write query fail with %d\n", ret);
 			continue;
 		}
 
 		ufs->attributes.arry[UPIU_ATTR_ID_BOOTLUNEN] = 0x01;
 		ret = ufs_utp_query_process(ufs, ATTR_W_BOOTLUNEN, 0);
 		if (ret) {
-			printf("[UFS] LU config: BootLUNEN setting fail with %d!!!\n", ret);
+			printf("UFS LU config: BootLUNEN setting fail with %d\n", ret);
+			continue;
+		}
+
+		ret = ufs_utp_query_process(ufs, ATTR_R_BOOTLUNEN, 0);
+		if (ret) {
+			printf("UFS LU config: BootLUNEN read fail with %d\n", ret);
 			continue;
 		}
 
@@ -2087,7 +2261,7 @@ int ufs_set_configuration_descriptor(void)
 
 	/* in case of UFS provisioning execution */
 	if (retry) {
-		puts("[UFS] LU config: PASS !!!\n");
+		puts("UFS LU config: PASS !!!\n");
 
 		/* remove enumerated bdevs*/
 		scsi_exit(&ufs_lu_list, "scsi");
@@ -2110,8 +2284,6 @@ status_t ufs_init(int mode)
 
 	int r = 0, i;
 	int rst_cnt = 0;
-
-	printf("\nUFS: %s: START TO INIT --------------------------------------------- \n", __func__);
 
 	// TODO:
 #if 0

@@ -415,6 +415,7 @@ struct ufs_upiu_header {
 } __attribute__ ((__packed__));
 
 #define DW_NUM_OF_TSF		20
+
 #define UPIU_DATA_SIZE		(ALIGNED_UPIU_SIZE - \
 		sizeof(u8) * DW_NUM_OF_TSF - sizeof(struct ufs_upiu_header))
 
@@ -479,6 +480,8 @@ struct ufs_config_desc_header {
 	u8 bInitActiveICCLevel;
 	u16 wPeriodicRTCUpdate;
 	u8 reserved[5];
+	u8 bTurboWriteBufferNoUserSpaceReductionEn;
+	u8 bTurboWriteBufferType;
 } __attribute__ ((__packed__));
 
 /*	Unit Descriptor Configurable Parameters	*/
@@ -493,6 +496,8 @@ struct ufs_unit_desc_param {
 	u8 bProvisioningType;
 	u16 wContextCapabilities;
 	u8 reserved[3];
+	u8 reserved_1[6];
+	u32 dLUNumTurboWriteBufferAllocUnits;
 } __attribute__ ((__packed__));
 
 /*	Configuration Descriptor	*/
@@ -529,7 +534,10 @@ struct ufs_device_desc {
 	u8 bUD0BaseOffset;
 	u8 bUDConfigPlength;
 	u8 bDeviceRTTCap;
-	u16 wPeriodicRTCUpdate;
+	u16 wPeriodicRTCUpdate;	/* offset : 0x1D */
+	u8 reserved_1[48];	/* 0x1F ~ 0x4E */
+	u32 dExtendedUFSFeaturesSupport;	/* offset : 0x4F */
+	u8 reserved_2[4];			/* 0x53 ~ 0x56 */
 } __attribute__ ((__packed__));
 
 /*	Unit Descriptor	*/
@@ -593,6 +601,13 @@ struct ufs_geometry_desc {
 	u16 wEnhanced3CapAdjFac;
 	u32 dEnhanced4MaxNAllocU;
 	u16 wEnhanced4CapAdjFac;	/* offset : 0x42 */
+	u32	Reserved_44;			/* 0x44 ~ 0x47 */
+	u8 reserved[7];			/* 0x48 ~ 0x4E */
+	u32 dTurboWriteBufferMaxNAllocUnits;	/* offset : 0x4f */
+	u8 reserved_1[2];			/* 0x53 ~ 0x54 */
+	u8 bSupportedTurboWriteBufferUserSpaceReductionTypes;	/* offset : 0x55 */
+	u8 bSupportedTurboWriteBufferTypes;	/* offset : 0x56 */
+	u8 reserved_2;		/* 0x57 */
 } __attribute__ ((__packed__));
 
 struct ufs_flag_bit {
@@ -711,6 +726,7 @@ struct ufs_host {
 	u32 mclk_rate;
 	struct uic_pwr_mode pmd_cxt;
 	u32 dev_pwr_shift;
+	u32	support_tw;
 };
 
 int ufs_alloc_memory(void);
