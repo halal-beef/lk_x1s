@@ -83,6 +83,8 @@
 
 #define RAMDUMP_BOOT_CNT_MAGIC	0xFACEDB90
 
+#define ARRAY_SIZE(x) (sizeof(x) / sizeof((x)[0]))
+
 #ifndef __ASSEMBLY__
 enum pt_reg {
 	SP = 31,
