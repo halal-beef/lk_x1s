@@ -221,7 +221,6 @@ static void dfd_display_pc_value(u32 reg)
 	}
 }
 
-#ifdef CONFIG_RAMDUMP_GPR
 void dfd_set_dump_en_for_cacheop(int en)
 {
 	if (en)
@@ -229,7 +228,6 @@ void dfd_set_dump_en_for_cacheop(int en)
 	else
 		pmu_clr_bit_atomic(RESET_SEQUENCER_OFFSET, DUMP_EN_BIT);
 }
-#endif
 
 /*
  * FLUSH_SKIP : skip cache flush
@@ -239,7 +237,7 @@ void dfd_set_dump_en_for_cacheop(int en)
  */
 static void dfd_set_cache_flush_level(void)
 {
-	int cpu, cluster_on = -1;
+	int cpu, little_on = -1, big_on = -1;
 	u64 val, stat;
 	u64 *cpu_reg;
 
@@ -249,11 +247,13 @@ static void dfd_set_cache_flush_level(void)
 		if (!cpu_reg[POWER_STATE]) {
 			stat = FLUSH_SKIP;
 		} else {
-			if (cpu <= LITTLE_CORE_LAST)
+			if (cpu <= LITTLE_CORE_LAST) {
 				stat = FLUSH_LEVEL1;
-			else
+				little_on = cpu;
+			} else {
 				stat = FLUSH_LEVEL2;
-			cluster_on = cpu;
+				big_on = cpu;
+			}
 		}
 		writel(stat, CONFIG_RAMDUMP_GPR_POWER_STAT + offset);
 		printf("Core%d: Initial policy - Cache Flush Level %llu\n", cpu, stat);
@@ -263,15 +263,22 @@ static void dfd_set_cache_flush_level(void)
 	if (cluster_on <= 0) {
 		/* core0 runs cache flush level 2 */
 		val = FLUSH_LEVEL2;
-		cluster_on = 0;
+		little_on = 0;
 	} else {
 		val = FLUSH_LEVEL3;
 	}
 
-	stat = readl(CONFIG_RAMDUMP_GPR_POWER_STAT + (cluster_on * REG_OFFSET));
+	stat = readl(CONFIG_RAMDUMP_GPR_POWER_STAT + (little_on * REG_OFFSET));
 	stat |= val;
-	writel(stat, CONFIG_RAMDUMP_GPR_POWER_STAT + (cluster_on * REG_OFFSET));
-	printf("Core%d: Cache Flush Level changed => %llu\n", cluster_on, stat);
+	writel(stat, CONFIG_RAMDUMP_GPR_POWER_STAT + (little_on * REG_OFFSET));
+	printf("Core%d: Cache Flush Level changed => %llu\n", little_on, stat);
+
+	if (big_on >= 0) {
+		stat = readl(CONFIG_RAMDUMP_GPR_POWER_STAT + (big_on * REG_OFFSET));
+		stat |= FLUSH_LEVEL3;
+		writel(stat, CONFIG_RAMDUMP_GPR_POWER_STAT + (big_on * REG_OFFSET));
+		printf("Core%d: Cache Flush Level changed => %llu\n", big_on, stat);
+	}
 }
 
 static void dfd_flush_dcache_level(u32 level, u32 invalidate)
@@ -389,7 +396,6 @@ static void dfd_ipc_fill_buffer(struct dfd_ipc_cmd *cmd, u32 data1, u32 data2, u
 	cmd->buffer[3] = data3;
 }
 
-#ifdef CONFIG_RAMDUMP_GPR
 void dfd_run_post_processing(void)
 {
 	u32 cpu_logical_map[NR_CPUS] = {
@@ -475,6 +481,7 @@ void dfd_run_post_processing(void)
 	}
 
 	mdelay(100);
+<<<<<<< HEAD
 
 #if 0
 	//Send Postprocessing Command. ID value is RUN DUMP.
@@ -507,8 +514,90 @@ finish:
 #endif
 done:
 	printf("---------------------------------------------------------\n");
-}
+=======
+
+#if 0
+	//Send Postprocessing Command. ID value is RUN DUMP.
+	cmd.cmd_raw.id = PP_IPC_CMD_ID_RUN_DUMP;
+	dfd_ipc_fill_buffer(&cmd, arr_addr, cpu_mask, 0);
+	printf("Try to get Arraydump of power on cores - ");
+	printf("%s(0x%x)!\n", dfd_ipc_send_data_polling(&cmd) < 0 ? "Failed" : "Finish", cmd.buffer[1]);
 #endif
+	get_sec_info(true);
+	//when receiving ipc, cpu0 is running. Run cache flush
+	for (cpu = 0; cpu < NR_CPUS; cpu++) {
+		val = readl(CONFIG_RAMDUMP_WAKEUP_WAIT);
+		writel(val | (1 << cpu), CONFIG_RAMDUMP_WAKEUP_WAIT);
+		if (cpu == 0)
+			dfd_secondary_cpu_cache_flush(cpu);
+
+		if (cpu >= BIG_CORE_START && cpu <= BIG_CORE_LAST)
+			write_back_cache(cpu);
+
+		if (!dfd_wait_complete(cpu)) {
+			printf("Core%d: ERR wait timeout.\n", cpu);
+			continue;
+		}
+
+		printf("Core%d: finished Cache Flush level:%d (0x%x)\n", cpu,
+		(readl(CONFIG_RAMDUMP_GPR_POWER_STAT + (cpu * REG_OFFSET))),
+		readl(CONFIG_RAMDUMP_DUMP_GPR_WAIT));
+	}
+	get_sec_info(false);
+finish:
+#ifdef SCAN2DRAM_SOLUTION
+	cmd.cmd_raw.id = PP_IPC_CMD_ID_FINISH;
+	dfd_ipc_fill_buffer(&cmd, 0, 0, 0);
+	dfd_ipc_send_data_polling(&cmd);
+#endif
+done:
+	printf("---------------------------------------------------------\n");
+}
+
+void dfd_get_dbgc_version(void)
+{
+	u32 flag, reg;
+	char *str;
+	struct dfd_ipc_cmd cmd;
+
+retry:
+	pmu_set_bit_atomic(DBGCORE_CPU_CONFIGURATION, 0);
+	mdelay(10);
+	reg = readl(EXYNOS9630_POWER_BASE + DBGCORE_CPU_STATES);
+	flag = readl(EXYNOS9630_DBG_MBOX_SRn(0));
+	writel(0, EXYNOS9630_DBG_MBOX_SRn(0));
+	printf("DBGCORE: power_state: %s\n", (reg == DBGCORE_STATE_UP) ? "up" : "down");
+
+	if (flag == 0xDB9C5A1D) {
+		str = (char *)CONFIG_RAMDUMP_DBGC_VERSION;
+		str[DBGC_VERSION_LEN - 1] = '\0';
+		printf("DBGCORE: VERSION: %s\n", str);
+	} else if (flag == 0xDB9CDEAD) {
+		printf("DBGCORE: locked up. retry boot dbgcore.\n");
+		pmu_clr_bit_atomic(DBGCORE_CPU_CONFIGURATION, 0);
+		mdelay(10);
+		goto retry;
+	} else {
+		printf("DBGCORE: boot fail!\n");
+		return;
+	}
+
+	memset(&cmd, 0, sizeof(struct dfd_ipc_cmd));
+	cmd.cmd_raw.cmd = IPC_CMD_COPY_DEBUG_LOG;
+	dfd_ipc_send_data_polling(&cmd);
+
+	cmd.cmd_raw.cmd = IPC_CMD_DEBUG_LOG_INFO;
+	dfd_ipc_fill_buffer(&cmd, debug_snapshot_get_item_paddr("log_dbgc"),
+			debug_snapshot_get_item_size("log_dbgc"), 0);
+	dfd_ipc_send_data_polling(&cmd);
+}
+
+unsigned int clear_llc_init_state(void)
+{
+	pmu_clr_bit_atomic(RESET_SEQUENCER_OFFSET, LLC_INIT_BIT);
+
+	return readl(EXYNOS9630_POWER_BASE + RESET_SEQUENCER_OFFSET);
+}
 
 #ifdef CONFIG_RAMDUMP_GPR
 void dfd_get_dbgc_version(void)
