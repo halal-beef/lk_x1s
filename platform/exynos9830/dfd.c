@@ -242,14 +242,13 @@ static void dfd_set_cache_flush_level(void)
 		if (!cpu_reg[POWER_STATE]) {
 			stat = FLUSH_SKIP;
 		} else {
-			if (cpu <= MID_CORE_LAST)
+			if (cpu <= MID_CORE_LAST) {
 				stat = FLUSH_LEVEL2;
-			else
-				stat = FLUSH_LEVEL1;
-			if (cpu <= MID_CORE_LAST)
 				little_on = cpu;
-			else
+			} else {
+				stat = FLUSH_LEVEL1;
 				big_on = cpu;
+			}
 		}
 		writel(stat, CONFIG_RAMDUMP_GPR_POWER_STAT + offset);
 		printf("Core%d: Initial policy - Cache Flush Level %llu\n", cpu, stat);
@@ -505,13 +504,13 @@ void dfd_run_post_processing(void)
 
 	mdelay(100);
 
-#if 0
+
 	//Send Postprocessing Command. ID value is RUN DUMP.
 	cmd.cmd_raw.id = PP_IPC_CMD_ID_RUN_DUMP;
-	dfd_ipc_fill_buffer(&cmd, arr_addr, cpu_mask, 0);
+	dfd_ipc_fill_buffer(&cmd, arr_addr, cpu_mask & 0x3f, 0);
 	printf("Try to get Arraydump of power on cores - ");
 	printf("%s(0x%x)!\n", dfd_ipc_send_data_polling(&cmd) < 0 ? "Failed" : "Finish", cmd.buffer[1]);
-#endif
+
 	get_sec_info(true);
 	//when receiving ipc, cpu0 is running. Run cache flush
 	for (cpu = 0; cpu < NR_CPUS; cpu++) {
