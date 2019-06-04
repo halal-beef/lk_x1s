@@ -34,6 +34,7 @@
 #include "flexpmu_dbg.h"
 #include <platform/tmu.h>
 #include <dev/chg_max77705.h>
+#include <platform/fvmap.h>
 #include <platform/mmu/mmu_func.h>
 #include <dev/mmc.h>
 
@@ -496,6 +497,8 @@ by_dumpgpr_out:
 
 	display_tmu_info();
 	display_trip_info();
+
+	display_asv_g_info();
 
 	chg_init_max77705();
 }
