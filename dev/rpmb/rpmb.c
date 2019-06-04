@@ -1058,18 +1058,12 @@ int read_write_counter(void)
 
 	packet.request = 0x02;
 #ifdef ENABLE_CM_NONCE
-#ifdef CACHE_ENABLED
-	CACHE_CLEAN_INVALIDATE(nonce, NONCE_SIZE);
-#endif
 	memset(nonce, 0, NONCE_SIZE);
 	ret = cm_get_random(nonce, NONCE_SIZE);
 	if (ret != RV_SUCCESS) {
 		printf("RPMB: fail to get NONCE\n");
 		return ret;
 	}
-#ifdef CACHE_ENABLED
-	CACHE_CLEAN_INVALIDATE(nonce, NONCE_SIZE);
-#endif
 	memcpy(packet.nonce, nonce, NONCE_SIZE);
 #ifdef RPMB_DEBUG
 	dprintf(INFO, "RPMB: read_write_counter NONCE\n");
@@ -1205,9 +1199,6 @@ static int rpmb_read_block(int addr, int blkcnt, u8 *buf)
 			printf("RPMB: fail to get NONCE\n");
 			return ret;
 		}
-#ifdef CACHE_ENABLED
-		CACHE_CLEAN_INVALIDATE(nonce, NONCE_SIZE);
-#endif
 		memcpy(packet.nonce, nonce, NONCE_SIZE);
 #ifdef RPMB_DEBUG
 		dprintf(INFO, "RPMB: rpmb_read_block NONCE\n");
