@@ -91,12 +91,14 @@ int fb_do_getvar(const char *cmd_buffer)
 			if (ptn->filesys == FS_TYPE_SPARSE_F2FS)
 				strcpy(response + 4, "f2fs");
 		}
+#ifdef CONFIG_USE_F2FS
 		if (strcmp(key, "pit") && ptn->filesys != FS_TYPE_NONE) {
 		    if (!strcmp(key, "userdata"))
 			strcpy(response + 4, "f2fs");
 		    else
 			strcpy(response + 4, "ext4");
 		}
+#endif
 	} else if (!memcmp(cmd_buffer + 7, "partition-size", strlen("partition-size")))	{
 		char *key = (char *)cmd_buffer + 7 + strlen("partition-size:");
 		struct pit_entry *ptn = pit_get_part_info(key);
