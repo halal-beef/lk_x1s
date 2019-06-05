@@ -59,7 +59,7 @@
  */
 #define CACHE_ENABLED
 #define CACHE_CLEAN(addr, len)			clean_dcache_range((unsigned long long)(addr), (unsigned long long)((addr) + (len)))
-#define CACHE_CLEAN_INVALIDATE(addr, len)	invalidate_dcache_range((unsigned long long)(addr), (unsigned long long)((addr) + (len)))
+#define CACHE_CLEAN_INVALIDATE(addr, len)	clean_invalidate_dcache_range((unsigned long long)(addr), (unsigned long long)((addr) + (len)))
 
 /* RPMB function number */
 enum {
