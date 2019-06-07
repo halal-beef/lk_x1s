@@ -36,6 +36,7 @@
 #include <dev/mmc.h>
 
 /* Memory node */
+#define SIZE_4GB		(0x100000000)
 #define SIZE_2GB		(0x80000000)
 #define SIZE_1GB		(0x40000000)
 #define SIZE_500MB		(0x20000000)
@@ -389,8 +390,15 @@ static void configure_dtb(void)
 		goto mem_node_out;
 
 	for (u64 i = 0; i < dram_size - SIZE_2GB; i += SIZE_500MB) {
+		/* HACK: unaccessible range(B_0000_0000 ~ B_FFFF_FFFF)*/
+		u64 ua_size;
+		if (((DRAM_BASE2 + i) >> 32) >= 0xb)
+			ua_size = SIZE_4GB;
+		else
+			ua_size = 0;
+
 		/* add 500MB mem node */
-		add_dt_memory_node(DRAM_BASE2 + i, SIZE_500MB);
+		add_dt_memory_node(DRAM_BASE2 + i + ua_size, SIZE_500MB);
 	}
 
 	set_bootargs();
