@@ -1082,13 +1082,13 @@ int read_write_counter(void)
 	if (ret != RV_SUCCESS)
 		return ret;
 
-	if(memcmp(packet.nonce, nonce, NONCE_SIZE)) {
-		printf("read_write_counter NONCE compare fail\n");
-		return -1;
-	}
 	if (packet.result != 0){
 		printf("read_write_counter packet result error = %d\n", packet.result );
 		return packet.result;
+	}
+	if(memcmp(packet.nonce, nonce, NONCE_SIZE)) {
+		printf("read_write_counter NONCE compare fail\n");
+		return -1;
 	}
 	return RV_SUCCESS;
 }
