@@ -16,6 +16,7 @@
 #include <platform/sfr.h>
 #include <platform/ldfw.h>
 #include <platform/smc.h>
+#include <platform/secure_boot.h>
 
 int init_ldfw(u64 addr, u64 size);
 int load_keystorage(u64 addr, u64 size);
@@ -259,10 +260,8 @@ int init_ldfws(void)
 
 	if (ret == -1) {
 		LDFW_ERR("ldfw: It is dump_gpr state. It does not load ldfw.\n");
-	} else if ((ret < 0) && (ret & CHECK_SIGNATURE_FAIL)) {
-		LDFW_ERR("ldfw: signature of ldfw is corrupted.!\n");
-	} else if ((ret < 0) && (ret & CHECK_ROLL_BACK_COUNT_FAIL)) {
-		LDFW_ERR("ldfw: roll back count of ldfw is corrupted.!\n");
+	} else if ((ret < 0) && ((ret & 0xffff0000) == SB_ERROR_PREFIX)) {
+		LDFW_ERR("ldfw: signature of ldfw is corrupted! ret = [0x%X]\n", (uint32_t)ret);
 	} else if (!ret) {
 		LDFW_WARN("ldfw: No ldfw is inited\n");
 	} else {
