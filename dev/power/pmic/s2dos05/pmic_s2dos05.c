@@ -274,20 +274,6 @@ void pmic_init_s2dos05(void)
 	IIC_S2DOS05_ESetport();
 
 	/* Display power set up */
-	IIC_S2DOS05_ERead(S2DOS05_ADDR, S2DOS05_LDO1_CFG, &reg);
-	printf("S2DOS05_LDO1_CFG def: 0x%x\n", reg);
-	reg |= LDO_EN;
-	IIC_S2DOS05_EWrite(S2DOS05_ADDR, S2DOS05_LDO1_CFG, reg);
-	IIC_S2DOS05_ERead(S2DOS05_ADDR, S2DOS05_LDO1_CFG, &reg);
-	printf("S2DOS05_LDO1_CFG set: 0x%x\n", reg);
-
-	IIC_S2DOS05_ERead(S2DOS05_ADDR, S2DOS05_LDO4_CFG, &reg);
-	printf("S2DOS05_LDO4_CFG def: 0x%x\n", reg);
-	reg |= LDO_EN;
-	IIC_S2DOS05_EWrite(S2DOS05_ADDR, S2DOS05_LDO4_CFG, reg);
-	IIC_S2DOS05_ERead(S2DOS05_ADDR, S2DOS05_LDO4_CFG, &reg);
-	printf("S2DOS05_LDO4_CFG set: 0x%x\n", reg);
-
 	IIC_S2DOS05_ERead(S2DOS05_ADDR, S2DOS05_REG_EN, &reg);
 	printf("S2DOS05_REG_EN def: 0x%x\n", reg);
 	reg |= (LDO1_EN | LDO4_EN | BUCK_EN);
