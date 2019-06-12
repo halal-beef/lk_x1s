@@ -296,7 +296,7 @@ static int is_dram_bound(u64 addr)
 
 	/* Compare with low 2GB DRAM. */
 	if (dram_size < SZ_2G) {
-		if (dram_base <= addr && addr <= dram_size)
+		if (dram_base <= addr && addr <= dram_base + dram_size)
 			return 1;
 		else
 			return 0;
