@@ -1108,12 +1108,18 @@ int authentication_key_programming(void)
 
 	packet.request = 0x01;
 #ifdef USE_MMC0
-	emmc_rpmb_commands(&packet);
+	ret = emmc_rpmb_commands(&packet);
 #else
-	ufs_rpmb_commands(&packet);
+	ret = ufs_rpmb_commands(&packet);
 #endif
 
 	memset(packet.Key_MAC, 0x0, RPMB_KEY_LEN);
+
+	if (ret != RV_SUCCESS) {
+		printf("key_programming ufs_rpmb_commands return error\n");
+		return ret;
+	}
+
 	if (packet.result != 0) {
 		printf("authentication_key_programming ufs_rpmb_commands result error = %d\n", packet.result );
 		return -1;
