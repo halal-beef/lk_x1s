@@ -11,6 +11,8 @@
 #ifndef __BOARD_INFO_H__
 #define __BOARD_INFO_H__
 
+#define CONFIG_BOARD_NAME	"universal9820"
+
 #define CONFIG_BOARD_ID		0x10
 #define CONFIG_SUB_PMIC_S2DOS05
 #define CONFIG_UFS_BOARD_TYPE	1      /* smdk : 0, universal : 1 */
