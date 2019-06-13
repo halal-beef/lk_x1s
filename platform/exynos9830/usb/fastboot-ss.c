@@ -16,8 +16,8 @@
 #include <string.h>
 #include <platform/chip_id.h>
 #include <lib/fastboot.h>
+#include <target/board_info.h>
 
-#define CONFIG_BOARD_NAME			"CONFIG_BOARD_NAME"
 /* String 0 is the language id */
 #define DEVICE_STRING_MANUFACTURER_INDEX	1
 #define DEVICE_STRING_PRODUCT_INDEX		2
@@ -45,7 +45,7 @@
 #define ERROR					-1
 
 static char manufacturer_name[] = "Samsung S.LSI";
-static char product_name[] = "CONFIG_BOARD_NAME";
+static char product_name[] = CONFIG_BOARD_NAME;
 static char config_name[] =  "Android Fasstboot";
 static char interface_name[] = "Android Fastboot";
 
