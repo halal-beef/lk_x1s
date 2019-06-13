@@ -427,15 +427,13 @@ mem_node_out:
 	}
 
 #if defined(CONFIG_USE_AVB20)
-	if (readl(EXYNOS9830_POWER_SYSIP_DAT0) != REBOOT_MODE_RECOVERY) {
-		/* set AVB args */
-		get_ops_addr(&ops);
-		ops->read_is_device_unlocked(ops, &unlock);
-		noff = fdt_path_offset (fdt_dtb, "/chosen");
-		np = fdt_getprop(fdt_dtb, noff, "bootargs", &len);
-		snprintf(str, BUFFER_SIZE, "%s %s %s", np, cmdline, verifiedbootstate);
-		fdt_setprop(fdt_dtb, noff, "bootargs", str, strlen(str) + 1);
-	}
+	/* set AVB args */
+	get_ops_addr(&ops);
+	ops->read_is_device_unlocked(ops, &unlock);
+	noff = fdt_path_offset (fdt_dtb, "/chosen");
+	np = fdt_getprop(fdt_dtb, noff, "bootargs", &len);
+	snprintf(str, BUFFER_SIZE, "%s %s %s", np, cmdline, verifiedbootstate);
+	fdt_setprop(fdt_dtb, noff, "bootargs", str, strlen(str) + 1);
 #endif
 	if (readl(EXYNOS9830_POWER_SYSIP_DAT0) == REBOOT_MODE_RECOVERY) {
 		/* Set bootargs for recovery mode */
