@@ -9,7 +9,7 @@
  */
 
 #include <debug.h>
-#include <platform/sub_pmic_s2mpb02.h>
+#include <dev/sub_pmic_s2mpb02.h>
 
 void IIC_Delay(void)
 {

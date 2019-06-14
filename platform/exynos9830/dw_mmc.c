@@ -3,7 +3,7 @@
 #include <dev/speedy_multi.h>
 #include <platform/sfr.h>
 #include <platform/delay.h>
-#include <platform/pmic_s2mps_19_22.h>
+#include <dev/pmic_s2mps_19_22.h>
 
 #define MMC_CARD_BASE				0x132E0000
 

@@ -30,4 +30,5 @@ MODULE_DEPS += \
 	dev/dpu \
 	dev/adc \
 	dev/pmucal \
-	dev/speedy
+	dev/speedy \
+	dev/power/pmic/s2mps_19_22

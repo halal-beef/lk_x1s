@@ -19,8 +19,6 @@ MODULE_SRCS += \
 	$(LOCAL_DIR)/security/sb_api.c \
 	$(LOCAL_DIR)/security/cm_api.c \
 	$(LOCAL_DIR)/security/otp_v20.c \
-	$(LOCAL_DIR)/pmic/pmic_s2mps_19_22.c \
-	$(LOCAL_DIR)/pmic/sub_pmic_s2mpb02.c \
 	$(LOCAL_DIR)/gpio_init.S \
 	$(LOCAL_DIR)/gpio.c \
 	$(LOCAL_DIR)/dpu_cal/decon_reg.c \
