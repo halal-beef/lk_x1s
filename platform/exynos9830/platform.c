@@ -19,11 +19,11 @@
 #include <platform/interrupts.h>
 #include <platform/sfr.h>
 #include <platform/smc.h>
-#include <platform/pmic_s2mps_19_22.h>
+#include <dev/pmic_s2mps_19_22.h>
 #ifdef CONFIG_SUB_PMIC_S2DOS05
 #include <target/pmic_s2dos05.h>
 #else
-#include <platform/sub_pmic_s2mpb02.h>
+#include <dev/sub_pmic_s2mpb02.h>
 #endif
 #include <platform/dfd.h>
 #include <platform/ldfw.h>

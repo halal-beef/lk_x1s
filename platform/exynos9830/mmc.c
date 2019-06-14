@@ -4,7 +4,7 @@
 #include <dev/boot.h>
 #include <platform/delay.h>
 #include <platform/sfr.h>
-#include <platform/pmic_s2mps_19_22.h>
+#include <dev/pmic_s2mps_19_22.h>
 
 #define MUX_CLKCMU_HSI1_MMC_CARD		0x1A33108C
 #define MUX_CLKCMU_HSI1_MMC_CARD_USER		0x13000610

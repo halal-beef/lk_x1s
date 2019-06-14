@@ -19,7 +19,7 @@
 #include <platform/delay.h>
 #include <platform/dss_store_ramdump.h>
 #include <platform/gpio.h>
-#include <platform/pmic_s2mps_19_22.h>
+#include <dev/pmic_s2mps_19_22.h>
 #include <platform/mmu/mmu_func.h>
 
 #ifdef CONFIG_OFFLINE_RAMDUMP
