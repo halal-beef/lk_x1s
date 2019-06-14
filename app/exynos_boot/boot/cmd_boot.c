@@ -206,15 +206,24 @@ static void remove_string_from_bootargs(const char *str)
 	int bootargs_len;
 	int str_len;
 	int i;
+	int flag = 0;
 
 	noff = fdt_path_offset(fdt_dtb, "/chosen");
 	np = fdt_getprop(fdt_dtb, noff, "bootargs", &bootargs_len);
 
 	str_len = strlen(str);
 
-	for (i = 0; i < bootargs_len - str_len; i++)
-		if (!strncmp(str, (np + i), str_len))
+	for (i = 0; i <= bootargs_len - str_len; i++) {
+		if(!strncmp(str, (np + i), str_len)) {
+			flag = 1;
 			break;
+		}
+	}
+
+	if (!flag) {
+		printf("%sis not in bootargs\n", str);
+		return;
+	}
 
 	memset(bootargs, 0, BUFFER_SIZE);
 	memcpy(bootargs, np, i);
