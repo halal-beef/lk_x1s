@@ -414,7 +414,9 @@ static int __utp_write_query_ucd(struct ufs_host *ufs, query_index qry)
 	ufs->data_seg_len = ufs->device_desc.bUD0BaseOffset
 		+ (8 * ufs->device_desc.bUDConfigPlength);
 
-	data_len = MIN(ufs->data_seg_len, UPIU_DATA_SIZE);
+	data_len = ufs->data_seg_len;
+	if (data_len > UPIU_DATA_SIZE)
+		return RET_FAILURE;
 
 	/* header */
 	hdr->type = UPIU_TRANSACTION_QUERY_REQ;
