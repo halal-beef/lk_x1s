@@ -9,7 +9,7 @@
  */
 
 #include <stdio.h>
-#include <target/pmic_s2dos05.h>
+#include <dev/pmic_s2dos05.h>
 
 static void Delay(void)
 {

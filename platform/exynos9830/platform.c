@@ -21,7 +21,7 @@
 #include <platform/smc.h>
 #include <dev/pmic_s2mps_19_22.h>
 #ifdef CONFIG_SUB_PMIC_S2DOS05
-#include <target/pmic_s2dos05.h>
+#include <dev/pmic_s2dos05.h>
 #else
 #include <dev/sub_pmic_s2mpb02.h>
 #endif

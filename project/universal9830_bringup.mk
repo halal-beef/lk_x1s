@@ -31,4 +31,5 @@ MODULE_DEPS += \
 	dev/adc \
 	dev/pmucal \
 	dev/speedy \
-	dev/power/pmic/s2mps_19_22
+	dev/power/pmic/s2mps_19_22 \
+	dev/power/pmic/s2dos05
