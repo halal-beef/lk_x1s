@@ -18,7 +18,7 @@
 //#include <common.h>
 //#include <asm/arch/cpu.h>
 #include <stdio.h>
-#include <platform/chg_max77705.h>
+#include <dev/chg_max77705.h>
 
 static void Delay(void)
 {

@@ -30,7 +30,7 @@
 #include <platform/secure_boot.h>
 #include "flexpmu_dbg.h"
 #include <platform/tmu.h>
-#include <platform/chg_max77705.h>
+#include <dev/chg_max77705.h>
 #include <platform/mmu/mmu_func.h>
 #include <dev/mmc.h>
 
