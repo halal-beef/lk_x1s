@@ -34,6 +34,7 @@
 #include <dev/pmucal_local.h>
 
 #define FB_RESPONSE_BUFFER_SIZE 128
+#define REBOOT_MODE_RECOVERY	0xFF
 
 unsigned int download_size;
 unsigned int downloaded_data_size;
@@ -160,6 +161,8 @@ int fb_do_getvar(const char *cmd_buffer)
 		sprintf(response + 4, "no");
 	} else if (!memcmp(cmd_buffer + 7, "str_ram", strlen("str_ram"))) {
 		debug_store_ramdump_getvar(cmd_buffer + 15, response + 4);
+	} else if (!memcmp(cmd_buffer + 7, "is-userspace", strlen("is-userspace"))) {
+		sprintf(response + 4, "no");
 	} else {
 		debug_snapshot_getvar_item(cmd_buffer + 7, response + 4);
 	}
@@ -300,10 +303,16 @@ int fb_do_reboot(const char *cmd_buffer)
 	sprintf(response, "OKAY");
 	fastboot_tx_status(response, strlen(response), FASTBOOT_TX_SYNC);
 
-	if (!memcmp(cmd_buffer, "reboot-bootloader", strlen("reboot-bootloader")))
+	if (!memcmp(cmd_buffer, "reboot-bootloader", strlen("reboot-bootloader"))) {
 		writel(CONFIG_RAMDUMP_MODE, CONFIG_RAMDUMP_SCRATCH);
-	else
+	}
+	else if (!memcmp(cmd_buffer, "reboot-fastboot", strlen("reboot-fastboot"))) {
+		writel(REBOOT_MODE_RECOVERY, EXYNOS9830_POWER_SYSIP_DAT0);
 		writel(0, CONFIG_RAMDUMP_SCRATCH);
+	}
+	else {
+		writel(0, CONFIG_RAMDUMP_SCRATCH);
+	}
 
 	/* write reboot reasen (bootloader reboot) */
 	writel(RAMDUMP_SIGN_BL_REBOOT, CONFIG_RAMDUMP_REASON);
