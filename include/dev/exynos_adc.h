@@ -26,6 +26,8 @@
 
 #include <arch/ops.h>
 #include <lk/init.h>
+#include <lk/reg.h>
+#include <kernel/thread.h>
 #include <platform.h>
 #include <platform/timer.h>
 #include <sys/types.h>

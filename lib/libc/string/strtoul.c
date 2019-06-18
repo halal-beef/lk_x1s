@@ -26,6 +26,10 @@
  */
 #include <string.h>
 #include <sys/types.h>
+#include <lk/err.h>
+#include <lk/debug.h>
+#include <platform.h>
+#include "platform_p.h"
 
 unsigned long strtoul(const char *cp, char **endp, unsigned int base)
 {
