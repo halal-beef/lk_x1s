@@ -25,6 +25,12 @@
  * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 #include <string.h>
+#include <lk/reg.h>
+#include <kernel/thread.h>
+#include <platform.h>
+#include <platform/interrupts.h>
+#include <platform/debug.h>
+#include <platform/timer.h>
 #include <sys/types.h>
 #include <ctype.h>
 
