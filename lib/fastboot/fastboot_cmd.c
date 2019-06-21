@@ -112,12 +112,9 @@ int fb_do_getvar(const char *cmd_buffer)
 		if (ptn->filesys != FS_TYPE_NONE)
 			sprintf(response + 4, "0x%llx", pit_get_length(ptn));
 	} else if (!strcmp(cmd_buffer + 7, "slot-count")) {
-		sprintf(response + 4, "2");
+		sprintf(response + 4, "0");
 	} else if (!strcmp(cmd_buffer + 7, "current-slot")) {
-		if (ab_current_slot())
-			sprintf(response + 4, "_b");
-		else
-			sprintf(response + 4, "_a");
+		sprintf(response + 4, " ");
 	} else if (!memcmp(cmd_buffer + 7, "slot-successful", strlen("slot-successful"))) {
 		int slot = -1;
 		if (!strcmp(cmd_buffer + 7 + strlen("slot-successful:"), "_a"))
