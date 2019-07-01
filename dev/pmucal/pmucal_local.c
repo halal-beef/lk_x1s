@@ -11,7 +11,7 @@
 #include <platform/dfd.h>
 #include <dev/boot.h>
 #include <dev/pmucal_local.h>
-#include <platform/flexpmu_cal_local_exynos9830.h>
+#include <platform/pmucal.h>
 
 /**
  *  pmucal_local_disable - disables a power domain.
