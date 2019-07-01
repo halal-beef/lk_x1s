@@ -26,18 +26,18 @@ MODULE_SRCS += \
 	$(LOCAL_DIR)/pmic/if_pmic_s2mu107.c \
 	$(LOCAL_DIR)/pmic/fg_s2mu107.c \
 	$(LOCAL_DIR)/ab_update/ab_update.c \
-	$(LOCAL_DIR)/dfd.c \
-	$(LOCAL_DIR)/dfd_verify.c \
-	$(LOCAL_DIR)/dfd_asm_helper.S \
-	$(LOCAL_DIR)/debug-snapshot-uboot.c \
 	$(LOCAL_DIR)/wdt/wdt_recovery.c \
 	$(LOCAL_DIR)/dram_training/dram_training.c \
 	$(LOCAL_DIR)/mmu/cpu_a.S \
 	$(LOCAL_DIR)/mmu/mmu.c \
-	$(LOCAL_DIR)/debug-store-ramdump.c \
 	$(LOCAL_DIR)/power.c \
 	$(LOCAL_DIR)/power/tmu.c \
-	$(LOCAL_DIR)/power/flexpmu_dbg.c
+	$(LOCAL_DIR)/power/flexpmu_dbg.c \
+	$(LOCAL_DIR)/debug/dfd.c \
+	$(LOCAL_DIR)/debug/dfd_verify.c \
+	$(LOCAL_DIR)/debug/dfd_asm_helper.S \
+	$(LOCAL_DIR)/debug/dss.c \
+	$(LOCAL_DIR)/debug/dss_store_ramdump.c
 
 MODULE_DEPS += \
 	dev/interrupt/arm_gic \

@@ -16,12 +16,12 @@
 #include <platform/sizes.h>
 #include <platform/dfd.h>
 #include <platform/delay.h>
-#include <platform/debug-store-ramdump.h>
+#include <platform/dss_store_ramdump.h>
 #include <platform/fastboot.h>
 #include <platform/gpio.h>
 #include <platform/pmic_s2mpu10_11.h>
 #include <platform/mmu/mmu_func.h>
-#include "fastboot/fastboot.h"
+#include "../fastboot/fastboot.h"
 
 #ifdef CONFIG_OFFLINE_RAMDUMP
 static int g_is_enabled = 1;

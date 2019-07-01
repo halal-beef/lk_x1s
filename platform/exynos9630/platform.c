@@ -269,7 +269,7 @@ void platform_early_init(void)
 
 	uart_test_function();
 	printf("LK build date: %s, time: %s\n", __DATE__, __TIME__);
-	debug_snapshot_boot_cnt();
+	dbg_snapshot_boot_cnt();
 
 	arm_gic_init();
 	writel(1 << 8, EXYNOS9630_MCT_G_TCON);
@@ -329,7 +329,7 @@ void platform_init(void)
 
 	part_init();
 	if (is_first_boot() && *(unsigned int *)DRAM_BASE == 0xabcdef)
-		debug_snapshot_fdt_init();
+		dbg_snapshot_fdt_init();
 
 	if (rst_stat & (WARM_RESET | LITTLE_WDT_RESET))
 		dfd_run_post_processing();
