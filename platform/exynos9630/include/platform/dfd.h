@@ -146,11 +146,11 @@ enum frmk_ipc_cmd {
 void dfd_verify_enable(void);
 extern void set_debug_level(const char *buf);
 extern void set_debug_level_by_env(void);
-extern void debug_snapshot_fdt_init(void);
-extern int debug_snapshot_getvar_item(const char *name, char *response);
-extern unsigned long debug_snapshot_get_item_paddr(const char *name);
-extern unsigned long debug_snapshot_get_item_size(const char *name);
-void debug_snapshot_boot_cnt(void);
+extern void dbg_snapshot_fdt_init(void);
+extern int dbg_snapshot_getvar_item(const char *name, char *response);
+extern unsigned long dbg_snapshot_get_item_paddr(const char *name);
+extern unsigned long dbg_snapshot_get_item_size(const char *name);
+void dbg_snapshot_boot_cnt(void);
 void llc_flush(u32 invway);
 unsigned int clear_llc_init_state(void);
 

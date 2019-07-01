@@ -62,7 +62,7 @@ struct dbg_snapshot_bl static_dss_bl = {
 
 struct dbg_snapshot_bl *dss_bl_p = &static_dss_bl;
 
-void debug_snapshot_boot_cnt(void)
+void dbg_snapshot_boot_cnt(void)
 {
 	unsigned int reg;
 
@@ -98,7 +98,7 @@ void debug_snapshot_boot_cnt(void)
 	printf("Bootloader Booting SEQ #%u\n", reg);
 }
 
-static int debug_snapshot_get_items(void)
+static int dbg_snapshot_get_items(void)
 {
 	char path[64];
 	u32 ret[8];
@@ -150,12 +150,12 @@ static int debug_snapshot_get_items(void)
 	return 0;
 }
 
-unsigned long debug_snapshot_get_item_count(void)
+unsigned long dbg_snapshot_get_item_count(void)
 {
 	return ARRAY_SIZE(dss_bl_p->item);
 }
 
-struct dss_item *debug_snapshot_get_item(const char *name)
+struct dss_item *dbg_snapshot_get_item(const char *name)
 {
 	unsigned int i;
 
@@ -168,7 +168,7 @@ struct dss_item *debug_snapshot_get_item(const char *name)
 	return NULL;
 }
 
-unsigned long debug_snapshot_get_item_paddr(const char *name)
+unsigned long dbg_snapshot_get_item_paddr(const char *name)
 {
 	unsigned int i;
 
@@ -180,7 +180,7 @@ unsigned long debug_snapshot_get_item_paddr(const char *name)
 	return 0;
 }
 
-unsigned long debug_snapshot_get_item_size(const char *name)
+unsigned long dbg_snapshot_get_item_size(const char *name)
 {
 	unsigned int i;
 
@@ -192,13 +192,13 @@ unsigned long debug_snapshot_get_item_size(const char *name)
 	return 0;
 }
 
-void debug_snapshot_fdt_init(void)
+void dbg_snapshot_fdt_init(void)
 {
-	if (debug_snapshot_get_items() < 0)
+	if (dbg_snapshot_get_items() < 0)
 		return;
 }
 
-int debug_snapshot_getvar_item(const char *name, char *response)
+int dbg_snapshot_getvar_item(const char *name, char *response)
 {
 	char log_name[32] = { 0, };
 	struct dss_item *item;
@@ -212,7 +212,7 @@ int debug_snapshot_getvar_item(const char *name, char *response)
 	}
 
 	if (!strcmp(name, "header")) {
-		item = debug_snapshot_get_item("header");
+		item = dbg_snapshot_get_item("header");
 		if (!item)
 			return -1;
 
@@ -223,7 +223,7 @@ int debug_snapshot_getvar_item(const char *name, char *response)
 	}
 
 	snprintf(log_name, sizeof(log_name) - 1, "log_%s", name);
-	item = debug_snapshot_get_item(log_name);
+	item = dbg_snapshot_get_item(log_name);
 	if (!item)
 		return -1;
 
