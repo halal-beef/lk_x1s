@@ -681,12 +681,9 @@ int cmd_boot(int argc, const cmd_args *argv)
 {
 #if defined(CONFIG_FACTORY_MODE)
 	struct exynos_gpio_bank *bank = (struct exynos_gpio_bank *)EXYNOS9630_GPA1CON;
-
 	int gpio = 5;	/* Volume Up */
 #endif
-#if defined(CONFIG_FACTORY_MODE)
 	unsigned int val;
-#endif
 
 	fdt_dtb = (struct fdt_header *)DT_BASE;
 	dtbo_table = (struct dt_table_header *)DTBO_BASE;
@@ -752,12 +749,10 @@ int cmd_boot(int argc, const cmd_args *argv)
 	configure_dtb();
 	configure_ddi_id();
 
-#if 0
 	val = readl(EXYNOS9630_POWER_SYSIP_DAT0);
 	if (val == REBOOT_MODE_RECOVERY || val == REBOOT_MODE_FACTORY) {
 		writel(0, EXYNOS9630_POWER_SYSIP_DAT0);
 	}
-#endif
 
 	/*
 	 * Send SSU to UFS. Something wrong on SSU should not
