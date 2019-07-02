@@ -57,9 +57,22 @@ err_out:
 void exynos_local_power_off(void)
 {
 	unsigned int i;
+	unsigned int start = 0, end = PMUCAL_NUM_PDS;
 	int ret;
+	unsigned int chip_rev;
 
-	for (i = 0; i < pmucal_pd_list_size; i ++) {
+	chip_rev = readl(EXYNOS9830_PRO_ID + 0x10);
+	chip_rev = (chip_rev & (0xf << 20)) >> 20;
+
+	if (chip_rev == 0) {
+		start = 0;
+		end = PMUCAL_NUM_PDS_EVT0;
+	} else if (chip_rev == 1) {
+		start = PMUCAL_NUM_PDS_EVT0;
+		end =PMUCAL_NUM_PDS_EVT1;
+	}
+
+	for (i = start; i < end; i++) {
 		printf("%s%s power off... ", PMUCAL_PREFIX, pmucal_pd_list[i].name);
 		ret = pmucal_local_disable(i);
 		if (ret)
