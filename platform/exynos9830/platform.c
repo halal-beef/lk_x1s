@@ -28,6 +28,7 @@
 #include <platform/dfd.h>
 #include <platform/ldfw.h>
 #include <platform/secure_boot.h>
+#include <platform/h-arx.h>
 #include "flexpmu_dbg.h"
 #include <platform/tmu.h>
 #include <dev/chg_max77705.h>
@@ -460,6 +461,10 @@ void platform_init(void)
 			printf("secure_payload: init done successfully.\n");
 		else
 			printf("secure_payload: init failed.\n");
+
+		/* Enabling H-Arx */
+		if (load_and_init_harx())
+			printf("CAN NOT enter EL2\n");
 
 by_dumpgpr_out:
 		print_el3_monitor_version();
