@@ -99,7 +99,7 @@ int load_and_init_harx_plugin(const char *name, u64 plugin_addr)
 			 plugin_addr,
 			 0, 0, 0);
 	if (ret) {
-		printf("[H-Arx Plug-in] ERROR: Fail to verify or register %s binary "
+		printf("[H-Arx Plug-in] This binary(%s) is not H-Arx plug-in "
 			"[ret = %llx]\n",
 			name, ret);
 		return -1;
