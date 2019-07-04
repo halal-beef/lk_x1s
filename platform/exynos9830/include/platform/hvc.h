@@ -11,6 +11,9 @@
 #ifndef _HVC_H_
 #define _HVC_H_
 
+/* HVC FID */
+#define HVC_CMD_GET_HARX_INFO				(0xC6000020)
+
 #ifndef __ASSEMBLY__
 #include <sys/types.h>
 
