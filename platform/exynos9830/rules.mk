@@ -20,6 +20,7 @@ MODULE_SRCS += \
 	$(LOCAL_DIR)/security/cm_api.c \
 	$(LOCAL_DIR)/security/otp_v20.c \
 	$(LOCAL_DIR)/security/h-arx.c \
+	$(LOCAL_DIR)/security/exynos-hvc.S \
 	$(LOCAL_DIR)/gpio_init.S \
 	$(LOCAL_DIR)/gpio.c \
 	$(LOCAL_DIR)/dpu_cal/decon_reg.c \
