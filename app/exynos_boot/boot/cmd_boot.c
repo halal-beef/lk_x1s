@@ -21,8 +21,10 @@
 #include <dev/rpmb.h>
 #include <platform/exynos9830.h>
 #include <platform/smc.h>
+#include <platform/hvc.h>
 #include <platform/sfr.h>
 #include <platform/ldfw.h>
+#include <platform/h-arx.h>
 #include <platform/charger.h>
 #include <lib/ab_update.h>
 #include <platform/secure_boot.h>
@@ -252,6 +254,11 @@ static void configure_dtb(void)
 	unsigned long sec_pt_base = 0;
 	unsigned int sec_pt_size = 0;
 	unsigned long sec_pt_end = 0;
+
+	unsigned long harx_info_ver = 0;
+	unsigned long harx_base = 0;
+	unsigned long harx_size = 0;
+
 	int len;
 	const char *np;
 	int noff;
@@ -336,6 +343,38 @@ static void configure_dtb(void)
 	printf("SEC_PGTBL_BASE[%#lx]\n", sec_pt_base);
 	printf("SEC_PGTBL_SIZE[%#x]\n", sec_pt_size);
 
+	/* Get H-Arx base address and size to carve-out */
+	harx_info_ver = exynos_hvc(HVC_CMD_GET_HARX_INFO,
+				   HARX_INFO_TYPE_VERSION,
+				   0, 0, 0);
+	if (harx_info_ver == HARX_INFO_VERSION) {
+		harx_base = exynos_hvc(HVC_CMD_GET_HARX_INFO,
+					HARX_INFO_TYPE_HARX_BASE,
+					0, 0, 0);
+		if (harx_base == (unsigned long)ERROR_INVALID_TYPE) {
+			printf("[ERROR] Invalid H-Arx base address\n");
+			harx_base = 0;
+		}
+
+		printf("HARX_BASE[%#lx]\n", harx_base);
+
+		harx_size = exynos_hvc(HVC_CMD_GET_HARX_INFO,
+					HARX_INFO_TYPE_HARX_SIZE,
+					0, 0, 0);
+		if (harx_size == (unsigned long)ERROR_INVALID_TYPE) {
+			printf("[ERROR] Invalid H-Arx size\n");
+			harx_size = 0;
+		}
+
+		printf("HARX_SIZE[%#lx]\n", harx_size);
+	} else {
+		printf("[ERROR] H-Arx info version is old version [%lx]\n",
+			harx_info_ver);
+
+		harx_base = 0;
+		harx_size = 0;
+	}
+
 	/* DT control code must write after this function call. */
 	merge_dto_to_main_dtb();
 	resize_dt(SZ_4K);
@@ -367,6 +406,13 @@ static void configure_dtb(void)
 	/*
 	 * 2nd DRAM node
 	 */
+	if ((harx_base != 0) && (harx_size != 0)) {
+		add_dt_memory_node(sec_dram_end,
+				   harx_base - sec_dram_end);
+
+		sec_dram_end = harx_base + harx_size;
+	}
+
 	if (sec_pt_base && sec_pt_size) {
 		add_dt_memory_node(sec_dram_end,
 		                   sec_pt_base - sec_dram_end);
