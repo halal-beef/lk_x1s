@@ -25,6 +25,13 @@
 /* Partition name */
 #define EXYNOS_HARX_PART_NAME			"harx"
 
+/* HVC_CMD_GET_HARX_INFO */
+#define HARX_INFO_MAJOR_VERSION			(1)
+#define HARX_INFO_MINOR_VERSION			(0)
+#define HARX_INFO_VERSION			(0xE1200000 |			\
+						(HARX_INFO_MAJOR_VERSION << 8) |\
+						HARX_INFO_MINOR_VERSION)
+
 /*
  * Callers don't have to write line feed(\n) when calling
  * this macro because print_lcd_update can't handle this
@@ -40,6 +47,13 @@
 	} while (0)
 
 #ifndef __ASSEMBLY__
+/* HVC_CMD_GET_HARX_INFO */
+enum harx_info_type {
+	HARX_INFO_TYPE_VERSION = 0,
+	HARX_INFO_TYPE_HARX_BASE,
+	HARX_INFO_TYPE_HARX_SIZE
+};
+
 int load_and_init_harx(void);
 #endif	/* __ASSEMBLY__ */
 #endif	/* _HARX_H_ */
