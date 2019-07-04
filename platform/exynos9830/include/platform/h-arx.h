@@ -21,9 +21,11 @@
 
 /* Base address */
 #define EXYNOS_HARX_BASE_ADDR			(0xC1000000)
+#define EXYNOS_HARX_PLUGIN_BASE_ADDR		(0xC0400000)
 
 /* Partition name */
 #define EXYNOS_HARX_PART_NAME			"harx"
+#define EXYNOS_HARX_PLUGIN_PART_NAME		"harx_rkp"
 
 /* HVC_CMD_GET_HARX_INFO */
 #define HARX_INFO_MAJOR_VERSION			(1)
@@ -55,5 +57,6 @@ enum harx_info_type {
 };
 
 int load_and_init_harx(void);
+int load_and_init_harx_plugin(const char *name, u64 plugin_addr);
 #endif	/* __ASSEMBLY__ */
 #endif	/* _HARX_H_ */

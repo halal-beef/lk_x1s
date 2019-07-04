@@ -12,6 +12,7 @@
 #define _HVC_H_
 
 /* HVC FID */
+#define HVC_CMD_REGISTER_HARX_PLUGIN			(0xC6000010)
 #define HVC_CMD_GET_HARX_INFO				(0xC6000020)
 
 #ifndef __ASSEMBLY__
