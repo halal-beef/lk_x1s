@@ -18,6 +18,7 @@
 #include <pit.h>
 
 #include <platform/h-arx.h>
+#include <platform/hvc.h>
 #include <platform/smc.h>
 
 static int load_el2_module(const char *part_name,
@@ -76,6 +77,35 @@ int load_and_init_harx(void)
 	}
 
 	harx_print_with_lcd("[H-Arx] Complete to initialization");
+
+	return 0;
+}
+
+int load_and_init_harx_plugin(const char *name, u64 plugin_addr)
+{
+	u64 size = 0;
+	u64 ret = 0;
+
+	if (load_el2_module(name, plugin_addr, &size)) {
+		printf("[H-Arx Plug-in] ERROR: Fail to load %s binary\n",
+			name);
+		return -1;
+	}
+
+	harx_print_with_lcd("[H-Arx Plug-in] %s plug-in loading done", name);
+
+	/* Verify & Register plug-in */
+	ret = exynos_hvc(HVC_CMD_REGISTER_HARX_PLUGIN,
+			 plugin_addr,
+			 0, 0, 0);
+	if (ret) {
+		printf("[H-Arx Plug-in] ERROR: Fail to verify or register %s binary "
+			"[ret = %llx]\n",
+			name, ret);
+		return -1;
+	}
+
+	harx_print_with_lcd("[H-Arx Plug-in] %s plug-in registration done", name);
 
 	return 0;
 }
