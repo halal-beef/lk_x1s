@@ -47,6 +47,13 @@
 /* CHIP REV */
 #define CHIPID_REV_OFFSET				0x10
 
+#define REVISION_MASK					(0xF)
+#define MAIN_REVISION_SHIFT				(20)
+#define SUB_REVISION_SHIFT				(16)
+
+#define SOC_REVISION_EVT0				(0)
+#define SOC_REVISION_EVT1				(1)
+
 #define BOOT_DEV_INFO					EXYNOS9830_POWER_INFORM3
 #define BOOT_DEV					readl(EXYNOS9830_POWER_INFORM3)
 
