@@ -259,6 +259,9 @@ static void configure_dtb(void)
 	unsigned long harx_base = 0;
 	unsigned long harx_size = 0;
 
+	unsigned int soc_rev = (readl(EXYNOS9830_PRO_ID + CHIPID_REV_OFFSET) >>
+				MAIN_REVISION_SHIFT) & REVISION_MASK;
+
 	int len;
 	const char *np;
 	int noff;
@@ -344,6 +347,9 @@ static void configure_dtb(void)
 	printf("SEC_PGTBL_SIZE[%#x]\n", sec_pt_size);
 
 	/* Get H-Arx base address and size to carve-out */
+	if (soc_rev < SOC_REVISION_EVT1)
+		goto skip_carve_out_evt0;
+
 	harx_info_ver = exynos_hvc(HVC_CMD_GET_HARX_INFO,
 				   HARX_INFO_TYPE_VERSION,
 				   0, 0, 0);
@@ -374,6 +380,8 @@ static void configure_dtb(void)
 		harx_base = 0;
 		harx_size = 0;
 	}
+
+skip_carve_out_evt0:
 
 	/* DT control code must write after this function call. */
 	merge_dto_to_main_dtb();
