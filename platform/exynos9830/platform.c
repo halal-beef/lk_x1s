@@ -475,12 +475,14 @@ void platform_init(void)
 			printf("secure_payload: init failed.\n");
 
 		/* Enabling H-Arx */
-		if (load_and_init_harx()) {
-			printf("CAN NOT enter EL2\n");
-		} else {
-			if (load_and_init_harx_plugin(EXYNOS_HARX_PLUGIN_PART_NAME,
-							EXYNOS_HARX_PLUGIN_BASE_ADDR))
-				printf("There is no H-Arx plug-in\n");
+		if (s5p_chip_rev.main >= SOC_REVISION_EVT1) {
+			if (load_and_init_harx()) {
+				printf("CAN NOT enter EL2\n");
+			} else {
+				if (load_and_init_harx_plugin(EXYNOS_HARX_PLUGIN_PART_NAME,
+								EXYNOS_HARX_PLUGIN_BASE_ADDR))
+					printf("There is no H-Arx plug-in\n");
+			}
 		}
 
 by_dumpgpr_out:
