@@ -27,11 +27,6 @@
 #define BIG_CORE_LAST			(7)
 
 #define RESET_SEQUENCER_OFFSET		(0x500)
-#define DBGCORE_CPU_CONFIGURATION	(0x2e80)
-#define DBGCORE_CPU_STATES		(0x2e88)
-#define DBGCORE_STATE_UP		(0x10)
-#define DBGCORE_CPU_IN			(0x2ea4)
-#define DBGCORE_CPU_OUT			(0x2ea0)
 
 #define DUMP_EN_BIT			(0)
 #define DUMP_EN				(1 << DUMP_EN_BIT)
@@ -57,16 +52,6 @@
 #define FLUSH_LEVEL1			0x1
 #define FLUSH_LEVEL2			0x2
 #define FLUSH_LEVEL3			0x3
-
-#define CONFIG_PHY_DRAM_NS_BASE		(0xBFFFF000)
-#define CORE_STAT			(CONFIG_PHY_DRAM_NS_BASE + 0x2C)
-
-#define RUNNING				(0 << 0)
-#define RESET				(1 << 0)
-#define RESERVED			(1 << 1)
-#define HOTPLUG				(1 << 2)
-#define C2_STATE			(1 << 3)
-#define CLUSTER_OFF			(1 << 4)
 
 #define DBGC_VERSION_LEN		(48)
 /*******************************************************************************
