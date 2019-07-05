@@ -132,35 +132,6 @@ void dfd_display_core_stat(void)
 	int val;
 	u32 ret;
 
-	printf("Core stat at previous(IRAM)\n");
-	for (val = 0; val < NR_CPUS; val++) {
-		ret = readl(CORE_STAT + (val * REG_OFFSET));
-		printf("Core%d: ", val);
-		switch (ret) {
-		case RUNNING:
-			printf("Running\n");
-			break;
-		case RESET:
-			printf("Reset\n");
-			break;
-		case RESERVED:
-			printf("Reserved\n");
-			break;
-		case HOTPLUG:
-			printf("Hotplug\n");
-			break;
-		case C2_STATE:
-			printf("C2\n");
-			break;
-		case CLUSTER_OFF:
-			printf("CLUSTER_OFF\n");
-			break;
-		default:
-			printf("Unknown: 0x%x\n", ret);
-			break;
-		}
-	}
-
 	printf("Core stat at previous(KERNEL)\n");
 	for (val = 0; val < NR_CPUS; val++) {
 		ret = readl(CONFIG_RAMDUMP_CORE_POWER_STAT + (val * REG_OFFSET));
@@ -436,18 +407,15 @@ void dfd_run_post_processing(void)
 	};
 	u32 cpu, val, cpu_mask = 0;
 	int ret;
-#ifdef SCAN2DRAM_SOLUTION
 	struct dfd_ipc_cmd cmd;
 	u32 arr_addr = (u32)dbg_snapshot_get_item_paddr("log_arrdumpreset");
 	u32 s2d_addr = (u32)dbg_snapshot_get_item_paddr("log_s2d");
 	u32 s2d_size = (u32)dbg_snapshot_get_item_size("log_s2d");
 
 	memset(&cmd, 0, sizeof(struct dfd_ipc_cmd));
-#endif
 	printf("---------------------------------------------------------\n");
 	printf("Watchdog or Warm Reset Detected.\n");
 
-#ifdef SCAN2DRAM_SOLUTION
 	cmd.cmd_raw.cmd = IPC_CMD_POST_PROCESSING;
 	/* Initialization to use waiting for complete Dump GPR of other cores */
 	writel(0, CONFIG_RAMDUMP_DUMP_GPR_WAIT);
@@ -456,6 +424,7 @@ void dfd_run_post_processing(void)
 	cmd.cmd_raw.id = PP_IPC_CMD_ID_START;
 	dfd_ipc_fill_buffer(&cmd, s2d_addr, s2d_size, 0);
 	ret = dfd_ipc_send_data_polling(&cmd);
+#ifdef SCAN2DRAM_SOLUTION
 	if (!ret && cmd.buffer[1]) {
 		printf("S2D Magic Detected - s2d sanity pass.\n");
 	} else {
@@ -473,6 +442,7 @@ void dfd_run_post_processing(void)
 	printf("Display PC value\n");
 	dfd_display_pc_value(PC);
 
+skip_gpr:
 	if (!(readl(EXYNOS9830_POWER_BASE + RESET_SEQUENCER_OFFSET) & DUMP_EN)) {
 		printf("DUMP_EN disabled, Skip cache flush.\n");
 		goto finish;
@@ -480,12 +450,6 @@ void dfd_run_post_processing(void)
 
 	llc_flush_disable();
 
-#ifdef SCAN2DRAM_SOLUTION
-	cmd.cmd_raw.id = PP_IPC_CMD_ID_RUN_ARR_TAG;
-	dfd_ipc_fill_buffer(&cmd, arr_addr, (u64)dfd_compact_cl2_bin, 0);
-	printf("Try to get CL2 L1-D$ Tag information. - ");
-	printf("%s!\n", dfd_ipc_send_data_polling(&cmd) < 0 ? "Failed" : "Finish");
-#endif
 	/* Following code is array dump and cache flush. (related cache operation) */
 	dfd_set_cache_flush_level();
 	//Wake up secondary CPUs.
@@ -507,7 +471,6 @@ void dfd_run_post_processing(void)
 	}
 
 	mdelay(100);
-
 
 	//Send Postprocessing Command. ID value is RUN DUMP.
 	cmd.cmd_raw.id = PP_IPC_CMD_ID_RUN_DUMP;
@@ -537,46 +500,30 @@ void dfd_run_post_processing(void)
 	}
 	get_sec_info(false);
 finish:
-#ifdef SCAN2DRAM_SOLUTION
 	cmd.cmd_raw.id = PP_IPC_CMD_ID_FINISH;
 	dfd_ipc_fill_buffer(&cmd, 0, 0, 0);
 	dfd_ipc_send_data_polling(&cmd);
-#endif
 done:
 	printf("---------------------------------------------------------\n");
 }
 
 void dfd_get_dbgc_version(void)
 {
-	u32 flag, reg;
+	u32 flag;
 	char *str;
 	struct dfd_ipc_cmd cmd;
 
 retry:
-	pmu_set_bit_atomic(DBGCORE_CPU_CONFIGURATION, 0);
-	mdelay(10);
-	reg = readl(EXYNOS9830_POWER_BASE + DBGCORE_CPU_STATES);
 	flag = readl(EXYNOS9830_DBG_MBOX_SRn(0));
 	writel(0, EXYNOS9830_DBG_MBOX_SRn(0));
-	printf("DBGCORE: power_state: %s\n", (reg == DBGCORE_STATE_UP) ? "up" : "down");
-
 	if (flag == 0xDB9C5A1D) {
 		str = (char *)CONFIG_RAMDUMP_DBGC_VERSION;
 		str[DBGC_VERSION_LEN - 1] = '\0';
 		printf("DBGCORE: VERSION: %s\n", str);
-	} else if (flag == 0xDB9CDEAD) {
-		printf("DBGCORE: locked up. retry boot dbgcore.\n");
-		pmu_clr_bit_atomic(DBGCORE_CPU_CONFIGURATION, 0);
-		mdelay(10);
-		goto retry;
 	} else {
 		printf("DBGCORE: boot fail!\n");
 		return;
 	}
-
-	memset(&cmd, 0, sizeof(struct dfd_ipc_cmd));
-	cmd.cmd_raw.cmd = IPC_CMD_COPY_DEBUG_LOG;
-	dfd_ipc_send_data_polling(&cmd);
 
 	cmd.cmd_raw.cmd = IPC_CMD_DEBUG_LOG_INFO;
 	dfd_ipc_fill_buffer(&cmd, dbg_snapshot_get_item_paddr("log_dbgc"),
