@@ -5,8 +5,7 @@
  * license that can be found in the LICENSE file or at
  * https://opensource.org/licenses/MIT
  */
-#ifndef __DEV_DISPLAY_H
-#define __DEV_DISPLAY_H
+#pragma once
 
 #include <stdbool.h>
 #include <sys/types.h>
@@ -73,4 +72,3 @@ status_t display_get_framebuffer(struct display_framebuffer *fb)
 
 __END_CDECLS
 
-#endif

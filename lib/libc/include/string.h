@@ -5,8 +5,7 @@
  * license that can be found in the LICENSE file or at
  * https://opensource.org/licenses/MIT
  */
-#ifndef __LIB_STRING_H
-#define __LIB_STRING_H
+#pragma once
 
 #include <stddef.h>
 #include <lk/compiler.h>
@@ -52,4 +51,3 @@ unsigned long long strtoull(const char *cp, char **endp, unsigned int base) __PU
 
 __END_CDECLS
 
-#endif

@@ -5,8 +5,7 @@
  * license that can be found in the LICENSE file or at
  * https://opensource.org/licenses/MIT
  */
-#ifndef __SYS_TYPES_H
-#define __SYS_TYPES_H
+#pragma once
 
 #include <limits.h>
 #include <stdint.h>
@@ -64,4 +63,3 @@ typedef uint64_t u_int64_t;
 
 #define ARRAY_SIZE(x)  (int)(sizeof(x) / sizeof((x)[0]))
 
-#endif

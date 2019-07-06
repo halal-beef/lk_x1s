@@ -5,8 +5,7 @@
  * license that can be found in the LICENSE file or at
  * https://opensource.org/licenses/MIT
  */
-#ifndef __DEV_I2C_H
-#define __DEV_I2C_H
+#pragma once
 
 #include <stdint.h>
 
@@ -42,5 +41,3 @@ static inline status_t i2c_read_reg(int bus, uint8_t address, uint8_t reg, uint8
 {
     return i2c_read_reg_bytes(bus, address, reg, val, 1);
 }
-#endif
-

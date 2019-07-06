@@ -5,8 +5,7 @@
  * license that can be found in the LICENSE file or at
  * https://opensource.org/licenses/MIT
  */
-#ifndef __STDIO_H
-#define __STDIO_H
+#pragma once
 
 #include <lk/compiler.h>
 #include <printf.h>
@@ -71,6 +70,4 @@ int vsnprintf(char *str, size_t len, const char *fmt, va_list ap);
 int print_lcd(u32 font_color, u32 bg_color, const char *fmt, ...);
 
 __END_CDECLS
-
-#endif
 
