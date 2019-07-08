@@ -17,6 +17,8 @@
 #ifndef _HARX_H_
 #define _HARX_H_
 
+#include <stdbool.h>
+
 #include <lib/font_display.h>
 
 /* Base address */
@@ -50,6 +52,8 @@
 
 #ifndef __ASSEMBLY__
 /* HVC_CMD_GET_HARX_INFO */
+extern bool is_harx_initialized;
+
 enum harx_info_type {
 	HARX_INFO_TYPE_VERSION = 0,
 	HARX_INFO_TYPE_HARX_BASE,
