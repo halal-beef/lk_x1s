@@ -347,8 +347,11 @@ static void configure_dtb(void)
 	printf("SEC_PGTBL_SIZE[%#x]\n", sec_pt_size);
 
 	/* Get H-Arx base address and size to carve-out */
+	if (is_harx_initialized == false)
+		goto skip_carve_out_harx;
+
 	if (soc_rev < SOC_REVISION_EVT1)
-		goto skip_carve_out_evt0;
+		goto skip_carve_out_harx;
 
 	harx_info_ver = exynos_hvc(HVC_CMD_GET_HARX_INFO,
 				   HARX_INFO_TYPE_VERSION,
@@ -381,7 +384,7 @@ static void configure_dtb(void)
 		harx_size = 0;
 	}
 
-skip_carve_out_evt0:
+skip_carve_out_harx:
 
 	/* DT control code must write after this function call. */
 	merge_dto_to_main_dtb();
