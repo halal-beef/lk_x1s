@@ -593,7 +593,7 @@ static int dwmci_start_cmd(struct dw_mci *host, struct mmc_cmd *cmd, unsigned in
 	unsigned int mask = 0;
 	int timeout = 0x200000;
 
-	printf("dwmci : cmdidx : %d, cmd_arg : %08x, flag : %08x\n", cmd->cmdidx, cmd->argument, flag);
+	dbg("dwmci : cmdidx : %d, cmd_arg : %08x, flag : %08x\n", cmd->cmdidx, cmd->argument, flag);
 	if (dwmci_check_command_method(host, flag, 0, &timeout, &mask))
 		return ERR_TIMED_OUT;
 	if (dwmci_check_command_method(host, flag, 1, &timeout, &mask))
