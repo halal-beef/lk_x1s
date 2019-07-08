@@ -17,6 +17,7 @@
 #include <string.h>
 #include <platform/delay.h>
 #include <err.h>
+#include <part.h>
 
 #ifndef CONFIG_SYS_MMC_MAX_BLK_COUNT
 //#define CONFIG_SYS_MMC_MAX_BLK_COUNT 32767
@@ -1794,6 +1795,8 @@ void mmc_init(void)
 		mmc_register_bdev(mmc);
 		printf("MMC channel %d initialize success\n", i);
 	}
+
+	part_set_def_dev(DEV_MMC);
 	mmc_test();
 }
 
