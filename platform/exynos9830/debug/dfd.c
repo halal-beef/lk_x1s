@@ -470,6 +470,7 @@ skip_gpr:
 		}
 	}
 
+	goto finish;
 	mdelay(100);
 
 	//Send Postprocessing Command. ID value is RUN DUMP.
