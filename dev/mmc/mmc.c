@@ -19,7 +19,9 @@
 #include <err.h>
 
 #ifndef CONFIG_SYS_MMC_MAX_BLK_COUNT
-#define CONFIG_SYS_MMC_MAX_BLK_COUNT 32767
+//#define CONFIG_SYS_MMC_MAX_BLK_COUNT 32767
+/* HACK MAX BLK */
+#define CONFIG_SYS_MMC_MAX_BLK_COUNT 4096
 #endif
 
 /* #define MMC_TEST */
@@ -404,6 +406,9 @@ static int mmc_boot_send_op_cond(struct mmc *mmc)
 	cmd.cmdidx = CMD1_SEND_OP_COND;
 	cmd.argument = mmc->ocr;
 	cmd.resp_type = MMC_BOOT_RESP_R3;
+
+	/* HACK */
+	cmd.argument = 0x40300000;
 
 	mmc_ret = mmc_send_command(mmc, &cmd);
 	if (mmc_ret != NO_ERROR)
@@ -817,6 +822,7 @@ static int mmc_boot_send_ext_cmd(struct mmc *mmc, unsigned char *buf)
 	struct mmc_cmd cmd;
 	struct mmc_data data;
 	int mmc_ret = NO_ERROR;
+	unsigned int status;
 
 	/* basic check */
 	if (mmc == NULL)
@@ -824,6 +830,7 @@ static int mmc_boot_send_ext_cmd(struct mmc *mmc, unsigned char *buf)
 
 	memset(buf, 0, 512);
 
+#if 0
 	/* set block len */
 	if (mmc_is_hc(mmc)) {
 		mmc_ret = mmc_boot_set_block_len(mmc, 512);
@@ -832,11 +839,15 @@ static int mmc_boot_send_ext_cmd(struct mmc *mmc, unsigned char *buf)
 			return mmc_ret;
 		}
 	}
+#endif
 
 	memset((struct mmc_cmd *)&cmd, 0,
 	       sizeof(struct mmc_cmd));
 	memset((struct mmc_data *)&data, 0,
 	       sizeof(struct mmc_data));
+
+	/* HACK Check eMMC device */
+	mmc_boot_get_card_status(mmc, 1000, &status);
 
 	/* CMD8 */
 	cmd.cmdidx = CMD8_SEND_EXT_CSD;
@@ -912,6 +923,10 @@ mmc_boot_decode_mmc_info(struct mmc *mmc, unsigned int *raw_csd)
 
 	if (mmc->wr_block_len > MMC_MAX_BLOCK_LEN)
 		mmc->wr_block_len = MMC_MAX_BLOCK_LEN;
+
+	/* HACK read/write block size */
+	mmc->rd_block_len = MMC_MAX_BLOCK_LEN;
+	mmc->wr_block_len = MMC_MAX_BLOCK_LEN;
 
 	/* If mmc version higher than 4, support EXT_CSD register */
 	if (mmc->version >= 4) {
@@ -1314,9 +1329,15 @@ static int mmc_boot_adjust_interface_speed(struct mmc *mmc)
 	int mmc_ret = NO_ERROR;
 
 	if (mmc->card_caps & (MMC_HS_52MHZ_1_8V_3V_IO | MMC_HS_52MHZ_1_2V_IO)) {
+#if 0
 		mmc->clock = MMC_CLK_52MHZ;
 		mmc->bus_width = MMC_BOOT_BUS_8BIT;
 		mmc->bus_mode = MMC_BOOT_BUS_DDR;
+#else
+		/* HACK 8bit SDR mode set */
+		mmc->bus_width = MMC_BOOT_BUS_8BIT;
+		mmc->bus_mode = MMC_BOOT_BUS_SDR;
+#endif
 	} else if (mmc->card_caps & MMC_HS_52MHZ) {
 		mmc->clock = MMC_CLK_52MHZ;
 		mmc->bus_width = MMC_BOOT_BUS_8BIT;
@@ -1406,6 +1427,14 @@ static int mmc_select_partition(mmc_device_t *mdev, struct mmc *mmc)
 	cmd.data = NULL;
 
 	err = mmc_send_command(mmc, &cmd);
+
+	cmd.cmdidx = CMD6_SWITCH_FUNC;
+	cmd.resp_type = MMC_BOOT_RESP_R1B;
+	cmd.argument = ((3 << 24) | (177 << 16) | ((1 << 0) << 8));
+	cmd.data = NULL;
+
+	err = mmc_send_command(mmc, &cmd);
+
 	return err;
 }
 
@@ -1419,11 +1448,14 @@ static status_t mmc_bwrite(struct bdev *dev, const void *buf, bnum_t block, uint
 	struct mmc_cmd cmd;
 	struct mmc_data data;
 	int mmc_return = NO_ERROR;
+	u32 backup;
 
-	mmc_return = mmc_select_partition(mdev, mmc);
-	if (mmc_return != NO_ERROR) {
-		printf("Select partition failed\n");
-		return mmc_return;
+	if (mdev->partition != 0) {
+		mmc_return = mmc_select_partition(mdev, mmc);
+		if (mmc_return != NO_ERROR) {
+			printf("Select partition failed\n");
+			return mmc_return;
+		}
 	}
 
 	memset((struct mmc_cmd *)&cmd, 0,
@@ -1464,7 +1496,20 @@ static status_t mmc_bwrite(struct bdev *dev, const void *buf, bnum_t block, uint
 		}
 	}
 
+	if (mdev->partition != 0) {
+		backup = mdev->partition;
+		mdev->partition = 0;
+		mmc_return = mmc_select_partition(mdev, mmc);
+		mdev->partition = backup;
+		if (mmc_return != NO_ERROR) {
+			printf("Select partition failed\n");
+			goto err;
+		}
+	}
+
 	return NO_ERROR;
+err:
+	return -1;
 }
 
 /*
@@ -1488,15 +1533,18 @@ static status_t mmc_bread(struct bdev *dev, void *buf, bnum_t block, uint count)
 	struct mmc_cmd cmd;
 	struct mmc_data data;
 	int mmc_return = NO_ERROR;
+	u32 backup;
+
+	if (mdev->partition != 0) {
+		mmc_return = mmc_select_partition(mdev, mmc);
+		if (mmc_return != NO_ERROR) {
+			printf("Select partition failed\n");
+			return mmc_return;
+		}
+	}
 
 	memset((struct mmc_cmd *)&cmd, 0,
 	       sizeof(struct mmc_cmd));
-
-	mmc_return = mmc_select_partition(mdev, mmc);
-	if (mmc_return != NO_ERROR) {
-		printf("Select partition failed\n");
-		return mmc_return;
-	}
 
 	if (count > 1)
 		cmd.cmdidx = CMD18_READ_MULTIPLE_BLOCK;
@@ -1531,7 +1579,20 @@ static status_t mmc_bread(struct bdev *dev, void *buf, bnum_t block, uint count)
 		}
 	}
 
+	if (mdev->partition != 0) {
+		backup = mdev->partition;
+		mdev->partition = 0;
+		mmc_return = mmc_select_partition(mdev, mmc);
+		mdev->partition = backup;
+		if (mmc_return != NO_ERROR) {
+			printf("Select partition failed\n");
+			goto err;
+		}
+	}
+
 	return NO_ERROR;
+err:
+	return -1;
 }
 
 /*
@@ -1622,27 +1683,28 @@ static int mmc_mmc_register(mmc_device_t *mdev, struct mmc *mmc, unsigned int pa
 	mdev->dev.private = mdev;
 	mdev->mmc = mmc;
 	mdev->block_size = mmc->rd_block_len;
-	if (partition == MMC_PARTITION_SD_USER) {
+	if (partition == MMC_PARTITION_MMC_USER) {
+		strcpy(name, "mmc0");
+		mdev->partition = MMC_PARTITION_MMC_USER;
+		mdev->block_cnt = mmc->user_size / mdev->block_size;
+	} else if (partition == MMC_PARTITION_SD_USER) {
 		strcpy(name, "sd0");
 		mdev->partition = MMC_PARTITION_SD_USER;
 		mdev->block_cnt = mmc->capacity / mdev->block_size;
 	} else if (partition == MMC_PARTITION_MMC_BOOT1) {
-		strcpy(name, "mmcboot1");
+		strcpy(name, "mmc1");
 		mdev->partition = MMC_PARTITION_MMC_BOOT1;
 		mdev->block_cnt = mmc->boot_size * 128 * 1024 / mdev->block_size;
 	} else if (partition == MMC_PARTITION_MMC_BOOT2) {
-		strcpy(name, "mmcboot2");
+		strcpy(name, "mmc2");
 		mdev->partition = MMC_PARTITION_MMC_BOOT2;
 		mdev->block_cnt = mmc->boot_size * 128 * 1024 / mdev->block_size;
 	} else if (partition == MMC_PARTITION_MMC_RPMB) {
 		strcpy(name, "mmcrpmb");
 		mdev->partition = MMC_PARTITION_MMC_RPMB;
 		mdev->block_cnt = mmc->rpmb_size * 128 * 1024 / mdev->block_size;
-	} else {
-		strcpy(name, "mmc0");
-		mdev->partition = MMC_PARTITION_MMC_USER;
-		mdev->block_cnt = mmc->user_size / mdev->block_size;
 	}
+
 	block_size = mdev->block_size;
 	block_count = mdev->block_cnt;
 	bio_initialize_bdev(&mdev->dev,
