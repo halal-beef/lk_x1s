@@ -55,6 +55,8 @@
 #include "acpm.h"
 #endif
 
+#include <platform/chip_rev.h>
+
 #define ARCH_TIMER_IRQ 30
 
 void speedy_gpio_init(void);
@@ -62,6 +64,7 @@ void xbootldo_gpio_init(void);
 void fg_init_s2mu004(void);
 
 unsigned int s5p_chip_id[4] = { 0x0, 0x0, 0x0, 0x0 };
+struct chip_rev_info s5p_chip_rev;
 unsigned int charger_mode = 0;
 unsigned int board_id = CONFIG_BOARD_ID;
 unsigned int board_rev = 0;
@@ -148,6 +151,14 @@ static void read_chip_id(void)
 	s5p_chip_id[0] = readl(EXYNOS9830_PRO_ID + CHIPID0_OFFSET);
 	s5p_chip_id[1] = readl(EXYNOS9830_PRO_ID + CHIPID1_OFFSET) & 0xFFFF;
 }
+
+static void read_chip_rev(void)
+{
+	unsigned int val = readl(EXYNOS9830_PRO_ID + CHIPID_REV_OFFSET);
+	s5p_chip_rev.main = (val >> 20) & 0xf;
+	s5p_chip_rev.sub = (val >> 16) & 0xf;
+}
+
 
 static void display_rst_stat(u32 rst_stat)
 {
@@ -301,6 +312,7 @@ void platform_early_init(void)
 	}
 
 	read_chip_id();
+	read_chip_rev();
 
 	speedy_gpio_init();
 	xbootldo_gpio_init();
