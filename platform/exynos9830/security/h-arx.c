@@ -14,12 +14,17 @@
 
 */
 
+#include <stdbool.h>
+
 #include <sys/types.h>
 #include <pit.h>
 
 #include <platform/h-arx.h>
 #include <platform/hvc.h>
 #include <platform/smc.h>
+
+
+bool is_harx_initialized;
 
 static int load_el2_module(const char *part_name,
 			   u64 addr,
@@ -77,6 +82,8 @@ int load_and_init_harx(void)
 	}
 
 	harx_print_with_lcd("[H-Arx] Complete to initialization");
+
+	is_harx_initialized = true;
 
 	return 0;
 }
