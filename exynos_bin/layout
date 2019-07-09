@@ -2,7 +2,6 @@
 0	32	0	env	0	0
 0	32768	0	kernel	0	0
 0	16384	0	ramdisk	0	0
-0	2048	0	dtbo	0	0
 0	8192	0	ldfw	0	0
 0	16	0	keystorage	0	0
 0	2048	0	tzsw	0	0
@@ -12,6 +11,7 @@
 5	7372800	0	super	0	0
 5	0	0	userdata	remained	0
 5	614400	0	cache	0	0
+1	2048	0	dtbo	0	0
 1	204800	0	modem	0	0
 5	61440	0	persist	0	0
 1	81920	0	boot	0	0
