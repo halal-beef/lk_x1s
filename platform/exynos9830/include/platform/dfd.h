@@ -148,6 +148,7 @@ void dfd_run_post_processing(void);
 void write_back_cache(int cpu);
 void dfd_set_dump_en_for_cacheop(int en);
 void dfd_get_dbgc_version(void);
+int dfd_get_revision(void);
 void llc_flush_disable(void);
 #else
 inline static void dfd_display_reboot_reason(void)
@@ -176,6 +177,11 @@ inline static void dfd_set_dump_en_for_cacheop(int en)
 
 inline static void dfd_get_dbgc_version(void)
 {
+}
+
+inline static int dfd_get_revision(void)
+{
+	return 0;
 }
 
 inline static void llc_flush_disable(void)

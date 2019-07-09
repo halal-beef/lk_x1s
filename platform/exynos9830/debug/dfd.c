@@ -470,7 +470,6 @@ skip_gpr:
 		}
 	}
 
-	goto finish;
 	mdelay(100);
 
 	//Send Postprocessing Command. ID value is RUN DUMP.
@@ -511,14 +510,13 @@ done:
 void dfd_get_dbgc_version(void)
 {
 	u32 flag;
-	char *str;
+	char str[DBGC_VERSION_LEN];
 	struct dfd_ipc_cmd cmd;
 
-retry:
 	flag = readl(EXYNOS9830_DBG_MBOX_SRn(0));
 	writel(0, EXYNOS9830_DBG_MBOX_SRn(0));
 	if (flag == 0xDB9C5A1D) {
-		str = (char *)CONFIG_RAMDUMP_DBGC_VERSION;
+		memcpy(str, (void *)CONFIG_RAMDUMP_DBGC_VERSION, DBGC_VERSION_LEN);
 		str[DBGC_VERSION_LEN - 1] = '\0';
 		printf("DBGCORE: VERSION: %s\n", str);
 	} else {
@@ -526,10 +524,26 @@ retry:
 		return;
 	}
 
+	memset(&cmd, 0, sizeof(struct dfd_ipc_cmd));
 	cmd.cmd_raw.cmd = IPC_CMD_DEBUG_LOG_INFO;
 	dfd_ipc_fill_buffer(&cmd, dbg_snapshot_get_item_paddr("log_dbgc"),
 			dbg_snapshot_get_item_size("log_dbgc"), 0);
 	dfd_ipc_send_data_polling(&cmd);
+}
+
+int dfd_get_revision(void)
+{
+	char str[DBGC_VERSION_LEN];
+
+	memcpy(str, (void *)CONFIG_RAMDUMP_DBGC_VERSION, DBGC_VERSION_LEN);
+	str[DBGC_VERSION_LEN - 1] = '\0';
+
+	if (strstr(str, "EVT0"))
+		return 0;
+	else if (strstr(str, "EVT1"))
+		return 1;
+	else
+		return -1;
 }
 
 unsigned int clear_llc_init_state(void)
