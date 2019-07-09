@@ -14,6 +14,8 @@
 #ifndef _EXYNOS9630_DFD_H
 #define _EXYNOS9630_DFD_H
 
+#define SCAN2DRAM_SOLUTION
+
 #define NR_CPUS				(8)
 #define BIG_NR_CPUS			(2)
 #define LITTLE_NR_CPUS			(6)
