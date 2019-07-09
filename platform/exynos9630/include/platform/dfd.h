@@ -57,16 +57,6 @@
 #define FLUSH_LEVEL2			0x2
 #define FLUSH_LEVEL3			0x3
 
-#define CONFIG_PHY_DRAM_NS_BASE		(0xBFFFF000)
-#define CORE_STAT			(CONFIG_PHY_DRAM_NS_BASE + 0x2C)
-
-#define RUNNING				(0 << 0)
-#define RESET				(1 << 0)
-#define RESERVED			(1 << 1)
-#define HOTPLUG				(1 << 2)
-#define C2_STATE			(1 << 3)
-#define CLUSTER_OFF			(1 << 4)
-
 #define DBGC_VERSION_LEN		(48)
 /*******************************************************************************
  * MPIDR macros
