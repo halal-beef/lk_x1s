@@ -12,6 +12,7 @@
 #include <stdlib.h>
 #include <part.h>
 #include <lib/console.h>
+#include <lib/fdtapi.h>
 #include <lib/font_display.h>
 #include <platform/sizes.h>
 #include <platform/dfd.h>
@@ -56,7 +57,7 @@ static int debug_store_is_skip(void)
 	return ret;
 }
 
-int debug_store_ramdump(void)
+static int debug_store_ramdump_to_storage(void)
 {
 	void *part;
 	u64 dram_size;
@@ -64,11 +65,6 @@ int debug_store_ramdump(void)
 	u64 dram_ptr;
 	u32 reboot_reason;
 	int ret = 0;
-
-	if (!g_is_enabled) {
-		printf("%s: Store Ramdump is off\n", __func__);
-		goto store_out;
-	}
 
 	reboot_reason = readl(CONFIG_RAMDUMP_REASON);
 	if (reboot_reason == RAMDUMP_SIGN_BL_REBOOT) {
@@ -170,8 +166,48 @@ store_out:
 	return ret;
 }
 
+static int debug_store_check_dpm_policy(void)
+{
+	int ret;
+	u32 reg;
+
+	ret = get_fdt_dpm_val("/fragment@debug_policy/__overlay__/dpm/feature/dump-mode",
+								"file-support", (char *)&reg);
+	if (ret) {
+		printf("%s: There is no file-support node\n", __func__);
+		goto out;
+	}
+
+	reg = be32_to_cpu(reg);
+	printf("%s: DPM(file-suppoert) is %sabled\n",
+				__func__, reg ? "en" : "dis");
+	ret = !reg;
+out:
+	return ret;
+}
+
+int debug_store_ramdump(void)
+{
+	int ret = 0;
+
+	if (!debug_store_check_dpm_policy()) {
+		ret = debug_store_ramdump_to_storage();
+		goto out;
+	} else {
+		printf("%s: DPM(file-support) is off\n", __func__);
+	}
+
+	if (!g_is_enabled)
+		printf("%s: Store Ramdump is off\n", __func__);
+	else
+		ret = debug_store_ramdump_to_storage();
+out:
+	return ret;
+}
+
 int debug_store_ramdump_redirection(void *ptr)
 {
+#ifdef DEBUG_STORE_RAMDUMP_TEST
 	void *part;
 	struct fastboot_ramdump_hdr *hdr = ptr;
 	u64 storage_base;
@@ -238,6 +274,9 @@ int debug_store_ramdump_redirection(void *ptr)
 
 redirection_out:
 	return ret;
+#else
+	return 0;
+#endif
 }
 
 int debug_store_ramdump_oem(const char *cmd)
