@@ -210,6 +210,18 @@ uint32_t avb_main(const char *suffix, char *cmdline, char *verifiedbootstate)
 			AVB_SLOT_VERIFY_FLAGS_ALLOW_VERIFICATION_ERROR,
 			AVB_HASHTREE_ERROR_MODE_RESTART_AND_INVALIDATE,
 			&ctx_ptr);
+
+	/* set cmdline */
+	if (ctx_ptr != NULL) {
+		i = 0;
+		while (ctx_ptr->cmdline[i++] != '\0');
+		memcpy(cmdline, ctx_ptr->cmdline, i);
+	}
+#if defined(CONFIG_AVB_DEBUG)
+	printf("i: %d\n", i);
+	printf("cmdline: %s\n", cmdline);
+#endif
+
 	/* get color */
 	if (unlock) {
 		strncpy(color, "orange", AVB_COLOR_MAX_SIZE);
@@ -249,6 +261,8 @@ uint32_t avb_main(const char *suffix, char *cmdline, char *verifiedbootstate)
 	strcat(verifiedbootstate, color);
 	printf(buf);
 	avb_print_lcd(buf);
+	if (ret)
+		return ret;
 
 	/* Set root of trust */
 	ret = avb_set_root_of_trust(device_state, boot_state);
@@ -274,24 +288,13 @@ uint32_t avb_main(const char *suffix, char *cmdline, char *verifiedbootstate)
 	}
 
 #if defined(CONFIG_USE_RPMB)
-	uint32_t tmp = 0;
+	uint32_t rpmb_ret = 0;
 
 	/* block RPMB */
-	tmp = block_RPMB_hmac();
-	if (tmp) {
-		printf("[AVB 2.0 ERR] RPMB hmac ret: 0x%X\n", tmp);
+	rpmb_ret = block_RPMB_hmac();
+	if (rpmb_ret) {
+		printf("[AVB 2.0 ERR] RPMB hmac ret: 0x%X\n", rpmb_ret);
 	}
-#endif
-
-	/* set cmdline */
-	if (ctx_ptr != NULL) {
-		i = 0;
-		while (ctx_ptr->cmdline[i++] != '\0');
-		memcpy(cmdline, ctx_ptr->cmdline, i);
-	}
-#if defined(CONFIG_AVB_DEBUG)
-	printf("i: %d\n", i);
-	printf("cmdline: %s\n", cmdline);
 #endif
 
 	return ret;

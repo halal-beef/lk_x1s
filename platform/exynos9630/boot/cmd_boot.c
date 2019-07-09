@@ -728,7 +728,7 @@ int cmd_boot(int argc, const cmd_args *argv)
 	else
 		avb_ret = avb_main("_a", cmdline, verifiedbootstate);
 
-	printf("AVB: suffix[%s], boot/dtbo image verification result: %d\n", ab_suffix, avb_ret);
+	printf("AVB: suffix[%s], boot/dtbo image verification result: 0x%X\n", ab_suffix, avb_ret);
 
 	rpmb_get_lock_state(&lock_state);
 	printf("lock state: %d\n", lock_state);
