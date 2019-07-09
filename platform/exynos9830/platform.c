@@ -404,7 +404,8 @@ void platform_init(void)
 	pit_init();
 
 	dbg_snapshot_fdt_init();
-	if (!is_first_boot() || (rst_stat & (WARM_RESET | LITTLE_WDT_RESET)))
+	dfd_get_dbgc_version();
+	if (rst_stat & (WARM_RESET | LITTLE_WDT_RESET))
 		dfd_run_post_processing();
 
 #ifdef CONFIG_EXYNOS_BOOTLOADER_DISPLAY
