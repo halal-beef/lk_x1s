@@ -17,6 +17,7 @@
 #include <stdbool.h>
 
 #include <sys/types.h>
+#include <libfdt.h>
 #include <pit.h>
 
 #include <platform/h-arx.h>
@@ -113,6 +114,54 @@ int load_and_init_harx_plugin(const char *name, u64 plugin_addr)
 	}
 
 	harx_print_with_lcd("[H-Arx Plug-in] %s plug-in registration done", name);
+
+	return 0;
+}
+
+int change_dt_psci_method(struct fdt_header *fdt_dtb)
+{
+	int nodeoff, len, ret;
+	const char *namep;
+
+	if (is_harx_initialized == false) {
+		printf("H-Arx is not initialized\n");
+		return -1;
+	}
+
+	if (fdt_dtb == NULL) {
+		printf("fdt_dtb is not set yet\n");
+		return -1;
+	}
+
+	nodeoff = fdt_path_offset(fdt_dtb, "/psci");
+	if (nodeoff < 0) {
+		printf("fdt_path_offset of PSCI fail: %d\n", nodeoff);
+		return -1;
+	}
+
+	namep = fdt_getprop(fdt_dtb, nodeoff, PSCI_METHOD_NAME, &len);
+	if (namep == NULL) {
+		printf("fdt_getprop of PSCI method fail\n");
+		return -1;
+	}
+
+	if (strncmp(namep, PSCI_METHOD_SMC, len) == 0) {
+		ret = fdt_setprop_string(fdt_dtb,
+					 nodeoff,
+					 PSCI_METHOD_NAME,
+					 PSCI_METHOD_HVC);
+		if (ret < 0) {
+			printf("fdt_setprop of PSCI method fail: %d\n",
+				ret);
+			return -1;
+		}
+	} else if (strncmp(namep, "hvc", len) == 0) {
+		printf("PSCI method has already been set as hvc\n");
+		return 0;
+	} else {
+		printf("Unknown PSCI method: %s\n", namep);
+		return -1;
+	}
 
 	return 0;
 }
