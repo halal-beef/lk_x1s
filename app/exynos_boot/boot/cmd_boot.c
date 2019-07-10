@@ -509,6 +509,11 @@ mem_node_out:
 	np = fdt_getprop(fdt_dtb, noff, "bootargs", &len);
 	printf("\nbootargs: %s\n", np);
 
+	if (change_dt_psci_method(fdt_dtb))
+		harx_print_with_lcd("Fail to change PSCI method to HVC\n");
+	else
+		harx_print_with_lcd("Change PSCI method to HVC\n");
+
 	resize_dt(0);
 }
 
