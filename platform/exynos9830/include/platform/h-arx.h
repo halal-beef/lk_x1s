@@ -19,6 +19,7 @@
 
 #include <stdbool.h>
 
+#include <libfdt.h>
 #include <lib/font_display.h>
 
 /* Base address */
@@ -35,6 +36,11 @@
 #define HARX_INFO_VERSION			(0xE1200000 |			\
 						(HARX_INFO_MAJOR_VERSION << 8) |\
 						HARX_INFO_MINOR_VERSION)
+
+/* PSCI method */
+#define PSCI_METHOD_NAME			"method"
+#define PSCI_METHOD_SMC				"smc"
+#define PSCI_METHOD_HVC				"hvc"
 
 /*
  * Callers don't have to write line feed(\n) when calling
@@ -62,5 +68,6 @@ enum harx_info_type {
 
 int load_and_init_harx(void);
 int load_and_init_harx_plugin(const char *name, u64 plugin_addr);
+int change_dt_psci_method(struct fdt_header *fdt_dtb);
 #endif	/* __ASSEMBLY__ */
 #endif	/* _HARX_H_ */
