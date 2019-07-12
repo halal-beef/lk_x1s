@@ -58,8 +58,15 @@
  * and also mercos should be defined
  */
 #define CACHE_ENABLED
-#define CACHE_CLEAN(addr, len)			clean_dcache_range((unsigned long long)(addr), (unsigned long long)((addr) + (len)))
-#define CACHE_CLEAN_INVALIDATE(addr, len)	clean_invalidate_dcache_range((unsigned long long)(addr), (unsigned long long)((addr) + (len)))
+
+#define CACHE_WRITEBACK_SHIFT_6		(6)
+#define CACHE_WRITEBACK_SHIFT_7		(7)
+
+#define CACHE_WRITEBACK_GRANULE_64	(1 << CACHE_WRITEBACK_SHIFT_6)
+#define CACHE_WRITEBACK_GRANULE_128	(1 << CACHE_WRITEBACK_SHIFT_7)
+
+#define CACHE_CLEAN(addr, len)		clean_dcache_range((unsigned long long)(addr), (unsigned long long)((addr) + (len)))
+#define CACHE_INVALIDATE(addr, len)	invalidate_dcache_range((unsigned long long)(addr), (unsigned long long)((addr) + (len)))
 
 /* RPMB function number */
 enum {
@@ -75,7 +82,7 @@ typedef struct rpmb_param {
 	uint64_t input_data;
 	uint64_t input_len;
 	uint64_t output_data;
-} rpmb_param;
+} rpmb_param __attribute__((__aligned__(CACHE_WRITEBACK_GRANULE_128)));
 
 struct rpmb_packet {
 	u16 request;
@@ -87,7 +94,7 @@ struct rpmb_packet {
 	u8 data[256];
 	u8 Key_MAC[32];
 	u8 stuff[196];
-};
+} __attribute__((__aligned__(CACHE_WRITEBACK_GRANULE_128)));
 
 typedef struct random_ctx {
         u64 output;
