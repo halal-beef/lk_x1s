@@ -135,7 +135,7 @@ uint32_t get_RPMB_key(size_t key_len, uint8_t * rpmb_key)
 	uint32_t ret = RV_SUCCESS;
 
 #ifdef CACHE_ENABLED
-	CACHE_CLEAN_INVALIDATE(rpmb_key, key_len);
+	CACHE_INVALIDATE(rpmb_key, key_len);
 #endif
 	do {
 		if (++retry_cnt > MAX_SMC_RETRY_CNT) {
@@ -158,7 +158,7 @@ uint32_t get_RPMB_key(size_t key_len, uint8_t * rpmb_key)
 		return ret;
 	}
 #ifdef CACHE_ENABLED
-	CACHE_CLEAN_INVALIDATE(rpmb_key, key_len);
+	CACHE_INVALIDATE(rpmb_key, key_len);
 #endif
 
 #ifdef RPMB_DEBUG
@@ -218,7 +218,7 @@ uint32_t get_RPMB_hmac(const uint8_t * input_data, size_t input_len, uint8_t * o
 #ifdef CACHE_ENABLED
 	CACHE_CLEAN(&rpmb_data, sizeof(rpmb_data));
 	CACHE_CLEAN(input_data, input_len);
-	CACHE_CLEAN_INVALIDATE(output_data, RPMB_HMAC_LEN);
+	CACHE_INVALIDATE(output_data, RPMB_HMAC_LEN);
 #endif
 
 	/* call REK-based KBKDF in CryptoManager F/W with smc */
@@ -242,7 +242,7 @@ uint32_t get_RPMB_hmac(const uint8_t * input_data, size_t input_len, uint8_t * o
 		return ret;
 	}
 #ifdef CACHE_ENABLED
-	CACHE_CLEAN_INVALIDATE(output_data, RPMB_HMAC_LEN);
+	CACHE_INVALIDATE(output_data, RPMB_HMAC_LEN);
 #endif
 #ifdef RPMB_DEBUG
 	dprintf(INFO, "[CM] RPMB: hmac calculation was finished successfully\n");
@@ -648,7 +648,7 @@ static int ufs_rpmb_commands(struct rpmb_packet *packet)
 	int result = -1;
 	u32 addr, start_blk, blk_cnt;
 	u32 *addrp = NULL;
-	uint8_t output_data[HMAC_SIZE];
+	uint8_t output_data[HMAC_SIZE] __attribute__((__aligned__(CACHE_WRITEBACK_GRANULE_128)));
 	uint32_t ret = RV_SUCCESS;
 	ssize_t cnt;
 	bdev_t *dev;
