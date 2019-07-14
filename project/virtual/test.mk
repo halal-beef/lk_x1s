@@ -9,7 +9,4 @@ MODULES += \
   lib/cksum \
   lib/debugcommands \
   lib/libm \
-  lib/version \
-
-WITH_CPP_SUPPORT=true
-
+  lib/version
