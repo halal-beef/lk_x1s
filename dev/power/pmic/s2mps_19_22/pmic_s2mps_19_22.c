@@ -68,6 +68,10 @@ void pmic_init(void)
 	reg |= S2MPS_OUTPUT_ON_TCXO;
 	speedy_write(CONFIG_SPEEDY0_BASE, S2MPS19_PM_ADDR, S2MPS19_PM_LDO12M_CTRL, reg);
 
+	/* Enable WTSR */
+	speedy_read(CONFIG_SPEEDY0_BASE, S2MPS19_RTC_ADDR, S2MPS19_RTC_WTSR_SMPL, &reg);
+	reg = (reg & 0xB8) | 0x43;
+	speedy_write(CONFIG_SPEEDY0_BASE, S2MPS19_RTC_ADDR, S2MPS19_RTC_WTSR_SMPL, reg);
 }
 
 void display_pmic_info(void)
