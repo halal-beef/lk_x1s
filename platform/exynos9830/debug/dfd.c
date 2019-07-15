@@ -431,14 +431,13 @@ void dfd_run_post_processing(void)
 		printf("S2D Magic didn't detect - s2d sanity fail!\n");
 		goto done;
 	}
-#if 0
+
 	//send Postprocessing Command. Id value is GET_GPR send with s2d dump address.
 	cmd.cmd_raw.id = PP_IPC_CMD_ID_RUN_GPR;
 	dfd_ipc_fill_buffer(&cmd, (u64)dfd_compact_cl0_bin, (u64)dfd_compact_cl2_bin, 0);
 	printf("Try to get GPR. (0x%llx, 0x%llx) - ",
 			(u64)dfd_compact_cl0_bin, (u64)dfd_compact_cl2_bin);
 	printf("%s(0x%x)!\n", dfd_ipc_send_data_polling(&cmd) < 0 ? "Failed" : "Finish", cmd.buffer[1]);
-#endif
 #endif
 	printf("Display PC value\n");
 	dfd_display_pc_value(PC);
