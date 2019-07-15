@@ -648,7 +648,7 @@ static int ufs_rpmb_commands(struct rpmb_packet *packet)
 	int result = -1;
 	u32 addr, start_blk, blk_cnt;
 	u32 *addrp = NULL;
-	uint8_t output_data[HMAC_SIZE] __attribute__((__aligned__(CACHE_WRITEBACK_GRANULE_128)));
+	uint8_t output_data[CACHE_WRITEBACK_GRANULE_128] __attribute__((__aligned__(CACHE_WRITEBACK_GRANULE_128)));
 	uint32_t ret = RV_SUCCESS;
 	ssize_t cnt;
 	bdev_t *dev;
@@ -1095,11 +1095,17 @@ int read_write_counter(void)
 int authentication_key_programming(void)
 {
 	int ret;
+	uint8_t rpmb_key[CACHE_WRITEBACK_GRANULE_128] __attribute__((__aligned__(CACHE_WRITEBACK_GRANULE_128)));
 
-	/*	RPMB key derivation */
+	/* RPMB key derivation */
 	dprintf(INFO, "RPMB key derivation\n");
+	ret = get_RPMB_key(RPMB_KEY_LEN, rpmb_key);
+#ifdef RPMB_DEBUG
+	dprintf(INFO, "getting rpmb KEY from cm\n");
+	dump_packet(rpmb_key, RPMB_KEY_LEN);
+#endif
+	memcpy(packet.Key_MAC, rpmb_key, RPMB_KEY_LEN);
 
-	ret = get_RPMB_key(RPMB_KEY_LEN, packet.Key_MAC);
 	if (ret != RV_SUCCESS) {
 		printf("key derivation: fail: 0x%X\n", ret);
 		return ret;
@@ -1114,6 +1120,7 @@ int authentication_key_programming(void)
 #endif
 
 	memset(packet.Key_MAC, 0x0, RPMB_KEY_LEN);
+	memset(rpmb_key, 0x0, RPMB_KEY_LEN);
 
 	if (ret != RV_SUCCESS) {
 		printf("key_programming ufs_rpmb_commands return error\n");
