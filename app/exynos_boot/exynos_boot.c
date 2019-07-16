@@ -13,12 +13,14 @@
 #include <app.h>
 #include <lib/console.h>
 #include <lib/fastboot.h>
+#include <lib/font_display.h>
 #include <platform/sfr.h>
 #include <platform/charger.h>
 #include <platform/dfd.h>
 #include <platform/gpio.h>
 #include <platform/smc.h>
 #include <platform/dss_store_ramdump.h>
+#include <platform/chip_rev.h>
 #include <dev/boot.h>
 
 int cmd_boot(int argc, const cmd_args *argv);
@@ -32,6 +34,17 @@ static void exynos_boot_task(const struct app_descriptor *app, void *args)
 
 	if (*(unsigned int *)DRAM_BASE != 0xabcdef) {
 		printf("Running on DRAM by TRACE32: skip auto booting\n");
+		do_fastboot(0, 0);
+		return;
+	}
+
+	printf("AP revision is EVT%d\n", s5p_chip_rev.main);
+	print_lcd(FONT_RED, FONT_BLACK, "AP revision is EVT%d", s5p_chip_rev.main);
+	if (s5p_chip_rev.main != (unsigned int)dfd_get_revision()) {
+		printf("Using invalid BL2!\n");
+		printf("Current BL2 is for EVT%d\n", dfd_get_revision());
+		print_lcd(FONT_RED, FONT_BLACK, "Using invalid BL2!");
+		print_lcd(FONT_RED, FONT_BLACK, "Current BL2 is for EVT%d", dfd_get_revision());
 		do_fastboot(0, 0);
 		return;
 	}
