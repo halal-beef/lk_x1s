@@ -474,7 +474,7 @@ skip_gpr:
 
 	//Send Postprocessing Command. ID value is RUN DUMP.
 	cmd.cmd_raw.id = PP_IPC_CMD_ID_RUN_DUMP;
-	dfd_ipc_fill_buffer(&cmd, arr_addr, cpu_mask & 0x3f, 0);
+	dfd_ipc_fill_buffer(&cmd, arr_addr, cpu_mask, 0);
 	printf("Try to get Arraydump of power on cores - ");
 	printf("%s(0x%x)!\n", dfd_ipc_send_data_polling(&cmd) < 0 ? "Failed" : "Finish", cmd.buffer[1]);
 
