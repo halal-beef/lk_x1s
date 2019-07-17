@@ -277,5 +277,13 @@ int do_fastboot(int argc, const cmd_args *argv);
 #define USB_SHARABLE_SHIFT		(1)
 
 void exynos_usb_cci_control(int on_off);
+
+enum fastboot_type {
+	PMIC_WTSR = 0,
+	PMIC_SMPL,
+	FASTBOOT_TYPE_END,
+};
+
+extern void set_do_fastboot(enum fastboot_type type);
 #endif /* FASTBOOT_H */
 
