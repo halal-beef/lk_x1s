@@ -160,6 +160,8 @@ static const char *master[] = {
 	"AP",
 };
 
+static u32 chip_rev;
+
 static void print_cpu_seq_status(struct dbg_list *dbg)
 {
 	int i, j;
@@ -323,17 +325,27 @@ static void print_pmudbg_registers(void)
 		"pd-itp",
 		"pd-mfc0",
 		"pd-mcsc",
-		"pd-npu0",
-		"pd-npu1",
+		"pd-npu00",
+		"pd-npu01",
 		"pd-tnr",
 		"pd-vra",
 		"pd-vts",
 		"pd-ssp",
 	};
 
+	const char *pd_name_evt1[3] = {
+		"pd-dsp2",
+		"pd-npu10",
+		"pd-npu11",
+	};
+
 	const unsigned int pd_offset[20] = {
 		0x34, 0x58, 0x5c, 0x60,	0x64, 0x68, 0x6c, 0x7c, 0x80, 0x88,
 		0x94, 0x98, 0x9c, 0xb0, 0xb4, 0xb8, 0xcc, 0xd0, 0xd4, 0xd8,
+	};
+
+	const unsigned int pd_offset_evt1[3] = {
+		0xdc, 0xe0, 0xe4,
 	};
 
 	int i;
@@ -349,14 +361,28 @@ static void print_pmudbg_registers(void)
 	printf("%s%s - 0x%x\n", FLEXPMU_DBG_LOG, "CLUSTER2_CPU0_STATES", readl(EXYNOS9830_PMUDBG_BASE + 0x20));
 	printf("%s%s - 0x%x\n", FLEXPMU_DBG_LOG, "CLUSTER2_CPU1_STATES", readl(EXYNOS9830_PMUDBG_BASE + 0x24));
 	printf("%s%s - 0x%x\n", FLEXPMU_DBG_LOG, "CLUSTER2_NONCPU_STATES", readl(EXYNOS9830_PMUDBG_BASE + 0x28));
-	printf("%s%s - 0x%x\n", FLEXPMU_DBG_LOG, "MIF_STATES", readl(EXYNOS9830_PMUDBG_BASE + 0xfc));
-	printf("%s%s - 0x%x\n", FLEXPMU_DBG_LOG, "TOP_STATES", readl(EXYNOS9830_PMUDBG_BASE + 0x100));
+	if (!chip_rev) {
+		printf("%s%s - 0x%x\n", FLEXPMU_DBG_LOG, "MIF_STATES", readl(EXYNOS9830_PMUDBG_BASE + 0xfc));
+		printf("%s%s - 0x%x\n", FLEXPMU_DBG_LOG, "TOP_STATES", readl(EXYNOS9830_PMUDBG_BASE + 0x100));
+	} else {
+		printf("%s%s - 0x%x\n", FLEXPMU_DBG_LOG, "MIF_STATES", readl(EXYNOS9830_PMUDBG_BASE + 0x108));
+		printf("%s%s - 0x%x\n", FLEXPMU_DBG_LOG, "TOP_STATES", readl(EXYNOS9830_PMUDBG_BASE + 0x10c));
+	}
 
 	for (i = 0; i < 20; i++) {
 		if (i % 4 == 0)
 			printf("\n");
 		printf("%16s - 0x%x\t", pd_name[i], readl(EXYNOS9830_PMUDBG_BASE + pd_offset[i]));
 	}
+
+	if (chip_rev) {
+		for (i = 0; i < 3; i++) {
+			if (i % 4 == 0)
+				printf("\n");
+			printf("%16s - 0x%x\t", pd_name_evt1[i], readl(EXYNOS9830_PMUDBG_BASE + pd_offset_evt1[i]));
+		}
+	}
+
 	printf("\n\n");
 }
 
@@ -393,6 +419,8 @@ void display_flexpmu_dbg(void)
 		printf("%sCold boot.\n", FLEXPMU_DBG_LOG);
 		return;
 	}
+
+	chip_rev = CHIPID_MAIN_REVISION(readl(EXYNOS9830_CHIPID));
 
 	for (i = 0; i < ARRAY_SIZE(flexpmu_dbg); i++) {
 		flexpmu_dbg[i].u32_data[0] =

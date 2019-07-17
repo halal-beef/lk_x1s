@@ -25,6 +25,10 @@
 
 #define PORESET					(0x40000000)
 
+#define EXYNOS9830_CHIPID                               (0x10000010)
+#define CHIPID_MAIN_REVISION(a)                         ((a & (0xF << 20)) >> 20)
+#define CHIPID_SUB_REVISION(a)                          ((a & (0xF << 16)) >> 16)
+
 struct dbg_list {
 	const char *name;
 	union {
