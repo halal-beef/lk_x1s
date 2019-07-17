@@ -111,6 +111,7 @@ ramdump:
 	cmd_boot(0, 0);
 #else
 	debug_store_ramdump();
+	dfd_set_dump_en_for_cacheop(0);
 	do_fastboot(0, 0);
 #endif
 	return;
