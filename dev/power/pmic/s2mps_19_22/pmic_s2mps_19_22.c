@@ -14,6 +14,7 @@
 #include <platform/delay.h>
 #include <dev/pmic_s2mps_19_22.h>
 #include <dev/speedy_multi.h>
+#include <lib/fastboot.h>
 
 void pmic_init(void)
 {
@@ -89,10 +90,14 @@ void display_pmic_info(void)
 	speedy_read(CONFIG_SPEEDY0_BASE, S2MPS19_RTC_ADDR, S2MPS19_RTC_WTSR_SMPL, &read_wtsr_smpl);
 	printf("S2MPS19_RTC_WTSR_SMPL: 0x%x\n", read_wtsr_smpl);
 
-	if ((read_pwronsrc & (1 << 7)) && (read_int2 & (1 << 5)) && !(read_int1 & (1 << 7)))
+	if ((read_pwronsrc & (1 << 7)) && (read_int2 & (1 << 5)) && !(read_int1 & (1 << 7))){
+		set_do_fastboot(PMIC_WTSR);
 		printf("WTSR detected\n");
-	else if ((read_pwronsrc & (1 << 6)) && (read_int2 & (1 << 3)) && (read_wtsr_smpl & (1 << 7)))
+	}
+	else if ((read_pwronsrc & (1 << 6)) && (read_int2 & (1 << 3)) && (read_wtsr_smpl & (1 << 7))) {
+		set_do_fastboot(PMIC_SMPL);
 		printf("SMPL detected\n");
+	}
 
 	speedy_read(CONFIG_SPEEDY0_BASE, S2MPS19_PM_ADDR, S2MPS19_PM_CTRL1, &reg);
 	printf("S2MPS19_PM_CTRL1: 0x%x\n", reg);
