@@ -25,6 +25,28 @@
 
 int cmd_boot(int argc, const cmd_args *argv);
 
+static unsigned int need_do_fastboot = 0;
+static const char *fastboot_reason[] = {
+	"PMIC WTSR Detected!",
+	"PMIC SMPL Detected!",
+};
+
+void set_do_fastboot(enum fastboot_type type)
+{
+	need_do_fastboot |= 1 << type;
+}
+
+static void print_fastboot_reason(void)
+{
+	unsigned int i = 0;
+
+	for (i = 0; i < FASTBOOT_TYPE_END; i++) {
+		if (need_do_fastboot & 1 << i) {
+			printf("Fastboot Reason >> %s\n", fastboot_reason[i]);
+		}
+	}
+}
+
 static void exynos_boot_task(const struct app_descriptor *app, void *args)
 {
 	unsigned int rst_stat = readl(EXYNOS_POWER_RST_STAT);
@@ -64,6 +86,13 @@ static void exynos_boot_task(const struct app_descriptor *app, void *args)
 		sdm_encrypt_secdram();
 		goto ramdump;
 	}
+
+	if (need_do_fastboot) {
+		sdm_encrypt_secdram();
+		print_fastboot_reason();
+		goto ramdump;
+	}
+
 	if (!val)
 		do_fastboot(0, 0);
 
