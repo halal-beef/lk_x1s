@@ -725,6 +725,109 @@ end:
 
 }
 
+static uint bio_new_byte_erase(struct bdev *dev, bnum_t _block, uint size)
+{
+	bnum_t block = _block;
+	uint native_block_size = dev->block_size / USER_BLOCK_SIZE;
+	uint block_per_time;
+	uint count = BYTE_TO_BLOCK(size);
+	uint block_erased = count;
+	uint erase_size;
+	uint esize = size;
+	ssize_t byte_size;
+	ssize_t byte_offset;
+
+	STACKBUF_DMA_ALIGN(temp, dev->block_size);
+	/*uint max_blkcnt = (dev->max_blkcnt_per_cmd) ? dev->max_blkcnt_per_cmd : 32;*/
+	uint p_cnt;
+
+	if (dev->erase_size &&
+		dev->erase_size > native_block_size &&
+		dev->erase_size % native_block_size == 0)
+		erase_size = dev->erase_size / USER_BLOCK_SIZE;
+	else
+		erase_size = native_block_size;
+	/*
+	 * handle partial first block
+	 *
+	 * Each device driver's maximum size can exist when it executes
+	 * a write command. So we determine what the size is and
+	 * should use less and equal than the size
+	 * every time we issue a write command
+	 */
+	if ((block % native_block_size) != 0) {
+		/* Read one native block */
+		block = (block / native_block_size) * native_block_size;
+		if (dev->new_read_native(dev, temp, block / native_block_size, 1))
+			goto end;
+
+		/* Clear temporal buffer partially */
+		byte_offset = (_block - block) * USER_BLOCK_SIZE;
+		p_cnt = MIN(count, block + native_block_size - _block);
+		byte_size = MIN(size, p_cnt * USER_BLOCK_SIZE);
+		memset(temp + byte_offset, 0, byte_size);
+
+		/* Write one native block */
+		if (dev->new_write_native(dev, temp, block / native_block_size, 1))
+			goto end;
+
+		block_erased -= p_cnt;
+		block += native_block_size;
+		esize -= byte_size;
+	}
+
+	memset(temp, 0, dev->block_size);
+	while (block % erase_size != 0 &&
+		(block_erased >= native_block_size)) {
+		dev->new_write_native(dev, temp, block/native_block_size, 1);
+		block += native_block_size;
+		block_erased -= native_block_size;
+		esize -= native_block_size * USER_BLOCK_SIZE;
+	}
+	block_per_time = block_erased;
+	block_per_time = (block_per_time / erase_size) * erase_size;
+	if (block_per_time) {
+		if (dev->new_erase_native(dev, block / native_block_size,
+					block_per_time / native_block_size))
+			goto end;
+
+		block_erased -= block_per_time;
+		esize -= block_per_time * USER_BLOCK_SIZE;
+		block += block_per_time;
+	}
+
+	/* All the blocks consumed */
+	if (_block + count == block)
+		goto end;
+
+	memset(temp, 0, dev->block_size);
+	while (block_erased >= native_block_size) {
+		dev->new_write_native(dev, temp, block/native_block_size, 1);
+		block += native_block_size;
+		block_erased -= native_block_size;
+		esize -= native_block_size * USER_BLOCK_SIZE;
+	}
+
+	/* handle partial last block */
+	if (block_erased) {
+		/* Read one native block */
+		if (dev->new_read_native(dev, temp, block / native_block_size, 1))
+			goto end;
+
+		/* Modity temporal buffer */
+		memset(temp, 0, esize);
+
+		/* Write one native block */
+		if (dev->new_write_native(dev, temp, block / native_block_size, 1))
+			goto end;
+
+		block_erased -= 1;
+		esize = 0;
+	}
+end:
+	return (count - block_erased);
+}
+
 static void bdev_inc_ref(bdev_t *dev)
 {
     LTRACEF("Add ref \"%s\" %d -> %d\n", dev->name, dev->ref, dev->ref + 1);
@@ -993,6 +1096,7 @@ void bio_initialize_bdev(bdev_t *dev,
     dev->new_erase = bio_new_erase;
     dev->new_byte_read = bio_new_byte_read;
     dev->new_byte_write = bio_new_byte_write;
+    dev->new_byte_erase = bio_new_byte_erase;
     dev->close = NULL;
 }
 

@@ -76,6 +76,7 @@ typedef struct bdev {
     uint (*new_erase)(struct bdev *, bnum_t block, uint count);
     uint (*new_byte_read)(struct bdev *, void *buf, bnum_t block, uint size);
     uint (*new_byte_write)(struct bdev *, const void *buf, bnum_t block, uint size);
+    uint (*new_byte_erase)(struct bdev *, bnum_t block, uint size);
     status_t (*new_read_native)(struct bdev *, void *buf, bnum_t block, uint count);
     status_t (*new_write_native)(struct bdev *, const void *buf, bnum_t block, uint count);
     status_t (*new_erase_native)(struct bdev *, bnum_t block, uint count);
