@@ -1405,6 +1405,18 @@ static int mmc_boot_init_and_identify_card(struct mmc *mmc)
 			return mmc_return;
 	}
 
+	if (!mmc_is_sd(mmc)) {
+		/* eMMC_n_RST Eanble */
+		mmc_return = mmc_boot_switch_cmd(mmc, EXT_CSD_CMD_SET_NORMAL,
+				EXT_CSD_RST_N_FUNCTION, 1);
+
+		if (mmc_return != NO_ERROR) {
+			printf("eMMC n RST Enable Fail!\n");
+			return mmc_return;
+
+		}
+	}
+
 	return NO_ERROR;
 }
 
