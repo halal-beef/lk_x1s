@@ -644,7 +644,7 @@ static uint bio_new_erase(struct bdev *dev, bnum_t _block, uint count)
 	if (dev->erase_size &&
 		dev->erase_size > native_block_size &&
 		dev->erase_size % native_block_size == 0)
-		erase_size = dev->erase_size / USER_BLOCK_SIZE;
+		erase_size = dev->erase_size;
 	else
 		erase_size = native_block_size;
 	/*
