@@ -78,7 +78,6 @@ static u8 ufs_query_params[][5] = {
 	{},
 };
 
-
 /* UFS user command definition */
 #if defined(WITH_LIB_CONSOLE)
 
@@ -118,7 +117,6 @@ static scsi_device_t *ufs_dev[SCSI_MAX_INITIATOR];
 static scsi_device_t ufs_dev_ssu;
 static scsi_device_t ufs_dev_rpmb;
 static struct list_node ufs_lu_list = LIST_INITIAL_VALUE(ufs_lu_list);
-
 
 
 /*********************************************************************************
@@ -597,7 +595,7 @@ static int handle_ufs_utp_int(struct ufs_host *ufs, u32 intr_stat)
 	return ret;
 }
 
-static int handle_ufs_int(struct ufs_host *ufs, int is_uic)
+int handle_ufs_int(struct ufs_host *ufs, int is_uic)
 {
 	u32 intr_stat;
 	int ret;
@@ -643,20 +641,20 @@ static int send_uic_cmd(struct ufs_host *ufs)
 	writel(ufs->uic_cmd->uiccmdr, (ufs->ioaddr + REG_UIC_COMMAND));
 
 	ufs->timeout = ufs->uic_cmd_timeout;	/* usec unit */
-	while (UFS_IN_PROGRESS == (err = handle_ufs_int(ufs, 1)))
-		;
+	while (UFS_IN_PROGRESS == (err = handle_ufs_int(ufs, 1)));
 	writel(readl(ufs->ioaddr + REG_INTERRUPT_STATUS),
 			ufs->ioaddr + REG_INTERRUPT_STATUS);
 
 	error_code = readl(ufs->ioaddr + REG_UIC_COMMAND_ARG_2);
 	if (err || error_code) {
 		printf("UFS(%d) UIC command error!\n\t%08x %08x %08x %08x\n\t%08x %08x %08x %08x\n",
-		       ufs->host_index, ufs->uic_cmd->uiccmdr, ufs->uic_cmd->uiccmdarg1,
-		       ufs->uic_cmd->uiccmdarg2, ufs->uic_cmd->uiccmdarg3,
-		       readl(ufs->ioaddr + REG_UIC_COMMAND),
-		       readl(ufs->ioaddr + REG_UIC_COMMAND_ARG_1)
-		       , readl(ufs->ioaddr + REG_UIC_COMMAND_ARG_2),
-		       readl(ufs->ioaddr + REG_UIC_COMMAND_ARG_3));
+			ufs->host_index, ufs->uic_cmd->uiccmdr, ufs->uic_cmd->uiccmdarg1,
+			ufs->uic_cmd->uiccmdarg2, ufs->uic_cmd->uiccmdarg3,
+			readl(ufs->ioaddr + REG_UIC_COMMAND),
+			readl(ufs->ioaddr + REG_UIC_COMMAND_ARG_1),
+			readl(ufs->ioaddr + REG_UIC_COMMAND_ARG_2),
+			readl(ufs->ioaddr + REG_UIC_COMMAND_ARG_3));
+			exynos_ufs_get_uic_info(ufs);
 	}
 	if (ufs->uic_cmd->uiccmdr == UIC_CMD_DME_GET
 	    || ufs->uic_cmd->uiccmdr == UIC_CMD_DME_PEER_GET) {
@@ -1741,12 +1739,12 @@ static int ufs_init_host(int host_index, struct ufs_host *ufs)
 	/* Read capabilities registers */
 	ufs->capabilities = readl(ufs->ioaddr + REG_CONTROLLER_CAPABILITIES);
 	ufs->ufs_version = readl(ufs->ioaddr + REG_UFS_VERSION);
-	ufs_debug
-	    ("%s\n\tcaps(0x%p) 0x%08x\n\tver(0x%p)  0x%08x\n\tPID(0x%p)  0x%08x\n\tMID(0x%p)  0x%08x\n",
-	     ufs->host_name, ufs->ioaddr + REG_CONTROLLER_CAPABILITIES, ufs->capabilities,
-	     ufs->ioaddr + REG_UFS_VERSION, ufs->ufs_version, ufs->ioaddr + REG_CONTROLLER_PID,
-	     readl(ufs->ioaddr + REG_CONTROLLER_PID)
-	     , ufs->ioaddr + REG_CONTROLLER_MID, readl(ufs->ioaddr + REG_CONTROLLER_MID));
+
+	ufs_debug("%s\n\tcaps(0x%p) 0x%08x\n\tver(0x%p)  0x%08x\n\tPID(0x%p)  0x%08x\n\tMID(0x%p)  0x%08x\n",
+		ufs->host_name, ufs->ioaddr + REG_CONTROLLER_CAPABILITIES, ufs->capabilities,
+		ufs->ioaddr + REG_UFS_VERSION, ufs->ufs_version, ufs->ioaddr + REG_CONTROLLER_PID,
+		readl(ufs->ioaddr + REG_CONTROLLER_PID),
+		ufs->ioaddr + REG_CONTROLLER_MID, readl(ufs->ioaddr + REG_CONTROLLER_MID));
 
 	ufs_init_mem(ufs);
 
