@@ -106,6 +106,7 @@ enum {
 	REG_UTP_TRANSFER_REQ_DOOR_BELL = 0x58,
 	REG_UTP_TRANSFER_REQ_LIST_CLEAR = 0x5C,
 	REG_UTP_TRANSFER_REQ_LIST_RUN_STOP = 0x60,
+	REG_UTP_TRANSFER_REQ_LIST_CNR	= 0x64,
 	REG_UTP_TASK_REQ_LIST_BASE_L = 0x70,
 	REG_UTP_TASK_REQ_LIST_BASE_H = 0x74,
 	REG_UTP_TASK_REQ_DOOR_BELL = 0x78,
@@ -115,6 +116,8 @@ enum {
 	REG_UIC_COMMAND_ARG_1 = 0x94,
 	REG_UIC_COMMAND_ARG_2 = 0x98,
 	REG_UIC_COMMAND_ARG_3 = 0x9C,
+
+	REG_CRYPTO_CAPABILITY			= 0x100,
 
 	VS_TXPRDT_ENTRY_SIZE		= 0x000,
 	VS_RXPRDT_ENTRY_SIZE		= 0x004,
@@ -666,6 +669,28 @@ union ufs_attributes {
 #define UFS_POWER_MODE	1
 #define UFS_RXTX_POWER_MODE	((UFS_POWER_MODE << 4)|UFS_POWER_MODE)
 
+struct exynos_ufs_sfr_log {
+	const char *name;
+	const u32 offset;
+#define LOG_STD_HCI_SFR		0xFFFFFFF0
+#define LOG_VS_HCI_SFR		0xFFFFFFF1
+#define LOG_FMP_SFR		0xFFFFFFF2
+#define LOG_UNIPRO_SFR		0xFFFFFFF3
+#define LOG_PMA_SFR		0xFFFFFFF4
+	u32 val;
+};
+
+struct exynos_ufs_attr_log {
+	const u32 offset;
+	u32 res;
+	u32 val;
+};
+
+struct exynos_ufs_debug {
+	struct exynos_ufs_sfr_log *sfr;
+	struct exynos_ufs_attr_log *attr;
+};
+
 /* Main structure for UFS core */
 struct ufs_host {
 	char host_name[16];
@@ -727,6 +752,8 @@ struct ufs_host {
 	struct uic_pwr_mode pmd_cxt;
 	u32 dev_pwr_shift;
 	u32	support_tw;
+
+	struct exynos_ufs_debug  debug;
 };
 
 int ufs_alloc_memory(void);
@@ -742,4 +769,12 @@ void print_ufs_device_desc(u8 * desc);
 void print_ufs_configuration_desc(u8 * desc);
 void print_ufs_geometry_desc(u8 * desc);
 void print_ufs_flags(union ufs_flags *flags);
+
+void exynos_ufs_get_sfr(struct ufs_host *ufs,
+		struct exynos_ufs_sfr_log *cfg);
+void exynos_ufs_get_attr(struct ufs_host *ufs,
+		struct exynos_ufs_attr_log *cfg);
+void exynos_ufs_get_uic_info(struct ufs_host *ufs);
+
+int handle_ufs_int(struct ufs_host *ufs, int is_uic);
 #endif				/* __UFS__ */

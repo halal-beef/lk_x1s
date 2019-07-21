@@ -1,3 +1,4 @@
+#include <reg.h>
 #include <dev/ufs.h>
 
 static void print_scsi_cmd(scm * pscm)
@@ -484,4 +485,84 @@ void print_ufs_flags(union ufs_flags *flags)
 	dprintf(INFO, "UFS flag : fPermanentWPEn: %d\n", flags->flag.fPermanentWPEn);
 	dprintf(INFO, "UFS flag : fPowerOnWPEn: %d\n", flags->flag.fPowerOnWPEn);
 	dprintf(INFO, "UFS flag : fBackgroundOpsEn: %d\n", flags->flag.fBackgroundOpsEn);
+}
+
+void exynos_ufs_get_sfr(struct ufs_host *ufs,
+					struct exynos_ufs_sfr_log *cfg)
+{
+	u32 sel_api = 0;
+
+	printf("UFS Get SFR Dump\n");
+
+	while (cfg) {
+		if (!cfg->name)
+			break;
+
+		if (cfg->offset >= LOG_STD_HCI_SFR) {
+			/* Select an API to get SFRs */
+			sel_api = cfg->offset;
+		} else {
+			/* Fetch value */
+			if (sel_api == LOG_STD_HCI_SFR)
+				cfg->val = readl(ufs->ioaddr + cfg->offset);
+			else if (sel_api == LOG_VS_HCI_SFR)
+				cfg->val = readl(ufs->vs_addr + cfg->offset);
+			else if (sel_api == LOG_FMP_SFR)
+				cfg->val = readl(ufs->fmp_addr + cfg->offset);
+			else if (sel_api == LOG_UNIPRO_SFR)
+				cfg->val = readl(ufs->unipro_addr + cfg->offset);
+			else if (sel_api == LOG_PMA_SFR)
+				cfg->val = readl(ufs->phy_pma + cfg->offset);
+			else
+				cfg->val = 0xFFFFFFFF;
+		}
+		printf("%s(0x%04x):\t\t\t\t0x%08x\n",
+				cfg->name, cfg->offset, cfg->val);
+
+		/* Next SFR */
+		cfg++;
+	}
+}
+
+void exynos_ufs_get_attr(struct ufs_host *ufs,
+					struct exynos_ufs_attr_log *cfg)
+{
+	int err = 0;
+
+	printf("UFS Get ATTR Dump\n");
+
+	while (cfg) {
+		if (cfg->offset == 0)
+			break;
+
+		ufs->uic_cmd->uiccmdr = UIC_CMD_DME_GET;
+		ufs->uic_cmd->uiccmdarg1 = cfg->offset;
+
+		writel(ufs->uic_cmd->uiccmdarg1, (ufs->ioaddr + REG_UIC_COMMAND_ARG_1));
+		writel(ufs->uic_cmd->uiccmdr, (ufs->ioaddr + REG_UIC_COMMAND));
+
+		ufs->timeout = ufs->uic_cmd_timeout;	/* usec unit */
+		while (UFS_IN_PROGRESS == (err = handle_ufs_int(ufs, 1)));
+		writel(readl(ufs->ioaddr + REG_INTERRUPT_STATUS),
+				ufs->ioaddr + REG_INTERRUPT_STATUS);
+
+		cfg->res = readl(ufs->ioaddr + REG_UIC_COMMAND_ARG_2);
+		cfg->val = readl(ufs->ioaddr + REG_UIC_COMMAND_ARG_3);
+
+		printf("0x%04x:\t\t0x%08x\t\t0x%08x\n",
+				cfg->offset, cfg->res, cfg->val);
+out:
+		if (err)
+			printf("Failed to fetch a value of %x err: %d \n",
+					ufs->uic_cmd->uiccmdarg1, err);
+
+		/* Next attribute */
+		cfg++;
+	}
+}
+
+void exynos_ufs_get_uic_info(struct ufs_host *ufs)
+{
+	exynos_ufs_get_sfr(ufs, ufs->debug.sfr);
+	exynos_ufs_get_attr(ufs, ufs->debug.attr);
 }
