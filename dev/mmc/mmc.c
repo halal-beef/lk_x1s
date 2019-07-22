@@ -1330,15 +1330,9 @@ static int mmc_boot_adjust_interface_speed(struct mmc *mmc)
 	int mmc_ret = NO_ERROR;
 
 	if (mmc->card_caps & (MMC_HS_52MHZ_1_8V_3V_IO | MMC_HS_52MHZ_1_2V_IO)) {
-#if 0
 		mmc->clock = MMC_CLK_52MHZ;
 		mmc->bus_width = MMC_BOOT_BUS_8BIT;
 		mmc->bus_mode = MMC_BOOT_BUS_DDR;
-#else
-		/* HACK 8bit SDR mode set */
-		mmc->bus_width = MMC_BOOT_BUS_8BIT;
-		mmc->bus_mode = MMC_BOOT_BUS_SDR;
-#endif
 	} else if (mmc->card_caps & MMC_HS_52MHZ) {
 		mmc->clock = MMC_CLK_52MHZ;
 		mmc->bus_width = MMC_BOOT_BUS_8BIT;
