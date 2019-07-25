@@ -22,6 +22,15 @@
 #define	SCSI_MAX_INITIATOR	1
 #define	SCSI_MAX_DEVICE		8
 
+#define	NOP_OUT_TIMEOUT	30000	/* 30ms */
+#define	NOP_OUT_RETRY		10
+#define	UTP_CMD_TIMEOUT	10000000/* 10sec */
+#define	UIC_CMD_TIMEOUT		1500000	/* 500ms * 3 */
+#define	QUERY_REQ_TIMEOUT	1500000	/* 1500ms */
+#define	FORMAT_CMD_TIMEOUT	10 * 60 * 1000 * 1000 /*10min*/
+
+#define	QUERY_REQ_RETRIES	3
+
 static int send_uic_cmd(struct ufs_host *ufs);
 static int ufs_bootlun_enable(int enable);
 
@@ -703,11 +712,14 @@ static int __utp_wait_for_response(struct ufs_host *ufs, u32 type)
 {
 	int err = UFS_IN_PROGRESS;
 
-	ufs->timeout = ufs->ufs_cmd_timeout;
-
 	/* FORMAT_UNIT should have longer timeout, 10 min */
 	if (type == UPIU_TRANSACTION_COMMAND && ufs->scsi_cmd->cdb[0] == SCSI_OP_FORMAT_UNIT)
-		ufs->timeout = 10 * 60 * 1000 * 1000;
+		ufs->timeout = FORMAT_CMD_TIMEOUT;
+	else if (type == UPIU_TRANSACTION_NOP_OUT)
+		ufs->timeout = NOP_OUT_TIMEOUT;
+	else
+		ufs->timeout = ufs->ufs_cmd_timeout;
+
 	while (UFS_IN_PROGRESS == (err = handle_ufs_int(ufs, 0)))
 		;
 	writel(readl(ufs->ioaddr + REG_INTERRUPT_STATUS),
@@ -1016,6 +1028,23 @@ end:
 	return r;
 }
 
+static int ufs_utp_query_retry(struct ufs_host *ufs, query_index qry, u32 lun)
+{
+	int r = 0;
+	int retries;
+
+	for (retries = QUERY_REQ_RETRIES; retries > 0; retries --) {
+		r = ufs_utp_query_process(ufs, qry, lun);
+
+		if (r)
+			printf("UFS Query retries error: %d, reties: %d\n", r, retries);
+		else
+			break;
+	}
+
+	return r;
+}
+
 /*
  * CALLBACK FUNCTION: scsi_exec
  *
@@ -1048,7 +1077,7 @@ static int ufs_bootlun_enable(int enable)
 	query_index qry = ATTR_W_BOOTLUNEN;
 
 	ufs->attributes.arry[ufs_query_params[qry][2]] = enable;
-	return ufs_utp_query_process(ufs, qry, 0);
+	return ufs_utp_query_retry(ufs, qry, 0);
 }
 
 /*
@@ -1072,13 +1101,13 @@ int ufs_edit_config_desc(u32 lun, u32 enable, u32 bootlun, u32 writeprotect, u32
 
 	ufs->lun = 0;
 
-	res = ufs_utp_query_process(ufs, DESC_R_DEVICE_DESC, 1);
+	res = ufs_utp_query_retry(ufs, DESC_R_DEVICE_DESC, 1);
 	if (res) {
 		printf("UFS Edit Read Device Desc Error: %d", res);
 		return res;
 	}
 
-	res = ufs_utp_query_process(ufs, DESC_R_GEOMETRY_DESC, 1);
+	res = ufs_utp_query_retry(ufs, DESC_R_GEOMETRY_DESC, 1);
 	if (res) {
 		printf("UFS Edit Read Geomerty Desc Error: %d", res);
 		return res;
@@ -1272,7 +1301,7 @@ static int ufs_update_active_lane(struct ufs_host *ufs)
 		goto out;
 
 	p->active_rx_lane = ufs->uic_cmd->uiccmdarg3;
-	printf("active_tx_lane(%d), active_rx_lane(%d)\n", p->active_tx_lane, p->active_rx_lane);
+	printf("UFS active_tx_lane(%d), active_rx_lane(%d)\n", p->active_tx_lane, p->active_rx_lane);
 
 out:
 	return res;
@@ -1352,25 +1381,39 @@ static int ufs_check_2lane(struct ufs_host *ufs)
 
 static int ufs_end_boot_mode(struct ufs_host *ufs)
 {
-	int flag = 1, retry = 1000;
+	int flag = 1, retry = 1500;
 	int res;
+	int i;
 
-	res = ufs_utp_nop_process(ufs);
+	for (i = 0; i < NOP_OUT_RETRY; i++) {
+		res = ufs_utp_nop_process(ufs);
+		if (res == UFS_NO_ERROR)
+			break;
+	}
+
 	if (res) {
 		printf("UFS: NOP OUT failed\n");
 		return res;
 	}
 
 	ufs->flags.arry[UPIU_FLAG_ID_DEVICEINIT] = flag;
-	res = ufs_utp_query_process(ufs, FLAG_W_FDEVICEINIT , 0);
-	if (res)
+	res = ufs_utp_query_retry(ufs, FLAG_W_FDEVICEINIT , 0);
+	if (res) {
+		printf("UFS setting fDeviceInit flag failed with error: %d\n", res);
 		return res;
+	}
 
 	do {
-		res = ufs_utp_query_process(ufs, FLAG_R_FDEVICEINIT, 0);
-		if (res)
+		res = ufs_utp_query_retry(ufs, FLAG_R_FDEVICEINIT, 0);
+		if (res) {
+			printf("UFS reading fDeviceInit flag failed with error: %d\n", res);
 			goto end;
+		}
+
 		flag = ufs->flags.arry[UPIU_FLAG_ID_DEVICEINIT];
+		if (flag == 0)
+			break;
+		mdelay(1);
 		retry--;
 	} while (flag && retry > 0);
 
@@ -1554,7 +1597,7 @@ static int ufs_ref_clk_setup(struct ufs_host *ufs)
 {
 	int res;
 
-	res = ufs_utp_query_process(ufs, ATTR_R_REFCLKFREQ, 0);
+	res = ufs_utp_query_retry(ufs, ATTR_R_REFCLKFREQ, 0);
 	if (res) {
 		printf("UFS read ref clk failed\n");
 		return res;
@@ -1564,7 +1607,7 @@ static int ufs_ref_clk_setup(struct ufs_host *ufs)
 
 	if (ufs->attributes.arry[UPIU_ATTR_ID_REFCLKFREQ] != 0x1) {
 		ufs->attributes.arry[UPIU_ATTR_ID_REFCLKFREQ] = 0x01;
-		res = ufs_utp_query_process(ufs, ATTR_W_REFCLKFREQ, 0);
+		res = ufs_utp_query_retry(ufs, ATTR_W_REFCLKFREQ, 0);
 	}
 
 	return res;
@@ -1650,7 +1693,7 @@ static int ufs_init_interface(struct ufs_host *ufs)
 	if (ufs_post_gear_change(ufs))
 		goto out;
 
-	printf("Power mode change: M(%d)G(%d)L(%d)HS-series(%d)\n",
+	printf("UFS Power mode change: M(%d)G(%d)L(%d)HS-series(%d)\n",
 			(pmd->mode & 0xF), pmd->gear, pmd->lane, pmd->hs_series);
 	res = 0;
 
@@ -1688,7 +1731,7 @@ static int ufs_identify_bootlun(struct ufs_host *ufs)
 	int i;
 	int res;
 
-	res = ufs_utp_query_process(ufs, ATTR_R_BOOTLUNEN, 0);
+	res = ufs_utp_query_retry(ufs, ATTR_R_BOOTLUNEN, 0);
 	if (res)
 		goto end;
 	boot_lun_en = ufs->attributes.arry[UPIU_ATTR_ID_BOOTLUNEN];
@@ -1700,7 +1743,7 @@ static int ufs_identify_bootlun(struct ufs_host *ufs)
 
 	for (i = 0; i < 8; i++) {
 		ufs_query_params[DESC_R_UNIT_DESC][3] = i;
-		res = ufs_utp_query_process(ufs, DESC_R_UNIT_DESC, i);
+		res = ufs_utp_query_retry(ufs, DESC_R_UNIT_DESC, i);
 		if (res)
 			goto end;
 		if (boot_lun_en == ufs->unit_desc[i].bBootLunID) {
@@ -1728,9 +1771,9 @@ static void ufs_disable_ufsp(struct ufs_host *ufs)
 static int ufs_init_host(int host_index, struct ufs_host *ufs)
 {
 	/* command timeout may be redefined in ufs_board_init()  */
-	ufs->ufs_cmd_timeout = 1000000;	/* 100msec */
-	ufs->uic_cmd_timeout = 1000000;	/* 100msec */
-	ufs->ufs_query_req_timeout = 15000000;	/* 1500msec */
+	ufs->ufs_cmd_timeout = UTP_CMD_TIMEOUT;
+	ufs->uic_cmd_timeout = UIC_CMD_TIMEOUT;
+	ufs->ufs_query_req_timeout = QUERY_REQ_TIMEOUT;
 
 	/* AP specific UFS host init */
 	if (ufs_board_init(host_index, ufs))
@@ -1822,25 +1865,25 @@ int ufs_check_config_desc(void)
 
 	ufs->lun = 0;
 
-	res = ufs_utp_query_process(ufs, DESC_R_DEVICE_DESC, 0);
+	res = ufs_utp_query_retry(ufs, DESC_R_DEVICE_DESC, 0);
 	if (res) {
 		printf("UFS Check Read Device Desc Error: %d", res);
 		return 0;
 	}
 
-	res = ufs_utp_query_process(ufs, DESC_R_GEOMETRY_DESC, 0);
+	res = ufs_utp_query_retry(ufs, DESC_R_GEOMETRY_DESC, 0);
 	if (res) {
 		printf("UFS Check Read Geometry Desc Error: %d", res);
 		return 0;
 	}
 
-	res = ufs_utp_query_process(ufs, DESC_R_CONFIG_DESC, 0);
+	res = ufs_utp_query_retry(ufs, DESC_R_CONFIG_DESC, 0);
 	if (res) {
 		printf("UFS Check Read Config Desc Error: %d", res);
 		return 0;
 	}
 
-	res = ufs_utp_query_process(ufs, ATTR_R_BOOTLUNEN, 0);
+	res = ufs_utp_query_retry(ufs, ATTR_R_BOOTLUNEN, 0);
 	if (res) {
 		printf("UFS Check Read BootlunEn Attr Error: %d", res);
 		return 0;
@@ -2003,19 +2046,19 @@ void print_ufs_information(void)
 	if (!ufs)
 		return;
 
-	res = ufs_utp_query_process(ufs, DESC_R_GEOMETRY_DESC, 1);
+	res = ufs_utp_query_retry(ufs, DESC_R_GEOMETRY_DESC, 1);
 	if (res) {
 		printf("UFS Info Read Gerometry Desc Error: %d", res);
 		return;
 	}
 
-	res = ufs_utp_query_process(ufs, DESC_R_DEVICE_DESC, 1);
+	res = ufs_utp_query_retry(ufs, DESC_R_DEVICE_DESC, 1);
 	if (res) {
 		printf("UFS Info Read Device Desc Error: %d", res);
 		return;
 	}
 
-	res = ufs_utp_query_process(ufs, DESC_R_CONFIG_DESC, 1);
+	res = ufs_utp_query_retry(ufs, DESC_R_CONFIG_DESC, 1);
 	if (res) {
 		printf("UFS Info Read Config Desc Error: %d", res);
 		return;
@@ -2237,20 +2280,20 @@ int ufs_set_configuration_descriptor(void)
 			}
 		}
 
-		ret = ufs_utp_query_process(ufs, DESC_W_CONFIG_DESC, 0);
+		ret = ufs_utp_query_retry(ufs, DESC_W_CONFIG_DESC, 0);
 		if (ret) {
 			printf("UFS LU config: Descriptor write query fail with %d\n", ret);
 			continue;
 		}
 
 		ufs->attributes.arry[UPIU_ATTR_ID_BOOTLUNEN] = 0x01;
-		ret = ufs_utp_query_process(ufs, ATTR_W_BOOTLUNEN, 0);
+		ret = ufs_utp_query_retry(ufs, ATTR_W_BOOTLUNEN, 0);
 		if (ret) {
 			printf("UFS LU config: BootLUNEN setting fail with %d\n", ret);
 			continue;
 		}
 
-		ret = ufs_utp_query_process(ufs, ATTR_R_BOOTLUNEN, 0);
+		ret = ufs_utp_query_retry(ufs, ATTR_R_BOOTLUNEN, 0);
 		if (ret) {
 			printf("UFS LU config: BootLUNEN read fail with %d\n", ret);
 			continue;
@@ -2314,7 +2357,8 @@ status_t ufs_init(int mode)
 				break;
 			rst_cnt++;
 			printf("UFS: Retry Link Startup CNT : %d\n", rst_cnt);
-		} while (rst_cnt < 3);
+		} while (rst_cnt < 5);
+
 		if (r)
 			goto out;
 
