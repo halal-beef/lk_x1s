@@ -12,10 +12,6 @@ MODULE_SRCS += \
 	$(LOCAL_DIR)/dpu_io/dpu_io_ctrl.c \
 	$(LOCAL_DIR)/dpu_panels/s6e3fa0_lcd_ctrl.c \
 	$(LOCAL_DIR)/dpu_panels/s6e3fa0_mipi_lcd.c \
-	$(LOCAL_DIR)/dpu_panels/nt36672a_lcd_ctrl.c \
-	$(LOCAL_DIR)/dpu_panels/nt36672a_mipi_lcd.c \
-	$(LOCAL_DIR)/dpu_panels/s6e3ha9_lcd_ctrl.c \
-	$(LOCAL_DIR)/dpu_panels/s6e3ha9_mipi_lcd.c \
 	$(LOCAL_DIR)/dpu_panels/lcd_module.c \
 
 include make/module.mk

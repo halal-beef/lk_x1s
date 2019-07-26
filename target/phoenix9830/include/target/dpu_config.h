@@ -34,8 +34,8 @@
 #define CONFIG_DISPLAY_FONT_BASE_ADDRESS	0xfac00000
 #define CONFIG_DISPLAY_TEMP_BASE_ADDRESS	0xfc000000
 
-#define LCD_WIDTH				1440
-#define LCD_HEIGHT				3040
+#define LCD_WIDTH				1080
+#define LCD_HEIGHT				1920
 
 
 /* =================================================== */
