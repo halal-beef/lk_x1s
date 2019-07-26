@@ -13,6 +13,9 @@ case $1 in
 	universal9830_bringup)
 		rm -rf build-$1; make $1 -j16
 		;;
+	phoenix9830)
+		rm -rf build-$1; make $1 -j16
+		;;
 	*)
 		echo "-----------------------------------------------------------------"
 		echo % usage : ./build.sh [board name] [none / user]
@@ -22,6 +25,7 @@ case $1 in
 		echo maestro9820
 		echo smdk9830
 		echo universal9830_bringup
+		echo phoenix9830
 		echo "-----------------------------------------------------------------"
 		exit 0
 		;;
