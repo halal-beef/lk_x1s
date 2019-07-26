@@ -42,46 +42,46 @@ display_te_init:
 
 	.global display_panel_init
 display_panel_init:
-	/* Set MIPI_DSI0_nRST (GPA3_4) to Pull-up enable, Reset is active low */
-	ldr	x0, =EXYNOS9830_GPA3PUD
+	/* Set MIPI_DSI0_nRST (GPR5_6) to Pull-up enable, Reset is active low */
+	ldr	x0, =EXYNOS9830_GPP5PUD
 	ldr	w1, [x0]
-	bic	w1, w1, #(0xF << 16)
-	orr	w1, w1, #(0x3 << 16)
+	bic	w1, w1, #(0xF << 24)
+	orr	w1, w1, #(0x3 << 24)
 	str	w1, [x0]
 
-	/* Set MIPI_DSI0_nRST (GPA3_4) to Output */
-	ldr	x0, =EXYNOS9830_GPA3CON
+	/* Set MIPI_DSI0_nRST (GPP5_6) to Output */
+	ldr	x0, =EXYNOS9830_GPP5CON
 	ldr	w1, [x0]
-	bic	w1, w1, #(0xF << 16)
-	orr	w1, w1, #(0x1 << 16)
+	bic	w1, w1, #(0xF << 24)
+	orr	w1, w1, #(0x1 << 24)
 	str	w1, [x0]
 
-	/* Set MIPI_DSI0_nRST (GPA3_4) to DRV 4X */
+	/* Set MIPI_DSI0_nRST (GPP5_6) to DRV 4X */
 	ldr	x0, =EXYNOS9830_GPP5DRV
 	ldr	w1, [x0]
-	bic	w1, w1, #(0xF << 16)
-	orr	w1, w1, #(0x3 << 16)
+	bic	w1, w1, #(0xF << 24)
+	orr	w1, w1, #(0x3 << 24)
 	str	w1, [x0]
 
 	ret
 
 	.global display_panel_reset
 display_panel_reset:
-	/* Set MLCD_RSTB (GPA3_4) to low */
-	ldr	x0, =EXYNOS9830_GPA3DAT
+	/* Set MLCD_RSTB (GPP5_6) to low */
+	ldr	x0, =EXYNOS9830_GPP5DAT
 	ldr	w1, [x0]
-	bic	w1, w1, #(0x1 << 4)
+	bic	w1, w1, #(0x1 << 6)
 	str	w1, [x0]
 
 	ret
 
 	.global display_panel_release
 display_panel_release:
-	/* Set MLCD_RSTB (GPA3_4) to high */
-	ldr	x0, =EXYNOS9830_GPA3DAT
+	/* Set MLCD_RSTB (GPP5_6) to high */
+	ldr	x0, =EXYNOS9830_GPP5DAT
 	ldr	w1, [x0]
-	bic	w1, w1, #(0x1 << 4)
-	orr	w1, w1, #(0x1 << 4)
+	bic	w1, w1, #(0x1 << 6)
+	orr	w1, w1, #(0x1 << 6)
 	str	w1, [x0]
 
 	ret

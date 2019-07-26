@@ -1,12 +1,12 @@
 /* Copyright (c) 2018 Samsung Electronics Co, Ltd.
- *
+
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
  * published by the Free Software Foundation.
- *
+
  * Copyright@ Samsung Electronics Co. LTD
  * Manseok Kim <manseoks.kim@samsung.com>
- *
+
  * Alternatively, Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -24,15 +24,16 @@
 #include <dev/dpu/exynos_panel.h>
 #include <dev/dpu/dsim.h>
 
-#define MAX_BRIGHTNESS		255
-#define MIN_BRIGHTNESS		0
-#define DEFAULT_BRIGHTNESS	0
+#define MAX_BRIGHTNESS 255
+#define MIN_BRIGHTNESS 0
+#define DEFAULT_BRIGHTNESS 0
 
 extern struct exynos_panel_info s6e3fa0_lcd_info;
 
 static int s6e3fa0_get_id(struct dsim_device *dsim)
 {
-	return 0xff244040; /* s6e3fa0 */
+	dsim_info("%s panel ID is 0x244040\n", __func__);
+	return 0x244040; /* s6e3fa0 */
 }
 
 static struct exynos_panel_info *s6e3fa0_get_lcd_info(void)
