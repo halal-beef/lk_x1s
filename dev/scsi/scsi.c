@@ -293,18 +293,23 @@ static status_t scsi_unmap(struct bdev *dev,
 	 */
 	memset((void *)g_scm.cdb, 0, sizeof(g_scm.cdb));
 
-	g_scm.datalen = SCSI_UNMAP_DATA_LEN + 8;
-
 	g_scm.cdb[0] = SCSI_OP_UNMAP;
 	set_word_le(&g_scm.cdb[7], g_scm.datalen);
 
 	/* Prepare data */
-	memset((void *)g_scm.buf, 0, SCSI_UNMAP_DATA_LEN + 2);
+	memset((void *)g_scm.buf, 0, g_scm.datalen);
 
 	set_word_le(&g_scm.buf[0], SCSI_UNMAP_DATA_LEN);
 	set_word_le(&g_scm.buf[2], SCSI_UNMAP_BLOCK_DESC_DATA_LEN);
 
+	/*
+	 * Currently, we're using devices that are equal or less than 2TB,
+	 * so the value of upper side of UNMAP LOGICAL BLOCK ADDRESS should
+	 * be zero. So we just set LBA from bytes offset 12, not 8 specified
+	 * in UFS specification.
+	 */
 	set_dword_le(&g_scm.buf[12], block);
+
 	set_dword_le(&g_scm.buf[16], count);
 
 	/* Actual issue */
