@@ -198,6 +198,17 @@ static AvbIOResult exynos_validate_vbmeta_public_key(AvbOps *ops,
 	*out_is_trusted = !memcmp(avb_pubkey, public_key_data, public_key_length);
 	if (*out_is_trusted == false) {
 		printf("[AVB 2.0 ERR] AVB pubkey is not matched with vbmeta\n");
+#if defined(CONFIG_AVB_DEBUG)
+		uint32_t i;
+		printf("Keystorage key dump\n");
+		for (i = 0; i < public_key_length; i++)
+			printf("%02X ", avb_pubkey[i]);
+		printf("\n");
+		printf("vbmeta key dump\n");
+		for (i = 0; i < public_key_length; i++)
+			printf("%02X ", public_key_data[i]);
+		printf("\n");
+#endif
 		goto out;
 	}
 
