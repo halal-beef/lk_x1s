@@ -25,9 +25,9 @@ static const uint64_t kRollbackIndexNotUsed = 0;
 static uint8_t avb_pubkey[SB_MAX_PUBKEY_LEN] __attribute__((__aligned__(CACHE_WRITEBACK_GRANULE_128)));
 
 #if defined(CONFIG_AVB_LCD_LOG)
-void avb_print_lcd(const char *str);
+void avb_print_lcd(const char *str, uint32_t boot_state);
 #else
-void avb_print_lcd(const char *str) {};
+void avb_print_lcd(const char *str, uint32_t boot_state) {};
 #endif
 
 uint32_t avb_set_root_of_trust(uint32_t device_state, uint32_t boot_state)
@@ -192,8 +192,6 @@ uint32_t avb_main(const char *suffix, char *cmdline, char *verifiedbootstate)
 {
 	bool unlock;
 	uint32_t ret = 0;
-	uint32_t i = 0;
-	uint32_t device_state;
 	uint32_t boot_state;
 	struct AvbOps *ops;
 	const char *partition_arr[] = {"boot", "dtbo", NULL};
@@ -210,17 +208,6 @@ uint32_t avb_main(const char *suffix, char *cmdline, char *verifiedbootstate)
 			AVB_SLOT_VERIFY_FLAGS_ALLOW_VERIFICATION_ERROR,
 			AVB_HASHTREE_ERROR_MODE_RESTART_AND_INVALIDATE,
 			&ctx_ptr);
-
-	/* set cmdline */
-	if (ctx_ptr != NULL) {
-		i = 0;
-		while (ctx_ptr->cmdline[i++] != '\0');
-		memcpy(cmdline, ctx_ptr->cmdline, i);
-	}
-#if defined(CONFIG_AVB_DEBUG)
-	printf("i: %d\n", i);
-	printf("cmdline: %s\n", cmdline);
-#endif
 
 	/* get color */
 	if (unlock) {
@@ -240,7 +227,6 @@ uint32_t avb_main(const char *suffix, char *cmdline, char *verifiedbootstate)
 		snprintf(buf, 100, "[AVB 2.0] authentication success (%s)\n", color);
 	}
 
-	device_state = !unlock;
 	switch (color[0]) {
 	case 'o':
 		boot_state = ORANGE;
@@ -260,14 +246,35 @@ uint32_t avb_main(const char *suffix, char *cmdline, char *verifiedbootstate)
 	/* Print log */
 	strcat(verifiedbootstate, color);
 	printf(buf);
-	avb_print_lcd(buf);
+	avb_print_lcd(buf, boot_state);
+
+#if defined(CONFIG_AVB_CMDLINE)
+	/* set cmdline */
+	uint32_t i = 0;
+	if (ctx_ptr != NULL) {
+		i = 0;
+		while (ctx_ptr->cmdline[i++] != '\0');
+		memcpy(cmdline, ctx_ptr->cmdline, i);
+	}
+#if defined(CONFIG_AVB_DEBUG)
+	printf("i: %d\n", i);
+	printf("cmdline: %s\n", cmdline);
+#endif
+#else
+	strncpy(verifiedbootstate, "", AVB_VBS_MAX_SIZE);
+	printf("[AVB] Command line is not set\n");
+#endif
 	if (ret)
 		return ret;
 
+#if defined(CONFIG_AVB_ROT)
 	/* Set root of trust */
-	ret = avb_set_root_of_trust(device_state, boot_state);
+	ret = avb_set_root_of_trust(!unlock, boot_state);
 	if (ret)
 		return ret;
+#else
+	printf("[AVB] Root of trust is not set\n");
+#endif
 
 	/* Update RP count */
 	if (!ret && is_slot_marked_successful()) {
