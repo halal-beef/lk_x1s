@@ -264,14 +264,14 @@ uint32_t avb_main(const char *suffix, char *cmdline, char *verifiedbootstate)
 	strncpy(verifiedbootstate, "", AVB_VBS_MAX_SIZE);
 	printf("[AVB] Command line is not set\n");
 #endif
-	if (ret)
-		return ret;
 
 #if defined(CONFIG_AVB_ROT)
+	uint32_t rot_ret = 0;
+
 	/* Set root of trust */
-	ret = avb_set_root_of_trust(!unlock, boot_state);
-	if (ret)
-		return ret;
+	rot_ret = avb_set_root_of_trust(!unlock, boot_state);
+	if (rot_ret)
+		printf("[AVB] Root of trust error ret: 0x%X\n", rot_ret);
 #else
 	printf("[AVB] Root of trust is not set\n");
 #endif
