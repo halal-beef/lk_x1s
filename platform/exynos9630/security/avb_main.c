@@ -222,9 +222,12 @@ uint32_t avb_main(const char *suffix, char *cmdline, char *verifiedbootstate)
 		}
 	}
 	if (ret) {
-		if (unlock && AVB_SLOT_VERIFY_RESULT_ERROR_VERIFICATION)
+		if (unlock && ret == AVB_SLOT_VERIFY_RESULT_ERROR_VERIFICATION)
 			snprintf(buf, 100, "[AVB 2.0 warning] authentication fail [ret: 0x%X] (%s) "
 					"No effect on booting process\n", ret, color);
+		else if (unlock && ret == AVB_SLOT_VERIFY_RESULT_ERROR_PUBLIC_KEY_REJECTED)
+			snprintf(buf, 100, "[AVB 2.0 warning] authentication fail [ret: 0x%X] (%s) "
+					"Invalid key is used\n", ret, color);
 		else
 			snprintf(buf, 100, "[AVB 2.0 ERR] authentication fail [ret: 0x%X] (%s)\n", ret, color);
 	} else {
