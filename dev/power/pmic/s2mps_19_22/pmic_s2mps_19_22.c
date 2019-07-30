@@ -16,6 +16,9 @@
 #include <dev/speedy_multi.h>
 #include <lib/fastboot.h>
 
+extern unsigned int board_id;
+extern unsigned int board_rev;
+
 void pmic_init(void)
 {
 	unsigned char reg;
@@ -31,7 +34,11 @@ void pmic_init(void)
 	/* Enable Warm Reset */
 	speedy_read(CONFIG_SPEEDY0_BASE, S2MPS19_PM_ADDR, S2MPS19_PM_CTRL3, &reg);
 	reg |= WRSTEN;
-	reg |= MRSEL;
+	/* HACK
+	 * In case of universal9830 rev05, it can be warm reset by only the volume down key.
+	 */
+	if (board_id == 0x10 && board_rev == 0x5)
+		reg |= MRSEL;
 	speedy_write(CONFIG_SPEEDY0_BASE, S2MPS19_PM_ADDR, S2MPS19_PM_CTRL3, reg);
 
 	/* LCD power */
