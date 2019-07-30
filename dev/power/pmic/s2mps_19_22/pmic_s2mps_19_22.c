@@ -31,6 +31,7 @@ void pmic_init(void)
 	/* Enable Warm Reset */
 	speedy_read(CONFIG_SPEEDY0_BASE, S2MPS19_PM_ADDR, S2MPS19_PM_CTRL3, &reg);
 	reg |= WRSTEN;
+	reg |= MRSEL;
 	speedy_write(CONFIG_SPEEDY0_BASE, S2MPS19_PM_ADDR, S2MPS19_PM_CTRL3, reg);
 
 	/* LCD power */
