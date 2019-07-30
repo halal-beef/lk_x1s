@@ -13,7 +13,7 @@
 #define __UFS__
 
 #include <dev/scsi.h>
-#include <platform/ufs-cal-9830.h>
+#include <platform/ufs-cal.h>
 
 #define RET_SUCCESS		0	/* 0 = Success */
 #define RET_FAILURE		1	/* 1 = Failure */
