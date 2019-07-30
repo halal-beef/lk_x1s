@@ -733,7 +733,9 @@ int cmd_boot(int argc, const cmd_args *argv)
 	rpmb_get_lock_state(&lock_state);
 	printf("lock state: %d\n", lock_state);
 	if(lock_state) {
-		if (avb_ret) {
+		if (avb_ret == AVB_SLOT_VERIFY_RESULT_ERROR_PUBLIC_KEY_REJECTED) {
+			printf("AVB key invalid!\n");
+		} else if (avb_ret) {
 			printf("AVB failed! Resetting!\n");
 			/* Delay for data write HW operation of ab_update_slot_info()
 				on AB_SLOTINFO_PART partition. */
