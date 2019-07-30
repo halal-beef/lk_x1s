@@ -68,7 +68,7 @@ static u32 get_boot_device_info(void)
 	return boot_device_info;
 }
 
-static int is_usb_boot(void)
+int is_usb_boot(void)
 {
 	u32 order = 0;
 	u32 boot_device_info = 0;

@@ -23,6 +23,8 @@
 #include <platform/h-arx.h>
 #include <platform/hvc.h>
 #include <platform/smc.h>
+#include <platform/ldfw.h>
+#include <platform/exynos9830.h>
 
 
 bool is_harx_initialized;
@@ -62,6 +64,16 @@ int load_and_init_harx(void)
 	u64 size = 0;
 	u64 ret = 0;
 
+	if (*(unsigned int *)DRAM_BASE != 0xabcdef) {
+		printf("[H-Arx] This boot is done by TRACE32\n");
+		return -1;
+	}
+
+	if (is_usb_boot() == 1) {
+		harx_print_with_lcd("[H-Arx] Do not load H-Arx for USB_BOOT case\n");
+		return -1;
+	}
+
 	if (load_el2_module(EXYNOS_HARX_PART_NAME,
 			    EXYNOS_HARX_BASE_ADDR,
 			    &size)) {
@@ -93,6 +105,11 @@ int load_and_init_harx_plugin(const char *name, u64 plugin_addr)
 {
 	u64 size = 0;
 	u64 ret = 0;
+
+	if (is_harx_initialized == false) {
+		printf("[H-Arx Plug-in] H-Arx is not initialized\n");
+		return -1;
+	}
 
 	if (load_el2_module(name, plugin_addr, &size)) {
 		printf("[H-Arx Plug-in] ERROR: Fail to load %s binary\n",

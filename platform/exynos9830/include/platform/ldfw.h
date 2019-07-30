@@ -54,5 +54,7 @@ int init_ldfws(void);
 int init_keystorage(void);
 int init_sp(void);
 int init_ssp(void);
+
+int is_usb_boot(void);
 #endif	/* __ASSEMBLY__ */
 #endif	/* __LDFW_H_ */
