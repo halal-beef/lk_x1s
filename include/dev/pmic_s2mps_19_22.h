@@ -59,6 +59,7 @@
  * CTRL3
  */
 #define WRSTBIEN		(0x1 << 6)
+#define MRSEL		(0x1 << 5)
 #define WRSTEN			(0x1 << 4)
 
 /*
