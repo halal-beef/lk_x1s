@@ -31,7 +31,7 @@
 
 #include <dev/dpu/exynos_panel.h>
 #include <dev/dpu/mipi_dsi_cmd.h>
-#include <platform/exynos9830.h>
+#include <platform/sfr.h>
 #include <platform/display_sfr.h>
 #include <platform/dpu_cal/regs-dsim.h>
 #include <platform/dpu_cal/dsim_cal.h>
