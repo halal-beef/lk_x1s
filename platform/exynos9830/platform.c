@@ -373,6 +373,7 @@ void platform_init(void)
 	print_acpm_version();
 
 	display_rst_stat(rst_stat);
+	get_board_rev();
 	pmic_init();
 	display_pmic_info();
 #ifdef CONFIG_SUB_PMIC_S2DOS05
@@ -380,7 +381,6 @@ void platform_init(void)
 #else
 	sub_pmic_s2mpb02_init();
 #endif
-	get_board_rev();
 
 	/*
 	 * check_charger_connect();
