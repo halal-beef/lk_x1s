@@ -510,7 +510,7 @@ mem_node_out:
 	printf("\nbootargs: %s\n", np);
 
 	if (change_dt_psci_method(fdt_dtb))
-		harx_print_with_lcd("Fail to change PSCI method to HVC\n");
+		printf("Do not change PSCI method\n");
 	else
 		harx_print_with_lcd("Change PSCI method to HVC\n");
 
