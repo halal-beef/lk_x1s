@@ -39,7 +39,7 @@ MODULE_SRCS += \
 	$(LOCAL_DIR)/debug/dfd_verify.c \
 	$(LOCAL_DIR)/debug/dss.c \
 	$(LOCAL_DIR)/debug/dss_store_ramdump.c \
-	$(LOCAL_DIR)/fvmap.c
+	$(LOCAL_DIR)/dvfs_info.c
 
 MODULE_DEPS += \
     dev/interrupt/arm_gic \
