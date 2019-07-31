@@ -29,7 +29,7 @@ u64 exynos_smc(u64 cmd, u64 arg1, u64 arg2, u64 arg3)
 	return reg0;
 }
 
-inline u64 exynos_smc_read(u64 cmd, u64 arg1)
+u64 exynos_smc_read(u64 cmd, u64 arg1)
 {
 	register u64 reg0 __asm__ ("x0") = cmd;
 	register u64 reg1 __asm__ ("x1") = arg1;
