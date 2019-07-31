@@ -273,7 +273,7 @@ extern int fastboot_flash_write(fastboot_ptentry *ptn, unsigned extra_per_page,
 				const void *data, unsigned bytes);
 int do_fastboot(int argc, const cmd_args *argv);
 
-#ifdef CONFIG_BOARD_UNIVERSAL9830
+#if defined(CONFIG_BOARD_SMDK9830) || defined(CONFIG_BOARD_UNIVERSAL9830)
 #define SYSREG_USB_BASE			0x10a20000
 #define USB_SHARABLE_OFFSET		(0x704)
 #define USB_SHARABLE_SHIFT		(1)
