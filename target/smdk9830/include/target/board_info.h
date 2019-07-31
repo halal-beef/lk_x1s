@@ -12,6 +12,7 @@
 #define __BOARD_INFO_H__
 
 #define CONFIG_BOARD_NAME	"smdks9830"
+#define CONFIG_BOARD_SMDK9830
 
 #define CONFIG_BOARD_ID	0
 #define CONFIG_DTB_IN_BOOT
