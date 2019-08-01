@@ -102,6 +102,8 @@ int ufs_board_init(int host_index, struct ufs_host *ufs)
 	ufs->mclk_rate = 166 * (1000 * 1000);
 	ufs_set_unipro_clk(ufs);
 
+	ufs->gear_mode = 4;
+
 	// TODO:
 	//set_ufs_clk(host_index);
 	//err = exynos_pinmux_config(PERIPH_ID_UFS0, PINMUX_FLAG_NONE);
