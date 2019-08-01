@@ -17,5 +17,6 @@
 #define CONFIG_BOARD_ID 0x2
 
 #define CONFIG_USE_RPMB
+#define CONFIG_UFS_BOARD_TYPE 1        /* smdk : 0, universal : 1 */
 
 #endif /*__BOARD_INFO_H__ */
