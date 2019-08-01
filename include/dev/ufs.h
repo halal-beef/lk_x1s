@@ -664,7 +664,6 @@ union ufs_attributes {
 #define __iomem
 #endif
 
-#define UFS_GEAR		4
 #define UFS_RATE		2
 #define UFS_POWER_MODE	1
 #define UFS_RXTX_POWER_MODE	((UFS_POWER_MODE << 4)|UFS_POWER_MODE)
@@ -751,7 +750,8 @@ struct ufs_host {
 	u32 mclk_rate;
 	struct uic_pwr_mode pmd_cxt;
 	u32 dev_pwr_shift;
-	u32	support_tw;
+	u32 support_tw;
+	u32 gear_mode;
 
 	struct exynos_ufs_debug  debug;
 };
