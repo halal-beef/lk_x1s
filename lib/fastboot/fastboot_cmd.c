@@ -85,7 +85,9 @@ int fb_do_getvar(const char *cmd_buffer)
 		void *part;
 		const char *type;
 #if (INPUT_GPT_AS_PT == 0)
+#ifdef CONFIG_USE_F2FS
 		const char *str_f2fs = "f2fs";
+#endif
 #endif
 		key = (char *)cmd_buffer + 7 + strlen("partition-type:");
 		if (!part_get_pt_type(key) && strcmp(key, "wipe")) {
@@ -102,8 +104,10 @@ int fb_do_getvar(const char *cmd_buffer)
 			 * in old projects. So I kept partition type of userdata, F2FS,
 			 * to prevent from the troubles.
 			 */
+#ifdef CONFIG_USE_F2FS
 			if (!strcmp(key, "userdata"))
 				type = str_f2fs;
+#endif
 #endif
 			if (type)
 				strcpy(response + 4, type);
