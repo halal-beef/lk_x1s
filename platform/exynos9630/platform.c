@@ -34,6 +34,7 @@
 #include <platform/mmu/mmu_func.h>
 #include <platform/fastboot.h>
 #include <platform/exynos9630.h>
+#include <part.h>
 
 #include <lib/font_display.h>
 #include <lib/logo_display.h>
@@ -328,7 +329,7 @@ void platform_init(void)
 	if (ret == 1)
 		ufs_init(2);
 
-	/* part_init(); */
+	part_init();
 	if (is_first_boot() && *(unsigned int *)DRAM_BASE == 0xabcdef)
 		debug_snapshot_fdt_init();
 
