@@ -17,7 +17,7 @@
 #include <dev/ufs_provision.h>
 #include <platform/delay.h>
 #include <platform/mmu/barrier.h>
-#include <platform/exynos9830.h>
+#include <platform/sfr.h>
 
 #define	SCSI_MAX_INITIATOR	1
 #define	SCSI_MAX_DEVICE		8
@@ -1269,7 +1269,7 @@ static int ufs_update_max_gear(struct ufs_host *ufs)
 		goto out;
 
 	max_rx_hs_gear = ufs->uic_cmd->uiccmdarg3;
-	p->max_gear = MIN(max_rx_hs_gear, UFS_GEAR);
+	p->max_gear = MIN(max_rx_hs_gear, ufs->gear_mode);
 
 	printf("ufs max_gear(%d)\n", p->max_gear);
 
@@ -1548,8 +1548,8 @@ static int ufs_pmc_common(struct ufs_host *ufs, struct uic_pwr_mode *pmd)
 	u32 reg;
 	int res = NO_ERROR;
 	struct ufs_uic_cmd cmd[] = {
-		{UIC_CMD_DME_SET, (0x1583 << 16), 0, UFS_GEAR}, /* PA_RxGear */
-		{UIC_CMD_DME_SET, (0x1568 << 16), 0, UFS_GEAR}, /* PA_TxGear */
+		{UIC_CMD_DME_SET, (0x1583 << 16), 0, ufs->gear_mode}, /* PA_RxGear */
+		{UIC_CMD_DME_SET, (0x1568 << 16), 0, ufs->gear_mode}, /* PA_TxGear */
 		{UIC_CMD_DME_SET, (0x1580 << 16), 0, 0}, /* PA_ActiveRxDataLanes */
 		{UIC_CMD_DME_SET, (0x1560 << 16), 0, 0}, /* PA_ActiveTxDataLanes */
 		{UIC_CMD_DME_SET, (0x1584 << 16), 0, 1}, /* PA_RxTermination */
@@ -1674,7 +1674,7 @@ static int ufs_init_interface(struct ufs_host *ufs)
 	}
 
 	/* 9. pre pmc */
-	pmd->gear = UFS_GEAR;
+	pmd->gear = ufs->gear_mode;
 	pmd->mode = UFS_POWER_MODE;
 	pmd->hs_series = UFS_RATE;
 
