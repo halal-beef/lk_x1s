@@ -19,6 +19,7 @@
 #include <lib/console.h>
 #include <lib/font_display.h>
 #include <lib/fastboot.h>
+#include <part.h>
 #include <pit.h>
 #include <platform/sfr.h>
 #include <platform/smc.h>
@@ -80,38 +81,46 @@ int fb_do_getvar(const char *cmd_buffer)
 		if (interface.transfer_buffer_size)
 			sprintf(response + 4, "%08x", interface.transfer_buffer_size);
 	} else if (!memcmp(cmd_buffer + 7, "partition-type", strlen("partition-type")))	{
-		char *key = (char *)cmd_buffer + 7 + strlen("partition-type:");
-		struct pit_entry *ptn = pit_get_part_info(key);
-
-		/*
-		 * In case of flashing pit, this should be
-		 * passed unconditionally.
-		 */
-		if (strcmp(key, "pit")) {
-			if (ptn->filesys == FS_TYPE_SPARSE_EXT4)
-				strcpy(response + 4, "ext4");
-			if (ptn->filesys == FS_TYPE_SPARSE_F2FS)
-				strcpy(response + 4, "f2fs");
-		}
-#ifdef CONFIG_USE_F2FS
-		if (strcmp(key, "pit") && ptn->filesys != FS_TYPE_NONE) {
-		    if (!strcmp(key, "userdata"))
-			strcpy(response + 4, "f2fs");
-		    else
-			strcpy(response + 4, "ext4");
-		}
+		char *key;
+		void *part;
+		const char *type;
+#if (INPUT_GPT_AS_PT == 0)
+		const char *str_f2fs = "f2fs";
 #endif
-	} else if (!memcmp(cmd_buffer + 7, "partition-size", strlen("partition-size")))	{
-		char *key = (char *)cmd_buffer + 7 + strlen("partition-size:");
-		struct pit_entry *ptn = pit_get_part_info(key);
+		key = (char *)cmd_buffer + 7 + strlen("partition-type:");
+		if (!part_get_pt_type(key) && strcmp(key, "wipe")) {
+			part = part_get(key);
+			if (!part) {
+				sprintf(response, "FAILpartition does not exist");
+				fastboot_tx_status(response, strlen(response), FASTBOOT_TX_ASYNC);
+				return 0;
+			}
+			type = part_get_fs_type(part);
+#if (INPUT_GPT_AS_PT == 0)
+			/*
+			 * With pit binary change, too many process troubles must follow
+			 * in old projects. So I kept partition type of userdata, F2FS,
+			 * to prevent from the troubles.
+			 */
+			if (!strcmp(key, "userdata"))
+				type = str_f2fs;
+#endif
+			if (type)
+				strcpy(response + 4, type);
+		}
+	}
+	else if (!memcmp(cmd_buffer + 7, "partition-size", strlen("partition-size")))
+	{
+		char *key;
+		void *part;
+		u64 size;
 
-		/*
-		 * In case of flashing pit, this location
-		 * would not be passed. So it's unnecessary
-		 * to check that this case is pit.
-		 */
-		if (ptn->filesys != FS_TYPE_NONE)
-			sprintf(response + 4, "0x%llx", pit_get_length(ptn));
+		key = (char *)cmd_buffer + 7 + strlen("partition-size:");
+		part = part_get(key);
+		if (part) {
+			size = part_get_size_in_bytes(part);
+			sprintf(response + 4, "0x%llx", size);
+		}
 	} else if (!strcmp(cmd_buffer + 7, "slot-count")) {
 		sprintf(response + 4, "0");
 	} else if (!strcmp(cmd_buffer + 7, "current-slot")) {
@@ -175,86 +184,92 @@ int fb_do_erase(const char *cmd_buffer)
 	char buf[FB_RESPONSE_BUFFER_SIZE];
 	char *response = (char *)(((unsigned long)buf + 8) & ~0x07);
 	char *key = (char *)cmd_buffer + 6;
-	struct pit_entry *ptn = pit_get_part_info(key);
+	void *part;
 	int status = 1;
 
-	if (strcmp(key, "pit") && ptn == 0) {
-		sprintf(response, "FAILpartition does not exist");
-		fastboot_tx_status(response, strlen(response), FASTBOOT_TX_ASYNC);
-		return 0;
+	if (!strcmp(key, "wipe")) {
+		status = part_wipe_boot();
+	} else {
+		part = part_get(key);
+
+		if (!part_get_pt_type(key) && !part) {
+			sprintf(response, "FAILpartition does not exist");
+			fastboot_tx_status(response, strlen(response), FASTBOOT_TX_ASYNC);
+			return 0;
+		}
+
+		printf("erasing(formatting) '%s'\n", key);
+
+		status = part_erase(part);
 	}
 
-	printf("erasing(formatting) '%s'\n", ptn->name);
-
-	status = pit_access(ptn, PIT_OP_ERASE, 0, 0);
-
 	if (status) {
-		sprintf(response, "FAILfailed to erase partition");
+		sprintf(response,"FAILfailed to erase partition");
 	} else {
-		printf("partition '%s' erased\n", ptn->name);
+		printf("partition '%s' erased\n", key);
 		sprintf(response, "OKAY");
 	}
 
 	fastboot_tx_status(response, strlen(response), FASTBOOT_TX_ASYNC);
 
+
 	return 0;
 }
 
-static void flash_using_pit(char *key, char *response,
-                            u32 size, void *addr)
+static void flash_using_part(char *key, char *response,
+		u32 size, void *addr)
 {
-	struct pit_entry *ptn;
+	void *part;
 	unsigned long long length;
+	u32 *env_val;
+
+	/* Partiton APIs can gets data in only 512 aligned size */
+	size = ROUNDUP(size, PART_SECTOR_SIZE);
 
 	/*
-	 * In case of flashing pit, this should be
+	 * In case of flashing part, this should be
 	 * passed unconditionally.
 	 */
-	if (!strcmp(key, "pit")) {
-		pit_update(addr, size);
-		print_lcd_update(FONT_GREEN, FONT_BLACK, "partition 'pit' flashed");
+	if (part_get_pt_type(key)) {
+		part_update(addr, size);
+		print_lcd_update(FONT_GREEN, FONT_BLACK, "partition '%s' flashed", key);
 		sprintf(response, "OKAY");
 		return;
 	}
 
-	if (!strcmp(key, "ffu")) {
-		int ret = 0;
-		ret = scsi_ufs_ffu(addr, size);
-		if (ret == 0) {
-			print_lcd_update(FONT_GREEN,
-			                 FONT_BLACK,
-			                 "UFS FFU succecced! Now turn off. You can boot with usb down mode on power-up"
-			                 );
-			sprintf(response, "OKAY");
-		} else {
-			print_lcd_update(FONT_RED, FONT_BLACK, "UFS 'ffu' failed");
-			sprintf(response, "FAILffu is failed!!");
-		}
-		return;
-	}
+	part = part_get(key);
+	if (part)
+		length = part_get_size_in_bytes(part);
 
-	ptn = pit_get_part_info(key);
-	if (ptn)
-		length = pit_get_length(ptn);
-
-	if (ptn == 0) {
+	if (!part) {
 		sprintf(response, "FAILpartition does not exist");
 	} else if ((downloaded_data_size > length) && (length != 0)) {
 		sprintf(response, "FAILimage too large for partition");
 	} else {
-		if ((ptn->blknum != 0) && (downloaded_data_size > length)) {
-			printf("flashing '%s' failed\n", ptn->name);
-			print_lcd_update(FONT_RED, FONT_BLACK, "flashing '%s' failed", ptn->name);
+		if ((length != 0) && (downloaded_data_size > length)) {
+			printf("flashing '%s' failed\n", key);
+			print_lcd_update(FONT_RED, FONT_BLACK, "flashing '%s' failed", key);
 			sprintf(response, "FAILfailed to too large image");
-		} else if (pit_access(ptn, PIT_OP_FLASH, (u64)addr, size)) {
-			printf("flashing '%s' failed\n", ptn->name);
-			print_lcd_update(FONT_RED, FONT_BLACK, "flashing '%s' failed", ptn->name);
+		} else if (part_write_partial(part, addr, 0, size)) {
+			printf("flashing '%s' failed\n", key);
+			print_lcd_update(FONT_RED, FONT_BLACK, "flashing '%s' failed", key);
 			sprintf(response, "FAILfailed to flash partition");
 		} else {
-			printf("partition '%s' flashed\n\n", ptn->name);
-			print_lcd_update(FONT_GREEN, FONT_BLACK, "partition '%s' flashed", ptn->name);
+			printf("partition '%s' flashed\n\n", key);
+			print_lcd_update(FONT_GREEN, FONT_BLACK, "partition '%s' flashed", key);
 			sprintf(response, "OKAY");
 		}
+	}
+
+	if (!strcmp(key, "ramdisk")) {
+		part = part_get("env");
+		env_val = memalign(0x1000, part_get_size_in_bytes(part));
+		part_read(part, env_val);
+
+		env_val[ENV_ID_RAMDISK_SIZE] = size;
+		part_write(part, env_val);
+
+		free(env_val);
 	}
 }
 
@@ -277,8 +292,8 @@ int fb_do_flash(const char *cmd_buffer)
 #endif
 
 	dprintf(ALWAYS, "flash\n");
-
-	flash_using_pit((char *)cmd_buffer + 6, response,
+	strcpy(response,"OKAY");
+	flash_using_part((char *)cmd_buffer + 6, response,
 	                downloaded_data_size, (void *)interface.transfer_buffer);
 
 	fastboot_tx_status(response, strlen(response), FASTBOOT_TX_ASYNC);

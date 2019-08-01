@@ -12,11 +12,17 @@
 
 #include <err.h>
 #include <string.h>
+#include <part_dev.h>
 #include <part_gpt.h>
 #include <lib/heap.h>
 #include <dev/boot.h>
 #include <platform/decompress_ext4.h>
 #include <platform/secure_boot.h>
+#include <lib/sysparam.h>
+#include <trace.h>
+#include <part_dev.h>
+
+#define LOCAL_TRACE 0
 
 
 /*
@@ -33,16 +39,10 @@
 #define LOAD_PIT(t, s)							\
 		memcpy((void *)(t), (void *)(s), sizeof(struct pit_info))\
 
-enum __pit_if {
-	PIT_NONE    = 0,
-	PIT_MMC,
-	PIT_UFS,
-};
-
 static const char *pit_if_tokens[] = {
-	"unknown",
 	"mmc",
 	"scsi",
+	"unknown",
 };
 
 /*
@@ -54,8 +54,8 @@ static struct pit_info pit;	/* pit cached data */
 static void *pit_buf;		/* buffer for disk access with default block count */
 static u32 pit_blk_cnt;		/* block count to access pit backed data */
 static bdev_t *pit_dev;
-static enum __pit_if pit_if;	/* block device identifier */
 static struct gpt_info gpt_if;	/* GPT LBA range to give GPT */
+static enum __boot_dev_id s_pit_dev_id;
 
 /*
  * When you erase somewhere on eMMC supporting high capacity and
@@ -113,37 +113,24 @@ static int pit_save_pit(void *buf)
 	return NO_ERROR;
 }
 
-static status_t pit_open_dev(void)
+static int pit_open_dev(void)
 {
-	unsigned int boot_dev;
 	char str[CMD_STRING_MAX_SIZE];
 	unsigned int len;
 
-	boot_dev = get_boot_device();
-	if (boot_dev == BOOT_UFS)
-		pit_if = PIT_UFS;
-	else if (boot_dev == BOOT_EMMC)
-		pit_if = PIT_MMC;
-	else
-		pit_if = PIT_NONE;
+	if (s_pit_dev_id == DEV_NONE)
+		return -1;
 
-	if (pit_if == PIT_NONE) {
-		printf("[PIT] block dev not set\n");
-	/*
-		print_lcd_update(FONT_RED, FONT_BLACK,
-			"[PIT] block dev not set");
-	*/
-		return ERR_NOT_VALID;
-	} else {
-		len = strlen(pit_if_tokens[pit_if]);
-		memcpy(str, pit_if_tokens[pit_if], len);
-		str[len] = '0';
-		str[len + 1] = '\0';
+	len = strlen(pit_if_tokens[s_pit_dev_id]);
+	memcpy(str, pit_if_tokens[s_pit_dev_id], len);
+	str[len] = '0';
+	str[len + 1] = '\0';
 
-		pit_dev = bio_open(str);
+	pit_dev = bio_open(str);
+	if (!pit_dev)
+		return -2;
 
-		return (pit_dev == 0) ? ERR_NOT_FOUND : NO_ERROR;
-	}
+	return 0;
 }
 
 static inline void pit_close_dev(void)		// TODO:
@@ -204,12 +191,12 @@ static int pit_access_emmc(struct pit_entry *ptn, int op, u64 addr, u32 size)
 	bdev_t *dev;
 	uint blks = 0;
 
-	len = strlen(pit_if_tokens[pit_if]);
-	memcpy(str, pit_if_tokens[pit_if], len);
+	len = strlen(pit_if_tokens[s_pit_dev_id]);
+	memcpy(str, pit_if_tokens[s_pit_dev_id], len);
 	str[len] = '0' + ptn->lun;
 	str[len + 1] = '\0';
 
-	//printf("[PIT] bio_open %s %d\n", str, strlen(pit_if_tokens[pit_if]));
+	//printf("[PIT] bio_open %s %d\n", str, strlen(pit_if_tokens[s_pit_dev_id]));
 	dev = bio_open(str);
 
 	/* only for boot partition of emmc */
@@ -297,6 +284,37 @@ static int pit_access_emmc(struct pit_entry *ptn, int op, u64 addr, u32 size)
 	return ret;
 }
 
+static int pit_flash_sparse(struct pit_entry *ptn, u64 addr)
+{
+	char str[CMD_STRING_MAX_SIZE];
+	unsigned int len;
+	bdev_t *dev;
+	int res;
+	u64 bytestart = (u64)ptn->blkstart * PIT_SECTOR_SIZE;
+	u32 blkstart = (u32)(bytestart / PIT_SECTOR_SIZE);
+
+	/* Open device */
+	len = strlen(pit_if_tokens[s_pit_dev_id]);
+	memcpy(str, pit_if_tokens[s_pit_dev_id], len);
+	str[len] = '0' + ptn->lun;
+	str[len + 1] = '\0';
+
+	dev = bio_open(str);
+
+	if (!check_compress_ext4((char *)addr,
+				pit_get_length(ptn)) != 0) {
+		printf("Compressed image\n");
+		res = write_compressed_ext4((char *)addr, blkstart);
+	} else {
+		printf("[PIT] %s flash failed on UFS\n", ptn->name);
+		res = 1;
+	}
+
+	bio_close(dev);
+
+	return res;
+}
+
 static int pit_access_ufs(struct pit_entry *ptn, int op, u64 addr, u32 size)
 {
 	int ret = 1;
@@ -309,63 +327,39 @@ static int pit_access_ufs(struct pit_entry *ptn, int op, u64 addr, u32 size)
 	bdev_t *dev;
 	uint blks = 0;
 
-	len = strlen(pit_if_tokens[pit_if]);
-	memcpy(str, pit_if_tokens[pit_if], len);
+	/* Sparse case */
+	if (op == PIT_OP_FLASH &&
+			(ptn->filesys == FS_TYPE_SPARSE_EXT4 ||
+			 ptn->filesys == FS_TYPE_SPARSE_F2FS)) {
+		printf("[PIT(%s)] flash on UFS..  \n", ptn->name);
+		return pit_flash_sparse(ptn, addr);
+	}
+
+	len = strlen(pit_if_tokens[s_pit_dev_id]);
+	memcpy(str, pit_if_tokens[s_pit_dev_id], len);
 	str[len] = '0' + ptn->lun;
 	str[len + 1] = '\0';
 
+	dev = bio_open(str);
 
 	switch (op) {
 	case PIT_OP_FLASH:	/* flash */
 		printf("[PIT(%s)] flash on UFS..  \n", ptn->name);
-
-		if (ptn->filesys == FS_TYPE_SPARSE_EXT4 || ptn->filesys == FS_TYPE_SPARSE_F2FS) {
-			/* In this case, bio_open will be called in ext apis */
-			if (check_compress_ext4((char *)addr,
-						__pit_get_length(ptn)) == 0) {
-				printf("Compressed ext4 image\n");
-				ret = write_compressed_ext4((char *)addr, blkstart);
-			} else {
-				printf("[PIT] %s flash failed on UFS\n", ptn->name);
-				ret = ERR_IO;
-			}
-
-			if (ret != NO_ERROR)
-				return ret;
-			else
-				blks = blknum;
-		} else {
-			dev = bio_open(str);
-			blks = dev->new_write(dev, (void *)addr, blkstart, blknum);
-			bio_close(dev);
-		}
-#if 0
-		if (!strcmp("ramdisk", ptn->name)) {
-			blknum = (size + PIT_SECTOR_SIZE - 1) / PIT_SECTOR_SIZE;
-			sprintf(ramdisk_size, "0x%x", size);
-		// TODO: setenv
-			/*
-			setenv("rootfslen", ramdisk_size);
-			saveenv();
-			*/
-		}
-#endif
+		blks = dev->new_write(dev, (void *)addr, blkstart, blknum);
 		break;
 	case PIT_OP_ERASE:	/* erase */
 		printf("[PIT(%s)] erase on UFS..  \n", ptn->name);
-		dev = bio_open(str);
 		blks = dev->new_erase(dev, blkstart, blknum);
-		bio_close(dev);
 		break;
 	case PIT_OP_LOAD:	/* load */
 		printf("[PIT(%s)] load on UFS..  \n", ptn->name);
-		dev = bio_open(str);
 		blks = dev->new_read(dev, (void *)addr, blkstart, blknum);
-		bio_close(dev);
 		break;
 	default:
 		break;
 	}
+
+	bio_close(dev);
 
 	if (blks != blknum)
 		ret = ERR_IO;
@@ -705,7 +699,7 @@ err:
 	return 1;
 }
 
-static void pit_show_info(void)
+void pit_show_info(void)
 {
 	struct pit_entry *ptn;
 	u32 i;
@@ -786,20 +780,16 @@ static int pit_check_format(void)
  * Common public functions
  * ---------------------------------------------------------------------------
  */
-
-/**
- * Initialize PIT for PIT integrity, signiture verification and GPT verification
- *
- * This returns nothing, but if something wrong, that would show you something.
- */
-void pit_init(void)
+void pit_init(enum __boot_dev_id id)
 {
 	int ret;
 
-	printf("[PIT] pit init start (Max entries: %u, Max blk count: %u)\n",
-			PIT_MAX_PART_NUM, PIT_DISK_SIZE_LIMIT);
+	/* Init private data */
+	s_pit_dev_id = id;
 
-	pit_buf = malloc(PIT_SIZE_LIMIT + PIT_SIGNITURE_SIZE);
+	printf("[PIT] pit init start...\n");
+
+	pit_buf = malloc(PIT_SIZE_LIMIT);
 	if (!pit_buf) {
 		printf("[PIT] pit_buf not allocated !!\n");
 		goto err;
@@ -832,8 +822,7 @@ void pit_init(void)
 	LOAD_PIT(&pit, pit_buf);
 
 	/*
-	ret = el3_verify_signature_using_image((uint64_t)pit_buf,
-			sizeof(struct pit_info) + PIT_SIGNITURE_SIZE);
+	ret = el3_verify_signature_using_image((uint64_t)&pit, sizeof(pit), 0);
 	if (ret) {
 		printf("[SB ERR] pit signature check fail [ret: 0x%X]\n", ret);
 	} else {
@@ -1005,9 +994,9 @@ int pit_access(struct pit_entry *ptn, int op, u64 addr, u32 size)
 	if (pit_check_header(&pit))
 		return 1;
 
-	if (pit_if == PIT_MMC)
+	if (s_pit_dev_id == DEV_MMC)
 		return pit_access_emmc(ptn, op, addr, size);
-	else if (pit_if == PIT_UFS)
+	else if (s_pit_dev_id == DEV_UFS)
 		return pit_access_ufs(ptn, op, addr, size);
 	else
 		return 1;
@@ -1019,21 +1008,48 @@ int pit_entry_write(struct pit_entry *ptn, void *buf, u64 offset, u64 size)
 	u64 blk_num;
 	u64 ret;
 
-	if (!pit_dev || (offset % PIT_SECTOR_SIZE) || (size % PIT_SECTOR_SIZE))
+	char str[CMD_STRING_MAX_SIZE];
+	unsigned int len;
+	bdev_t *dev;
+
+	/* Sparse case */
+	if (ptn->filesys == FS_TYPE_SPARSE_EXT4
+			|| ptn->filesys == FS_TYPE_SPARSE_F2FS) {
+		printf("[PIT(%s)] flash on UFS..  \n", ptn->name);
+		return pit_flash_sparse(ptn, (u64)buf);
+	}
+
+	/* Open device */
+	len = strlen(pit_if_tokens[s_pit_dev_id]);
+	memcpy(str, pit_if_tokens[s_pit_dev_id], len);
+	str[len] = '0' + ptn->lun;
+	str[len + 1] = '\0';
+
+	dev = bio_open(str);
+	if (!dev)
 		return 1;
+
+	if ((offset % PIT_SECTOR_SIZE) || (size % PIT_SECTOR_SIZE)) {
+		bio_close(dev);
+		return 1;
+	}
 
 	blk_num = size / PIT_SECTOR_SIZE;
 	blk_offset = offset / PIT_SECTOR_SIZE;
 	blk_offset += ptn->blkstart;
 
-	if ((blk_offset + blk_num) > (ptn->blkstart + ptn->blknum))
+	if ((blk_offset + blk_num) > (ptn->blkstart + ptn->blknum)) {
+		bio_close(dev);
 		return 1;
+	}
 
 	printf("%s: start[%llu] num[%llu]\n", __func__, blk_offset, blk_num);
-	ret = pit_dev->new_write(pit_dev, buf, (bnum_t)blk_offset, (uint)blk_num);
+	ret = dev->new_write(dev, buf, (bnum_t)blk_offset, (uint)blk_num);
 	if (ret != blk_num) {
 		printf("%s: ret = [%llu]\n", __func__, ret);
 	}
+
+	bio_close(dev);
 
 	return 0;
 }
@@ -1044,21 +1060,41 @@ int pit_entry_read(struct pit_entry *ptn, void *buf, u64 offset, u64 size)
 	u64 blk_num;
 	u64 ret;
 
-	if (!pit_dev || (offset % PIT_SECTOR_SIZE) || (size % PIT_SECTOR_SIZE))
+	char str[CMD_STRING_MAX_SIZE];
+	unsigned int len;
+	bdev_t *dev;
+
+	/* Open device */
+	len = strlen(pit_if_tokens[s_pit_dev_id]);
+	memcpy(str, pit_if_tokens[s_pit_dev_id], len);
+	str[len] = '0' + ptn->lun;
+	str[len + 1] = '\0';
+
+	dev = bio_open(str);
+	if (!dev)
 		return 1;
+
+	if ((offset % PIT_SECTOR_SIZE) || (size % PIT_SECTOR_SIZE)) {
+		bio_close(dev);
+		return 1;
+	}
 
 	blk_num = size / PIT_SECTOR_SIZE;
 	blk_offset = offset / PIT_SECTOR_SIZE;
 	blk_offset += ptn->blkstart;
 
-	if ((blk_offset + blk_num) > (ptn->blkstart + ptn->blknum))
+	if ((blk_offset + blk_num) > (ptn->blkstart + ptn->blknum)) {
+		bio_close(dev);
 		return 1;
+	}
 
 	printf("%s: start[%llu] num[%llu]\n", __func__, blk_offset, blk_num);
-	ret = pit_dev->new_read(pit_dev, buf, (bnum_t)blk_offset, (uint)blk_num);
+	ret = dev->new_read(dev, buf, (bnum_t)blk_offset, (uint)blk_num);
 	if (ret != blk_num) {
 		printf("%s: ret = [%llu]\n", __func__,  ret);
 	}
+
+	bio_close(dev);
 
 	return 0;
 }
@@ -1069,21 +1105,41 @@ int pit_entry_erase(struct pit_entry *ptn, u64 offset, u64 size)
 	u64 blk_num;
 	u64 ret;
 
-	if (!pit_dev || (offset % PIT_SECTOR_SIZE) || (size % PIT_SECTOR_SIZE))
+	char str[CMD_STRING_MAX_SIZE];
+	unsigned int len;
+	bdev_t *dev;
+
+	/* Open device */
+	len = strlen(pit_if_tokens[s_pit_dev_id]);
+	memcpy(str, pit_if_tokens[s_pit_dev_id], len);
+	str[len] = '0' + ptn->lun;
+	str[len + 1] = '\0';
+
+	dev = bio_open(str);
+	if (!dev)
 		return 1;
+
+	if ((offset % PIT_SECTOR_SIZE) || (size % PIT_SECTOR_SIZE)) {
+		bio_close(dev);
+		return 1;
+	}
 
 	blk_num = size / PIT_SECTOR_SIZE;
 	blk_offset = offset / PIT_SECTOR_SIZE;
 	blk_offset += ptn->blkstart;
 
-	if ((blk_offset + blk_num) > (ptn->blkstart + ptn->blknum))
+	if ((blk_offset + blk_num) > (ptn->blkstart + ptn->blknum)) {
+		bio_close(dev);
 		return 1;
+	}
 
 	printf("%s: start[%llu] num[%llu]\n", __func__, blk_offset, blk_num);
-	ret = pit_dev->new_erase(pit_dev, (bnum_t)blk_offset, (uint)blk_num);
+	ret = dev->new_erase(dev, (bnum_t)blk_offset, (uint)blk_num);
 	if (ret != blk_num) {
 		printf("%s: ret = [%llu]\n", __func__, ret);
 	}
+
+	bio_close(dev);
 
 	return 0;
 }

@@ -11,7 +11,7 @@
 #include <errno.h>
 #include <malloc.h>
 #include <guid.h>
-#include <part_gpt.h>
+#include <part.h>
 #include <lib/cksum.h>
 #include <stdio.h>
 #include <stdlib.h>

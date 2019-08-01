@@ -11,6 +11,7 @@
 #ifndef __GPT_H__
 #define __GPT_H__
 
+#include <part_dev.h>
 #include <pit.h>
 #include <lib/bio.h>
 
@@ -45,7 +46,6 @@
 #define EXYNOS_UNIQUE_GUID "4558594e-4f53-534c-7369-504152543d"
 
 #define HEAD_SIZE 0x5C
-#define TABLE_SIZE 0x80
 
 #define be16_to_cpu(x) \
 		((((x) & 0xff00) >> 8) | \
