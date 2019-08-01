@@ -12,6 +12,7 @@
 #include <stdlib.h>
 #include <part_gpt.h>
 #include <pit.h>
+#include <part.h>
 #include <platform/environment.h>
 
 void lock(int state)
@@ -20,7 +21,7 @@ void lock(int state)
 	struct pit_entry *ptn;
 
 	ptn = pit_get_part_info("env");
-	env_val = memalign(0x1000, pit_get_length(ptn));
+	env_val = memalign(0x1000, part_get_size_in_bytes(ptn));
 	pit_access(ptn, PIT_OP_LOAD, (u64)env_val, 0);
 
 	/* The device should prompt users to warn them that
@@ -42,9 +43,9 @@ int get_lock_state(void)
 	struct pit_entry *ptn;
 	int lock_state;
 
-	ptn = pit_get_part_info("env");
-	env_val = memalign(0x1000, pit_get_length(ptn));
-	pit_access(ptn, PIT_OP_LOAD, (u64)env_val, 0);
+	ptn = part_get("env");
+	env_val = memalign(0x1000, part_get_size_in_bytes(ptn));
+	part_read(ptn, env_val);
 
 	lock_state = env_val[ENV_ID_LOCKED];
 
@@ -58,9 +59,9 @@ void lock_critical(int state)
 	unsigned int *env_val;
 	struct pit_entry *ptn;
 
-	ptn = pit_get_part_info("env");
-	env_val = memalign(0x1000, pit_get_length(ptn));
-	pit_access(ptn, PIT_OP_LOAD, (u64)env_val, 0);
+	ptn = part_get("env");
+	env_val = memalign(0x1000, part_get_size_in_bytes(ptn));
+	part_read(ptn, env_val);
 
 	/* Transitioning from locked to unlocked state should
 	 * require a physical interaction with the device. */
@@ -68,7 +69,7 @@ void lock_critical(int state)
 	}
 
 	env_val[ENV_ID_LOCKED_CRITICAL] = state;
-	pit_access(ptn, PIT_OP_FLASH, (u64)env_val, 0);
+	part_write(ptn, env_val);
 
 	free(env_val);
 }
