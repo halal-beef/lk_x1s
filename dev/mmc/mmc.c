@@ -1435,16 +1435,14 @@ static int mmc_select_partition(mmc_device_t *mdev, struct mmc *mmc)
 	cmd.argument = (MMC_SWITCH_MODE_WRITE_BYTE<<24) |
 			(EXT_CSD_PART_CONF << 16) |
 			(((1 << 6) | (1 << 3)) << 8);
-	cmd.argument |= mdev->partition << 8;
+	cmd.argument |= (mdev->partition << 8);
 	cmd.data = NULL;
-
 	err = mmc_send_command(mmc, &cmd);
 
 	cmd.cmdidx = CMD6_SWITCH_FUNC;
 	cmd.resp_type = MMC_BOOT_RESP_R1B;
 	cmd.argument = ((3 << 24) | (177 << 16) | ((1 << 0) << 8));
 	cmd.data = NULL;
-
 	err = mmc_send_command(mmc, &cmd);
 
 	return err;
@@ -1544,6 +1542,15 @@ static status_t mmc_bwrite(struct bdev *dev, const void *buf, bnum_t block, uint
 	else
 		cmd.cmdidx = CMD24_WRITE_SINGLE_BLOCK;
 
+	if (mdev->partition == MMC_PARTITION_MMC_RPMB) {
+		cmd.cmdidx = CMD23_SET_BLOCK_COUNT;
+		cmd.argument = (1<<30) | (count);
+		cmd.resp_type = MMC_BOOT_RESP_R1B;
+		cmd.data = NULL;
+		mmc_return = mmc_send_command(mmc, &cmd);
+		cmd.cmdidx = CMD25_WRITE_MULTIPLE_BLOCK;
+	}
+
 	if (mmc_is_hc(mmc))
 		cmd.argument = block;
 	else
@@ -1562,7 +1569,7 @@ static status_t mmc_bwrite(struct bdev *dev, const void *buf, bnum_t block, uint
 		return mmc_return;
 	}
 
-	if (count > 1) {
+	if (count > 1 && mdev->partition != MMC_PARTITION_MMC_RPMB) {
 		cmd.cmdidx = CMD12_STOP_TRANSMISSION;
 		cmd.argument = 0;
 		cmd.resp_type = MMC_BOOT_RESP_R1B;
@@ -1693,6 +1700,15 @@ static status_t mmc_bread(struct bdev *dev, void *buf, bnum_t block, uint count)
 	else
 		cmd.cmdidx = CMD17_READ_SINGLE_BLOCK;
 
+	if (mdev->partition == MMC_PARTITION_MMC_RPMB) {
+		cmd.cmdidx = CMD23_SET_BLOCK_COUNT;
+		cmd.argument = count;
+		cmd.resp_type = MMC_BOOT_RESP_R1B;
+		cmd.data = NULL;
+		mmc_return = mmc_send_command(mmc, &cmd);
+		cmd.cmdidx = CMD18_READ_MULTIPLE_BLOCK;
+	}
+
 	if (mmc_is_hc(mmc))
 		cmd.argument = block;
 	else
@@ -1709,7 +1725,8 @@ static status_t mmc_bread(struct bdev *dev, void *buf, bnum_t block, uint count)
 		printf("mmc fail to send read cmd\n");
 		return mmc_return;
 	}
-	if (count > 1) {
+
+	if (count > 1 && mdev->partition != MMC_PARTITION_MMC_RPMB) {
 		cmd.cmdidx = CMD12_STOP_TRANSMISSION;
 		cmd.argument = 0;
 		cmd.resp_type = MMC_BOOT_RESP_R1B;
