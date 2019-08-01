@@ -15,6 +15,7 @@
 #define FASTBOOT_H
 
 #include <lib/console.h>
+#include <target/board_info.h>
 
 #ifndef NULL
 #define NULL 0
@@ -272,10 +273,17 @@ extern int fastboot_flash_write(fastboot_ptentry *ptn, unsigned extra_per_page,
 				const void *data, unsigned bytes);
 int do_fastboot(int argc, const cmd_args *argv);
 
+#ifdef CONFIG_BOARD_UNIVERSAL9830
 #define SYSREG_USB_BASE			0x10a20000
 #define USB_SHARABLE_OFFSET		(0x704)
 #define USB_SHARABLE_SHIFT		(1)
+#endif
 
+#ifdef CONFIG_BOARD_UNIVERSAL9630
+#define SYSREG_USB_BASE			0x13020000
+#define USB_SHARABLE_OFFSET		(0x700)
+#define USB_SHARABLE_SHIFT		(1)
+#endif
 void exynos_usb_cci_control(int on_off);
 
 enum fastboot_type {
