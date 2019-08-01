@@ -4,6 +4,9 @@ case $1 in
 	maestro9610)
 		rm -rf build-$1; make $1 $2 -j16
 		;;
+	universal9630)
+		rm -rf build-$1; make $1 $2 -j16
+		;;
 	maestro9820)
 		rm -rf build-$1; make $1 $2 -j16
 		;;
@@ -22,6 +25,7 @@ case $1 in
 		echo % user mode is not entering ramdump mode when problem happened.
 		echo % board list
 		echo maestro9610
+		echo universal9630
 		echo maestro9820
 		echo smdk9830
 		echo universal9830_bringup
