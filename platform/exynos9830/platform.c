@@ -14,6 +14,7 @@
 #include <dev/boot.h>
 #include <dev/rpmb.h>
 #include <pit.h>
+#include <part.h>
 #include <dev/interrupt/arm_gic.h>
 #include <dev/timer/arm_generic.h>
 #include <platform/interrupts.h>
@@ -406,7 +407,7 @@ void platform_init(void)
 	 * So always call mmc_init().
 	 */
 	mmc_init();
-	pit_init();
+	part_init();
 
 	dbg_snapshot_fdt_init();
 	dfd_get_dbgc_version();
