@@ -11,6 +11,7 @@
 #include <reg.h>
 #include <dev/ufs.h>
 #include <platform/sfr.h>
+#include <platform/ufs-dump.h>
 
 struct ufs_host;
 
@@ -87,6 +88,9 @@ int ufs_board_init(int host_index, struct ufs_host *ufs)
 	ufs->unipro_addr = (void __iomem *)0x13680000;
 	ufs->phy_pma = (void __iomem *)(0x13600000 + 0x4000);
 
+	ufs->debug.sfr = ufs_log_sfr;
+	ufs->debug.attr = ufs_log_attr;
+
 	/* power source changed compared with before */
 	ufs->dev_pwr_addr = (void __iomem *)(0x10E50000 + 0x4);
 	ufs->dev_pwr_shift = 0;
@@ -97,6 +101,8 @@ int ufs_board_init(int host_index, struct ufs_host *ufs)
 
 	ufs->mclk_rate = 166 * (1000 * 1000);
 	ufs_set_unipro_clk(ufs);
+
+	ufs->gear_mode = 3;
 
 	// TODO:
 	//set_ufs_clk(host_index);
