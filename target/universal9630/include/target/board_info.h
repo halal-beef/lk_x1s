@@ -11,6 +11,9 @@
 #ifndef __BOARD_INFO_H__
 #define __BOARD_INFO_H__
 
+#define CONFIG_BOARD_NAME	"universal9630"
+#define CONFIG_BOARD_UNIVERSAL9630
+
 #define CONFIG_BOARD_ID 0x2
 
 #define CONFIG_USE_RPMB
