@@ -417,6 +417,7 @@ static int mmc_boot_send_op_cond(struct mmc *mmc)
 
 	/* Now it's time to examine response */
 	mmc_resp = cmd.response[0];
+	mmc->ocr = cmd.response[0];
 
 	/* Check the response for busy status */
 	if (!(mmc_resp & MMC_BOOT_OCR_BUSY))
@@ -555,17 +556,20 @@ static int mmc_boot_init_card(struct mmc *mmc)
 			mdelay(1);
 			continue;
 		} else if (mmc_return == NO_ERROR) {
+			mmc->exist = 1;
 			mmc->rca = 0;
 			break;
 		} else {
 			return mmc_return;
 		}
-	} while (mmc_retry < mmc->cmd_retry);
+		udelay(100);
+	} while (mmc_retry < 1000);
 
 	/* If card still returned busy status we are out of luck.
 	 * Card cannot be initialized
 	 */
 	if (mmc_return == ERR_BUSY) {
+		mmc->exist = 1;
 		printf("Error No. %d: Card has busy status set.\n", mmc_return);
 		return mmc_return;
 	}
