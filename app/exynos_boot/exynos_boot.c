@@ -74,6 +74,7 @@ static void exynos_boot_task(const struct app_descriptor *app, void *args)
 	/* Volume up set Input & Pull up */
 	exynos_gpio_set_pull(bank, gpio, GPIO_PULL_UP);
 	exynos_gpio_cfg_pin(bank, gpio, GPIO_INPUT);
+	mdelay(50);
 	val = exynos_gpio_get_value(bank, gpio);
 	if (!is_first_boot() ||
 			(rst_stat & (WARM_RESET | LITTLE_WDT_RESET | BIG_WDT_RESET))) {
