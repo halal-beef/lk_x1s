@@ -430,10 +430,10 @@ static void dwmci_set_idma_desc(struct dwmci_idmac *desc,
 	((struct dwmci_idmac *)(desc))->des2 = buffer_size;
 	((struct dwmci_idmac *)(desc))->des3 = 0;
 	((struct dwmci_idmac *)(desc))->des4 = buffer_addr;
-	((struct dwmci_idmac *)(desc))->des5 = 0;
+	((struct dwmci_idmac *)(desc))->des5 = (buffer_addr >> 32);
 	((struct dwmci_idmac *)(desc))->des6 = (u64)desc +
 					sizeof(struct dwmci_idmac);
-	((struct dwmci_idmac *)(desc))->des7 = 0;
+	((struct dwmci_idmac *)(desc))->des7 = (((u64)desc + sizeof(struct dwmci_idmac)) >> 32);
 	((struct dwmci_idmac *)(desc))->des8 = 0;
 	((struct dwmci_idmac *)(desc))->des9 = 0;
 	((struct dwmci_idmac *)(desc))->des10 = 0;
