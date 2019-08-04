@@ -35,6 +35,10 @@
 
 #define DELAY 100
 
+/* S2MU107 common slave address */
+#define S2MU107_COMMON_W_ADDR 	0x74
+#define S2MU107_COMMON_R_ADDR 	0x75
+
 /* S2MU107 charger slave address */
 #define S2MU107_CHG_W_ADDR 	0x7A
 #define S2MU107_CHG_R_ADDR 	0x7B
