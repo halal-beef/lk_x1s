@@ -17,6 +17,11 @@
 #include <platform/exynos9630.h>
 #include <reg.h>
 
+#define m_delay(a) u_delay((a) * 1000)
+
+unsigned char rev_id;
+unsigned char es_id;
+
 static void Delay(void)
 {
 	unsigned long i = 0;
@@ -274,7 +279,7 @@ void IIC_S2MU107_ERead(unsigned char ChipId,
 
 void s2mu107_sc_set_mode(int mode)
 {
-    u8 reg;
+    u8 reg, val, tmp = 0;
 
     if (mode != S2MU107_CHG_MODE_OFF &&
             mode != S2MU107_CHG_MODE_BUCK &&
@@ -285,15 +290,49 @@ void s2mu107_sc_set_mode(int mode)
     }
 
     IIC_S2MU107_ESetport();
-    IIC_S2MU107_ERead(S2MU107_CHG_R_ADDR, S2MU107_SC_CTRL0, &reg);
-    reg &= ~0x0F;
-    reg |= mode;
-    IIC_S2MU107_EWrite(S2MU107_CHG_W_ADDR, S2MU107_SC_CTRL0, reg);
+
+	IIC_S2MU107_ERead(S2MU107_CHG_R_ADDR, S2MU107_SC_CTRL0, &val);
+
+	if((mode == S2MU107_CHG_MODE_OFF) || (mode == S2MU107_CHG_MODE_BUCK)) {
+		/* Set Async mode */
+		IIC_S2MU107_ERead(S2MU107_CHG_R_ADDR, 0x3A, &reg);
+		reg &= ~0x03;
+		reg |= (0x3 << 0);
+		IIC_S2MU107_EWrite(S2MU107_CHG_W_ADDR, 0x3A, reg);
+		m_delay(20);
+	}
+	if(((val & 0x0F) == S2MU107_CHG_MODE_CHG) && (mode == S2MU107_CHG_MODE_BUCK)) {
+		/* T_EN_CCR */
+		IIC_S2MU107_ERead(S2MU107_CHG_R_ADDR, 0x34, &reg);
+		reg &= ~0x0C;
+		reg |= (0x3 << 2);
+		IIC_S2MU107_EWrite(S2MU107_CHG_W_ADDR, 0x34, reg);
+		tmp = 1;
+	}
+
+    val &= ~0x0F;
+    val |= mode;
+    IIC_S2MU107_EWrite(S2MU107_CHG_W_ADDR, S2MU107_SC_CTRL0, val);
+
+	if(tmp == 1) {
+		m_delay(1);
+		/* T_EN_CCR */
+		IIC_S2MU107_ERead(S2MU107_CHG_R_ADDR, 0x34, &reg);
+		reg &= ~0x0C;
+		reg |= (0x1 << 2);
+		IIC_S2MU107_EWrite(S2MU107_CHG_W_ADDR, 0x34, reg);
+	}
+	if(mode == S2MU107_CHG_MODE_CHG) {
+		/* Set Auto Sync mode */
+		IIC_S2MU107_ERead(S2MU107_CHG_R_ADDR, 0x3A, &reg);
+		reg &= ~0x03;
+		reg |= (0x1 << 0);
+		IIC_S2MU107_EWrite(S2MU107_CHG_W_ADDR, 0x3A, reg);
+		printf("%s: Set Auto Sync mode 0x3A = 0x%02x\n", __func__, reg);
+	}
 
     IIC_S2MU107_ERead(S2MU107_CHG_R_ADDR, S2MU107_SC_CTRL0, &reg);
-    printf("%s: S2MU107_SC_CTRL0 = 0x%02x\n", __func__,
-            reg);
-
+    printf("%s: S2MU107_SC_CTRL0 = 0x%02x\n", __func__, reg);
 }
 
 void s2mu107_sc_init(void)
@@ -301,29 +340,109 @@ void s2mu107_sc_init(void)
 	unsigned char reg;
 
 	IIC_S2MU107_ESetport();
-	/* open input TR */
-	IIC_S2MU107_ERead(S2MU107_CHG_R_ADDR, 0x5F, &reg);
-	reg |= (1 << 5);
-	IIC_S2MU107_EWrite(S2MU107_CHG_W_ADDR, 0x5F, reg);
-	printf("%s, 0x5F(%x)\n", __func__, reg);
 
-	/* OTG w/a */
-	IIC_S2MU107_ERead(S2MU107_CHG_R_ADDR, 0x90, &reg);
-	reg &= ~(1 << 2);
-	IIC_S2MU107_EWrite(S2MU107_CHG_W_ADDR, 0x90, reg);
-	printf("%s, 0x90(%x)\n", __func__, reg);
+	IIC_S2MU107_ERead(S2MU107_COMMON_R_ADDR, 0xF5, &reg);
+	rev_id = reg & 0x0F;
+	es_id = (reg & 0xF0) >> 4;
+	printf("%s: rev_id(%d), es_id(%d), 0xF5(0x%x)\n", __func__, rev_id, es_id, reg);
 
-	/* plug off w/a */
-	IIC_S2MU107_ERead(S2MU107_CHG_R_ADDR, 0x81, &reg);
-	reg &= 0x1F;
-	reg |= (1 << 5);
-	IIC_S2MU107_EWrite(S2MU107_CHG_W_ADDR, 0x81, reg);
-	printf("%s, 0x81(%x)\n", __func__, reg);
+	if(rev_id == 0) {
+		/* open input TR */
+		IIC_S2MU107_ERead(S2MU107_CHG_R_ADDR, 0x5F, &reg);
+		reg |= (1 << 5);
+		IIC_S2MU107_EWrite(S2MU107_CHG_W_ADDR, 0x5F, reg);
 
-	/* Buck NTR off */
-	IIC_S2MU107_EWrite(S2MU107_CHG_W_ADDR, 0x3A, 0x57);
-	IIC_S2MU107_ERead(S2MU107_CHG_R_ADDR, 0x3A, &reg);
-	printf("%s, 0x3A(%x)\n", __func__, reg);
+		/* Buck NTR off */
+		IIC_S2MU107_ERead(S2MU107_CHG_R_ADDR, 0x3A, &reg);
+		reg &= 0xFC;
+		reg |= (0x3 << 0);
+		IIC_S2MU107_EWrite(S2MU107_CHG_W_ADDR, 0x3A, reg);
+		printf("%s, 0x3A(%x)\n", __func__, reg);
+	}
+
+	if(rev_id <= 1) {
+		/* OTG w/a */
+		IIC_S2MU107_ERead(S2MU107_CHG_R_ADDR, 0x90, &reg);
+		reg &= ~(1 << 2);
+		IIC_S2MU107_EWrite(S2MU107_CHG_W_ADDR, 0x90, reg);
+
+		/* OTG w/a */
+		IIC_S2MU107_ERead(S2MU107_CHG_R_ADDR, 0x7D, &reg);
+		reg &= ~(1 << 3);
+		IIC_S2MU107_EWrite(S2MU107_CHG_W_ADDR, 0x7D, reg);
+
+		/* change Buck switching slope */
+		IIC_S2MU107_ERead(S2MU107_CHG_R_ADDR, 0x89, &reg);
+		reg &= 0x0F;
+		reg |= (0xA << 4);
+		IIC_S2MU107_EWrite(S2MU107_CHG_W_ADDR, 0x89, reg);
+
+		/* manual reset disable */
+		IIC_S2MU107_ERead(S2MU107_COMMON_R_ADDR, 0xE5, &reg);
+		reg &= ~(1 << 3);
+		IIC_S2MU107_EWrite(S2MU107_COMMON_W_ADDR, 0xE5, reg);
+		printf("%s, 0xE5(%x)\n", __func__, reg);
+	}
+
+	if((rev_id == 0) || ((rev_id == 1) && (es_id == 0))) {
+		/* change Min off time */
+		IIC_S2MU107_ERead(S2MU107_CHG_R_ADDR, 0x81, &reg);
+		reg &= 0x1F;
+		reg |= (0x7 << 5);
+		IIC_S2MU107_EWrite(S2MU107_CHG_W_ADDR, 0x81, reg);
+
+		/* change IN2BAT voltage trim */
+		IIC_S2MU107_ERead(S2MU107_CHG_R_ADDR, 0x6D, &reg);
+		reg &= 0x0F;
+		reg |= (0xE << 4);
+		IIC_S2MU107_EWrite(S2MU107_CHG_W_ADDR, 0x6D, reg);
+
+		/* change WCIN2BAT voltage trim */
+		IIC_S2MU107_ERead(S2MU107_CHG_R_ADDR, 0x70, &reg);
+		reg &= 0x0F;
+		reg |= (0xE << 4);
+		IIC_S2MU107_EWrite(S2MU107_CHG_W_ADDR, 0x70, reg);
+		printf("%s, 0x70(%x)\n", __func__, reg);
+	}
+
+	if(rev_id == 1) {
+		/* FLED Work-around */
+		IIC_S2MU107_ERead(S2MU107_CHG_R_ADDR, 0xD5, &reg);
+		reg |= (1 << 3);
+		IIC_S2MU107_EWrite(S2MU107_CHG_W_ADDR, 0xD5, reg);
+
+		/* FLED Work-around */
+		IIC_S2MU107_ERead(S2MU107_CHG_R_ADDR, 0x76, &reg);
+		reg |= (1 << 5);
+		IIC_S2MU107_EWrite(S2MU107_CHG_W_ADDR, 0x76, reg);
+
+		/* FLED Work-around */
+		IIC_S2MU107_ERead(S2MU107_COMMON_R_ADDR, 0x24, &reg);
+		reg |= (1 << 6);
+		IIC_S2MU107_EWrite(S2MU107_COMMON_W_ADDR, 0x24, reg);
+		printf("%s, 0x24(%x)\n", __func__, reg);
+	}
+
+	if((rev_id == 1) && (es_id == 1)) {
+		/* WCIN IVR 4.5V */
+		IIC_S2MU107_ERead(S2MU107_CHG_R_ADDR, 0x1C, &reg);
+		reg &= 0xF8;
+		reg |= (0x5 << 0);
+		IIC_S2MU107_EWrite(S2MU107_CHG_W_ADDR, 0x1C, reg);
+
+		/* CHGIN IVR 4.5V */
+		IIC_S2MU107_ERead(S2MU107_COMMON_R_ADDR, 0x1C, &reg);
+		reg &= 0xC7;
+		reg |= (0x5 << 3);
+		IIC_S2MU107_EWrite(S2MU107_COMMON_W_ADDR, 0x1C, reg);
+		printf("%s, 0x1C(%x)\n", __func__, reg);
+	}
+
+	/* Async <-> Sync Debounce time set */
+	IIC_S2MU107_ERead(S2MU107_CHG_R_ADDR, 0x98, &reg);
+	reg &= 0x0F;
+	reg |= (0x3 << 4);
+	IIC_S2MU107_EWrite(S2MU107_CHG_W_ADDR, 0x98, reg);
 
 	s2mu107_sc_set_mode(S2MU107_CHG_MODE_CHG);
 }
