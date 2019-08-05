@@ -25,5 +25,6 @@
 #define CONFIG_RAMDISK_IN_BOOT
 
 #define CONFIG_GET_B_REV_FROM_ADC
+#define CONFIG_S2MU106_CHARGER
 
 #endif /*__BOARD_INFO_H__ */

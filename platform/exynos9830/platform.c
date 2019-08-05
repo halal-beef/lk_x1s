@@ -25,6 +25,8 @@
 #else
 #include <dev/sub_pmic_s2mpb02.h>
 #endif
+#include <dev/if_pmic_s2mu106.h>
+#include <dev/fg_s2mu106.h>
 #include <platform/dfd.h>
 #include <platform/ldfw.h>
 #include <platform/secure_boot.h>
@@ -61,7 +63,6 @@
 
 void speedy_gpio_init(void);
 void xbootldo_gpio_init(void);
-void fg_init_s2mu004(void);
 
 unsigned int s5p_chip_id[4] = { 0x0, 0x0, 0x0, 0x0 };
 struct chip_rev_info s5p_chip_rev;
@@ -381,7 +382,10 @@ void platform_init(void)
 #else
 	sub_pmic_s2mpb02_init();
 #endif
-
+#ifdef CONFIG_S2MU106_CHARGER
+	s2mu106_charger_init();
+	fg_init_s2mu106();
+#endif
 	/*
 	 * check_charger_connect();
 	 */
