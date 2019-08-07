@@ -13,6 +13,7 @@
 #include <platform/delay.h>
 #include <platform/exynos9830.h>
 #include <platform/tmu.h>
+#include <lib/font_display.h>
 
 void display_tmu_info(void)
 {
@@ -156,19 +157,23 @@ void display_trip_info(void)
 	/* Print trip information */
 	if (tmu_trip && pshold_trip) {
 		printf("\n TMU TRIP & PSHOLD low Detected.\n");
+		print_lcd_update(FONT_GREEN, FONT_BLACK, "\n TMU TRIP & PSHOLD low Detected.\n");
 		writel(0x0, EXYNOS9830_POWER_BASE + EXYNOS9830_PMU_PS_HOLD_HW_TRIP);
 		writel(0x0, EXYNOS9830_POWER_BASE + EXYNOS9830_PMU_PS_HOLD_SW_TRIP);
 	} else if (tmu_trip) {
 		printf("\n TMU TRIP Detected.\n");
+		print_lcd_update(FONT_GREEN, FONT_BLACK, "\n TMU TRIP Detected.\n");
 		writel(0x0, EXYNOS9830_POWER_BASE + EXYNOS9830_PMU_PS_HOLD_HW_TRIP);
 	} else if (pshold_trip) {
 		printf("\n PSHOLD low Detected.\n");
+		print_lcd_update(FONT_GREEN, FONT_BLACK, "\n PSHOLD low Detected.\n");
 		writel(0x0, EXYNOS9830_POWER_BASE + EXYNOS9830_PMU_PS_HOLD_SW_TRIP);
 	}
 
 	/* Print trip sensor information */
 	if (tmu_trip) {
 		printf("[TMU TRIP] 0x%x, 0x%x\n", tmu_top_trip, tmu_sub_trip);
+		print_lcd_update(FONT_GREEN, FONT_BLACK, "[TMU TRIP] 0x%x, 0x%x\n", tmu_top_trip, tmu_sub_trip);
 		writel(0x0, EXYNOS9830_POWER_BASE + EXYNOS9830_PMU_TMU_TOP_TRIP);
 		writel(0x0, EXYNOS9830_POWER_BASE + EXYNOS9830_PMU_TMU_SUB_TRIP);
 	}
