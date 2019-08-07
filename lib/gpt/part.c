@@ -316,7 +316,11 @@ void part_init(void)
 		s_def_boot_dev_id = DEV_UFS;
 
 	boot_dev = get_boot_device();
-	if (is_first_boot()) {
+	/*
+	 * In USB 1st boot cases, part init needs to executed
+	 * based on SW intention.
+	 */
+	if (is_first_boot() && boot_dev != BOOT_USB) {
 		if (boot_dev == BOOT_UFS)
 			id = DEV_UFS;
 		else if (boot_dev == BOOT_EMMC || boot_dev == BOOT_MMCSD)
