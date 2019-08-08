@@ -28,9 +28,10 @@
 
 __BEGIN_CDECLS;
 
-#define BIO_FLAGS_NONE                (0 << 0)
-#define BIO_FLAG_CACHE_ALIGNED_READS  (1 << 0)
-#define BIO_FLAG_CACHE_ALIGNED_WRITES (1 << 1)
+#define BIO_FLAGS_NONE				(0 << 0)
+#define BIO_FLAG_CACHE_ALIGNED_READS		(1 << 0)
+#define BIO_FLAG_CACHE_ALIGNED_WRITES		(1 << 1)
+#define BIO_FLAG_RELIABLE_WRITE			(1 << 2)
 
 typedef uint32_t bnum_t;
 
