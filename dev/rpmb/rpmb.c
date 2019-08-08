@@ -80,7 +80,6 @@ uint32_t table_init_state;
 struct boot_header bootHeader;
 struct persist_data persistentData[PERSIST_DATA_CNT];
 static u8 nonce[NONCE_SIZE];
-struct rpmb_packet packet;
 
 static void dump_packet(u8 * data, u32 len)
 {
@@ -1055,6 +1054,8 @@ out:
 int read_write_counter(void)
 {
 	int ret;
+	struct rpmb_packet packet;
+	memset((void *)&packet, 0, RPMB_SIZE);
 
 	packet.request = 0x02;
 #ifdef ENABLE_CM_NONCE
@@ -1095,7 +1096,9 @@ int read_write_counter(void)
 int authentication_key_programming(void)
 {
 	int ret;
+	struct rpmb_packet packet;
 	uint8_t rpmb_key[CACHE_WRITEBACK_GRANULE_128] __attribute__((__aligned__(CACHE_WRITEBACK_GRANULE_128)));
+	memset((void *)&packet, 0, RPMB_SIZE);
 
 	/* RPMB key derivation */
 	dprintf(INFO, "RPMB key derivation\n");
@@ -1123,12 +1126,12 @@ int authentication_key_programming(void)
 	memset(rpmb_key, 0x0, RPMB_KEY_LEN);
 
 	if (ret != RV_SUCCESS) {
-		printf("key_programming ufs_rpmb_commands return error\n");
+		printf("key_programming rpmb_commands return error\n");
 		return ret;
 	}
 
 	if (packet.result != 0) {
-		printf("authentication_key_programming ufs_rpmb_commands result error = %d\n", packet.result );
+		printf("authentication_key_programming rpmb_commands result error = %d\n", packet.result );
 		return -1;
 	}
 	return RV_SUCCESS;
