@@ -1451,7 +1451,73 @@ static int mmc_select_partition(mmc_device_t *mdev, struct mmc *mmc)
 }
 
 /*
- * Process write request 
+ * Process rpmb write request
+ */
+static status_t mmc_rpmb_bwrite(struct bdev *dev, const void *buf, bnum_t block, uint count)
+{
+	mmc_device_t *mdev = (mmc_device_t *)dev->private;
+	struct mmc *mmc = (struct mmc *)mdev->mmc;
+	struct mmc_cmd cmd;
+	struct mmc_data data;
+	int mmc_return = NO_ERROR;
+	u32 backup;
+
+	if (mdev->partition != 0) {
+		mmc_return = mmc_select_partition(mdev, mmc);
+		if (mmc_return != NO_ERROR) {
+			printf("Select partition failed\n");
+			return mmc_return;
+		}
+	}
+
+	memset((struct mmc_cmd *)&cmd, 0,
+	       sizeof(struct mmc_cmd));
+
+	cmd.cmdidx = CMD23_SET_BLOCK_COUNT;
+	cmd.argument = count;
+	if (dev->flags & BIO_FLAG_RELIABLE_WRITE)
+		cmd.argument |= (1<<31);
+	cmd.resp_type = MMC_BOOT_RESP_R1B;
+	cmd.data = NULL;
+	mmc_return = mmc_send_command(mmc, &cmd);
+	cmd.cmdidx = CMD25_WRITE_MULTIPLE_BLOCK;
+
+	if (mmc_is_hc(mmc))
+		cmd.argument = block;
+	else
+		cmd.argument = block * mmc->wr_block_len;
+
+	cmd.resp_type = MMC_BOOT_RESP_R1;
+	data.flags = MMC_DATA_WRITE;
+	data.src = buf;
+	data.block_cnt = count;
+	data.block_size = mmc->wr_block_len;
+	cmd.data = &data;
+
+	mmc_return = mmc_send_command(mmc, &cmd);
+	if (mmc_return != NO_ERROR) {
+		printf("mmc fail to send write cmd\n");
+		return mmc_return;
+	}
+
+	if (mdev->partition != 0) {
+		backup = mdev->partition;
+		mdev->partition = 0;
+		mmc_return = mmc_select_partition(mdev, mmc);
+		mdev->partition = backup;
+		if (mmc_return != NO_ERROR) {
+			printf("Select partition failed\n");
+			goto err;
+		}
+	}
+
+	return NO_ERROR;
+err:
+	return -1;
+}
+
+/*
+ * Process write request
  */
 static status_t mmc_bwrite(struct bdev *dev, const void *buf, bnum_t block, uint count)
 {
@@ -1536,7 +1602,71 @@ static status_t mmc_berase_write(struct bdev *dev, bnum_t block, uint count)
 }
 
 /*
- * Process read request 
+ * Process rpmb read request
+ */
+static status_t mmc_rpmb_bread(struct bdev *dev, void *buf, bnum_t block, uint count)
+{
+	mmc_device_t *mdev = (mmc_device_t *)dev->private;
+	struct mmc *mmc = (struct mmc *)mdev->mmc;
+	struct mmc_cmd cmd;
+	struct mmc_data data;
+	int mmc_return = NO_ERROR;
+	u32 backup;
+
+	if (mdev->partition != 0) {
+		mmc_return = mmc_select_partition(mdev, mmc);
+		if (mmc_return != NO_ERROR) {
+			printf("Select partition failed\n");
+			return mmc_return;
+		}
+	}
+
+	memset((struct mmc_cmd *)&cmd, 0,
+	       sizeof(struct mmc_cmd));
+
+	cmd.cmdidx = CMD23_SET_BLOCK_COUNT;
+	cmd.argument = count;
+	cmd.resp_type = MMC_BOOT_RESP_R1B;
+	cmd.data = NULL;
+	mmc_return = mmc_send_command(mmc, &cmd);
+	cmd.cmdidx = CMD18_READ_MULTIPLE_BLOCK;
+
+	if (mmc_is_hc(mmc))
+		cmd.argument = block;
+	else
+		cmd.argument = block * mmc->rd_block_len;
+
+	cmd.resp_type = MMC_BOOT_RESP_R1;
+	data.flags = MMC_DATA_READ;
+	data.dest = buf;
+	data.block_cnt = count;
+	data.block_size = mmc->rd_block_len;
+	cmd.data = &data;
+	mmc_return = mmc_send_command(mmc, &cmd);
+	if (mmc_return != NO_ERROR) {
+		printf("mmc fail to send read cmd\n");
+		return mmc_return;
+	}
+
+	if (mdev->partition != 0) {
+		backup = mdev->partition;
+		mdev->partition = 0;
+		mmc_return = mmc_select_partition(mdev, mmc);
+		mdev->partition = backup;
+		if (mmc_return != NO_ERROR) {
+			printf("Select partition failed\n");
+			goto err;
+		}
+	}
+
+	return NO_ERROR;
+err:
+	return -1;
+}
+
+
+/*
+ * Process read request
  */
 static status_t mmc_bread(struct bdev *dev, void *buf, bnum_t block, uint count)
 {
@@ -1726,8 +1856,15 @@ static int mmc_mmc_register(mmc_device_t *mdev, struct mmc *mmc, unsigned int pa
 			0,
 			NULL,
 			BIO_FLAGS_NONE);
-	mdev->dev.new_read_native = mmc_bread;
-	mdev->dev.new_write_native = mmc_bwrite;
+
+	if (partition == MMC_PARTITION_MMC_RPMB) {
+		mdev->dev.new_read_native = mmc_rpmb_bread;
+		mdev->dev.new_write_native = mmc_rpmb_bwrite;
+	} else {
+		mdev->dev.new_read_native = mmc_bread;
+		mdev->dev.new_write_native = mmc_bwrite;
+	}
+
 	if (partition == MMC_PARTITION_MMC_BOOT1 ||
 		partition == MMC_PARTITION_MMC_BOOT2 ||
 		partition == MMC_PARTITION_MMC_RPMB) {
