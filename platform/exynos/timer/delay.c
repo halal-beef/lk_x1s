@@ -11,12 +11,12 @@
  *
  */
 #include <sys/types.h>
-#include <platform/exynos9830.h>
+#include <platform/sfr.h>
 
 #define Outp32(addr, data)	(*(volatile u32 *)(addr) = (data))
 #define Inp32(addr)		((*(volatile u32 *)(addr)))
 
-#define PWMTIMER_BASE	(EXYNOS9830_PWMTIMER_BASE)
+#define PWMTIMER_BASE	(EXYNOS_PWMTIMER_BASE)
 
 #define rTCFG0		(PWMTIMER_BASE + 0x00)
 #define rTCFG1		(PWMTIMER_BASE + 0x04)
@@ -29,14 +29,14 @@
 #define rTCNTO1		(PWMTIMER_BASE + 0x20)
 #define rTINT_CSTAT	(PWMTIMER_BASE + 0x44)
 
-void Dmc_StartTimer(u32 uTsel)
+static void Dmc_StartTimer(u32 uTsel)
 {
 	u32 uTimer = uTsel;
 	u32 uTemp0, uTemp1;
 	u32 uEnInt = 0;
 	u32 uDivider = 0;
 	u32 uDzlen = 0;
-	u32 uPrescaler = 66; /*- Silicon : uPrescaler=66   /  FPGA : uPrescaler=24*/
+	u32 uPrescaler = 26; /*- Silicon : uPrescaler=66   /  FPGA : uPrescaler=24*/
 	u32 uEnDz = 0;
 	u32 uAutoreload = 1;
 	u32 uEnInverter = 0;
@@ -132,7 +132,7 @@ void Dmc_StartTimer(u32 uTsel)
 	}
 }
 
-void Dmc_PWM_stop(u32 uNum)
+static void Dmc_PWM_stop(u32 uNum)
 {
 	u32 uTemp;
 
@@ -146,7 +146,7 @@ void Dmc_PWM_stop(u32 uNum)
 	Outp32(rTCON, uTemp);
 }
 
-u32 Dmc_StopTimer(u32 uTsel)
+static u32 Dmc_StopTimer(u32 uTsel)
 {
 	u32 uVal = 0;
 
