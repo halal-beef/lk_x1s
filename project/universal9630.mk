@@ -9,6 +9,7 @@ MODULES += \
 	app/exynos_main
 
 MODULE_DEPS += \
+	platform/exynos \
 	lib/gpt \
 	lib/font \
 	lib/logo \
