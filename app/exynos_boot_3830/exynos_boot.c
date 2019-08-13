@@ -108,7 +108,7 @@ static void exynos_boot_task(const struct app_descriptor *app, void *args)
 	} else if (rst_stat & (WARM_RESET | LITTLE_WDT_RESET | BIG_WDT_RESET)) {
 		printf("Entering fastboot: Abnormal RST_STAT: 0x%x\n", rst_stat);
 		sdm_encrypt_secdram();
-		dfd_set_dump_en_for_cacheop(0);
+		dfd_set_dump_en(0);
 		goto fastboot;
 	} else if (readl(EXYNOS3830_POWER_SYSIP_DAT0) == REBOOT_MODE_FASTBOOT) {
 		printf("Entering fastboot: reboot bootloader command\n");
@@ -140,10 +140,10 @@ reboot:
 
 	/* Turn on dumpEN for DumpGPR */
 #ifdef RAMDUMP_MODE_OFF
-	dfd_set_dump_en_for_cacheop(0);
+	dfd_set_dump_en(0);
 	set_debug_level("low");
 #else
-	dfd_set_dump_en_for_cacheop(0);
+	dfd_set_dump_en(1);
 	set_debug_level("mid");
 #endif
 	set_debug_level_by_env();
