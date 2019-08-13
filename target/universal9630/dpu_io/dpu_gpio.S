@@ -88,18 +88,6 @@ display_panel_release:
 
 	.global display_panel_power
 display_panel_power:
-	/* Set VDD_DISP_1P6_EN (GPP3_2) to Output */
-	ldr             x0, =EXYNOS9630_GPP3CON
-	ldr             w1, [x0]
-	bic             w1, w1, #(0xF << 8)
-	orr             w1, w1, #(0x1 << 8)
-	str             w1, [x0]
-
-	ldr             x0, =EXYNOS9630_GPP3DAT
-	ldr             w1, [x0]
-	bic             w1, w1, #(0x1 << 2)
-	orr             w1, w1, #(0x1 << 2)
-	str             w1, [x0]
 
 	ret
 
