@@ -42,7 +42,5 @@ FUNCTION(read_mpidr)
 FUNCTION(get_core_pos)
         and     x1, x0, #MPIDR_CPU_MASK
         ands    x0, x0, #MPIDR_CLUSTER_MASK
-        add     x2, x1, #2                      /* Cluster 1 */
-        csel    x1, x1, x2, eq
         add     x0, x1, x0, LSR #6
         ret
