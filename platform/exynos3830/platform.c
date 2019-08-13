@@ -11,7 +11,6 @@
 #include <reg.h>
 #include <stdlib.h>
 #include <string.h>
-#include "uart_simple.h"
 #include <dev/boot.h>
 #include <dev/rpmb.h>
 #include <part.h>
@@ -33,6 +32,7 @@
 #include <platform/mmu/mmu_func.h>
 #include <platform/fastboot.h>
 #include <platform/sfr.h>
+#include <platform/uart.h>
 #include <dev/mmc.h>
 #include <dev/debug/dss.h>
 #include <platform/secure_boot.h>
@@ -265,7 +265,7 @@ void platform_early_init(void)
 	}
 #endif
 
-	uart_test_function();
+	uart_console_init();
 	printf("LK build date: %s, time: %s\n", __DATE__, __TIME__);
 	dss_boot_cnt();
 

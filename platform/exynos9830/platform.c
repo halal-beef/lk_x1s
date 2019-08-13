@@ -9,7 +9,6 @@
  */
 
 #include <reg.h>
-#include "uart_simple.h"
 #include <dev/ufs.h>
 #include <dev/boot.h>
 #include <dev/rpmb.h>
@@ -19,6 +18,7 @@
 #include <dev/timer/arm_generic.h>
 #include <platform/interrupts.h>
 #include <platform/sfr.h>
+#include <platform/uart.h>
 #include <platform/smc.h>
 #include <dev/pmic_s2mps_19_22.h>
 #ifdef CONFIG_SUB_PMIC_S2DOS05
@@ -323,7 +323,7 @@ void platform_early_init(void)
 #endif
 	set_first_boot_device_info();
 
-	uart_test_function();
+	uart_console_init();
 	printf("LK build date: %s, time: %s\n", __DATE__, __TIME__);
 	dss_boot_cnt();
 

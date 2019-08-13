@@ -82,4 +82,12 @@
 
 #define RAMDUMP_BOOT_CNT_MAGIC				0xFACEDB90
 
+#define EXYNOS_UART_BASE 							EXYNOS9630_UART_BASE
+#define UART_SRCCLK								133250000
+#define UART_BAUDRATE								115200
+#define UARTGPIO_CON								EXYNOS9630_GPQ0CON /* UART_DEBUG0, Speedy */
+#define UARTGPIO_CON_MASK							0xFF
+#define UARTGPIO_CON_SET							0x22
+#define UARTGPIO_CON_BASE_BIT							(0 * 4)
+
 #endif	/* __SFR_H__ */

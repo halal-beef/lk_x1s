@@ -20,12 +20,12 @@
 
 extern unsigned int uart_log_mode;
 
-void uart_simple_GPIOInit(void);
-void uart_simple_UartInit(unsigned int uUartBase, unsigned int clk, unsigned int nBaudrate);
-void uart_simple_string_out(const char * string);
-void itoa_base_custom(unsigned int number, unsigned int uBaseUnit, unsigned int uUnitWidth, char *Converted);
-void uart_test_function(void);
-void uart_simple_char_in(char *cData);
-void uart_simple_char_out(char cData);
+void uart_console_init(void);
+void uart_char_in(char *cData);
+void uart_char_out(char cData);
+
+#define uart_test_function(void) uart_console_init(void)
+#define uart_simple_char_in(void) uart_char_in(void)
+#define uart_simple_char_out(void) uart_char_out(void)
 
 #endif /* UART_UART_SIMPLE_H_ */
