@@ -20,8 +20,8 @@
  * limitations under the License.
  */
 
-#include <dev/dpu/dpp.h>
-#include <dev/dpu/hdr_lut.h>
+#include <dpu/dpp.h>
+#include <dpu/hdr_lut.h>
 #include "dpp_coef.h"
 
 /****************** ODMA CAL functions ******************/

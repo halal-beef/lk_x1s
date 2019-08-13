@@ -6,6 +6,8 @@ PLATFORM := exynos9630
 MEMBASE := 0xF8800000
 MEMSIZE := 0x01800000
 
+#GLOBAL_COMPILEFLAGS += -D__EXYNOS9630_SOC__
+
 MODULE_SRCS += \
 	$(LOCAL_DIR)/target.c \
 	$(LOCAL_DIR)/dpu_io/dpu_gpio.S \

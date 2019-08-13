@@ -2,7 +2,7 @@
  * Copyright (c) 2019 Samsung Electronics Co., Ltd.
  *		http://www.samsung.com
  *
- * Header file for Exynos9830 DSIM CAL
+ * Header file for Exynos9630 DSIM CAL
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -12,7 +12,7 @@
 #ifndef __SAMSUNG_DSIM_CAL_H__
 #define __SAMSUNG_DSIM_CAL_H__
 
-#include <dev/dpu/exynos_panel.h>
+#include <dpu/exynos_panel.h>
 
 /* EVT1 feature */
 #define DPHY_PLL_CLK_GATE_EN	0

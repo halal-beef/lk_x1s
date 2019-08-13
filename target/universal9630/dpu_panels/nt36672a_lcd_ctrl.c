@@ -19,9 +19,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include <dev/dpu/lcd_ctrl.h>
-#include <dev/dpu/mipi_dsi_cmd.h>
-#include <dev/dpu/dsim.h>
+#include <dpu/lcd_ctrl.h>
+#include <dpu/mipi_dsi_cmd.h>
+#include <dpu/dsim.h>
 #include "nt36672a_param.h"
 
 

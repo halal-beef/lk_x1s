@@ -19,15 +19,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef __LCD_MODULE_H__
-#define __LCD_MODULE_H__
 
-#include <dpu/dsim.h>
 
-int cm_fill_id(struct dsim_device *dsim);
-int cm_read_id(struct dsim_device *dsim);
-struct dsim_lcd_driver *cm_get_panel_info(struct dsim_device *dsim);
-struct lcd_driver *get_lcd_drv_ops(void);
-struct exynos_panel_info *common_get_lcd_info(void);
+#ifndef __DISPLAY_SFR_H__
+#define __DISPLAY_SFR_H__
 
-#endif /*__LCD_MODULE_H__ */
+
+/* DMA & DPP SFR Base Address */
+#define DPP_IDMAG0_BASE_ADDR		0x14841000
+#define DPP_IDMAG0_DMA_ADDR		0x14891000
+#define DPP_IDMAG0_DMA_COM_ADDR		0x14890000
+
+#define DPP_IDMAG1_BASE_ADDR		0x14842000
+#define DPP_IDMAG1_DMA_ADDR		0x14892000
+
+/* DECON SFR Base Address */
+#define DECON0_BASE_ADDR		0x14850000
+#define SYSMMU_DPU1_BASE_ADDR		0x14900000
+#define DPU_SYSREG_BASE_ADDR		0x14821000
+
+/* DSIM & PHY SFR Base Address */
+#define DSIM0_BASE_ADDR			0x148D0000
+#define DPHY_BASE_ADDR			0x148E0900
+#define DPHY_EX_BASE_ADDR		0x148E0000
+
+#endif /* __DISPLAY_SFR_H__ */

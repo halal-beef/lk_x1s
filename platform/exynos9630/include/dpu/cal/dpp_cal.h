@@ -2,7 +2,7 @@
  * Copyright (c) 2018 Samsung Electronics Co., Ltd.
  *		http://www.samsung.com
  *
- * Header file for Exynos9830 DPP CAL
+ * Header file for Exynos9630 DPP CAL
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -12,8 +12,8 @@
 #ifndef __SAMSUNG_DPP_CAL_H__
 #define __SAMSUNG_DPP_CAL_H__
 
-#include <dev/dpu/decon.h>
-#include <dev/dpu/format.h>
+#include <dpu/decon.h>
+#include <dpu/format.h>
 
 struct dpp_hdr_params {
 	unsigned int oetf_x[33];

@@ -10,6 +10,8 @@ MODULES += \
 
 MODULE_DEPS += \
 	lib/gpt \
+	lib/font \
+	lib/logo \
 	lib/libavb \
 	lib/cksum \
 	lib/fdt \

@@ -50,3 +50,4 @@ MODULE_DEPS += \
 LINKER_SCRIPT += $(BUILDDIR)/system-onesegment.ld
 
 include make/module.mk
+include $(LOCAL_DIR)/dpu/rules.mk

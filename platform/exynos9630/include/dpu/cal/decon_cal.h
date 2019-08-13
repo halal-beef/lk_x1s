@@ -2,7 +2,7 @@
  * Copyright (c) 2018 Samsung Electronics Co., Ltd.
  *		http://www.samsung.com
  *
- * Header file for Exynos9830 DECON CAL
+ * Header file for Exynos9630 DECON CAL
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -12,8 +12,8 @@
 #ifndef __SAMSUNG_DECON_CAL_H__
 #define __SAMSUNG_DECON_CAL_H__
 
-#include <dev/dpu/exynos_panel.h>
-#include <dev/dpu/format.h>
+#include <dpu/exynos_panel.h>
+#include <dpu/format.h>
 
 #define CEIL(x)			((x-(u32)(x) > 0 ? (u32)(x+1) : (u32)(x)))
 

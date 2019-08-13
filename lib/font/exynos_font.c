@@ -24,7 +24,7 @@
 #include <stdio.h> /* TODO : divide print_lcd function */
 
 #include "exynos_font.h"
-#include <dev/dpu/lcd_ctrl.h>
+//#include <dev/dpu/lcd_ctrl.h>
 #include <target/dpu_config.h>
 #include <target/lcd_module.h>
 
