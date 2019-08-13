@@ -559,18 +559,15 @@ mem_node_out:
 	sprintf(str, "<0x%x>", ECT_SIZE);
 	set_fdt_val("/ect", "parameter_size", str);
 
-	/* Recovery boot mode - add initrd-start end value */
-	if (readl(EXYNOS9630_POWER_SYSIP_DAT0) == REBOOT_MODE_RECOVERY) {
-		memset(str, 0, BUFFER_SIZE);
-		sprintf(str, "<0x%x>", RAMDISK_BASE);
-		set_fdt_val("/chosen", "linux,initrd-start", str);
-		printf("initrd-start: %s\n", str);
+	memset(str, 0, BUFFER_SIZE);
+	sprintf(str, "<0x%x>", RAMDISK_BASE);
+	set_fdt_val("/chosen", "linux,initrd-start", str);
+	printf("initrd-start: %s\n", str);
 
-		memset(str, 0, BUFFER_SIZE);
-		sprintf(str, "<0x%x>", RAMDISK_BASE + b_hdr->ramdisk_size);
-		set_fdt_val("/chosen", "linux,initrd-end", str);
-		printf("initrd-end: %s\n", str);
-	}
+	memset(str, 0, BUFFER_SIZE);
+	sprintf(str, "<0x%x>", RAMDISK_BASE + b_hdr->ramdisk_size);
+	set_fdt_val("/chosen", "linux,initrd-end", str);
+	printf("initrd-end: %s\n", str);
 
 	noff = fdt_path_offset(fdt_dtb, "/reserved-memory/cp_rmem");
 	if (noff >= 0) {
@@ -669,6 +666,9 @@ int load_boot_images(void)
 		printf("Partition '%s' does not exist\n", boot_part_name);
 		return -1;
 	}
+
+	/* ensure ramdisk image loaded in 0 initialized area */
+	memset((void *)RAMDISK_BASE, 0, 0x200000);
 
 	part_read(part, (void *)BOOT_BASE);
 
