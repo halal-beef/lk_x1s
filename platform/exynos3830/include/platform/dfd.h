@@ -11,24 +11,34 @@
  *
  */
 
-#ifndef _EXYNOS9630_DFD_H
-#define _EXYNOS9630_DFD_H
+#ifndef __DFD_H__
+#define __DFD_H__
 
 #define NR_CPUS				(8)
-#define BIG_NR_CPUS			(2)
-#define LITTLE_NR_CPUS			(6)
+#define BIG_NR_CPUS			(4)
+#define LITTLE_NR_CPUS			(4)
 
 #define LITTLE_CORE_START		(0)
-#define LITTLE_CORE_LAST		(5)
-#define BIG_CORE_START			(6)
+#define LITTLE_CORE_LAST		(3)
+#define BIG_CORE_START			(4)
 #define BIG_CORE_LAST			(7)
 
+#define PMU_CPU_OUT_OFFSET		(0x1020)
+#define PMU_CL0_NCPU_OUT_OFFSET		(0x1220)
+#define PMU_CL1_NCPU_OUT_OFFSET		(0x1620)
+/* PMU_CPU_OPTION bit field */
+#define CPU_EN_DBGL1RSTDIS              (4)
+
+/* PMU_CL_NONCPU_OPTION bit field */
+#define NCPU_EN_DBGL3RSTDIS             (4)
+
+/* PMU_CPU_OUT bit field */
+#define CPU_CLR_DBGL1RSTDIS             (5)
+
+/* PMU_CL_NONCPU_OUT bit field */
+#define NCPU_CLR_DBGL3RSTDIS            (14)
+
 #define RESET_SEQUENCER_OFFSET		(0x500)
-#define DBGCORE_CPU_CONFIGURATION	(0x2e80)
-#define DBGCORE_CPU_STATES		(0x2e88)
-#define DBGCORE_STATE_UP		(0x10)
-#define DBGCORE_CPU_IN			(0x2ea4)
-#define DBGCORE_CPU_OUT			(0x2ea0)
 
 #define DUMP_EN_BIT			(0)
 #define DUMP_EN				(1 << DUMP_EN_BIT)
@@ -36,6 +46,8 @@
 #define LLC_INIT_BIT			(24)
 #define LLC_INIT			(1 << LLC_INIT_BIT)
 
+#define DUMPGPR_BASE			(0x9000C800)
+#define DUMPPC_BASE			(0x90010a00)
 #define CPU_ON_PSCI_ID			(0xC4000003)
 #define CPU_OFF_PSCI_ID			(0x84000002)
 #define COREREG_OFFSET			(0x200)
@@ -45,17 +57,16 @@
 #define CPU1_LOGICAL_MAP		0x0001
 #define CPU2_LOGICAL_MAP		0x0002
 #define CPU3_LOGICAL_MAP		0x0003
-#define CPU4_LOGICAL_MAP		0x0004
-#define CPU5_LOGICAL_MAP		0x0005
-#define CPU6_LOGICAL_MAP		0x0100
-#define CPU7_LOGICAL_MAP		0x0101
+#define CPU4_LOGICAL_MAP		0x0100
+#define CPU5_LOGICAL_MAP		0x0101
+#define CPU6_LOGICAL_MAP		0x0102
+#define CPU7_LOGICAL_MAP		0x0103
 
 #define FLUSH_SKIP			0x0
 #define FLUSH_LEVEL1			0x1
 #define FLUSH_LEVEL2			0x2
 #define FLUSH_LEVEL3			0x3
 
-#define DBGC_VERSION_LEN		(48)
 /*******************************************************************************
  * MPIDR macros
  ******************************************************************************/
@@ -69,20 +80,42 @@
 #define MPIDR_AFF3_SHIFT	32
 #define MT_BIT_OFFSET		(24)
 
-#define INTGR_AP_TO_DBGC	(0x1c)
-
 #define RAMDUMP_BOOT_CNT_MAGIC	0xFACEDB90
 
 // #define ARRAY_SIZE(x) (sizeof(x) / sizeof((x)[0]))
 
 #ifndef __ASSEMBLY__
+enum pt_gpr {
+	X0,
+	X1,
+	X2,
+	X3,
+	X4,
+	X5,
+	X6,
+	X7,
+	X8,
+	X19,
+	X20,
+	X21,
+	X22,
+	X23,
+	X24,
+	X25,
+	X26,
+	X27,
+	X28,
+	X29,
+	X30,
+	SP_EL1,
+	GPR_END,
+};
+
 enum pt_reg {
 	SP = 31,
 	PC,
 	PSTATE,
-	PCSR,
 	POWER_STATE,
-	NS,
 };
 
 enum {
@@ -92,44 +125,6 @@ enum {
 };
 #define DEBUG_LEVEL_PREFIX	(0xDB9 << 16)
 extern int debug_level;
-
-struct dfd_ipc_cmd_raw {
-	u32 cmd                 :16;
-	u32 response            :1;
-	u32 overlay             :1;
-	u32 ret                 :1;
-	u32 ok                  :1;
-	u32 busy                :1;
-	u32 manual_polling      :1;
-	u32 one_way             :1;
-	u32 reserved            :1;
-	u32 id                  :4;
-	u32 size                :4;
-};
-
-struct dfd_ipc_cmd {
-	union {
-		struct dfd_ipc_cmd_raw cmd_raw;
-		unsigned int buffer[4];
-	};
-};
-
-enum pp_ipc_cmd_id {
-	PP_IPC_CMD_ID_ENTER_HALT,
-	PP_IPC_CMD_ID_RUN_DUMP,
-	PP_IPC_CMD_ID_EXIT_HALT,
-	PP_IPC_CMD_ID_RUN_GPR,
-	PP_IPC_CMD_ID_RUN_ARR_TAG,
-	PP_IPC_CMD_ID_START,
-	PP_IPC_CMD_ID_FINISH,
-
-};
-
-enum frmk_ipc_cmd {
-	IPC_CMD_COPY_DEBUG_LOG = 0xcb10,
-	IPC_CMD_DEBUG_LOG_INFO,
-	IPC_CMD_POST_PROCESSING = 0x8080,
-};
 
 void dfd_verify_enable(void);
 extern void set_debug_level(const char *buf);
@@ -169,10 +164,6 @@ inline static void dfd_run_post_processing(void)
 {
 }
 
-inline static void write_back_cache(int cpu)
-{
-}
-
 inline static void dfd_set_dump_en_for_cacheop(int en)
 {
 }
@@ -182,4 +173,4 @@ inline static void llc_flush_disable(void)
 }
 #endif
 #endif /*__ASSEMBLY__ */
-#endif /* _EXYNOS9630_DFD_H */
+#endif /* __DFD_H__ */
