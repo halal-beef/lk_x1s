@@ -23,6 +23,8 @@
 #ifndef __DISPLAY_CONFIG_H__
 #define __DISPLAY_CONFIG_H__
 
+//#define __EXYNOS9630_SOC__	// by jinkook : one-branch-test
+
 /* Enable BOOTLOADER DISPLAY : call display function at platform.c */
 #define CONFIG_EXYNOS_BOOTLOADER_DISPLAY
 
@@ -39,7 +41,7 @@
 #endif
 
 /* Enable FONT : FONT CONFIG needs CONFIG_EXYNOS_BOOTLOADER_DISPLAY */
-//#define CONFIG_DISPLAY_DRAWFONT
+#define CONFIG_DISPLAY_DRAWFONT
 #if defined(CONFIG_DISPLAY_DRAWFONT)
 #define CONFIG_EXYNOS_BOOTLOADER_DISPLAY
 #endif
@@ -77,8 +79,8 @@
 /* =================================================== */
 
 /* Platform Dependency */
-#include <dev/dpu/decon.h>
-#include <platform/display_sfr.h>
+#include <dpu/decon.h>
+#include <dpu/display_sfr.h>
 
 /* TODO : divide platform info and target info */
 //#define NUM_OF_DPP   4

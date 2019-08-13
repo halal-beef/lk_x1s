@@ -20,7 +20,7 @@
  * limitations under the License.
  */
 
-#include <dev/dpu/decon.h>
+#include <dpu/decon.h>
 
 /******************* DECON CAL functions *************************/
 static int decon_reg_reset(u32 id)
@@ -2263,6 +2263,12 @@ int decon_check_supported_formats(enum decon_pixel_format format)
 	case DECON_PIXEL_FORMAT_NV16M_S10B:
 	case DECON_PIXEL_FORMAT_NV61M_S10B:
 
+	case DECON_PIXEL_FORMAT_NV12M_SBWC_8B:
+	case DECON_PIXEL_FORMAT_NV12M_SBWC_10B:
+	case DECON_PIXEL_FORMAT_NV21M_SBWC_8B:
+	case DECON_PIXEL_FORMAT_NV21M_SBWC_10B:
+	case DECON_PIXEL_FORMAT_NV12N_SBWC_8B:
+	case DECON_PIXEL_FORMAT_NV12N_SBWC_10B:
 		return 0;
 	default:
 		break;
