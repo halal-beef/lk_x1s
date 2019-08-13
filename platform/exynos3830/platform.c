@@ -307,10 +307,6 @@ void platform_init(void)
 	if (is_first_boot() && *(unsigned int *)DRAM_BASE == 0xabcdef)
 		dbg_snapshot_fdt_init();
 
-	if (rst_stat & (WARM_RESET | LITTLE_WDT_RESET))
-		dfd_run_post_processing();
-
-
 #if defined(CONFIG_UART_LOG_MODE)
 	if (get_current_boot_device() != BOOT_USB &&
 		*(unsigned int *)DRAM_BASE == 0xabcdef) {
@@ -406,4 +402,7 @@ void platform_init(void)
 by_dumpgpr_out:
 		print_el3_monitor_version();
 	}
+
+	if (rst_stat & (WARM_RESET | LITTLE_WDT_RESET))
+		dfd_run_post_processing();
 }
