@@ -6,7 +6,6 @@ WITH_SMP := 0
 MODULE_SRCS += \
     $(LOCAL_DIR)/platform.c \
 	$(LOCAL_DIR)/debug.c \
-	$(LOCAL_DIR)/uart_simple.c \
 	$(LOCAL_DIR)/ufs.c \
 	$(LOCAL_DIR)/ufs-cal-9630.c \
 	$(LOCAL_DIR)/usb/usb.c \
