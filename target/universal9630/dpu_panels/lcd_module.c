@@ -24,35 +24,36 @@
 
 #define GAMMA_PARAM_SIZE	26
 
-#define S6E3HA8_CMD_VBP		15
-#define S6E3HA8_CMD_VFP		8
-#define S6E3HA8_CMD_VSA		1
-#define S6E3HA8_CMD_HBP		2
-#define S6E3HA8_CMD_HFP		2
-#define S6E3HA8_CMD_HSA		2
+#define ANA6705_CMD_VBP		15
+#define ANA6705_CMD_VFP		3
+#define ANA6705_CMD_VSA		1
+#define ANA6705_CMD_HBP		2
+#define ANA6705_CMD_HFP		2
+#define ANA6705_CMD_HSA		2
 
-#define S6E3HA8_HORIZONTAL	1440
-#define S6E3HA8_VERTICAL	2960
+#define ANA6705_HORIZONTAL	1080
+#define ANA6705_VERTICAL	2400
 
 #define CONFIG_DECON_LCD_VIDEO_MODE
 
 struct exynos_panel_info common_lcd_info = {
 	.mode = DECON_MIPI_COMMAND_MODE,
-	.vfp = S6E3HA8_CMD_VFP,
-	.vbp = S6E3HA8_CMD_VBP,
-	.hfp = S6E3HA8_CMD_HFP,
-	.hbp = S6E3HA8_CMD_HBP,
-	.vsa = S6E3HA8_CMD_VSA,
-	.hsa = S6E3HA8_CMD_HSA,
-	.xres = S6E3HA8_HORIZONTAL,
-	.yres = S6E3HA8_VERTICAL,
+	.vfp = ANA6705_CMD_VFP,
+	.vbp = ANA6705_CMD_VBP,
+	.hfp = ANA6705_CMD_HFP,
+	.hbp = ANA6705_CMD_HBP,
+	.vsa = ANA6705_CMD_VSA,
+	.hsa = ANA6705_CMD_HSA,
+	.xres = ANA6705_HORIZONTAL,
+	.yres = ANA6705_VERTICAL,
 
 	/* Mhz */
-	.hs_clk = 898,
-	.esc_clk = 20,
+	.hs_clk = 1200,
+	.esc_clk = 16,
 
-	.dphy_pms = {2, 138, 2, 0},
-	.cmd_underrun_cnt = {3022},
+	.dphy_pms = {3, 277, 2, 0}, /* pmsk */
+	.cmd_underrun_cnt = {1886},
+
 	/* Maybe, width and height will be removed */
 	.width = 70,
 	.height = 121,
@@ -61,11 +62,13 @@ struct exynos_panel_info common_lcd_info = {
 //	.mic_enabled = 0,
 //	.mic_ver = 0,
 
-	.dsc = {1, 1, 2, 40, 720, 240},
+	.dsc = {0, 0, 0, 40, 720, 240},
 //	.dsc_enabled = 1,
 //	.dsc_cnt = 1,
 //	.dsc_slice_num = 2,
 //	.dsc_slice_h = 40,
+//	.dsc_dec_sw = 720;
+//	.dsc_enc_sw = 240;
 	.data_lane = 4,
 };
 
@@ -78,12 +81,14 @@ extern struct dsim_lcd_driver s6e3fa0_mipi_lcd_driver;
 extern struct dsim_lcd_driver nt36672a_mipi_lcd_driver;
 extern struct dsim_lcd_driver s6e3ha8_mipi_lcd_driver;
 extern struct dsim_lcd_driver s6e3ha9_mipi_lcd_driver;
+extern struct dsim_lcd_driver ana6705_mipi_lcd_driver;
 
 struct dsim_lcd_driver *panel_list[NUM_OF_VERIFIED_PANEL] = {
 	&s6e3fa0_mipi_lcd_driver,
 	&nt36672a_mipi_lcd_driver,
 	&s6e3ha8_mipi_lcd_driver,
 	&s6e3ha9_mipi_lcd_driver,
+	&ana6705_mipi_lcd_driver,
 };
 
 /* fill panel id to panel_ids arrary from panel driver each */
