@@ -1,7 +1,7 @@
 LOCAL_DIR := $(GET_LOCAL_DIR)
 MODULE := ${LOCAL_DIR}
 
-GLOBAL_DEFINES += \
-	$(LOCAL_DIR)/include
+MODULE_SRCS += \
+    $(LOCAL_DIR)/boot_info.c
 
 include make/module.mk

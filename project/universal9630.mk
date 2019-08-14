@@ -21,7 +21,6 @@ MODULE_DEPS += \
 	lib/fastboot \
 	dev/scsi \
 	dev/rpmb \
-	dev/boot \
 	dev/acpm_ipc
 
 GLOBAL_DEFINES += \
