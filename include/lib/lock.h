@@ -15,6 +15,7 @@
 #define LOCK_CRITICAL_SYSPARAM_NAME	"lock_critical"
 
 void lock(int state);
+int set_lock_state(int state);
 int get_lock_state(void);
 void lock_critical(int state);
 int get_unlock_ability(void);

@@ -37,6 +37,25 @@ void lock(int state)
 	free(env_val);
 }
 
+int set_lock_state(int state)
+{
+	int ret;
+
+#if defined(CONFIG_USE_RPMB)
+	int rpmb_ret;
+	rpmb_ret = rpmb_set_lock_state((uint32_t)(state));
+	if (rpmb_ret == RV_SUCCESS) {
+		ret = 0;
+	} else {
+		ret = -1;
+	}
+#else
+	ret = -1;
+#endif
+
+	return ret;
+}
+
 int get_lock_state(void)
 {
 	unsigned int *env_val;

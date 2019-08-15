@@ -266,6 +266,20 @@ static inline struct list_node *list_next_wrap(struct list_node *list, struct li
         &(entry)->member != (list);\
         entry = temp_entry, temp_entry = containerof((temp_entry)->member.next, type, member))
 
+// iterates over the list backward, entry should be the container structure type *
+#define list_for_every_entry_reverse(list, entry, type, member) \
+    for((entry) = containerof((list)->prev, type, member);\
+        &(entry)->member != (list);\
+        (entry) = containerof((entry)->member.prev, type, member))
+
+// iterates over the list in a safe way for deletion of current node
+// entry and temp_entry should be the container structure type *
+#define list_for_every_entry_safe_reverse(list, entry, temp_entry, type, member) \
+    for(entry = containerof((list)->prev, type, member),\
+        temp_entry = containerof((entry)->member.prev, type, member);\
+        &(entry)->member != (list);\
+        entry = temp_entry, temp_entry = containerof((temp_entry)->member.prev, type, member))
+
 static inline bool list_is_empty(struct list_node *list)
 {
     return (list->next == list) ? true : false;
