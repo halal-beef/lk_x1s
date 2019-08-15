@@ -596,7 +596,7 @@ static int rx_handler(const unsigned char *buffer, unsigned int buffer_size)
 
 	return 0;
 }
-
+void muic_sw_usb(void);
 int do_fastboot(int argc, const cmd_args *argv)
 {
 	int continue_from_disconnect = 0;
@@ -611,7 +611,9 @@ int do_fastboot(int argc, const cmd_args *argv)
 	printf("Initialization USB!!!!\n");
 
 	mdelay(200);
-	/* muic_sw_usb(); */
+#if defined(CONFIG_BOARD_UNIVERSAL9630)
+	muic_sw_usb();
+#endif
 
 	do {
 		continue_from_disconnect = 0;
