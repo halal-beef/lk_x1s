@@ -13,6 +13,7 @@
 #include <app.h>
 #include <part.h>
 #include <stdlib.h>
+#include <dev/usb/gadget.h>
 #include <lib/console.h>
 #include <lib/font_display.h>
 #include <platform/mmu/mmu_func.h>
@@ -59,7 +60,7 @@ static void exynos_boot_task(const struct app_descriptor *app, void *args)
 	if (*(unsigned int *)DRAM_BASE != 0xabcdef) {
 		printf("Running on DRAM by TRACE32: skip auto booting\n");
 
-		do_fastboot(0, 0);
+		start_usb_gadget();
 		return;
 	}
 
@@ -72,7 +73,7 @@ static void exynos_boot_task(const struct app_descriptor *app, void *args)
 	}
 	if (vol_up_val == 0) {
 		printf("Volume up key is pressed. Entering fastboot mode!\n");
-		do_fastboot(0, 0);
+		start_usb_gadget();
 		return;
 	}
 
@@ -152,14 +153,14 @@ download:
 #ifndef RAMDUMP_MODE_OFF
 	debug_store_ramdump();
 #endif
-	do_fastboot(0, 0);
+	start_usb_gadget();
 	return;
 
 fastboot:
 	uart_log_mode = 1;
 #ifndef RAMDUMP_MODE_OFF
 	debug_store_ramdump();
-	do_fastboot(0, 0);
+	start_usb_gadget();
 	return;
 #endif
 

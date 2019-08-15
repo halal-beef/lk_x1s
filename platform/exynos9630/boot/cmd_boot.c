@@ -18,6 +18,7 @@
 #include <lib/font_display.h>
 #include <dev/boot.h>
 #include <dev/rpmb.h>
+#include <dev/usb/gadget.h>
 #include <platform/mmu/mmu_func.h>
 #include <platform/sfr.h>
 #include <platform/smc.h>
@@ -711,7 +712,7 @@ int cmd_boot(int argc, const cmd_args *argv)
 		printf("AB update error! Error code: %d\n", ab_ret);
 		print_lcd_update(FONT_RED, FONT_WHITE,
 			"AB Update fail(%d), Entering fastboot...", ab_ret);
-		do_fastboot(0, 0);
+		start_usb_gadget();
 		do {
 			asm volatile("wfi");
 		} while(1);

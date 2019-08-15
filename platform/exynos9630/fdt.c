@@ -13,6 +13,7 @@
 #include <fdt.h>
 #include <libfdt.h>
 #include <part.h>
+#include <dev/usb/gadget.h>
 #include <lib/console.h>
 #include <platform/fdt.h>
 #include <platform/fastboot.h>
@@ -61,7 +62,7 @@ void merge_dto_to_main_dtb(void)
 
 	if (i == fdt32_to_cpu(dtbo_table->dt_entry_count)) {
 		printf("DTBO: Not found dtbo of board_rev 0x%x.\n", board_rev);
-		do_fastboot(0, 0);
+		start_usb_gadget();
 		return;
 	}
 
