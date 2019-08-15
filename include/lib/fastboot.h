@@ -282,7 +282,7 @@ int do_fastboot(int argc, const cmd_args *argv);
 #ifdef CONFIG_BOARD_UNIVERSAL9630
 #define SYSREG_USB_BASE			0x13020000
 #define USB_SHARABLE_OFFSET		(0x700)
-#define USB_SHARABLE_SHIFT		(1)
+#define USB_SHARABLE_SHIFT		(12)
 #endif
 void exynos_usb_cci_control(int on_off);
 
