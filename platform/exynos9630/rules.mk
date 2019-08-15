@@ -10,7 +10,7 @@ MODULE_SRCS += \
 	$(LOCAL_DIR)/delay.c \
 	$(LOCAL_DIR)/ufs.c \
 	$(LOCAL_DIR)/ufs-cal-9630.c \
-	$(LOCAL_DIR)/usb.c \
+	$(LOCAL_DIR)/usb/usb.c \
 	$(LOCAL_DIR)/boot/cmd_scatter_load_boot.c \
 	$(LOCAL_DIR)/boot/cmd_boot.c \
 	$(LOCAL_DIR)/boot/cmd_display.c \
