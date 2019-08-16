@@ -6,54 +6,54 @@
  * transcribed, stored in a retrieval system or translated into any human or computer language in any form by any means,
  * electronic, mechanical, manual or otherwise, or disclosed
  * to third parties without the express written permission of Samsung Electronics.
- */
+
+
+ * Alternatively, this program is free software in case of open source project
+ * you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2 as
+ * published by the Free Software Foundation.
+
+*/
 
 
 #include <reg.h>
 #include <platform/sfr.h>
 #include <platform/gpio.h>
 
-#define CON_MASK(x)		(0xf << ((x) << 2))
-#define CON_SFR(x, v)		((v) << ((x) << 2))
+#define CON_MASK(x)	(0xf << ((x) << 2))
+#define CON_SFR(x, v)	((v) << ((x) << 2))
 
-#define DAT_MASK(x)		(0x1 << (x))
-#define DAT_SET(x)		(0x1 << (x))
+#define DAT_MASK(x)	(0x1 << (x))
+#define DAT_SET(x)	(0x1 << (x))
 
-#if defined (CONFIG_GPIO_4BIT_PUD)
-#define PULL_MASK(x)		(0xf << ((x) << 2))
-#define PULL_MODE(x, v)		((v) << ((x) << 2))
-#else
-#define PULL_MASK(x)		(0x3 << ((x) << 1))
-#define PULL_MODE(x, v)		((v) << ((x) << 1))
-#endif
+#define PULL_MASK(x)	(0xf << ((x) << 2))
+#define PULL_MODE(x, v)	((v) << ((x) << 2))
 
-#if defined (CONFIG_GPIO_4BIT_DRV)
-#define DRV_MASK(x)		(0xf << ((x) << 2))
-#define DRV_SET(x, m)		((m) << ((x) << 2))
-#else
-#define DRV_MASK(x)		(0x3 << ((x) << 1))
-#define DRV_SET(x, m)		((m) << ((x) << 1))
-#endif
-#define RATE_MASK(x)		(0x1 << (x + 16))
-#define RATE_SET(x)		(0x1 << (x + 16))
+#define DRV_MASK(x)	(0xf << ((x) << 2))
+#define DRV_SET(x, m)	((m) << ((x) << 2))
+
+#define RATE_MASK(x)	(0x1 << (x + 16))
+#define RATE_SET(x)	(0x1 << (x + 16))
 
 #ifdef CONFIG_GPIO_DAT_MASK
 void exynos_gpio_dat_mask(struct exynos_gpio_bank *bank, unsigned int *dat)
 {
-	unsigned int i, con, dat_mask=0;
+	unsigned int i, con, dat_mask = 0;
 
 	con = readl(&bank->con);
-	for (i = 0; i < 8; i++)
-	{
+	for (i = 0; i < 8; i++)	{
 		if (((con >> (i * 4)) & 0xf) == GPIO_OUTPUT)
 			dat_mask |= 1 << i;
 	}
 
 	*dat &= dat_mask;
 }
+
 #else
-void exynos_gpio_dat_mask(struct exynos_gpio_bank *bank, unsigned int *dat) {}
-#endif
+void exynos_gpio_dat_mask(struct exynos_gpio_bank *bank, unsigned int *dat)
+{
+}
+#endif /* ifdef CONFIG_GPIO_DAT_MASK */
 
 void exynos_gpio_cfg_pin(struct exynos_gpio_bank *bank, int gpio, int cfg)
 {
@@ -158,9 +158,10 @@ void exynos_gpio_set_rate(struct exynos_gpio_bank *bank, int gpio, int mode)
 struct exynos_gpio_bank *exynos_gpio_get_bank(unsigned gpio)
 {
 	int bank = gpio / GPIO_PER_BANK;
+
 	bank *= sizeof(struct exynos_gpio_bank);
 
-	return (struct exynos_gpio_bank *) (exynos_gpio_base(gpio) + bank);
+	return (struct exynos_gpio_bank *)(exynos_gpio_base(gpio) + bank);
 }
 
 int exynos_gpio_get_pin(unsigned gpio)
@@ -183,27 +184,27 @@ int gpio_free(unsigned gpio)
 int gpio_direction_input(unsigned gpio)
 {
 	exynos_gpio_direction_input(exynos_gpio_get_bank(gpio),
-				exynos_gpio_get_pin(gpio));
+	                            exynos_gpio_get_pin(gpio));
 	return 0;
 }
 
 int gpio_direction_output(unsigned gpio, int value)
 {
 	exynos_gpio_direction_output(exynos_gpio_get_bank(gpio),
-				 exynos_gpio_get_pin(gpio), value);
+	                             exynos_gpio_get_pin(gpio), value);
 	return 0;
 }
 
 int gpio_get_value(unsigned gpio)
 {
-	return (int) exynos_gpio_get_value(exynos_gpio_get_bank(gpio),
-				       exynos_gpio_get_pin(gpio));
+	return (int)exynos_gpio_get_value(exynos_gpio_get_bank(gpio),
+	                                  exynos_gpio_get_pin(gpio));
 }
 
 int gpio_set_value(unsigned gpio, int value)
 {
 	exynos_gpio_set_value(exynos_gpio_get_bank(gpio),
-			  exynos_gpio_get_pin(gpio), value);
+	                      exynos_gpio_get_pin(gpio), value);
 
 	return 0;
 }

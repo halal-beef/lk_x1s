@@ -27,7 +27,6 @@ MODULE_SRCS += \
 	$(LOCAL_DIR)/pmic/fg_s2mu107.c \
 	$(LOCAL_DIR)/ab_update/ab_update.c \
 	$(LOCAL_DIR)/gpio_init.S \
-	$(LOCAL_DIR)/gpio.c \
 	$(LOCAL_DIR)/dfd.c \
 	$(LOCAL_DIR)/dfd_verify.c \
 	$(LOCAL_DIR)/dfd_asm_helper.S \
