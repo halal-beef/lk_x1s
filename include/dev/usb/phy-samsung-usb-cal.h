@@ -32,6 +32,7 @@
 #define EXYNOS_USBCON_VER_03_MAX	0x03FF
 
 #define EXYNOS_USBCON_VER_04_0_0	0x0400	/* Lhotse - USB/DP  */
+#define EXYNOS_USBCON_VER_04_1_0	0x0410  /* Makalu - USB/DP  */
 #define EXYNOS_USBCON_VER_04_MAX	0x04FF
 
 /* Sub phy control - not include System/Link control */
@@ -131,7 +132,7 @@ enum exynos_usb_bc {
 };
 
 struct exynos_usb_tune_param {
-	char name[16];
+	char name[32];
 	unsigned int value;
 };
 

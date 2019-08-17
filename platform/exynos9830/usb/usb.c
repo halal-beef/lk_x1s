@@ -19,12 +19,28 @@
 #include "dev/usb/phy-samsung-usb-cal.h"
 #include "dev/usb/fastboot.h"
 #include "platform/sfr.h"
+#include <platform/chip_id.h>
 
 #include <part.h>
 
-#define SYSREG_USB_BASE			0x13020000
-#define USB_SHARABLE_OFFSET		(0x700)
-#define USB_SHARABLE_SHIFT		(12)
+#define SYSREG_USB_BASE			0x10a20000
+#define USB_SHARABLE_OFFSET		0x704
+#define USB_SHARABLE_SHIFT		1
+
+#define EXYNOS_POWER_BASE		0x15860000
+
+#define USB_LINK_BASE			0x10E00000
+#define USB_PHY_BASE			0x10C00000
+#define USB_PHY_DP_BASE			0x10AE0000
+#define USB_PHY_PCS_BASE		0x10AF0000
+
+/* PHY CONTROL */
+#define USBDP_PHY_CONTROL_OFFSET	0x704
+#define USB2_PHY_CONTROL_OFFSET		0x72C
+
+#define USB_INT_NUM			310
+
+static unsigned int dwc3_isr_num = (USB_INT_NUM + 32);
 
 void gadget_probe_pid_vid_version(unsigned short *vid, unsigned short *pid, unsigned short *bcd_version)
 {
@@ -61,8 +77,8 @@ void reserve_serialno_string(void)
 
 void get_serialno(int *chip_id)
 {
-	chip_id[0] = readl(EXYNOS9630_PRO_ID + CHIPID0_OFFSET);
-	chip_id[1] = readl(EXYNOS9630_PRO_ID + CHIPID1_OFFSET) & 0xFFFF;
+	chip_id[0] = readl(EXYNOS9830_PRO_ID + CHIPID0_OFFSET);
+	chip_id[1] = readl(EXYNOS9830_PRO_ID + CHIPID1_OFFSET) & 0xFFFF;
 }
 
 static const char *make_serial_string(void)
@@ -73,8 +89,8 @@ static const char *make_serial_string(void)
 	if (strcmp(serial_id, "No Serial"))
 		return serial_id;
 
-	chip_id[0] = readl(EXYNOS9630_PRO_ID + CHIPID0_OFFSET);
-	chip_id[1] = readl(EXYNOS9630_PRO_ID + CHIPID1_OFFSET) & 0xFFFF;
+	chip_id[0] = readl(EXYNOS9830_PRO_ID + CHIPID0_OFFSET);
+	chip_id[1] = readl(EXYNOS9830_PRO_ID + CHIPID1_OFFSET) & 0xFFFF;
 	for (j = 0; j < 2; j++) {
 		u32 hex;
 		char *str;
@@ -241,11 +257,9 @@ int init_fastboot_variables(void)
 	return 0;
 }
 
-static unsigned int dwc3_isr_num = (370 + 32);
-
 int dwc3_plat_init(struct dwc3_plat_config *plat_config)
 {
-	plat_config->base = (void *) 0x13200000;
+	plat_config->base = (void *) USB_LINK_BASE;
 	plat_config->num_hs_phy = 1;
 	plat_config->array_intr = &dwc3_isr_num;
 	plat_config->num_intr = 1;
@@ -264,7 +278,7 @@ static struct dwc3_dev_config dwc3_dev_config = {
 
 int dwc3_dev_plat_init(void **base_addr, struct dwc3_dev_config **plat_config)
 {
-	*base_addr = (void *) (0x13200000);
+	*base_addr = (void *) (USB_LINK_BASE);
 	*plat_config = &dwc3_dev_config;
 	return 0;
 }
@@ -278,14 +292,51 @@ static struct exynos_usb_tune_param usbcal_20phy_tune[] = {
 };
 
 static struct exynos_usbphy_info usbphy_cal_info = {
-	.version = EXYNOS_USBCON_VER_03_0_0,
+	.version = EXYNOS_USBCON_VER_03_0_1,
 	.refclk = USBPHY_REFCLK_DIFF_26MHZ,
 	.refsel = USBPHY_REFSEL_CLKCORE,
 	.not_used_vbus_pad = true,
-	.regs_base = (void *) 0x131F0000,
+	.use_io_for_ovc = 0,
+	.regs_base = (void *) USB_PHY_BASE,
 	.tune_param = usbcal_20phy_tune,
+	.used_phy_port = 0,
 	.hs_rewa = 1,
 };
+
+#if 0 // For USB3.0
+static struct exynos_usb_tune_param usbcal_ssphy_tune[] = {
+	{ .name = "ssrx_sqhs_th",		.value = 0x4, },
+	{ .name = "ssrx_lfps_th",		.value = 0x2, },
+	{ .name = "ssrx_mf_eq_en",		.value = 0x1, },
+	{ .name = "ssrx_mf_eq_ctrl_ss",		.value = 0x6, },
+	{ .name = "ssrx_hf_eq_ctrl_ss",		.value = 0xe, },
+	{ .name = "ssrx_mf_eq_ctrl_ssp",	.value = 0xc, },
+	{ .name = "ssrx_hf_eq_ctrl_ssp",	.value = 0xc, },
+	{ .name = "ssrx_dfe1_tap_ctrl",		.value = 0x4, },
+	{ .name = "ssrx_dfe2_tap_ctrl",		.value = 0x0, },
+	{ .name = "ssrx_dfe3_tap_ctrl",		.value = 0x0, },
+	{ .name = "ssrx_dfe4_tap_ctrl",		.value = 0x0, },
+	{ .name = "ssrx_dfe5_tap_ctrl",		.value = 0x0, },
+	{ .name = "ssrx_term_cal",		.value = 0x5, },
+	{ .name = "sstx_amp",			.value = 0xb, },
+	{ .name = "sstx_deemp",			.value = 0x5, },
+	{ .name = "sstx_pre_shoot",		.value = 0x3, },
+	{ .name = "sstx_idrv_up",		.value = 0x7, },
+	{ .name = "sstx_idrv_dn",		.value = 0x0, },
+	{ .name = "sstx_up_term",		.value = 0x3, },
+	{ .name = "sstx_dn_term",		.value = 0x3, },
+	{ .value = EXYNOS_USB_TUNE_LAST, },
+};
+
+static struct exynos_usbphy_info usbphy_cal_ssphy_info = {
+	.version = EXYNOS_USBCON_VER_04_1_0,
+	.refsel = USBPHY_REFSEL_CLKCORE,
+	.regs_base = (void *)USB_PHY_DP_BASE,
+	.regs_base_2nd = (void *)USB_PHY_PCS_BASE,
+	.used_phy_port = 0,
+	.tune_param = usbcal_ssphy_tune,
+};
+#endif
 
 static void register_phy_cal_infor(uint level)
 {
@@ -299,41 +350,51 @@ void phy_usb_exynos_system_init(int num_phy_port, bool en)
 
 	dprintf(ALWAYS, "%s called: %d\n", __func__, en);
 
-	if (num_phy_port == 0) {
-		/* 2.0 HS PHY */
-		/* PMU Isolation release */
-		reg = readl((void *)(0x10E60000 + 0x704));
-		if (en)
-			reg |= 0x2;
-		else
-			reg &= ~0x2;
-		writel(reg, (void *)(0x10E60000 + 0x704));
+	/* 2.0 HS PHY */
+	/* PMU Isolation release */
+	if (en)
+		writel(1, (void *)(EXYNOS_POWER_BASE + USB2_PHY_CONTROL_OFFSET));
+	else
+		writel(0, (void *)(EXYNOS_POWER_BASE + USB2_PHY_CONTROL_OFFSET));
 
-		reg = readl((void *)(0x10E60000 + 0x72c));
-		if (en)
-			reg |= 0x1;
-		else
-			reg &= ~0x1;
-		writel(reg, (void *)(0x10E60000 + 0x72c));
+	if (en)
+		writel(1, (void *)(EXYNOS_POWER_BASE + USBDP_PHY_CONTROL_OFFSET));
+	else
+		writel(0, (void *)(EXYNOS_POWER_BASE + USBDP_PHY_CONTROL_OFFSET));
 
-		/* CCI Enable */
-		reg = readl((void *)(0x13020000 + 0x700));
-		if (en)
-			reg |= (0x3 << 12);
-		else
-			reg &= ~(0x3 << 12);
-		writel(reg, (void *)(0x13020000 + 0x700));
-	} else {
-		/* 3.0 PHY */
-		reg = readl((void *)(0x10E60000 + 0x704));
-		if (en)
-			reg |= 0x1;
-		else
-			reg &= ~0x1;
-		writel(reg, (void *)(0x10E60000 + 0x704));
-	}
+	/* CCI Enable */
+	reg = readl((void *)(SYSREG_USB_BASE + USB_SHARABLE_OFFSET));
+	if (en)
+		reg |= (0x3 << USB_SHARABLE_SHIFT);
+	else
+		reg &= ~(0x3 << USB_SHARABLE_SHIFT);
+	writel(reg, SYSREG_USB_BASE + USB_SHARABLE_OFFSET);
+	
 }
 
+void exynos_usb_cci_control(int on_off)
+{
+	u32 reg;
+
+	reg = readl(SYSREG_USB_BASE + USB_SHARABLE_OFFSET);
+
+	if (on_off) {
+		dprintf(ALWAYS, "USB CCI unit is enabled.\n");
+		reg |= (0x3 << USB_SHARABLE_SHIFT);
+	} else {
+		dprintf(ALWAYS, "USB CCI unit is disabled.\n");
+		reg &= ~(0x3 << USB_SHARABLE_SHIFT);
+	}
+
+	writel(reg, SYSREG_USB_BASE + USB_SHARABLE_OFFSET);
+}
+
+void muic_sw_usb (void)
+{
+	return;
+}
+
+#if 0
 /* Fastboot command related function */
 #include <dev/rpmb.h>
 #include <dev/scsi.h>
@@ -349,13 +410,14 @@ void platform_prepare_reboot(void)
 void platform_do_reboot(const char *cmd_buf)
 {
 	if(!memcmp(cmd_buf, "reboot-bootloader", strlen("reboot-bootloader"))) {
-		writel(REBOOT_MODE_FASTBOOT, EXYNOS9630_POWER_SYSIP_DAT0);
+		writel(REBOOT_MODE_FASTBOOT, EXYNOS9830_POWER_SYSIP_DAT0);
 	} else {
-		writel(0, EXYNOS9630_POWER_SYSIP_DAT0);
+		writel(0, EXYNOS9830_POWER_SYSIP_DAT0);
 		writel(0, CONFIG_RAMDUMP_SCRATCH);
 	}
 
-	writel(readl(EXYNOS9630_SYSTEM_CONFIGURATION) | 0x2, EXYNOS9630_SYSTEM_CONFIGURATION);
+	writel(readl(EXYNOS9830_POWER_SYSTEM_CONFIGURATION) | 0x2, EXYNOS9830_POWER_SYSTEM_CONFIGURATION);
 
 	return;
 }
+#endif
