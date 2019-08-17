@@ -56,5 +56,6 @@ int init_sp(void);
 int init_ssp(void);
 
 int is_usb_boot(void);
+u32 get_ldfw_load_flag(void);
 #endif	/* __ASSEMBLY__ */
 #endif	/* __LDFW_H_ */

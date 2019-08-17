@@ -308,3 +308,9 @@ int init_sp(void)
 
 	return ret;
 }
+
+
+u32 get_ldfw_load_flag(void)
+{
+	return 1;
+}

@@ -18,21 +18,25 @@
 #include <stdlib.h>
 #include <err.h>
 #include <lib/console.h>
-#include <lib/sysparam.h>
 #include <lib/font_display.h>
+//#include <lib/fastboot.h>
 #include <part.h>
+#include <pit.h>
 #include <platform/sfr.h>
 #include <platform/smc.h>
 #include <platform/ldfw.h>
 #include <lib/lock.h>
-#include <platform/ab_update.h>
+#include <lib/ab_update.h>
 #include <platform/environment.h>
 #include <platform/dfd.h>
+#include <platform/mmu/mmu_func.h>
 #include <platform/dss_store_ramdump.h>
 #include <dev/usb/fastboot.h>
-#include <platform/boot_info.h>
+#include <target/board_info.h>
+#include <dev/boot.h>
 #include <dev/rpmb.h>
 #include <dev/scsi.h>
+#include <dev/pmucal_local.h>
 
 #include "usb-def.h"
 
@@ -43,19 +47,22 @@ extern void fastboot_set_payload_data(int dir, void *buf, unsigned int len);
 extern void fasboot_set_rx_sz(unsigned int prot_req_sz);
 extern void fastboot_tx_event_init(void);
 
-
 #define FB_RESPONSE_BUFFER_SIZE 128
+#define REBOOT_MODE_RECOVERY	0xFF
 #define LOCAL_TRACE 0
 
-unsigned int download_size = 0;
+unsigned int download_size;
 unsigned int downloaded_data_size;
+int extention_flag;
 static unsigned int is_ramdump = 0;
 unsigned int s_fb_on_diskdump = 0;
 static char resp_data[FB_RESPONSE_BUFFER_SIZE];
 
+int rx_handler(const unsigned char *buffer, unsigned int buffer_size);
+int fastboot_tx_mem(u64 buffer, u64 buffer_size);
+
 /* cmd_fastboot_interface	in fastboot.h	*/
-struct cmd_fastboot_interface interface =
-{
+struct cmd_fastboot_interface interface = {
 	.rx_handler            = rx_handler,
 	.reset_handler         = NULL,
 	.product_name          = NULL,
@@ -211,7 +218,9 @@ int fb_do_getvar(const char *cmd_buffer, unsigned int rx_sz)
 		void *part;
 		const char *type;
 #if (INPUT_GPT_AS_PT == 0)
+#ifdef CONFIG_USE_F2FS
 		const char *str_f2fs = "f2fs";
+#endif
 #endif
 
 		LTRACEF("fast cmd:partition-type\n");
@@ -231,8 +240,10 @@ int fb_do_getvar(const char *cmd_buffer, unsigned int rx_sz)
 			 * in old projects. So I kept partition type of userdata, F2FS,
 			 * to prevent from the troubles.
 			 */
+#ifdef CONFIG_USE_F2FS
 			if (!strcmp(key, "userdata"))
 				type = str_f2fs;
+#endif
 #endif
 			if (type)
 				strcpy(response + 4, type);
@@ -261,47 +272,32 @@ int fb_do_getvar(const char *cmd_buffer, unsigned int rx_sz)
 	{
 		sprintf(response + 4, "0x%x", part_get_erase_size());
 	}
-	else if (!memcmp(cmd_buffer + 7, "slot-count", strlen("slot-count")))
-	{
-		LTRACEF("fast cmd:get slot-count\n");
-		if (!ab_update_support())
-			sprintf(response, "FAILnot support");
-		else
-			sprintf(response + 4, "2");
+	else if (!strcmp(cmd_buffer + 7, "slot-count"))
+        {
+		sprintf(response + 4, "0");
 	}
-	else if (!memcmp(cmd_buffer + 7, "current-slot", strlen("current-slot")))
-	{
-		LTRACEF("fast cmd:current-slot\n");
-		if (!ab_update_support())
-			sprintf(response, "FAILnot support");
-		else
-			if (ab_current_slot())
-				sprintf(response + 4, "_b");
-			else
-				sprintf(response + 4, "_a");
+        else if (!strcmp(cmd_buffer + 7, "current-slot"))
+        {
+		sprintf(response + 4, " ");
 	}
-	else if (!memcmp(cmd_buffer + 7, "slot-successful", strlen("slot-successful")))
-	{
+        else if (!memcmp(cmd_buffer + 7, "slot-successful", strlen("slot-successful")))
+        {
 		int slot = -1;
-
-		LTRACEF("fast cmd:slot-successful\n");
 		if (!strcmp(cmd_buffer + 7 + strlen("slot-successful:"), "_a"))
 			slot = 0;
 		else if (!strcmp(cmd_buffer + 7 + strlen("slot-successful:"), "_b"))
 			slot = 1;
 		else
 			sprintf(response, "FAILinvalid slot");
-		LTRACEF("slot: %d\n", slot);
-		if (!ab_update_support()) {
-			sprintf(response, "FAILnot support");
-		} else if (slot >= 0) {
+		printf("slot: %d\n", slot);
+		if (slot >= 0) {
 			if (ab_slot_successful(slot))
 				sprintf(response + 4, "yes");
 			else
 				sprintf(response + 4, "no");
 		}
 	}
-	else if (!memcmp(cmd_buffer + 7, "slot-unbootable", strlen("slot-unbootable")))
+        else if (!memcmp(cmd_buffer + 7, "slot-unbootable", strlen("slot-unbootable")))
 	{
 		int slot = -1;
 
@@ -312,9 +308,7 @@ int fb_do_getvar(const char *cmd_buffer, unsigned int rx_sz)
 			slot = 1;
 		else
 			sprintf(response, "FAILinvalid slot");
-		if (!ab_update_support()) {
-			sprintf(response, "FAILnot support");
-		} else if (slot >= 0) {
+		if (slot >= 0) {
 			if (ab_slot_unbootable(slot))
 				sprintf(response + 4, "yes");
 			else
@@ -332,30 +326,11 @@ int fb_do_getvar(const char *cmd_buffer, unsigned int rx_sz)
 			slot = 1;
 		else
 			sprintf(response, "FAILinvalid slot");
-		if (!ab_update_support())
-			sprintf(response, "FAILnot support");
-		else if (slot >= 0)
+		if (slot >= 0)
 			sprintf(response + 4, "%d", ab_slot_retry_count(slot));
 	}
-	else if (!memcmp(cmd_buffer + 7, "has-slot", strlen("has-slot")))
-	{
-		LTRACEF("fast cmd:has-slot\n");
-		if (!ab_update_support())
-			sprintf(response, "FAILnot support");
-		else if (!strcmp(cmd_buffer + 7 + strlen("has-slot:"), "ldfw") ||
-			!strcmp(cmd_buffer + 7 + strlen("has-slot:"), "keystorage") ||
-			!strcmp(cmd_buffer + 7 + strlen("has-slot:"), "boot") ||
-			!strcmp(cmd_buffer + 7 + strlen("has-slot:"), "dtbo") ||
-			!strcmp(cmd_buffer + 7 + strlen("has-slot:"), "system") ||
-			!strcmp(cmd_buffer + 7 + strlen("has-slot:"), "vbmeta") ||
-			!strcmp(cmd_buffer + 7 + strlen("has-slot:"), "oem") ||
-			!strcmp(cmd_buffer + 7 + strlen("has-slot:"), "vendor") ||
-			!strcmp(cmd_buffer + 7 + strlen("has-slot:"), "logo") ||
-			!strcmp(cmd_buffer + 7 + strlen("has-slot:"), "modem") ||
-			!strcmp(cmd_buffer + 7 + strlen("has-slot:"), "bootloader"))
-			sprintf(response + 4, "yes");
-		else
-			sprintf(response + 4, "no");
+	else if (!memcmp(cmd_buffer + 7, "has-slot", strlen("has-slot"))) {
+		sprintf(response + 4, "no");
 	}
 	else if (!memcmp(cmd_buffer + 7, "unlocked", strlen("unlocked")))
 	{
@@ -531,25 +506,23 @@ int fb_do_flash(const char *cmd_buffer, unsigned int rx_sz)
 
 	LTRACE_ENTRY;
 
-#if defined(CONFIG_CHECK_LOCK_STATE)
-	if(is_first_boot()) {
-		int lock_state;
-
-		lock_state = get_lock_state();
-		if (lock_state >= 0)
-			LTRACEF_LEVEL(INFO, "Lock state: %d\n", lock_state);
-		if (lock_state == 1) {
+#if defined(CONFIG_CHECK_LOCK_STATE) || defined(CONFIG_USE_RPMB)
+	if (is_first_boot()) {
+		uint32_t lock_state;
+		rpmb_get_lock_state(&lock_state);
+		printf("Lock state: %d\n", lock_state);
+		if (lock_state) {
 			sprintf(response, "FAILDevice is locked");
 			fastboot_send_status(response, strlen(response), FASTBOOT_TX_ASYNC);
 			return 1;
 		}
 	}
 #endif
-	dprintf(ALWAYS, "flash\n");
 
+	dprintf(ALWAYS, "flash\n");
 	strcpy(response,"OKAY");
 	flash_using_part((char *)cmd_buffer + 6, response,
-			downloaded_data_size, (void *)interface.transfer_buffer);
+	                downloaded_data_size, (void *)interface.transfer_buffer);
 
 	fastboot_send_status(response, strlen(response), FASTBOOT_TX_ASYNC);
 
@@ -564,12 +537,34 @@ int fb_do_reboot(const char *cmd_buffer, unsigned int rx_sz)
 	char buf[FB_RESPONSE_BUFFER_SIZE];
 	char *response = (char *)(((unsigned long)buf + 8) & ~0x07);
 
-	platform_prepare_reboot();
+	/*
+	 * PON (Power off notification) to storage
+	 *
+	 * Even with its failure, subsequential operations should be executed.
+	 */
+	scsi_do_ssu();
+	//platform_prepare_reboot(); // NEUS branch
 
-	sprintf(response,"OKAY");
+	sprintf(response, "OKAY");
 	fastboot_send_status(response, strlen(response), FASTBOOT_TX_SYNC);
 
-	platform_do_reboot(cmd_buffer);
+	//platform_do_reboot(cmd_buffer); // NEUS branch
+
+	if (!memcmp(cmd_buffer, "reboot-bootloader", strlen("reboot-bootloader"))) {
+		writel(CONFIG_RAMDUMP_MODE, CONFIG_RAMDUMP_SCRATCH);
+	}
+	else if (!memcmp(cmd_buffer, "reboot-fastboot", strlen("reboot-fastboot"))) {
+		writel(REBOOT_MODE_RECOVERY, EXYNOS_POWER_SYSIP_DAT0);
+		writel(0, CONFIG_RAMDUMP_SCRATCH);
+	}
+	else {
+		writel(0, CONFIG_RAMDUMP_SCRATCH);
+	}
+
+	/* write reboot reasen (bootloader reboot) */
+	writel(RAMDUMP_SIGN_BL_REBOOT, CONFIG_RAMDUMP_REASON);
+
+	writel(0x2, EXYNOS_POWER_SYSTEM_CONFIGURATION);
 
 	return 0;
 }
@@ -656,23 +651,17 @@ int fb_do_set_active(const char *cmd_buffer, unsigned int rx_sz)
 
 	LTRACEF_LEVEL(INFO, "set_active\n");
 
-	if (!ab_update_support()) {
-		printf("set_active is not support\n");
-		print_lcd_update(FONT_RED, FONT_BLACK, "set active is not support");
-		sprintf(response, "FAILnot support");
+	sprintf(response, "OKAY");
+	if (!strcmp(cmd_buffer + 11, "a")) {
+		printf("Set slot 'a' active.\n");
+		print_lcd_update(FONT_GREEN, FONT_BLACK, "Set slot 'a' active.");
+		ab_set_active(0);
+	} else if (!strcmp(cmd_buffer + 11, "b")) {
+		printf("Set slot 'b' active.\n");
+		print_lcd_update(FONT_GREEN, FONT_BLACK, "Set slot 'b' active.");
+		ab_set_active(1);
 	} else {
-		sprintf(response,"OKAY");
-		if (!strcmp(cmd_buffer + 11, "a")) {
-			printf("Set slot 'a' active.\n");
-			print_lcd_update(FONT_GREEN, FONT_BLACK, "Set slot 'a' active.");
-			ab_set_active(0);
-		} else if (!strcmp(cmd_buffer + 11, "b")) {
-			printf("Set slot 'b' active.\n");
-			print_lcd_update(FONT_GREEN, FONT_BLACK, "Set slot 'b' active.");
-			ab_set_active(1);
-		} else {
-			sprintf(response, "FAILinvalid slot");
-		}
+		sprintf(response, "FAILinvalid slot");
 	}
 
 	fastboot_send_status(response, strlen(response), FASTBOOT_TX_ASYNC);
@@ -686,17 +675,18 @@ int fb_do_flashing(const char *cmd_buffer, unsigned int rx_sz)
 	char buf[FB_RESPONSE_BUFFER_SIZE];
 	char *response = (char *)(((unsigned long)buf + 8) & ~0x07);
 
-	sprintf(response,"OKAY");
+	sprintf(response, "OKAY");
+#if defined(CONFIG_USE_RPMB)
 	if (!strcmp(cmd_buffer + 9, "lock")) {
 		printf("Lock this device.\n");
 		print_lcd_update(FONT_GREEN, FONT_BLACK, "Lock this device.");
-		if(set_lock_state(1))
+		if (rpmb_set_lock_state(1))
 			sprintf(response, "FAILRPBM error: failed to change lock state on RPMB");
 	} else if (!strcmp(cmd_buffer + 9, "unlock")) {
 		if (get_unlock_ability()) {
 			printf("Unlock this device.\n");
 			print_lcd_update(FONT_GREEN, FONT_BLACK, "Unlock this device.");
-			if(set_lock_state(0))
+			if (rpmb_set_lock_state(0))
 				sprintf(response, "FAILRPBM error: failed to change lock state on RPMB");
 		} else {
 			sprintf(response, "FAILunlock_ability is 0");
@@ -716,6 +706,7 @@ int fb_do_flashing(const char *cmd_buffer, unsigned int rx_sz)
 	} else {
 		sprintf(response, "FAILunsupported command");
 	}
+#endif
 
 	fastboot_send_status(response, strlen(response), FASTBOOT_TX_ASYNC);
 
@@ -726,124 +717,8 @@ int fb_do_oem(const char *cmd_buffer, unsigned int rx_sz)
 {
 	char buf[FB_RESPONSE_BUFFER_SIZE];
 	char *response = (char *)(((unsigned long)buf + 8) & ~0x07);
-	unsigned int env_val = 0;
-	ssize_t param_sz;
 
-	if (!strncmp(cmd_buffer + 4, "trackid write", 13)) {
-		void *part;
-		char *proinfo;
-
-		part = part_get("proinfo");
-		proinfo = memalign(0x1000, part_get_size_in_bytes(part));
-		part_read(part, (void *)proinfo);
-
-		memcpy(proinfo + 21, cmd_buffer + 18, 10);
-		part_write(part, (void *)proinfo);
-
-		sprintf(response, "OKAY");
-		fastboot_send_status(response, strlen(response), FASTBOOT_TX_ASYNC);
-
-		free(proinfo);
-	} else if (!strncmp(cmd_buffer + 4, "trackid read", 13)) {
-		void *part;
-		char *proinfo;
-
-		part = part_get("proinfo");
-		proinfo = memalign(0x1000, part_get_size_in_bytes(part));
-		part_read(part, (void *)proinfo);
-
-		sprintf(response, "INFO");
-		memcpy(response + 4, proinfo + 21, 10);
-		*(response + 14) = 0;
-		fastboot_send_status(response, strlen(response), FASTBOOT_TX_ASYNC);
-
-		sprintf(response, "OKAY");
-		fastboot_send_status(response, strlen(response), FASTBOOT_TX_ASYNC);
-
-		free(proinfo);
-
-	} else if (!strncmp(cmd_buffer + 4, "uart_log_enable", 15)) {
-		/* Check value on the sysparam */
-		param_sz = sysparam_read("uart_log_enable", &env_val, sizeof(env_val));
-		if (param_sz > 0)
-			sysparam_remove("uart_log_enable");
-		env_val = UART_LOG_MODE_FLAG;
-		sysparam_add("uart_log_enable", &env_val, sizeof(env_val));
-		sysparam_write();
-
-		sprintf(response, "OKAY");
-		fastboot_send_status(response, strlen(response), FASTBOOT_TX_ASYNC);
-	} else if (!strncmp(cmd_buffer + 4, "uart_log_disable", 16)) {
-		param_sz = sysparam_read("uart_log_enable", &env_val, sizeof(env_val));
-		if (param_sz > 0) {
-			sysparam_remove("uart_log_enable");
-			sysparam_write();
-		}
-
-		sprintf(response, "OKAY");
-		fastboot_send_status(response, strlen(response), FASTBOOT_TX_ASYNC);
-	} else if (!strncmp(cmd_buffer + 4, "fb_mode_set", 11)) {
-		param_sz = sysparam_read("fb_mode_set", &env_val, sizeof(env_val));
-		if (param_sz > 0)
-			sysparam_remove("fb_mode_set");
-		env_val = UART_LOG_MODE_FLAG;
-		sysparam_add("fb_mode_set", &env_val, sizeof(env_val));
-		sysparam_write();
-
-		sprintf(response, "OKAY");
-		fastboot_send_status(response, strlen(response), FASTBOOT_TX_ASYNC);
-	} else if (!strncmp(cmd_buffer + 4, "fb_mode_clear", 13)) {
-		param_sz = sysparam_read("fb_mode_set", &env_val, sizeof(env_val));
-		if (param_sz > 0) {
-			sysparam_remove("fb_mode_set");
-			sysparam_write();
-		}
-
-		sprintf(response, "OKAY");
-		fastboot_send_status(response, strlen(response), FASTBOOT_TX_ASYNC);
-	} else if (!strncmp(cmd_buffer + 4, "xct-on", 6)) {
-		char xct_on[8] = { 0, };
-
-		param_sz = sysparam_read("xct", xct_on, 8);
-		if (param_sz > 0)
-			sysparam_remove("xct");
-		sprintf(xct_on, "xct-on");
-		sysparam_add("xct", xct_on, strlen(xct_on));
-		sysparam_write();
-
-		sprintf(response, "OKAY");
-		fastboot_send_status(response, strlen(response), FASTBOOT_TX_ASYNC);
-	} else if (!strncmp(cmd_buffer + 4, "xct-off", 7)) {
-		char xct_on[8] = { 0, };
-
-		param_sz = sysparam_read("xct", xct_on, 8);
-		if (param_sz > 0) {
-			sysparam_remove("xct");
-			sysparam_write();
-		}
-		fastboot_send_status(response, strlen(response), FASTBOOT_TX_ASYNC);
-	} else if (!strncmp(cmd_buffer + 4, "boot_wait_on", 12)) {
-		int wait_max = 0;
-
-		param_sz = sysparam_read("boot_wait", &wait_max, sizeof(int));
-		if (param_sz > 0)
-			sysparam_remove("boot_wait");
-		wait_max = 3;
-		sysparam_add("boot_wait", &wait_max, sizeof(int));
-		sysparam_write();
-
-		sprintf(response, "OKAY");
-		fastboot_send_status(response, strlen(response), FASTBOOT_TX_ASYNC);
-	} else if (!strncmp(cmd_buffer + 4, "boot_wait_off", 13)) {
-		int wait_max;
-
-		param_sz = sysparam_read("boot_wait", &wait_max, sizeof(int));
-		if (param_sz > 0) {
-			sysparam_remove("boot_wait");
-			sysparam_write();
-		}
-		fastboot_send_status(response, strlen(response), FASTBOOT_TX_ASYNC);
-	} else if (!strncmp(cmd_buffer + 4, "str_ram", 7)) {
+	if (!strncmp(cmd_buffer + 4, "str_ram", 7)) {
 		if (!debug_store_ramdump_oem(cmd_buffer + 12))
 			sprintf(response, "OKAY");
 		else

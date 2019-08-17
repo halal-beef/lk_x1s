@@ -11,6 +11,7 @@
 #include <debug.h>
 #include <reg.h>
 #include <app.h>
+#include <dev/usb/gadget.h>
 #include <lib/console.h>
 #include <lib/fastboot.h>
 #include <lib/font_display.h>
@@ -56,7 +57,7 @@ static void exynos_boot_task(const struct app_descriptor *app, void *args)
 
 	if (*(unsigned int *)DRAM_BASE != 0xabcdef) {
 		printf("Running on DRAM by TRACE32: skip auto booting\n");
-		do_fastboot(0, 0);
+		start_usb_gadget();
 		return;
 	}
 
@@ -67,7 +68,7 @@ static void exynos_boot_task(const struct app_descriptor *app, void *args)
 		printf("Current BL2 is for EVT%d\n", dfd_get_revision());
 		print_lcd(FONT_RED, FONT_BLACK, "Using invalid BL2!");
 		print_lcd(FONT_RED, FONT_BLACK, "Current BL2 is for EVT%d", dfd_get_revision());
-		do_fastboot(0, 0);
+		start_usb_gadget();
 		return;
 	}
 
@@ -95,7 +96,7 @@ static void exynos_boot_task(const struct app_descriptor *app, void *args)
 	}
 
 	if (!val)
-		do_fastboot(0, 0);
+		start_usb_gadget();
 
 #ifdef RAMDUMP_MODE_OFF
 	dfd_set_dump_en_for_cacheop(0);
@@ -113,7 +114,7 @@ ramdump:
 #else
 	debug_store_ramdump();
 	dfd_set_dump_en_for_cacheop(0);
-	do_fastboot(0, 0);
+	start_usb_gadget();
 #endif
 	return;
 }

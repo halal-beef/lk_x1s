@@ -73,6 +73,8 @@ int phy_usb_exynos_initiate(void *handle)
 		phy_usb_exynos_system_init(pos->register_num, true);
 		phy_exynos_usb_v3p1_enable(cal_info);
 		phy_exynos_usb_v3p1_pipe_ovrd(cal_info);
+
+		phy_exynos_usb_v3p1_tune(cal_info);
 #endif
 	}
 	return 0;

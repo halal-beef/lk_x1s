@@ -10,8 +10,7 @@ MODULE_SRCS += \
 	$(LOCAL_DIR)/delay.c \
 	$(LOCAL_DIR)/ufs.c \
 	$(LOCAL_DIR)/ufs-cal-9830.c \
-	$(LOCAL_DIR)/usb/usbd3-ss.c \
-	$(LOCAL_DIR)/usb/phy-exynos-usb3p1.c \
+	$(LOCAL_DIR)/usb/usb.c \
 	$(LOCAL_DIR)/security/smc_aarch64.c \
 	$(LOCAL_DIR)/security/ldfw.c \
 	$(LOCAL_DIR)/security/avb_ops.c \
@@ -40,7 +39,10 @@ MODULE_SRCS += \
 
 MODULE_DEPS += \
     dev/interrupt/arm_gic \
-	dev/timer/arm_generic
+	dev/timer/arm_generic \
+	dev/usb/dwc3 \
+	dev/usb/phy/exynos \
+	dev/usb/device/fastboot
 
 LINKER_SCRIPT += $(BUILDDIR)/system-onesegment.ld
 
