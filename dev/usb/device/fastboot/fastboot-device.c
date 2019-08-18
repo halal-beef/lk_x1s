@@ -28,6 +28,8 @@
 
 #define LOCAL_TRACE 0
 
+extern int usb_config_state;
+
 struct fastboot_infor {
 	unsigned int bulk_in_ep;
 	int bulk_in_ep_status;
@@ -339,6 +341,7 @@ static void fastboot_config(void *class_handle, USB_SPEED speed, unsigned int if
 	gadget_ep_set_cb_xferdone(fastboot_h.bulk_in_ep, tx_status_callback, &fastboot_h);
 	fastboot_h.tx_sts_done = 0;
 	ready_to_rx_cmd();
+	usb_config_state = 1;
 }
 
 static struct usb_dev_infor fastboot_infor = {
