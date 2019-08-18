@@ -21,6 +21,7 @@
 #include <platform/delay.h>
 #include <platform/mmu/barrier.h>
 #include <lib/font_display.h>
+#include <kernel/timer.h>
 
 #include "dev/usb/gadget.h"
 #include "dwc3-reg.h"
@@ -29,6 +30,13 @@
 
 #define dwc3_DEV_GET_HANDLER(_PDEV) (DWC3_DEV_HANDLER)(dev_get_drvdata(&_PDEV->dev))
 #define LOCAL_TRACE 0
+
+int usb_config_state;
+struct timer config_timer;
+int retry_cnt;
+
+void muic_sw_usb(void);
+static enum handler_return dwc3_dev_config_check(struct timer *timer, unsigned int now, void *arg);
 
 enum dwc3_dev_dbg_bit {
 	UDEV3DBG_E = (1 << 0),
@@ -925,6 +933,9 @@ void dwc3_dev_HandleDevEvent(DWC3_DEV_HANDLER dwc3_dev_h, USB3_DEV_DEVT_o *uDevE
 {
 	switch (uDevEvent->b.evt_type) {
 	case DEVT_USBRESET:
+		usb_config_state = 0;
+		timer_cancel(&config_timer);
+		timer_set_periodic(&config_timer, 2000, dwc3_dev_config_check, dwc3_dev_h);
 		U3DBG_ISR_DEV("USB Reset\n");
 		dwc3_dev_HandleUsbResetInt(dwc3_dev_h);
 		break;
@@ -1195,7 +1206,31 @@ void *dwc3_dev_init_once(void)
 	return dwc3_dev_h;
 }
 
-void muic_sw_usb(void);
+static enum handler_return
+dwc3_dev_config_check(struct timer *timer, unsigned int now, void *arg) {
+	if (!usb_config_state) {
+		muic_sw_usb();
+		mdelay(50);
+		printf("%s: DCTL runstop cnt %d!\n", __func__, retry_cnt);
+		dwc3_dev_set_rs(arg, false);
+		mdelay(50);
+		dwc3_dev_set_rs(arg, true);
+	} else {
+		printf("%s: configuration done. delete timer!!\n", __func__);
+		timer_cancel(&config_timer);
+		retry_cnt = 0;
+	}
+
+	if (retry_cnt >= 3) {
+		printf("%s: retry all fail!\n", __func__);
+		timer_cancel(&config_timer);
+		retry_cnt = 0;
+	}
+	retry_cnt++;
+
+	return INT_NO_RESCHEDULE;
+}
+
 int dwc3_dev_init(void *dev_handle)
 {
 	u32 uRegData = 0;
@@ -1331,6 +1366,8 @@ int dwc3_dev_init(void *dev_handle)
 	dwc3_dev_h->fastboot_mode = true;
 
 	muic_sw_usb();
+	timer_initialize(&config_timer);
+	timer_set_periodic(&config_timer, 2000, dwc3_dev_config_check, dwc3_dev_h);
 
 	return 0;
 }
