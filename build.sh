@@ -1,5 +1,5 @@
 #!/bin/bash
-
+export ARCH_arm64_TOOLCHAIN_PREFIX=~/workspace/product_erd3830/toolchain/aarch64-elf-5.3.0-Linux-x86_64/bin/aarch64-elf-
 case $1 in
 	maestro9610)
 		rm -rf build-$1; make $1 $2 -j16
@@ -19,6 +19,9 @@ case $1 in
 	phoenix9830)
 		rm -rf build-$1; make $1 -j16
 		;;
+	erd3830)
+		rm -rf build-$1; make $1 -j16
+		;;
 	*)
 		echo "-----------------------------------------------------------------"
 		echo % usage : ./build.sh [board name] [none / user]
@@ -30,6 +33,7 @@ case $1 in
 		echo smdk9830
 		echo universal9830_bringup
 		echo phoenix9830
+		echo erd3830
 		echo "-----------------------------------------------------------------"
 		exit 0
 		;;
