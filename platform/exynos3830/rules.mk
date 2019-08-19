@@ -46,7 +46,6 @@ MODULE_SRCS += \
 MODULE_DEPS += \
 	dev/interrupt/arm_gic \
 	dev/timer/arm_generic \
-	dev/scsi \
 	lib/cksum \
 	dev/usb/dwc3 \
 	dev/usb/phy/exynos \
