@@ -25,7 +25,7 @@
 
 #include <dpu/exynos_panel.h>
 
-#define ARRAY_SIZE(x) (sizeof(x) / sizeof((x)[0]))
+// #define ARRAY_SIZE(x) (sizeof(x) / sizeof((x)[0]))
 
 void s6e3fa0_lcd_init(unsigned int id, struct exynos_panel_info *lcd);
 void s6e3fa0_lcd_enable_exynos(unsigned int id);
