@@ -1,5 +1,5 @@
 #!/bin/bash
-export ARCH_arm64_TOOLCHAIN_PREFIX=~/workspace/product_erd3830/toolchain/aarch64-elf-5.3.0-Linux-x86_64/bin/aarch64-elf-
+
 case $1 in
 	maestro9610)
 		rm -rf build-$1; make $1 $2 -j16
