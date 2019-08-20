@@ -49,8 +49,8 @@
 /* =================================================== */
 
 /* Platform Dependency */
-#include <dev/dpu/decon.h>
-#include <platform/display_sfr.h>
+#include <dpu/decon.h>
+#include <dpu/display_sfr.h>
 
 /* TODO : divide platform info and target info */
 #define MAX_DPP_CNT	6

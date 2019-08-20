@@ -12,7 +12,7 @@
 #ifndef __SAMSUNG_DSIM_CAL_H__
 #define __SAMSUNG_DSIM_CAL_H__
 
-#include <dev/dpu/exynos_panel.h>
+#include <dpu/exynos_panel.h>
 
 /* EVT1 feature */
 #define DPHY_PLL_CLK_GATE_EN	0

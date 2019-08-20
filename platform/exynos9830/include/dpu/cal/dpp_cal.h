@@ -12,8 +12,8 @@
 #ifndef __SAMSUNG_DPP_CAL_H__
 #define __SAMSUNG_DPP_CAL_H__
 
-#include <dev/dpu/decon.h>
-#include <dev/dpu/format.h>
+#include <dpu/decon.h>
+#include <dpu/format.h>
 
 struct dpp_params_info {
 	struct decon_frame src;

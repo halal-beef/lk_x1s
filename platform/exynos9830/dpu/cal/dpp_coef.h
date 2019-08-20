@@ -24,7 +24,7 @@
 #define DPP_COEF_H_
 
 #include <sys/types.h>
-#include <dev/dpu/dpp.h>
+#include <dpu/dpp.h>
 
 const s16 h_coef_8t[7][16][8] = {
 	{	/* Ratio <= 65536 (~8:8) Selection = 0 */

@@ -21,8 +21,8 @@
  */
 
 #include <malloc.h>
-#include <dev/dpu/dpp.h>
-#include <dev/dpu/lcd_ctrl.h>
+#include <dpu/dpp.h>
+#include <dpu/lcd_ctrl.h>
 #include <target/dpu_config.h>
 
 int dpp_log_level = 6;

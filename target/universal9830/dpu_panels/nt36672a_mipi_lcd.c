@@ -20,9 +20,9 @@
  * limitations under the License.
  */
 
-#include <dev/dpu/lcd_ctrl.h>
-#include <dev/dpu/exynos_panel.h>
-#include <dev/dpu/dsim.h>
+#include <dpu/lcd_ctrl.h>
+#include <dpu/exynos_panel.h>
+#include <dpu/dsim.h>
 
 #define MAX_BRIGHTNESS		255
 #define MIN_BRIGHTNESS		0

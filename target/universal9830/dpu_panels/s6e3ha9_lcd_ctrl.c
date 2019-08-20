@@ -10,9 +10,9 @@
  * published by the Free Software Foundation.
  */
 
-#include <dev/dpu/lcd_ctrl.h>
-#include <dev/dpu/mipi_dsi_cmd.h>
-#include <dev/dpu/dsim.h>
+#include <dpu/lcd_ctrl.h>
+#include <dpu/mipi_dsi_cmd.h>
+#include <dpu/dsim.h>
 #include "s6e3ha9_param.h"
 
 /* Porch values. It depends on command or video mode */

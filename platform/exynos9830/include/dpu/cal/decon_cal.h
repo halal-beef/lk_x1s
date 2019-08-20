@@ -12,8 +12,8 @@
 #ifndef __SAMSUNG_DECON_CAL_H__
 #define __SAMSUNG_DECON_CAL_H__
 
-#include <dev/dpu/exynos_panel.h>
-#include <dev/dpu/format.h>
+#include <dpu/exynos_panel.h>
+#include <dpu/format.h>
 
 #define CEIL(x)			((x-(u32)(x) > 0 ? (u32)(x+1) : (u32)(x)))
 

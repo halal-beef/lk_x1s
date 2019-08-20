@@ -25,14 +25,14 @@
 
 #include <stdio.h>
 #include <errno.h>
-#include <dev/dpu/exynos_panel.h>
-#include <dev/dpu/dsim.h>
-#include <dev/dpu/mipi_dsi_cmd.h>
+#include <dpu/exynos_panel.h>
+#include <dpu/dsim.h>
+#include <dpu/mipi_dsi_cmd.h>
 #include <platform/sfr.h>
-#include <platform/display_sfr.h>
+#include <dpu/display_sfr.h>
 #include <platform/delay.h>
-#include <platform/dpu_cal/regs-decon.h>
-#include <platform/dpu_cal/decon_cal.h>
+#include <dpu/cal/regs-decon.h>
+#include <dpu/cal/decon_cal.h>
 
 #ifndef __iomem
 #define __iomem

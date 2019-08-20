@@ -33,7 +33,6 @@ MODULE_DEPS += \
 	dev/mmc \
 	dev/rpmb \
 	dev/boot \
-	dev/dpu \
 	dev/adc \
 	dev/pmucal \
 	dev/speedy \

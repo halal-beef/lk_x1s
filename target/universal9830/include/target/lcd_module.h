@@ -22,7 +22,7 @@
 #ifndef __LCD_MODULE_H__
 #define __LCD_MODULE_H__
 
-#include <dev/dpu/dsim.h>
+#include <dpu/dsim.h>
 
 int cm_fill_id(struct dsim_device *dsim);
 int cm_read_id(struct dsim_device *dsim);

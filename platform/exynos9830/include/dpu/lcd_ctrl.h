@@ -23,7 +23,7 @@
 #ifndef __LCD_CTRL_H__
 #define __LCD_CTRL_H__
 
-#include <dev/dpu/exynos_panel.h>
+#include <dpu/exynos_panel.h>
 
 //#define ARRAY_SIZE(x) (sizeof(x) / sizeof((x)[0]))
 
