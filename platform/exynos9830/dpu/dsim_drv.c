@@ -23,9 +23,9 @@
 #include <malloc.h>
 #include <platform/delay.h>
 
-#include <dev/dpu/dsim.h>
-#include <dev/dpu/decon.h>
-#include <dev/dpu/lcd_ctrl.h>
+#include <dpu/dsim.h>
+#include <dpu/decon.h>
+#include <dpu/lcd_ctrl.h>
 #include <target/dpu_config.h>
 #include <target/lcd_module.h>
 

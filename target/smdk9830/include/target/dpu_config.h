@@ -69,8 +69,8 @@
 /* =================================================== */
 
 /* Platform Dependency */
-#include <dev/dpu/decon.h>
-#include <platform/display_sfr.h>
+#include <dpu/decon.h>
+#include <dpu/display_sfr.h>
 
 /* TODO : divide platform info and target info */
 //#define NUM_OF_DPP   6

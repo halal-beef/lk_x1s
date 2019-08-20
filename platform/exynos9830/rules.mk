@@ -23,9 +23,6 @@ MODULE_SRCS += \
 	$(LOCAL_DIR)/security/exynos-hvc.S \
 	$(LOCAL_DIR)/gpio_init.S \
 	$(LOCAL_DIR)/gpio.c \
-	$(LOCAL_DIR)/dpu_cal/decon_reg.c \
-	$(LOCAL_DIR)/dpu_cal/dpp_reg.c \
-	$(LOCAL_DIR)/dpu_cal/dsim_reg.c \
 	$(LOCAL_DIR)/fdt.c \
 	$(LOCAL_DIR)/flexpmu_dbg.c \
 	$(LOCAL_DIR)/tmu.c \
@@ -51,3 +48,4 @@ GLOBAL_COMPILEFLAGS += -mfix-cortex-a53-835769
 GLOBAL_COMPILEFLAGS += -mfix-cortex-a53-843419
 
 include make/module.mk
+include $(LOCAL_DIR)/dpu/rules.mk

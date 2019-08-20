@@ -21,11 +21,11 @@
  */
 
 #include <malloc.h>
-#include <dev/dpu/dpp.h>
-#include <dev/dpu/decon.h>
-#include <dev/dpu/dsim.h>
+#include <dpu/dpp.h>
+#include <dpu/decon.h>
+#include <dpu/dsim.h>
 
-#include <dev/dpu/lcd_ctrl.h>
+#include <dpu/lcd_ctrl.h>
 #include <lib/logo_display.h>
 #include <lib/font_display.h>
 #include <target/dpu_config.h>

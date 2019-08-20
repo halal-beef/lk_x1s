@@ -9,9 +9,9 @@
  * published by the Free Software Foundation.
 */
 
-#include <dev/dpu/decon.h>
-#include <dev/dpu/dpp.h>
-#include <dev/dpu/format.h>
+#include <dpu/decon.h>
+#include <dpu/dpp.h>
+#include <dpu/format.h>
 
 static const struct dpu_fmt dpu_formats_list[] = {
 	{

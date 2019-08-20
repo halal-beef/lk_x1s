@@ -25,10 +25,10 @@
 
 #include <errno.h>
 
-#include <dev/dpu/decon.h>
-#include <platform/dpu_cal/regs-dpp.h>
-#include <platform/dpu_cal/dpp_cal.h>
-#include <platform/display_sfr.h>
+#include <dpu/decon.h>
+#include <dpu/cal/regs-dpp.h>
+#include <dpu/cal/dpp_cal.h>
+#include <dpu/display_sfr.h>
 #include <target/dpu_config.h>
 
 

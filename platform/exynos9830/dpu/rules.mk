@@ -7,6 +7,9 @@ MODULE_SRCS += \
 	$(LOCAL_DIR)/dpp_drv.c \
 	$(LOCAL_DIR)/dsim_drv.c \
 	$(LOCAL_DIR)/format.c \
+	$(LOCAL_DIR)/cal/decon_reg.c \
+	$(LOCAL_DIR)/cal/dpp_reg.c \
+	$(LOCAL_DIR)/cal/dsim_reg.c \
 
 include make/module.mk
 

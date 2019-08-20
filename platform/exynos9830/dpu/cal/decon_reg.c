@@ -20,7 +20,7 @@
  * limitations under the License.
  */
 
-#include <dev/dpu/decon.h>
+#include <dpu/decon.h>
 /* current setting for 3HF4 & 3HA6 does not support VESA_SCR_V4 */
 /* #define VESA_SCR_V4 */
 /******************* CAL raw functions implementation *************************/

@@ -20,7 +20,7 @@
  * limitations under the License.
  */
 
-#include <dev/dpu/dsim.h>
+#include <dpu/dsim.h>
 
 /* dsim version */
 #define DSIM_VER_EVT0			0x02040000
