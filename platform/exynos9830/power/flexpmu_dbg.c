@@ -17,8 +17,8 @@
 #include <stdlib.h>
 #include <lib/console.h>
 
-#include "flexpmu_dbg.h"
-#include "include/platform/exynos9830.h"
+#include <platform/power/flexpmu_dbg.h>
+#include <platform/exynos9830.h>
 
 enum dbg_index {
 	CPU_SEQ_STATUS,

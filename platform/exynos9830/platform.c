@@ -32,7 +32,7 @@
 #include <platform/ldfw.h>
 #include <platform/secure_boot.h>
 #include <platform/h-arx.h>
-#include "flexpmu_dbg.h"
+#include <platform/power/flexpmu_dbg.h>
 #include <platform/tmu.h>
 #include <dev/chg_max77705.h>
 #include <platform/dvfs_info.h>
@@ -56,7 +56,7 @@
 #endif
 
 #ifdef EXYNOS_ACPM_BASE
-#include "acpm.h"
+#include <platform/power/acpm.h>
 #endif
 
 #include <platform/chip_rev.h>
