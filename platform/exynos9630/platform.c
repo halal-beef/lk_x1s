@@ -43,7 +43,7 @@
 #include <stdio.h>
 
 #include <dev/lk_acpm_ipc.h>
-#include "flexpmu_dbg.h"
+#include <platform/power/flexpmu_dbg.h>
 
 #define ARCH_TIMER_IRQ		30
 
