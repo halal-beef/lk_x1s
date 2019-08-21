@@ -542,7 +542,9 @@ int fb_do_reboot(const char *cmd_buffer, unsigned int rx_sz)
 	 *
 	 * Even with its failure, subsequential operations should be executed.
 	 */
+#ifndef CONFIG_NOT_SCSI
 	scsi_do_ssu();
+#endif
 	//platform_prepare_reboot(); // NEUS branch
 
 	sprintf(response, "OKAY");
