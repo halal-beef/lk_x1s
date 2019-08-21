@@ -23,10 +23,6 @@
 
 #include <part.h>
 
-#define SYSREG_USB_BASE			0x13020000
-#define USB_SHARABLE_OFFSET		0x700
-#define USB_SHARABLE_SHIFT		12
-
 #define EXYNOS_POWER_BASE		0x11860000
 
 #define USB_LINK_BASE			0x13600000
@@ -313,7 +309,6 @@ LK_INIT_HOOK(register_phy_cal_infor, &register_phy_cal_infor, LK_INIT_LEVEL_KERN
 
 void phy_usb_exynos_system_init(int num_phy_port, bool en)
 {
-	u32 reg;
 
 	dprintf(ALWAYS, "%s called: %d\n", __func__, en);
 
@@ -323,31 +318,11 @@ void phy_usb_exynos_system_init(int num_phy_port, bool en)
 		writel(1, (void *)(EXYNOS_POWER_BASE + USB2_PHY_CONTROL_OFFSET));
 	else
 		writel(0, (void *)(EXYNOS_POWER_BASE + USB2_PHY_CONTROL_OFFSET));
-
-	/* CCI Enable */
-	reg = readl((void *)(SYSREG_USB_BASE + USB_SHARABLE_OFFSET));
-	if (en)
-		reg |= (0x3 << USB_SHARABLE_SHIFT);
-	else
-		reg &= ~(0x3 << USB_SHARABLE_SHIFT);
-	writel(reg, SYSREG_USB_BASE + USB_SHARABLE_OFFSET);
 }
 
 void exynos_usb_cci_control(int on_off)
 {
-	u32 reg;
-
-	reg = readl(SYSREG_USB_BASE + USB_SHARABLE_OFFSET);
-
-	if (on_off) {
-		dprintf(ALWAYS, "USB CCI unit is enabled.\n");
-		reg |= (0x3 << USB_SHARABLE_SHIFT);
-	} else {
-		dprintf(ALWAYS, "USB CCI unit is disabled.\n");
-		reg &= ~(0x3 << USB_SHARABLE_SHIFT);
-	}
-
-	writel(reg, SYSREG_USB_BASE + USB_SHARABLE_OFFSET);
+	return;
 }
 
 #if 0
