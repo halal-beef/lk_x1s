@@ -9,7 +9,6 @@ MODULE_SRCS += \
 	$(LOCAL_DIR)/uart_simple.c \
 	$(LOCAL_DIR)/delay.c \
 	$(LOCAL_DIR)/usb/usb.c \
-	$(LOCAL_DIR)/fastboot/decompress_ext4.c \
 	$(LOCAL_DIR)/boot/cmd_scatter_load_boot.c \
 	$(LOCAL_DIR)/boot/cmd_boot.c \
 	$(LOCAL_DIR)/boot/cmd_display.c \

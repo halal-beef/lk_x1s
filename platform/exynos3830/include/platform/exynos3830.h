@@ -216,4 +216,7 @@
 #define EXYNOS3830_GPG1PUD                            	(EXYNOS3830_GPIO_PERI_BASE + 0x0088)
 #define EXYNOS3830_GPG1DRV                              (EXYNOS3830_GPIO_PERI_BASE + 0x008C)
 
+/* Skip SCSI for mmc, exynos3830 */
+#define CONFIG_NOT_SCSI
+
 #endif	/* __EXYNOS3830_H__ */

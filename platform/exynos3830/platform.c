@@ -304,7 +304,8 @@ void platform_init(void)
 		fg_init_s2mu106();
 	}
 
-	check_charger_connect();
+	if (*(unsigned int *)DRAM_BASE == 0xabcdef)
+		check_charger_connect();
 
 	mmc_init();
 	part_init();

@@ -24,9 +24,10 @@
 #include <dpu/decon.h>
 #include <target/dpu_config.h>
 
-#ifdef CONFIG_PIT
-#include <pit.h>
-#endif
+//#ifdef CONFIG_PIT
+//#include <pit.h>
+//#endif
+#include <part.h>
 
 #define BMP_HEADER_SIZE 54
 
@@ -36,7 +37,8 @@ int show_boot_logo(void)
 #ifdef CONFIG_PIT
 	unsigned char *file = (unsigned char *)(CONFIG_DISPLAY_TEMP_BASE_ADDRESS);
 	unsigned int *fb = (unsigned int *)(CONFIG_DISPLAY_LOGO_BASE_ADDRESS);
-	struct pit_entry *ptn = pit_get_part_info("logo");
+	void *part = part_get("logo");
+	u64 aligned_read_size = 0;
 
 	unsigned int i;
 
@@ -47,10 +49,9 @@ int show_boot_logo(void)
 	unsigned int img_height;
 	unsigned short bpp;
 
-	if (ptn)
-		pit_access(ptn, PIT_OP_LOAD, (u64)file, 512);
-	else
+	if (!part)
 		goto error;
+	part_read_partial(part, (void *)file, 0, (u64)512);
 
 	type = ((unsigned short)*(file + 1) << 8) | (unsigned short)(*file);
 	printf("type : 0x%04x\n", type);
@@ -86,7 +87,8 @@ int show_boot_logo(void)
 		aligned_read_size = (((img_width * img_height * 3 + BMP_HEADER_SIZE) / 1024) + 1) * 1024;
 
 		file = (unsigned char *)(CONFIG_DISPLAY_TEMP_BASE_ADDRESS);
-		pit_access(ptn, PIT_OP_LOAD, (u64)file, aligned_read_size);
+		aligned_read_size = ((aligned_read_size + PART_SECTOR_SIZE - 1) / PART_SECTOR_SIZE) * PART_SECTOR_SIZE;
+		part_read_partial(part, (void *)file, 0, (u64)aligned_read_size);
 
 		file+=BMP_HEADER_SIZE;
 
@@ -106,7 +108,9 @@ int show_boot_logo(void)
 
 	} else {
 		// RGB raw file
-		pit_access(ptn, PIT_OP_LOAD, (u64)fb, LCD_WIDTH * LCD_HEIGHT * 4);
+		aligned_read_size = (u64)(LCD_WIDTH * LCD_HEIGHT * 4);
+		aligned_read_size = ((aligned_read_size + PART_SECTOR_SIZE - 1) / PART_SECTOR_SIZE) * PART_SECTOR_SIZE;
+		part_read_partial(part, (void *)fb, 0, aligned_read_size);
 	}
 
 	decon_string_update();
