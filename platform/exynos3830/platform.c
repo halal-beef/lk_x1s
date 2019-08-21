@@ -10,6 +10,7 @@
 
 #include <reg.h>
 #include <stdlib.h>
+#include <string.h>
 #include "uart_simple.h"
 #include <dev/ufs.h>
 #include <dev/boot.h>

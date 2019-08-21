@@ -10,12 +10,14 @@ MODULES += \
 	dev/acpm_ipc \
 	dev/mmc
 
-MODULES += \
+MODULE_DEPS += \
+	platform/exynos \
 	lib/gpt \
 	lib/font \
 	lib/logo \
 	lib/libavb \
 	lib/lock \
+	lib/fastboot \
 	dev/rpmb \
 	external/lib/fdt \
 	external/lib/ufdt \
