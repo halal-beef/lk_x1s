@@ -8,8 +8,6 @@ MODULE_SRCS += \
 	$(LOCAL_DIR)/debug.c \
 	$(LOCAL_DIR)/uart_simple.c \
 	$(LOCAL_DIR)/delay.c \
-	$(LOCAL_DIR)/ufs.c \
-	$(LOCAL_DIR)/ufs-cal-9630.c \
 	$(LOCAL_DIR)/usb/usb.c \
 	$(LOCAL_DIR)/fastboot/decompress_ext4.c \
 	$(LOCAL_DIR)/boot/cmd_scatter_load_boot.c \
