@@ -19,8 +19,25 @@
 #include "dev/usb/phy-samsung-usb-cal.h"
 #include "dev/usb/fastboot.h"
 #include "platform/sfr.h"
+#include <platform/chip_id.h>
 
 #include <part.h>
+
+#define SYSREG_USB_BASE			0x13020000
+#define USB_SHARABLE_OFFSET		0x700
+#define USB_SHARABLE_SHIFT		12
+
+#define EXYNOS_POWER_BASE		0x11860000
+
+#define USB_LINK_BASE			0x13600000
+#define USB_PHY_BASE			0x135D0000
+
+/* PHY CONTROL */
+#define USB2_PHY_CONTROL_OFFSET		0x704
+
+#define USB_INT_NUM			137
+
+static unsigned int dwc3_isr_num = (USB_INT_NUM + 32);
 
 void gadget_probe_pid_vid_version(unsigned short *vid, unsigned short *pid, unsigned short *bcd_version)
 {
@@ -237,11 +254,9 @@ int init_fastboot_variables(void)
 	return 0;
 }
 
-static unsigned int dwc3_isr_num = (137 + 32);
-
 int dwc3_plat_init(struct dwc3_plat_config *plat_config)
 {
-	plat_config->base = (void *) 0x13600000;
+	plat_config->base = (void *) USB_LINK_BASE;
 	plat_config->num_hs_phy = 1;
 	plat_config->array_intr = &dwc3_isr_num;
 	plat_config->num_intr = 1;
@@ -260,7 +275,7 @@ static struct dwc3_dev_config dwc3_dev_config = {
 
 int dwc3_dev_plat_init(void **base_addr, struct dwc3_dev_config **plat_config)
 {
-	*base_addr = (void *) (0x13600000);
+	*base_addr = (void *) (USB_LINK_BASE);
 	*plat_config = &dwc3_dev_config;
 	return 0;
 }
@@ -285,8 +300,7 @@ static struct exynos_usbphy_info usbphy_cal_info = {
 	.refsel = USBPHY_REFSEL_CLKCORE,
 	.not_used_vbus_pad = true,
 	.common_block_disable = true,
-//	.usb_io_for_ovc = DISABLE,
-	.regs_base = (void *) 0x135D0000,
+	.regs_base = (void *) USB_PHY_BASE,
 	.tune_param = usbcal_20phy_tune,
 	.hs_rewa = 1,
 };
@@ -303,35 +317,40 @@ void phy_usb_exynos_system_init(int num_phy_port, bool en)
 
 	dprintf(ALWAYS, "%s called: %d\n", __func__, en);
 
-	if (num_phy_port == 0) {
-		/* 2.0 HS PHY */
-		/* PMU Isolation release */
-		reg = readl((void *)(0x11860000 + 0x704));
-		if (en)
-			reg |= 0x1;
-		else
-			reg &= ~0x1;
-		writel(reg, (void *)(0x11860000 + 0x704));
-#if 0
-		/* CCI Enable */
-		reg = readl((void *)(0x13020000 + 0x700));
-		if (en)
-			reg |= (0x3 << 12);
-		else
-			reg &= ~(0x3 << 12);
-		writel(reg, (void *)(0x13020000 + 0x700));
-#endif
-	} else {
-		/* 3.0 PHY */
-		reg = readl((void *)(0x11860000 + 0x704));
-		if (en)
-			reg |= 0x1;
-		else
-			reg &= ~0x1;
-		writel(reg, (void *)(0x11860000 + 0x704));
-	}
+	/* 2.0 HS PHY */
+	/* PMU Isolation release */
+	if (en)
+		writel(1, (void *)(EXYNOS_POWER_BASE + USB2_PHY_CONTROL_OFFSET));
+	else
+		writel(0, (void *)(EXYNOS_POWER_BASE + USB2_PHY_CONTROL_OFFSET));
+
+	/* CCI Enable */
+	reg = readl((void *)(SYSREG_USB_BASE + USB_SHARABLE_OFFSET));
+	if (en)
+		reg |= (0x3 << USB_SHARABLE_SHIFT);
+	else
+		reg &= ~(0x3 << USB_SHARABLE_SHIFT);
+	writel(reg, SYSREG_USB_BASE + USB_SHARABLE_OFFSET);
 }
 
+void exynos_usb_cci_control(int on_off)
+{
+	u32 reg;
+
+	reg = readl(SYSREG_USB_BASE + USB_SHARABLE_OFFSET);
+
+	if (on_off) {
+		dprintf(ALWAYS, "USB CCI unit is enabled.\n");
+		reg |= (0x3 << USB_SHARABLE_SHIFT);
+	} else {
+		dprintf(ALWAYS, "USB CCI unit is disabled.\n");
+		reg &= ~(0x3 << USB_SHARABLE_SHIFT);
+	}
+
+	writel(reg, SYSREG_USB_BASE + USB_SHARABLE_OFFSET);
+}
+
+#if 0
 /* Fastboot command related function */
 #include <dev/rpmb.h>
 #include <dev/scsi.h>
@@ -341,7 +360,7 @@ void platform_prepare_reboot(void)
 	 * Send SSU to UFS. Something wrong on SSU should not
 	 * affect reboot sequence.
 	 */
-//	scsi_do_ssu();
+	scsi_do_ssu();
 }
 
 void platform_do_reboot(const char *cmd_buf)
@@ -357,3 +376,4 @@ void platform_do_reboot(const char *cmd_buf)
 
 	return;
 }
+#endif
