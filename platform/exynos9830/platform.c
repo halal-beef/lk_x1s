@@ -317,8 +317,6 @@ void platform_early_init(void)
 	read_chip_id();
 	read_chip_rev();
 
-	speedy_gpio_init();
-	xbootldo_gpio_init();
 #ifdef CONFIG_EXYNOS_BOOTLOADER_DISPLAY
 	display_panel_init();
 	initialize_fbs();
