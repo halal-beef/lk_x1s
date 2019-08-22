@@ -23,8 +23,6 @@ MODULE_SRCS += \
 	$(LOCAL_DIR)/pmic/if_pmic_s2mu106.c \
 	$(LOCAL_DIR)/pmic/fg_s2mu106.c \
 	$(LOCAL_DIR)/ab_update/ab_update.c \
-	$(LOCAL_DIR)/gpio_init.S \
-	$(LOCAL_DIR)/gpio.c \
 	$(LOCAL_DIR)/wdt/wdt_recovery.c \
 	$(LOCAL_DIR)/fdt.c \
 	$(LOCAL_DIR)/dram_training/dram_training.c \
