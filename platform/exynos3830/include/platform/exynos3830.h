@@ -156,6 +156,8 @@
 #define RAMDUMP_REBOOT_WDT				0x3
 #define RAMDUMP_REBOOT_PANIC				0x4
 
+#define EXYNOS_MAILBOX_AP2APM           (0x11900000)
+
 /* AVB2.0 */
 #define CONFIG_USE_AVB20
 #if defined(CONFIG_USE_AVB20)
