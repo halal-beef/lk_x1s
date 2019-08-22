@@ -48,9 +48,6 @@
 
 #define ARCH_TIMER_IRQ		30
 
-void speedy_gpio_init(void);
-void xbootldo_gpio_init(void);
-
 unsigned int s5p_chip_id[4] = {0x0, 0x0, 0x0, 0x0};
 unsigned int charger_mode = 0;
 unsigned int board_id = CONFIG_BOARD_ID;
@@ -254,8 +251,6 @@ void platform_early_init(void)
 #endif
 
 	read_chip_id();
-
-	xbootldo_gpio_init();
 
 #ifdef CONFIG_EXYNOS_BOOTLOADER_DISPLAY
 	display_panel_init();
