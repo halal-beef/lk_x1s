@@ -708,12 +708,11 @@ int cmd_boot(int argc, const cmd_args *argv)
 
 	int gpio = 5;	/* Volume Up */
 #endif
-#if defined(CONFIG_FACTORY_MODE)
 	unsigned int val;
-#endif
 
 	fdt_dtb = (struct fdt_header *)DT_BASE;
 	dtbo_table = (struct dt_table_header *)DTBO_BASE;
+	uint32_t recovery_mode = 0;
 #if defined(CONFIG_USE_AVB20)
 	int avb_ret = 0;
 	uint32_t lock_state;
@@ -748,14 +747,18 @@ int cmd_boot(int argc, const cmd_args *argv)
 
 	load_boot_images();
 
+	val = readl(EXYNOS3830_POWER_SYSIP_DAT0);
+	if (val == REBOOT_MODE_RECOVERY)
+		recovery_mode = 1;
+
 #if defined(CONFIG_USE_AVB20)
 	ab_ret = ab_current_slot();
 	if (ab_ret == AB_ERROR_NOT_SUPPORT)
-		avb_ret = avb_main("", cmdline, verifiedbootstate);
+		avb_ret = avb_main("", cmdline, verifiedbootstate, recovery_mode);
 	else if (ab_ret == AB_SLOT_B)
-		avb_ret = avb_main("_b", cmdline, verifiedbootstate);
+		avb_ret = avb_main("_b", cmdline, verifiedbootstate, recovery_mode);
 	else
-		avb_ret = avb_main("_a", cmdline, verifiedbootstate);
+		avb_ret = avb_main("_a", cmdline, verifiedbootstate, recovery_mode);
 
 	printf("AVB: suffix[%s], boot/dtbo image verification result: 0x%X\n", ab_suffix, avb_ret);
 

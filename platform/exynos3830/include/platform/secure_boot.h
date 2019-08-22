@@ -196,7 +196,7 @@ uint32_t cm_verify_signature_using_image(
  ******************************************************************************/
 void set_avbops(void);
 
-uint32_t avb_main(const char *suffix, char *cmdline, char *verifiedbootstate);
+uint32_t avb_main(const char *suffix, char *cmdline, char *verifiedbootstate, uint32_t recovery_mode);
 
 uint32_t get_ops_addr(struct AvbOps **ops_addr);
 
