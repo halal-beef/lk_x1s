@@ -12,7 +12,8 @@
 #ifndef __EXYNOS_ACPM_IPC_H_
 #define __EXYNOS_ACPM_IPC_H_
 
-#define EXYNOS_MAILBOX_AP2APM           (0x10F00000)
+#include <platform/sfr.h>
+
 #define INTGR0                          (0x0008)
 #define INTCR1                          (0x0020)
 #define INTSR1                          (0x0028)
