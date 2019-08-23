@@ -45,7 +45,7 @@ char *dto_strchr(const char *s, int c)
 
 unsigned long int dto_strtoul(const char *nptr, char **endptr, int base)
 {
-	return simple_strtoul(nptr, endptr, base);
+	return strtoul(nptr, endptr, base);
 }
 
 size_t dto_strlen(const char *s)
