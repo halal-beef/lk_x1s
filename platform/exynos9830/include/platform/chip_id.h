@@ -12,4 +12,7 @@
 #define __CHIP_ID_H__
 
 extern unsigned int s5p_chip_id[4];
+extern unsigned int board_id;
+extern unsigned int board_rev;
+
 #endif	/* __CHIP_ID_H__ */
