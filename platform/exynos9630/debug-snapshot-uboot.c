@@ -19,7 +19,7 @@
 #include <platform/sfr.h>
 #include <platform/sizes.h>
 #include <platform/dfd.h>
-#include <platform/fdt.h>
+#include <lib/fdtapi.h>
 
 #define DSS_RESERVE_PATH	"/reserved-memory/debug_snapshot"
 

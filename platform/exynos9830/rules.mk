@@ -20,7 +20,6 @@ MODULE_SRCS += \
 	$(LOCAL_DIR)/security/otp_v20.c \
 	$(LOCAL_DIR)/security/h-arx.c \
 	$(LOCAL_DIR)/security/exynos-hvc.S \
-	$(LOCAL_DIR)/fdt.c \
 	$(LOCAL_DIR)/power/flexpmu_dbg.c \
 	$(LOCAL_DIR)/power/tmu.c \
 	$(LOCAL_DIR)/mmc.c \

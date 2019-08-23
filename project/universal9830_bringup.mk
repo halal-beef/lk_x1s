@@ -25,6 +25,7 @@ MODULE_DEPS += \
 	lib/cksum \
 	lib/fdt \
 	lib/ufdt \
+	lib/fdtapi \
 	lib/ab_update \
 	lib/lock \
 	lib/fastboot \
