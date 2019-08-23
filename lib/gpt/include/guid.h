@@ -17,8 +17,6 @@
 #define UID_STR_LEN		36
 #define UID_BIN_LEN		16
 
-unsigned long simple_strtoul(const char *cp,char **endp,unsigned int base);
-unsigned long long simple_strtoull (const char *cp, char **endp, unsigned int base);
 int uid_str_valid(const char *uid);
 int uid_str_to_bin(char *uid_str, unsigned char *uid_bin, int str_format);
 void uid_bin_to_str(unsigned char *uid_bin, char *uid_str, int str_format);
