@@ -32,9 +32,6 @@
 #include <platform/smc.h>
 #include <lib/font_display.h>
 #include <lib/logo_display.h>
-#include "almighty.h"
-#include "drex_v3_3.h"
-#include "mct.h"
 #include "recovery.h"
 
 #define CONFIG_PIT_IMAMGE_BASE 0x80100000
@@ -55,63 +52,13 @@ extern unsigned int uart_log_mode;
 static void exynos_boot_task(const struct app_descriptor *app, void *args)
 {
 	unsigned int rst_stat = readl(EXYNOS3830_POWER_RST_STAT);
-	/* struct pit_entry *ptn; */
-	int cpu;
 	struct exynos_gpio_bank *bank = (struct exynos_gpio_bank *)EXYNOS3830_GPA0CON;
 	int vol_up_val;
 	int chk_wtsr_smpl;
 	int i;
-	//void *part;
 
 	if (*(unsigned int *)DRAM_BASE != 0xabcdef) {
 		printf("Running on DRAM by TRACE32: skip auto booting\n");
-
-#if 0
-		ptn = pit_get_part_info("pit");
-		if (ptn == 0)
-			printf("Partition 'pit' does not exist.\n");
-		pit_update((void *)CONFIG_PIT_IMAMGE_BASE, 0);
-
-		ptn = pit_get_part_info("fwbl1");
-		if (ptn == 0)
-			printf("Partition 'fwbl1' does not exist.\n");
-		pit_access(ptn, PIT_OP_FLASH, (u64)CONFIG_FWBL1_IMAMGE_BASE, 0);
-
-		ptn = pit_get_part_info("epbl");
-		if (ptn == 0)
-			printf("Partition 'epbl' does not exist.\n");
-		pit_access(ptn, PIT_OP_FLASH, (u64)CONFIG_EPBL_IMAMGE_BASE, 0);
-
-		ptn = pit_get_part_info("bl2");
-		if (ptn == 0)
-			printf("Partition 'bl2' does not exist.\n");
-		pit_access(ptn, PIT_OP_FLASH, (u64)CONFIG_BL2_IMAMGE_BASE, 0);
-
-		ptn = pit_get_part_info("bootloader");
-		if (ptn == 0)
-			printf("Partition 'bootloader' does not exist.\n");
-		pit_access(ptn, PIT_OP_FLASH, (u64)CONFIG_LK_IMAMGE_BASE, 0);
-
-		ptn = pit_get_part_info("el3_mon");
-		if (ptn == 0)
-			printf("Partition 'el3_mon' does not exist.\n");
-		pit_access(ptn, PIT_OP_FLASH, (u64)CONFIG_EL3_MON_IMAMGE_BASE, 0);
-
-		ptn = pit_get_part_info("boot");
-		if (ptn == 0)
-			printf("Partition 'boot' does not exist.\n");
-		pit_access(ptn, PIT_OP_FLASH, (u64)CONFIG_BOOT_IMAMGE_BASE, 0);
-
-		ptn = pit_get_part_info("dtbo");
-		if (ptn == 0)
-			printf("Partition 'dtbo' does not exist.\n");
-		pit_access(ptn, PIT_OP_FLASH, (u64)CONFIG_DTBO_IMAMGE_BASE, 0);
-
-		ptn = pit_get_part_info("ramdisk");
-		if (ptn == 0)
-			printf("Partition 'ramdisk' does not exist.\n");
-		pit_access(ptn, PIT_OP_FLASH, (u64)CONFIG_RAMDISK_IMAMGE_BASE, 0);
-#endif
 
 		start_usb_gadget();
 		return;
@@ -130,31 +77,9 @@ static void exynos_boot_task(const struct app_descriptor *app, void *args)
 		return;
 	}
 
-/*
-
-	if (is_first_boot()) {
-		unsigned int env_val = 0;
-
-		if (sysparam_read("fb_mode_set", &env_val, sizeof(env_val)) > 0) {
-			if (env_val == FB_MODE_FLAG) {
-				printf("Fastboot is not completed on a prior booting.\n");
-				printf("Entering fastboot.\n");
-				print_lcd_update(FONT_RED, FONT_BLACK,
-						"Fastboot is not completed on a prior booting.");
-				print_lcd_update(FONT_RED, FONT_BLACK,
-						"Entering fastboot.");
-				fb_mode_failed = 1;
-			}
-		}
-	}
-*/
 #ifdef CONFIG_WDT_RECOVERY_USB_BOOT
 	clear_wdt_recovery_settings();
 #endif
-/*
-	if (is_first_boot())
-		ab_update_slot_info_bootloader();
-*/
 	/* check SMPL & WTSR with S2MPU10 */
 	chk_wtsr_smpl = chk_smpl_wtsr_s2mpu12();
 	if (chk_wtsr_smpl == PMIC_DETECT_WTSR) {
@@ -194,15 +119,6 @@ static void exynos_boot_task(const struct app_descriptor *app, void *args)
 		printf("Entering fastboot: Ramdump_Scratch & Charger\n");
 		sdm_encrypt_secdram();
 		goto fastboot;
-/*
-	} else if (fb_mode_failed == 1) {
-		printf("Entering fastboot: fastboot_reg | fb_mode\n");
-		goto fastboot;
-*/
-	} else if (is_xct_boot()) {
-		cpu = cmd_xct(0, 0);
-		printf("Entering fastboot: xct boot fail code - %d\n", cpu);
-		goto download;
 	} else {
 		goto reboot;
 	}
@@ -221,24 +137,7 @@ fastboot:
 #endif
 
 reboot:
-/*
-	vol_up_val = exynos_gpio_get_value(bank, 5);
-	vol_down_val = exynos_gpio_get_value(bank, 6);
 
-	if ((vol_up_val == 0) && (vol_down_val == 0)) {
-		do_memtester(0);
-
-		part = part_get("logbuf");
-		if (!part) {
-			printf("Partition 'logbuf' does not exist.\n");
-			print_lcd_update(FONT_RED, FONT_BLACK, "Partition 'logbuf' does not exist.");
-		} else {
-			printf("Saving memory test logs to 'logbuf' partition.\n");
-			print_lcd_update(FONT_GREEN, FONT_BLACK, "Saving memory test logs to 'logbuf' partition.");
-			part_write(part, (void *)CONFIG_RAMDUMP_LOGBUF);
-		}
-	}
-*/
 	/* Turn on dumpEN for DumpGPR */
 #ifdef RAMDUMP_MODE_OFF
 	dfd_set_dump_en_for_cacheop(0);
@@ -252,63 +151,6 @@ reboot:
 	cmd_boot(0, 0);
 	return;
 }
-
-#if 0
-static void print_status(int iter)
-{
-	int vbat;
-	unsigned int cpu_temp;
-	int i, j;
-	/* Get status */
-	vbat = s2mu004_get_avgvbat();
-	read_temperature(TZ_LIT, &cpu_temp, NO_PRINT);
-
-	/* print cpu temp and vbat gauge */
-	printf("[%d] CPU : %d, BATT : %d DRAM: ", 0, cpu_temp, vbat);
-	print_lcd_update(FONT_WHITE, FONT_BLACK, "[%d] CPU: %d, BATT: %d \n", iter, cpu_temp, vbat);
-	clean_invalidate_dcache_all();
-	for (i = 0; i < MC_CH_ALL; i++) {
-		for (j = 1; j < MC_RANK_ALL; j++) {
-			printf("[CH%d.CS%d].MR4 = %d\n", i, j - 1, mc_driver.command.mode_read(i, j, 4));
-		}
-	}
-	printf("\n");
-
-}
-
-static void do_memtester(unsigned int loop)
-{
-	int iter = 0;
-#ifdef CONFIG_DISPLAY_DRAWFONT
-	int dram_freq;
-
-	dram_freq = almighty_get_dram_freq();
-	print_lcd_update(FONT_WHITE, FONT_BLACK, "DRAM Test will start at %dMHz\n", dram_freq);
-#endif
-	cpu_common_init();
-	print_lcd_update(FONT_WHITE, FONT_BLACK, "Cache is enabled.\n");
-	clean_invalidate_dcache_all();
-
-	do {
-		mct.init();
-
-		if (almighty_pattern_test(1)) {	/* '-1' is all pattern(8ea), '0 ~ 7' is fixed pattern */
-			printf("test fail\n");
-			print_lcd_update(FONT_RED, FONT_BLACK, "DRAM test failed\n");
-			break;
-		}
-
-		print_status(++iter);
-		mct.deinit();
-	} while (loop-- > 0);
-
-	print_lcd_update(FONT_BLUE, FONT_BLACK, "DRAM test passed.\n");
-
-	/* After the test */
-	clean_invalidate_dcache_all();
-	disable_mmu_dcache();
-}
-#endif
 
 APP_START(exynos_boot)
 	.entry = exynos_boot_task,
