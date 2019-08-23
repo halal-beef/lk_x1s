@@ -12,23 +12,12 @@
 
 #define __UFS__
 
+#include <types.h>
 #include <dev/scsi.h>
 #include <platform/ufs-cal.h>
 
 #define RET_SUCCESS		0	/* 0 = Success */
 #define RET_FAILURE		1	/* 1 = Failure */
-
-#define be16_to_cpu(x) \
-	((((x) & 0xff00) >> 8) | \
-	 (((x) & 0x00ff) << 8))
-#define cpu_to_be16(x) be16_to_cpu(x)
-
-#define be32_to_cpu(x) \
-	((((x) & 0xff000000) >> 24) | \
-	 (((x) & 0x00ff0000) >>  8) | \
-	 (((x) & 0x0000ff00) <<  8) | \
-	 (((x) & 0x000000ff) << 24))
-#define cpu_to_be32(x) be32_to_cpu(x)
 
 #ifdef	SCSI_UFS_DEBUG
 #define	ufs_debug(fmt,args...)	dprintf (INFO, fmt ,##args)
