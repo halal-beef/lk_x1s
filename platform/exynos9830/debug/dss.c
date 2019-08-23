@@ -20,7 +20,7 @@
 #include <platform/sizes.h>
 #include <lib/ab_update.h>
 #include <platform/dfd.h>
-#include <platform/fdt.h>
+#include <lib/fdtapi.h>
 
 #define DSS_RESERVE_PATH	"/reserved-memory/debug_snapshot"
 #define CP_RESERVE_PATH		"/reserved-memory/modem_if"

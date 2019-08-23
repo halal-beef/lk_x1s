@@ -7,29 +7,27 @@
  * electronic, mechanical, manual or otherwise, or disclosed
  * to third parties without the express written permission of Samsung Electronics.
  */
-#include <debug.h>
+#include <string.h>
 #include <stdlib.h>
-#include <libfdt_env.h>
-#include <fdt.h>
-#include <libfdt.h>
-#include <part.h>
-#include <dev/usb/gadget.h>
+#include <types.h>
 #include <lib/console.h>
-#include <platform/fdt.h>
-#include <platform/fastboot.h>
+#include <lib/fdtapi.h>
 #include <ufdt_overlay.h>
+#include <lib/font_display.h>
 
-#define BUFFER_SIZE 4096
-#define MASK_4GB (0xFFFFFFFF)
+#define BUFFER_SIZE	4096
+#define MASK_4GB	(0xFFFFFFFF)
 
 struct fdt_header *fdt_dtb;
 struct dt_table_header *dtbo_table;
+int dtbo_idx = -1;
 
-unsigned long simple_strtoul(const char *cp,char **endp,unsigned int base);
+int get_selected_dtbo_idx(void)
+{
+	return dtbo_idx;
+}
 
-char dtbo_idx[4] = {0,};
-
-void merge_dto_to_main_dtb(void)
+int merge_dto_to_main_dtb(unsigned int board_id, unsigned int board_rev)
 {
 	void *fdto, *merged_fdt;
 	struct dt_table_entry *dt_entry;
@@ -39,36 +37,37 @@ void merge_dto_to_main_dtb(void)
 	ret = fdt_check_header(fdt_dtb);
 	if (ret < 0) {
 		printf("DTBO: fdt_check_header(): %s\n", fdt_strerror(ret));
-		return;
+		return -EINVAL;
 	}
 
 	if (fdt32_to_cpu(dtbo_table->magic) != DT_TABLE_MAGIC) {
 		printf("DTBO: dtbo.img: %s\n", fdt_strerror(-FDT_ERR_BADMAGIC));
-		return;
+		return -EINVAL;
 	}
 	dt_entry = (struct dt_table_entry *)((unsigned long)dtbo_table
-			+ fdt32_to_cpu(dtbo_table->header_size));
+	                                     + fdt32_to_cpu(dtbo_table->header_size));
 
 	for (i = 0; i < fdt32_to_cpu(dtbo_table->dt_entry_count); i++, dt_entry++) {
 		u32 id = fdt32_to_cpu(dt_entry->id);
 		u32 rev = fdt32_to_cpu(dt_entry->rev);
 
 		if ((id == board_id) && (rev == board_rev)) {
-			printf("DTBO: id: 0x%x, rev: 0x%x, dtbo_idx: 0x%x\n", id, rev, i);
-			snprintf(dtbo_idx, sizeof(dtbo_idx), "%d", i);
+			printf("DTBO: id: 0x%x, rev: 0x%x\n", id, rev);
+			print_lcd_update(FONT_YELLOW, FONT_BLACK, "DTBO: id: 0x%x, rev: 0x%x\n", id, rev);
+			dtbo_idx = i;
 			break;
 		}
 	}
 
 	if (i == fdt32_to_cpu(dtbo_table->dt_entry_count)) {
 		printf("DTBO: Not found dtbo of board_rev 0x%x.\n", board_rev);
-		start_usb_gadget();
-		return;
+		print_lcd_update(FONT_RED, FONT_BLACK, "DTBO: Not found dtbo of board_rev 0x%x.\n", board_rev);
+		return -EINVAL;
 	}
 
 	fdto = malloc(fdt32_to_cpu(dt_entry->dt_size));
 	memcpy((void *)fdto, (void *)((unsigned long)dtbo_table + fdt32_to_cpu(dt_entry->dt_offset)),
-			fdt32_to_cpu(dt_entry->dt_size));
+	       fdt32_to_cpu(dt_entry->dt_size));
 
 	ret = fdt_check_header(fdto);
 	if (ret < 0) {
@@ -77,7 +76,7 @@ void merge_dto_to_main_dtb(void)
 	}
 
 	merged_fdt = ufdt_apply_overlay(fdt_dtb, fdt_totalsize(fdt_dtb),
-			fdto, fdt_totalsize(fdto));
+	                                fdto, fdt_totalsize(fdto));
 	if (!merged_fdt)
 		goto fdto_magic_err;
 
@@ -87,6 +86,7 @@ void merge_dto_to_main_dtb(void)
 	free(merged_fdt);
 fdto_magic_err:
 	free(fdto);
+	return -EINVAL;
 }
 
 int resize_dt(unsigned int sz)
@@ -121,13 +121,13 @@ int make_fdt_node(const char *path, char *node)
 
 	offset = fdt_path_offset(fdt_dtb, path);
 	if (offset < 0) {
-		printf ("libfdt fdt_path_offset(): %s\n", fdt_strerror(offset));
+		printf("libfdt fdt_path_offset(): %s\n", fdt_strerror(offset));
 		return 1;
 	}
 
 	ret = fdt_add_subnode(fdt_dtb, offset, node);
 	if (ret < 0) {
-		printf ("libfdt fdt_add_subnode(): %s\n", fdt_strerror(ret));
+		printf("libfdt fdt_add_subnode(): %s\n", fdt_strerror(ret));
 		return 1;
 	}
 
@@ -137,8 +137,8 @@ int make_fdt_node(const char *path, char *node)
 int get_fdt_val(const char *path, const char *property, char *retval)
 {
 	const char *np;
-	int  offset;
-	int  len, ret = 0;
+	int offset;
+	int len, ret = 0;
 
 	ret = fdt_check_header(fdt_dtb);
 	if (ret) {
@@ -177,7 +177,7 @@ int set_fdt_val(const char *path, const char *property, const char *value)
 		np++;
 		while (*np != '>') {
 			tp = np;
-			tmp = simple_strtoul(tp, (char **)&np, 0);
+			tmp = strtoul(tp, (char **)&np, 0);
 			*(uint32_t *)dp = cpu_to_be32(tmp);
 			dp  += 4;
 			len += 4;
@@ -231,5 +231,3 @@ void add_dt_memory_node(unsigned long base, unsigned int size)
 	sprintf(str, "/memory@%lx", base);
 	set_fdt_val(str, "device_type", "memory");
 }
-
-

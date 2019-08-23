@@ -9,8 +9,8 @@
  */
 
 #include <stdio.h>
-#include <libfdt.h>
-#include <platform/fdt.h>
+#include <string.h>
+#include <lib/fdtapi.h>
 
 #define BUFFER_SIZE 10
 extern u32 ddi_id;

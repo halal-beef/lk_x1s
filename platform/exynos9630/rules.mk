@@ -31,7 +31,6 @@ MODULE_SRCS += \
 	$(LOCAL_DIR)/dfd_asm_helper.S \
 	$(LOCAL_DIR)/debug-snapshot-uboot.c \
 	$(LOCAL_DIR)/wdt/wdt_recovery.c \
-	$(LOCAL_DIR)/fdt.c \
 	$(LOCAL_DIR)/dram_training/dram_training.c \
 	$(LOCAL_DIR)/mmu/cpu_a.S \
 	$(LOCAL_DIR)/mmu/mmu.c \

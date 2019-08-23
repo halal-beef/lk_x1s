@@ -30,7 +30,7 @@
 #include <platform/secure_boot.h>
 #include <platform/sizes.h>
 #include <platform/bootimg.h>
-#include <platform/fdt.h>
+#include <lib/fdtapi.h>
 #include <platform/chip_id.h>
 #include <platform/mmu/mmu_func.h>
 #include <pit.h>
@@ -387,7 +387,7 @@ static void configure_dtb(void)
 skip_carve_out_harx:
 
 	/* DT control code must write after this function call. */
-	merge_dto_to_main_dtb();
+	merge_dto_to_main_dtb(board_id, board_rev);
 	resize_dt(SZ_4K);
 
 	/* Disable CCI unit for USB */
