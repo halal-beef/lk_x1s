@@ -483,6 +483,10 @@ static void dwc3_dev_ep0_stdreq(DWC3_DEV_EP0_HANDLER dwc3_dev_ep0_h, USB_STDREQ_
 				U3DBG_STDREQ("EP%d Clear Halt\n", uEpNum);
 				dwc3_dev_h->m_bEPHalted &= ~(1 << uEpNum);
 				// TODO: Reset EP for Sequencing
+	                        uEpNum = uEpNum << 1;
+				if (dwc3_dev_ep0_h->m_pDeviceRequest->wIndex & 0x80)
+                                      uEpNum += 1;
+				dwc3_dev_ep_cmd(hUSB30_EP[uEpNum], DEPCMD_ClrStall, 0, 0);
 			}
 			break;
 		case INTERFACE_RECIPIENT:
