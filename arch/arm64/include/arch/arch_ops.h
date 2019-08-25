@@ -81,6 +81,7 @@ static inline bool arch_fiqs_disabled(void)
 #define mb()        __asm__ volatile("dsb sy" : : : "memory")
 #define rmb()       __asm__ volatile("dsb ld" : : : "memory")
 #define wmb()       __asm__ volatile("dsb st" : : : "memory")
+#define wfi()       __asm__ volatile("wfi" : : : "memory")
 
 #ifdef WITH_SMP
 #define smp_mb()    __asm__ volatile("dmb ish" : : : "memory")
