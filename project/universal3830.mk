@@ -18,10 +18,12 @@ MODULE_DEPS += \
 	lib/libavb \
 	lib/lock \
 	lib/fastboot \
+	lib/fdtapi \
 	dev/rpmb \
 	external/lib/fdt \
 	external/lib/ufdt \
-	dev/adc
+	dev/adc \
+	dev/debug \
 
 GLOBAL_DEFINES += \
 	INPUT_GPT_AS_PT=1 \

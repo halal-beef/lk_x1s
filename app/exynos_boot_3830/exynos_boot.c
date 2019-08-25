@@ -22,13 +22,13 @@
 #include <platform/sfr.h>
 #include <platform/charger.h>
 #include <platform/fastboot.h>
-#include <platform/dfd.h>
 #include <platform/xct.h>
 #include <dev/boot.h>
 #include <dev/usb/gadget.h>
+#include <dev/debug/dss.h>
+#include <dev/debug/dss_store_ramdump.h>
 #include <platform/gpio.h>
 #include <platform/gpio.h>
-#include <platform/dss_store_ramdump.h>
 #include <platform/smc.h>
 #include <lib/font_display.h>
 #include <lib/logo_display.h>
@@ -146,7 +146,6 @@ reboot:
 	dfd_set_dump_en(1);
 	set_debug_level("mid");
 #endif
-	set_debug_level_by_env();
 	recovery_init();
 	cmd_boot(0, 0);
 	return;

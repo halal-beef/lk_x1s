@@ -24,7 +24,6 @@ MODULE_SRCS += \
 	$(LOCAL_DIR)/pmic/fg_s2mu106.c \
 	$(LOCAL_DIR)/ab_update/ab_update.c \
 	$(LOCAL_DIR)/wdt/wdt_recovery.c \
-	$(LOCAL_DIR)/fdt.c \
 	$(LOCAL_DIR)/dram_training/dram_training.c \
 	$(LOCAL_DIR)/mmu/cpu_a.S \
 	$(LOCAL_DIR)/mmu/mmu.c \
@@ -35,8 +34,6 @@ MODULE_SRCS += \
 	$(LOCAL_DIR)/dw_mmc.c \
 	$(LOCAL_DIR)/debug/dfd.c \
 	$(LOCAL_DIR)/debug/dfd_asm_helper.S \
-	$(LOCAL_DIR)/debug/dss.c \
-	$(LOCAL_DIR)/debug/dss_store_ramdump.c
 
 MODULE_DEPS += \
 	dev/interrupt/arm_gic \

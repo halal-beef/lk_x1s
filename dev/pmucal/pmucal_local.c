@@ -8,7 +8,6 @@
 #include <pit.h>
 #include <platform/sfr.h>
 #include <platform/environment.h>
-#include <platform/dfd.h>
 #include <dev/boot.h>
 #include <dev/pmucal_local.h>
 #include <platform/pmucal.h>

@@ -38,4 +38,5 @@ MODULE_DEPS += \
 	dev/speedy \
 	dev/power/pmic/s2mps_19_22 \
 	dev/power/pmic/s2dos05 \
-	dev/battery/charger
+	dev/battery/charger \
+	dev/debug \

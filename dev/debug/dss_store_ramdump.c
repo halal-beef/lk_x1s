@@ -17,12 +17,11 @@
 #include <platform/sizes.h>
 #include <platform/dfd.h>
 #include <platform/delay.h>
-#include <platform/dss_store_ramdump.h>
-#include <platform/fastboot.h>
 #include <platform/gpio.h>
-#include <platform/pmic_s2mpu10_11.h>
+//#include <platform/pmic_s2mpu10_11.h>
 #include <platform/mmu/mmu_func.h>
-#include "../fastboot/fastboot.h"
+#include <platform/mmu/barrier.h>
+#include <dev/debug/dss_store_ramdump.h>
 
 #ifdef CONFIG_OFFLINE_RAMDUMP
 static int g_is_enabled = 1;
@@ -32,14 +31,10 @@ static int g_is_enabled = 0;
 
 union store_ramdump_metadata metadata;
 
-static void wfi(void)
-{
-	asm volatile("wfi");
-}
-
 static int debug_store_is_skip(void)
 {
-	struct exynos_gpio_bank *bank = (struct exynos_gpio_bank *)EXYNOS9630_GPA1CON;
+	struct exynos_gpio_bank *bank = (struct exynos_gpio_bank *)VOLDOWN_GPIOCON;
+	int gpio = VOLDOWN_BIT;
 	int ret = 0;
 	int cnt = 100;
 
@@ -48,7 +43,7 @@ static int debug_store_is_skip(void)
 
 	do {
 		u_delay(100000);
-		if (!exynos_gpio_get_value(bank, 6)) {
+		if (!exynos_gpio_get_value(bank, gpio)) {
 			ret = -1;
 			break;
 		}
@@ -134,7 +129,7 @@ static int debug_store_ramdump_to_storage(void)
 	metadata.data.flag_data_to_storage = 0xffffffff;
 	metadata.data.dram_size = dram_size;
 	metadata.data.dram_start_addr = DRAM_BASE;
-	get_pmic_rtc_time(metadata.data.file_name);
+//	get_pmic_rtc_time(metadata.data.file_name);
 	printf("%s: get_pmic_rtc_time = [%s]\n", __func__,
 					metadata.data.file_name);
 
@@ -155,7 +150,7 @@ static int debug_store_ramdump_to_storage(void)
 
 	/* Reset device for normal booting */
 	writel(0, CONFIG_RAMDUMP_SCRATCH);
-	writel(readl(EXYNOS9630_SYSTEM_CONFIGURATION) | 0x2, EXYNOS9630_SYSTEM_CONFIGURATION);
+	writel(0x2, EXYNOS_POWER_SYSTEM_CONFIGURATION);
 
 	/* Do not run this code */
 	do {

@@ -23,12 +23,11 @@
 #include <platform/sfr.h>
 #include <platform/charger.h>
 #include <platform/fastboot.h>
-#include <platform/dfd.h>
 #include <platform/xct.h>
 #include <dev/boot.h>
+#include <dev/debug/dss.h>
+#include <dev/debug/dss_store_ramdump.h>
 #include <platform/gpio.h>
-#include <platform/gpio.h>
-#include <platform/debug-store-ramdump.h>
 #include <platform/smc.h>
 #include <lib/font_display.h>
 #include <lib/logo_display.h>
@@ -128,7 +127,7 @@ static void exynos_boot_task(const struct app_descriptor *app, void *args)
 	} else if (rst_stat & (WARM_RESET | LITTLE_WDT_RESET | BIG_WDT_RESET)) {
 		printf("Entering fastboot: Abnormal RST_STAT: 0x%x\n", rst_stat);
 		sdm_encrypt_secdram();
-		dfd_set_dump_en_for_cacheop(0);
+		dfd_set_dump_en(0);
 		goto fastboot;
 	} else if (readl(EXYNOS9630_POWER_SYSIP_DAT0) == REBOOT_MODE_FASTBOOT) {
 		printf("Entering fastboot: reboot bootloader command\n");
@@ -185,13 +184,12 @@ reboot:
 */
 	/* Turn on dumpEN for DumpGPR */
 #ifdef RAMDUMP_MODE_OFF
-	dfd_set_dump_en_for_cacheop(0);
+	dfd_set_dump_en(0);
 	set_debug_level("low");
 #else
-	dfd_set_dump_en_for_cacheop(1);
+	dfd_set_dump_en(1);
 	set_debug_level("mid");
 #endif
-	set_debug_level_by_env();
 	cmd_boot(0, 0);
 	return;
 }

@@ -28,9 +28,9 @@
 #include <lib/lock.h>
 #include <lib/ab_update.h>
 #include <platform/environment.h>
-#include <platform/dfd.h>
 #include <platform/mmu/mmu_func.h>
-#include <platform/dss_store_ramdump.h>
+#include <dev/debug/dss.h>
+#include <dev/debug/dss_store_ramdump.h>
 #include <dev/usb/fastboot.h>
 #include <target/board_info.h>
 #include <dev/boot.h>
@@ -396,7 +396,7 @@ int fb_do_getvar(const char *cmd_buffer, unsigned int rx_sz)
 	else
 	{
 		LTRACEF("fast cmd:vendor\n");
-		ret = debug_snapshot_getvar_item(cmd_buffer + 7, response + 4);
+		ret = dss_getvar_item(cmd_buffer + 7, response + 4);
 		if (ret != 0)
 			sprintf(response, "FAIL");
 	}

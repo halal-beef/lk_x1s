@@ -26,7 +26,6 @@
 #include <platform/if_pmic_s2mu106.h>
 #include <platform/fg_s2mu106.h>
 #include <platform/tmu.h>
-#include <platform/dfd.h>
 #include <platform/ldfw.h>
 #include <platform/gpio.h>
 #include <platform/bl_sys_info.h>
@@ -35,6 +34,7 @@
 #include <platform/fastboot.h>
 #include <platform/sfr.h>
 #include <dev/mmc.h>
+#include <dev/debug/dss.h>
 #include <platform/secure_boot.h>
 
 #include <lib/font_display.h>
@@ -267,7 +267,7 @@ void platform_early_init(void)
 
 	uart_test_function();
 	printf("LK build date: %s, time: %s\n", __DATE__, __TIME__);
-	dbg_snapshot_boot_cnt();
+	dss_boot_cnt();
 
 	arm_gic_init();
 	writel(1 << 8, EXYNOS3830_MCT_G_TCON);
@@ -305,7 +305,7 @@ void platform_init(void)
 	mmc_init();
 	part_init();
 	if (is_first_boot() && *(unsigned int *)DRAM_BASE == 0xabcdef)
-		dbg_snapshot_fdt_init();
+		dss_fdt_init();
 
 #if defined(CONFIG_UART_LOG_MODE)
 	if (get_current_boot_device() != BOOT_USB &&
