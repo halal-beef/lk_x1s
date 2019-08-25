@@ -16,7 +16,9 @@ int make_fdt_node(const char *path, char *node);
 int get_fdt_val(const char *path, const char *property, char *retval);
 int set_fdt_val(const char *path, const char *property, const char *value);
 void add_dt_memory_node(unsigned long base, unsigned int size);
+int get_fdt_dpm_val(const char *path, const char *property, char *retval);
 
 extern struct fdt_header *fdt_dtb;
 extern struct dt_table_header *dtbo_table;
+extern struct fdt_header *fdt_dpm;
 #endif

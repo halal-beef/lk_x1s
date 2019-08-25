@@ -20,6 +20,7 @@
 
 struct fdt_header *fdt_dtb;
 struct dt_table_header *dtbo_table;
+struct fdt_header *fdt_dpm;
 int dtbo_idx = -1;
 
 int get_selected_dtbo_idx(void)
@@ -84,6 +85,21 @@ int merge_dto_to_main_dtb(unsigned int board_id, unsigned int board_rev)
 	printf("DTBO: Merge Complete (size:%d)!\n", fdt_totalsize(fdt_dtb));
 
 	free(merged_fdt);
+
+	/* merge dpm dt */
+	ret = fdt_check_header(fdt_dpm);
+	if (ret >= 0) {
+		merged_fdt = ufdt_apply_overlay(fdt_dtb, fdt_totalsize(fdt_dtb),
+				fdt_dpm, fdt_totalsize(fdt_dpm));
+		if (!merged_fdt)
+			goto fdto_magic_err;
+
+		memcpy(fdt_dtb, merged_fdt, fdt_totalsize(merged_fdt));
+		printf("DPM: Merge Complete (size%d)!\n", fdt_totalsize(fdt_dtb));
+		free(merged_fdt);
+	} else {
+		printf("DPM: dpm dtb: does not exist.(%s)\n", fdt_strerror(ret));
+	}
 fdto_magic_err:
 	free(fdto);
 	return -EINVAL;
@@ -230,4 +246,30 @@ void add_dt_memory_node(unsigned long base, unsigned int size)
 
 	sprintf(str, "/memory@%lx", base);
 	set_fdt_val(str, "device_type", "memory");
+}
+
+int get_fdt_dpm_val(const char *path, const char *property, char *retval)
+{
+	const char *np;
+	int  offset;
+	int  len, ret = 0;
+
+	ret = fdt_check_header(fdt_dpm);
+	if (ret) {
+		printf("libfdt fdt_check_header(): %s\n", fdt_strerror(ret));
+		return 1;
+	}
+
+	offset = fdt_path_offset(fdt_dpm, path);
+	if (offset < 0) {
+		printf("libfdt fdt_path_offset(): %s\n", fdt_strerror(offset));
+		return 1;
+	}
+	np = fdt_getprop(fdt_dpm, offset, property, &len);
+	if (len <= 0) {
+		printf("libfdt fdt_getprop(): %s\n", fdt_strerror(len));
+		return 1;
+	}
+	memcpy(retval, np, len);
+	return 0;
 }
