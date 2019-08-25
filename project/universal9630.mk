@@ -22,7 +22,8 @@ MODULE_DEPS += \
 	lib/fastboot \
 	dev/scsi \
 	dev/rpmb \
-	dev/acpm_ipc
+	dev/acpm_ipc \
+	dev/debug \
 
 GLOBAL_DEFINES += \
 	INPUT_GPT_AS_PT=1 \

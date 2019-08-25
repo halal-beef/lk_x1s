@@ -11,19 +11,18 @@
 #include <reg.h>
 #include <stdlib.h>
 #include <libfdt.h>
-#include <pit.h>
-#include <part_gpt.h>
+#include <stdio.h>
+#include <part.h>
+#include <lib/fdtapi.h>
+#include <lib/font_display.h>
 #include <lib/console.h>
-#include <platform/exynos9830.h>
 #include <dev/boot.h>
+#include <dev/debug/dss.h>
 #include <platform/sfr.h>
 #include <platform/sizes.h>
-#include <lib/ab_update.h>
-#include <platform/dfd.h>
-#include <lib/fdtapi.h>
+#include <platform/mmu/barrier.h>
 
 #define DSS_RESERVE_PATH	"/reserved-memory/debug_snapshot"
-#define CP_RESERVE_PATH		"/reserved-memory/modem_if"
 
 extern int load_boot_images(void);
 
@@ -38,7 +37,7 @@ struct dss_item {
 	int enabled;
 };
 
-struct dbg_snapshot_bl {
+struct dss_bl {
 	unsigned int magic1;
 	unsigned int magic2;
 	unsigned int item_count;
@@ -46,28 +45,24 @@ struct dbg_snapshot_bl {
 	struct dss_item item[16];
 };
 
-struct reserve_mem cp_rmem;
-
-struct dbg_snapshot_bl static_dss_bl = {
-	.item[0] = {"header",		{0, 0}, 0},
-	.item[1] = {"log_kernel",	{0, 0}, 0},
-	.item[2] = {"log_platform",	{0, 0}, 0},
-	.item[3] = {"log_sfr",		{0, 0}, 0},
-	.item[4] = {"log_s2d",		{0, 0}, 0},
-	.item[5] = {"log_arrdumpreset",	{0, 0}, 0},
-	.item[6] = {"log_arrdumppanic",	{0, 0}, 0},
-	.item[7] = {"log_etm",		{0, 0}, 0},
-	.item[8] = {"log_bcm",		{0, 0}, 0},
-	.item[9] = {"log_llc",		{0, 0}, 0},
-	.item[10] = {"log_dbgc",	{0, 0}, 0},
-	.item[11] = {"log_pstore",	{0, 0}, 0},
-	.item[12] = {"log_kevents",	{0, 0}, 0},
-	.item[13] = {"log_fatal",	{0, 0}, 0},
+struct dss_bl static_dss_bl = {
+	.item = {
+		{"header",		{0, 0}, 0},
+		{"log_kernel",		{0, 0}, 0},
+		{"log_platform",	{0, 0}, 0},
+		{"log_sfr",		{0, 0}, 0},
+		{"log_s2d",		{0, 0}, 0},
+		{"log_arrdumpreset",	{0, 0}, 0},
+		{"log_arrdumppanic",	{0, 0}, 0},
+		{"log_dbgc",		{0, 0}, 0},
+		{"log_kevents",		{0, 0}, 0},
+		{"log_fatal",		{0, 0}, 0},
+	},
 };
 
-struct dbg_snapshot_bl *dss_bl_p;
+struct dss_bl *dss_bl_p = &static_dss_bl;
 
-void dbg_snapshot_boot_cnt(void)
+void dss_boot_cnt(void)
 {
 	unsigned int reg;
 
@@ -85,15 +80,15 @@ void dbg_snapshot_boot_cnt(void)
 	printf("Bootloader Booting SEQ #%u\n", reg);
 }
 
-static int dbg_snapshot_get_items(void)
+static void dss_get_items(void)
 {
 	char path[64];
 	u32 ret[8];
-	int i;
+	u32 i;
 
 	if (readl(CONFIG_RAMDUMP_DSS_ITEM_INFO) == 0x01234567
 	    && readl(CONFIG_RAMDUMP_DSS_ITEM_INFO + 0x4) == 0x89ABCDEF) {
-		dss_bl_p = (struct dbg_snapshot_bl *)CONFIG_RAMDUMP_DSS_ITEM_INFO;
+		dss_bl_p = (struct dss_bl *)CONFIG_RAMDUMP_DSS_ITEM_INFO;
 	} else {
 		load_boot_images();
 		fdt_dtb = (struct fdt_header *)DT_BASE;
@@ -118,11 +113,6 @@ static int dbg_snapshot_get_items(void)
 			}
 		}
 
-		if (!get_fdt_val(CP_RESERVE_PATH, "reg", (char *)ret)) {
-			cp_rmem.paddr |= be32_to_cpu(ret[1]);
-			cp_rmem.size = be32_to_cpu(ret[2]);
-		}
-
 		dss_bl_p = &static_dss_bl;
 	}
 
@@ -138,16 +128,14 @@ static int dbg_snapshot_get_items(void)
 			       dss_bl_p->item[i].rmem.size);
 		}
 	}
-
-	return 0;
 }
 
-unsigned long dbg_snapshot_get_item_count(void)
+unsigned long dss_get_item_count(void)
 {
 	return ARRAY_SIZE(dss_bl_p->item);
 }
 
-struct dss_item *dbg_snapshot_get_item(const char *name)
+struct dss_item *dss_get_item(const char *name)
 {
 	unsigned int i;
 
@@ -160,7 +148,7 @@ struct dss_item *dbg_snapshot_get_item(const char *name)
 	return NULL;
 }
 
-unsigned long dbg_snapshot_get_item_paddr(const char *name)
+unsigned long dss_get_item_paddr(const char *name)
 {
 	unsigned int i;
 
@@ -172,7 +160,7 @@ unsigned long dbg_snapshot_get_item_paddr(const char *name)
 	return 0;
 }
 
-unsigned long dbg_snapshot_get_item_size(const char *name)
+unsigned long dss_get_item_size(const char *name)
 {
 	unsigned int i;
 
@@ -184,15 +172,15 @@ unsigned long dbg_snapshot_get_item_size(const char *name)
 	return 0;
 }
 
-void dbg_snapshot_fdt_init(void)
+void dss_fdt_init(void)
 {
-	if (dbg_snapshot_get_items() < 0)
-		return;
+	fdt_dpm = (struct fdt_header *)CONFIG_RAMDUMP_DPM_BASE;
+	dss_get_items();
 }
 
-int debug_snapshot_getvar_item(const char *name, char *response)
+int dss_getvar_item(const char *name, char *response)
 {
-	char log_name[SZ_128] = { 0, };
+	char log_name[32] = { 0, };
 	struct dss_item *item;
 
 	if (!strcmp(name, "dramsize")) {
@@ -203,37 +191,19 @@ int debug_snapshot_getvar_item(const char *name, char *response)
 		return 0;
 	}
 
-	if (!strcmp(name, "cpmem")) {
-		if ((readl(CONFIG_RAMDUMP_DSS_ITEM_INFO) == 0x01234567) &&
-		    (readl(CONFIG_RAMDUMP_DSS_ITEM_INFO + 0x4) == 0x89ABCDEF)) {
-			item = dbg_snapshot_get_item("cpmem");
-			if (!item)
-				return -1;
-
-			sprintf(response, "%X, %X, %X", item->rmem.paddr,
-			        item->rmem.size - 1,
-			        item->rmem.paddr + item->rmem.size - 1);
-		} else {
-			if (cp_rmem.paddr == 0 || cp_rmem.size == 0)
-				return -1;
-
-			sprintf(response, "%X, %X, %X", cp_rmem.paddr, cp_rmem.size,
-			        cp_rmem.paddr + cp_rmem.size - 1);
-		}
-		return 0;
-	}
-
 	if (!strcmp(name, "header")) {
-		item = dbg_snapshot_get_item("header");
+		item = dss_get_item("header");
 		if (!item)
 			return -1;
 
 		sprintf(response, "%X, %X, %X", item->rmem.paddr, item->rmem.size,
 		        item->rmem.paddr + item->rmem.size - 1);
+
+		return 0;
 	}
 
 	snprintf(log_name, sizeof(log_name) - 1, "log_%s", name);
-	item = dbg_snapshot_get_item(log_name);
+	item = dss_get_item(log_name);
 	if (!item)
 		return -1;
 

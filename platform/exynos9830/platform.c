@@ -28,7 +28,7 @@
 #endif
 #include <dev/if_pmic_s2mu106.h>
 #include <dev/fg_s2mu106.h>
-#include <platform/dfd.h>
+#include <dev/debug/dss.h>
 #include <platform/ldfw.h>
 #include <platform/secure_boot.h>
 #include <platform/h-arx.h>
@@ -325,7 +325,7 @@ void platform_early_init(void)
 
 	uart_test_function();
 	printf("LK build date: %s, time: %s\n", __DATE__, __TIME__);
-	dbg_snapshot_boot_cnt();
+	dss_boot_cnt();
 
 	arm_gic_init();
 	writel(1 << 8, EXYNOS9830_MCT_G_TCON);
@@ -407,7 +407,7 @@ void platform_init(void)
 	mmc_init();
 	part_init();
 
-	dbg_snapshot_fdt_init();
+	dss_fdt_init();
 	dfd_get_dbgc_version();
 	if (rst_stat & (WARM_RESET | LITTLE_WDT_RESET))
 		dfd_run_post_processing();

@@ -29,9 +29,6 @@ MODULE_SRCS += \
 	$(LOCAL_DIR)/debug/dfd.c \
 	$(LOCAL_DIR)/debug/dfd_cache_flush.c \
 	$(LOCAL_DIR)/debug/dfd_asm_helper.S \
-	$(LOCAL_DIR)/debug/dfd_verify.c \
-	$(LOCAL_DIR)/debug/dss.c \
-	$(LOCAL_DIR)/debug/dss_store_ramdump.c \
 	$(LOCAL_DIR)/dvfs_info.c
 
 MODULE_DEPS += \

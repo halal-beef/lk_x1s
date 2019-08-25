@@ -16,6 +16,7 @@
 #include <lib/bio.h>
 #include <lib/console.h>
 #include <lib/font_display.h>
+#include <lib/fdtapi.h>
 #include <dev/boot.h>
 #include <dev/rpmb.h>
 #include <dev/usb/gadget.h>
@@ -31,7 +32,6 @@
 #include <platform/sizes.h>
 #include <platform/fastboot.h>
 #include <platform/bootimg.h>
-#include <platform/fdt.h>
 #include <platform/chip_id.h>
 #include <platform/gpio.h>
 #include <part.h>
@@ -431,7 +431,7 @@ static void configure_dtb(void)
 	 * If you modify dtb, you must use under set_bootargs function.
 	 * And if you modify bootargs, you will modify in set_bootargs function.
 	 */
-	merge_dto_to_main_dtb();
+	merge_dto_to_main_dtb(board_id, board_rev);
 	resize_dt(SZ_4K);
 
 

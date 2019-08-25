@@ -19,4 +19,6 @@
 #define CONFIG_USE_RPMB
 #define CONFIG_UFS_BOARD_TYPE 1        /* smdk : 0, universal : 1 */
 
+#define VOLDOWN_GPIOCON EXYNOS9630_GPA1CON
+#define VOLDOWN_BIT	6
 #endif /*__BOARD_INFO_H__ */

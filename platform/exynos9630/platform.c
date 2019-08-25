@@ -26,14 +26,12 @@
 #include <platform/if_pmic_s2mu107.h>
 #include <platform/fg_s2mu107.h>
 #include <platform/tmu.h>
-#include <platform/dfd.h>
 #include <platform/ldfw.h>
 #include <platform/gpio.h>
 #include <platform/bl_sys_info.h>
 #include <platform/dram_training.h>
 #include <platform/mmu/mmu_func.h>
 #include <platform/fastboot.h>
-#include <platform/exynos9630.h>
 #include <part.h>
 
 #include <lib/font_display.h>
@@ -43,6 +41,7 @@
 #include <stdio.h>
 
 #include <dev/lk_acpm_ipc.h>
+#include <dev/debug/dss.h>
 #include <platform/power/flexpmu_dbg.h>
 
 #define ARCH_TIMER_IRQ		30
@@ -269,7 +268,7 @@ void platform_early_init(void)
 
 	uart_test_function();
 	printf("LK build date: %s, time: %s\n", __DATE__, __TIME__);
-	dbg_snapshot_boot_cnt();
+	dss_boot_cnt();
 
 	arm_gic_init();
 	writel(1 << 8, EXYNOS9630_MCT_G_TCON);
@@ -329,7 +328,7 @@ void platform_init(void)
 
 	part_init();
 	if (is_first_boot() && *(unsigned int *)DRAM_BASE == 0xabcdef)
-		dbg_snapshot_fdt_init();
+		dss_fdt_init();
 
 	if (rst_stat & (WARM_RESET | LITTLE_WDT_RESET))
 		dfd_run_post_processing();
@@ -376,7 +375,6 @@ void platform_init(void)
 	read_temperature(TZ_LIT, &temp, PRINT);
 	read_temperature(TZ_BIG, &temp, PRINT);
 	display_trip_info();
-	dfd_display_reboot_reason();
 	if ((get_current_boot_device() != BOOT_USB) &&
 		*(unsigned int *)DRAM_BASE == 0xabcdef)
 		init_fastboot_variables();

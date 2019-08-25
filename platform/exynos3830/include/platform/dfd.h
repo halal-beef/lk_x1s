@@ -80,10 +80,7 @@
 #define MPIDR_AFF3_SHIFT	32
 #define MT_BIT_OFFSET		(24)
 
-#define RAMDUMP_BOOT_CNT_MAGIC	0xFACEDB90
-
-// #define ARRAY_SIZE(x) (sizeof(x) / sizeof((x)[0]))
-
+#define DBGC_VERSION_LEN	(48)
 #ifndef __ASSEMBLY__
 enum pt_gpr {
 	X0,
@@ -118,53 +115,16 @@ enum pt_reg {
 	POWER_STATE,
 };
 
-enum {
-	DEBUG_LEVEL_NONE = -1,
-	DEBUG_LEVEL_LOW = 0,
-	DEBUG_LEVEL_MID = 1,
-};
-#define DEBUG_LEVEL_PREFIX	(0xDB9 << 16)
-extern int debug_level;
-
-void dfd_verify_enable(void);
-extern void set_debug_level(const char *buf);
-extern void set_debug_level_by_env(void);
-extern void dbg_snapshot_fdt_init(void);
-extern int debug_snapshot_getvar_item(const char *name, char *response);
-extern unsigned long dbg_snapshot_get_item_paddr(const char *name);
-extern unsigned long dbg_snapshot_get_item_size(const char *name);
-void dbg_snapshot_boot_cnt(void);
 void llc_flush(u32 invway);
 unsigned int clear_llc_init_state(void);
-
 #ifdef CONFIG_RAMDUMP_GPR
 void dfd_entry_point(void);
-void dfd_display_reboot_reason(void);
-void dfd_display_rst_stat(void);
-void dfd_display_core_stat(void);
 u64 cpu_boot(u64 id, u64 cpu, u64 fn);
-void dfd_run_post_processing(void);
-void write_back_cache(int cpu);
-void dfd_set_dump_en_for_cacheop(int en);
+void dfd_soc_run_post_processing(void);
+void dfd_soc_get_dbgc_version(void);
 void llc_flush_disable(void);
 #else
-inline static void dfd_display_reboot_reason(void)
-{
-}
-
-inline static void dfd_display_rst_stat(void)
-{
-}
-
-inline static void dfd_display_core_stat(void)
-{
-}
-
 inline static void dfd_run_post_processing(void)
-{
-}
-
-inline static void dfd_set_dump_en_for_cacheop(int en)
 {
 }
 

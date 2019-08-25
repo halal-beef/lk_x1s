@@ -17,12 +17,12 @@
 #include <lib/font_display.h>
 #include <platform/sfr.h>
 #include <platform/charger.h>
-#include <platform/dfd.h>
 #include <platform/gpio.h>
 #include <platform/smc.h>
-#include <platform/dss_store_ramdump.h>
 #include <platform/chip_rev.h>
 #include <dev/boot.h>
+#include <dev/debug/dss.h>
+#include <dev/debug/dss_store_ramdump.h>
 
 int cmd_boot(int argc, const cmd_args *argv);
 
@@ -79,7 +79,7 @@ static void exynos_boot_task(const struct app_descriptor *app, void *args)
 	val = exynos_gpio_get_value(bank, gpio);
 	if (!is_first_boot() ||
 			(rst_stat & (WARM_RESET | LITTLE_WDT_RESET | BIG_WDT_RESET))) {
-		dfd_set_dump_en_for_cacheop(0);
+		dfd_set_dump_en(0);
 		sdm_encrypt_secdram();
 		goto ramdump;
 	}
@@ -99,13 +99,12 @@ static void exynos_boot_task(const struct app_descriptor *app, void *args)
 		start_usb_gadget();
 
 #ifdef RAMDUMP_MODE_OFF
-	dfd_set_dump_en_for_cacheop(0);
+	dfd_set_dump_en(0);
 	set_debug_level("low");
 #else
-	dfd_set_dump_en_for_cacheop(1);
+	dfd_set_dump_en(1);
 	set_debug_level("mid");
 #endif
-	set_debug_level_by_env();
 	cmd_boot(0, 0);
 	return;
 ramdump:
@@ -113,7 +112,7 @@ ramdump:
 	cmd_boot(0, 0);
 #else
 	debug_store_ramdump();
-	dfd_set_dump_en_for_cacheop(0);
+	dfd_set_dump_en(0);
 	start_usb_gadget();
 #endif
 	return;
