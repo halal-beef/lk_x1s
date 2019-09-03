@@ -155,7 +155,7 @@ uint32_t el3_verify_signature_using_image(
 	ctx.sign_field_ptr = sign_field_ptr;
 
 	FLUSH_DCACHE_RANGE(&ctx, sizeof(SB_V40_SMC_CTX));
-	FLUSH_DCACHE_RANGE(signed_img_ptr, signed_img_len - sizeof(SB_V40_SIGN_FIELD));
+	FLUSH_DCACHE_RANGE(signed_img_ptr, signed_img_len);
 	FLUSH_DCACHE_RANGE(sign_field_ptr, sizeof(SB_V40_SIGN_FIELD));
 
 	ret = exynos_smc(SMC_CMD_CHECK_SIGNATURE, ch, (uint64_t)&ctx, 0);
