@@ -556,10 +556,13 @@ int fb_do_reboot(const char *cmd_buffer, unsigned int rx_sz)
 		writel(CONFIG_RAMDUMP_MODE, CONFIG_RAMDUMP_SCRATCH);
 	}
 	else if (!memcmp(cmd_buffer, "reboot-fastboot", strlen("reboot-fastboot"))) {
-		writel(REBOOT_MODE_RECOVERY, EXYNOS_POWER_SYSIP_DAT0);
+		writel(REBOOT_MODE_FASTBOOT_USER, EXYNOS_POWER_SYSIP_DAT0);
 		writel(0, CONFIG_RAMDUMP_SCRATCH);
 	}
-	else {
+	else if (!memcmp(cmd_buffer, "reboot-recovery", strlen("reboot-recovery"))) {
+		writel(REBOOT_MODE_RECOVERY, EXYNOS_POWER_SYSIP_DAT0);
+		writel(0, CONFIG_RAMDUMP_SCRATCH);
+	} else {
 		writel(0, CONFIG_RAMDUMP_SCRATCH);
 	}
 

@@ -345,8 +345,14 @@ void platform_prepare_reboot(void)
 
 void platform_do_reboot(const char *cmd_buf)
 {
-	if(!memcmp(cmd_buf, "reboot-bootloader", strlen("reboot-bootloader"))) {
+	if (!memcmp(cmd_buf, "reboot-bootloader", strlen("reboot-bootloader"))) {
 		writel(REBOOT_MODE_FASTBOOT, EXYNOS9630_POWER_SYSIP_DAT0);
+	} else if (!memcmp(cmd_buf, "reboot-recovery", strlen("reboot-recovery"))) {
+		writel(REBOOT_MODE_RECOVERY, EXYNOS9630_POWER_SYSIP_DAT0);
+		writel(0, CONFIG_RAMDUMP_SCRATCH);
+	} else if (!memcmp(cmd_buf, "reboot-fastboot", strlen("reboot-fastboot"))) {
+		writel(REBOOT_MODE_FASTBOOT_USER, EXYNOS9630_POWER_SYSIP_DAT0);
+		writel(0, CONFIG_RAMDUMP_SCRATCH);
 	} else {
 		writel(0, EXYNOS9630_POWER_SYSIP_DAT0);
 		writel(0, CONFIG_RAMDUMP_SCRATCH);
