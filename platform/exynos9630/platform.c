@@ -235,7 +235,7 @@ void arm_generic_timer_disable(void)
 
 void platform_early_init(void)
 {
-#if defined(CONFIG_UART_LOG_MODE)
+#if defined(CONFIG_UART_LOG_MODE) || defined(CONFIG_MMU_ENABLE)
 	unsigned int rst_stat = readl(EXYNOS9630_POWER_RST_STAT);
 #endif
 #if defined(CONFIG_MMU_ENABLE)
