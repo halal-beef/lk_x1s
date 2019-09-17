@@ -36,6 +36,7 @@ void pmic_enable_manual_reset(pmic_mrdt deb_time)
 	reg |= MRSTB_EN;
 	reg &= 0xF0;
 	reg |= (0x0F & deb_time);
+	reg &= ~WRSTBO_SEL;
 	i3c_write(0, S2MPU10_PM_ADDR, S2MPU10_PM_CTRL1, reg);
 }
 
@@ -55,6 +56,7 @@ void pmic_init (void)
 	/* Disable manual reset */
 	i3c_read(0, S2MPU10_PM_ADDR, S2MPU10_PM_CTRL1, &reg);
 	reg &= ~MRSTB_EN;
+	reg &= ~WRSTBO_SEL;
 	i3c_write(0, S2MPU10_PM_ADDR, S2MPU10_PM_CTRL1, reg);
 
 	/* Enable warm reset */
