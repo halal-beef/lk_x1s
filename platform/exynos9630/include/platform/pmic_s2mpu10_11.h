@@ -119,6 +119,7 @@ typedef enum {
 /*
  * CTRL1
  */
+#define WRSTBO_SEL	(0x1 << 7)
 #define MRSTB_EN	(0x1 << 4)
 
 /*
