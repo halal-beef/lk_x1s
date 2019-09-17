@@ -52,6 +52,7 @@ void pmic_init (void)
 {
 	unsigned char reg;
 	struct exynos_gpio_bank *bank = (struct exynos_gpio_bank *)EXYNOS9630_GPP2CON;
+	struct exynos_gpio_bank *gpa0 = (struct exynos_gpio_bank *)EXYNOS9630_GPA0CON;
 
 	/* Disable manual reset */
 	i3c_read(0, S2MPU10_PM_ADDR, S2MPU10_PM_CTRL1, &reg);
@@ -80,6 +81,10 @@ void pmic_init (void)
 	exynos_gpio_set_pull(bank, 4, GPIO_PULL_NONE);
 	exynos_gpio_cfg_pin(bank, 4, GPIO_OUTPUT);
 	exynos_gpio_set_value(bank, 4, 1);
+
+	/* Volume down set Input & no Pull */
+	exynos_gpio_set_pull(gpa0, 7, GPIO_PULL_NONE);
+	exynos_gpio_cfg_pin(gpa0, 7, GPIO_INPUT);
 
 	/* Main/Slave PMIC interrupt blocking */
 	pmic_int_mask(0, S2MPU10_PM_ADDR, S2MPU10_PM_INT1M);
@@ -129,7 +134,7 @@ void read_pmic_info_s2mpu10 (void)
 {
 	unsigned char read_int1, read_int2, read_int;
 	unsigned char read_ldo21_ctrl, read_ldo22_ctrl, read_ldo23_ctrl;
-	unsigned char read_pwronsrc, read_offsrc, read_wtsr_smpl;
+	unsigned char read_pwronsrc, read_offsrc, read_wtsr_smpl, read_status1;
 
 	i3c_read(0, S2MPU10_PM_ADDR, S2MPU10_PM_INT1, &read_int1);
 	i3c_read(0, S2MPU10_PM_ADDR, S2MPU10_PM_INT2, &read_int2);
@@ -142,6 +147,7 @@ void read_pmic_info_s2mpu10 (void)
 	i3c_read(0, S2MPU10_PM_ADDR, S2MPU10_PM_LDO21_CTRL, &read_ldo21_ctrl);
 	i3c_read(0, S2MPU10_PM_ADDR, S2MPU10_PM_LDO22_CTRL, &read_ldo22_ctrl);
 	i3c_read(0, S2MPU10_PM_ADDR, S2MPU10_PM_LDO23_CTRL, &read_ldo23_ctrl);
+	i3c_read(0, S2MPU10_PM_ADDR, S2MPU10_PM_STATUS1, &read_status1);
 
 	/* read PMIC RTC */
 	i3c_read(0, S2MPU10_RTC_ADDR, S2MPU10_RTC_WTSR_SMPL, &read_wtsr_smpl);
@@ -154,6 +160,7 @@ void read_pmic_info_s2mpu10 (void)
 	printf("S2MPU10_PM_LDO22M_CTRL: 0x%x\n", read_ldo22_ctrl);
 	printf("S2MPU10_PM_LDO23M_CTRL: 0x%x\n", read_ldo23_ctrl);
 	printf("S2MPU10_RTC_WTSR_SMPL : 0x%x\n", read_wtsr_smpl);
+	printf("S2MPU10_PM_STATUS1: 0x%x\n", read_status1);
 
 	if ((read_pwronsrc & (1 << 7)) && (read_int2 & (1 << 5)) && !(read_int1 & (1 << 7))) {
 		/* WTSR detect condition - WTSR_ON && WTSR_INT && ! MRB_INT */
