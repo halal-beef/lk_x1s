@@ -404,11 +404,9 @@ static void s5e9630_mmu_table_init(void)
 	set_tt_entry((u64 *)0x04000000, (u64 *)0x05FFFFFF, (u64 *)0x04000000, TT_PERI);
 	set_tt_entry((u64 *)0x06000000, (u64 *)0x0FFFFFFF, (u64 *)0x06000000, TT_PERI);	/* SIREX virtual iRAM */
 	set_tt_entry((u64 *)0x10000000, (u64 *)0x1FFFFFFF, (u64 *)0x10000000, TT_PERI);
-	set_tt_entry((u64 *)0x80000000, (u64 *)0xEBFFFFFF, (u64 *)0x80000000, TT_RAM);
-	set_tt_entry((u64 *)0xEC000000, (u64 *)0xF27FFFFF, (u64 *)0xEC000000, TT_NONCACHEBLE);
-	set_tt_entry((u64 *)0xF2800000, (u64 *)0xF8FFFFFF, (u64 *)0xF2800000, TT_RAM);
-	set_tt_entry((u64 *)0xF9000000, (u64 *)0xF91FFFFF, (u64 *)0xF9000000, TT_NONCACHEBLE);
-	set_tt_entry((u64 *)0xF9200000, (u64 *)0xFFFFFFFF, (u64 *)0xF9200000, TT_RAM);
+	set_tt_entry((u64 *)0x80000000, (u64 *)0xF97FFFFF, (u64 *)0x80000000, TT_RAM);
+	set_tt_entry((u64 *)0xF9800000, (u64 *)0xFD3FFFFF, (u64 *)0xF9800000, TT_NONCACHEBLE);
+	set_tt_entry((u64 *)0xFD400000, (u64 *)0xFFFFFFFF, (u64 *)0xFD400000, TT_RAM);
 	set_tt_entry((u64 *)0x880000000, (u64 *)0xAFFFFFFFF, (u64 *)0x880000000, TT_RAM);
 }
 
