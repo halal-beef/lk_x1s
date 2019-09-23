@@ -132,14 +132,12 @@ u32 __usb3_dev_trb_CompleteOP(USB3_DEV_TRB_HANDLER hTRB, u8 bEnClear, USB_DIR eE
 		// Cache Invalid
 		if (trb_block->m_bCacheCleand && !hTRB->non_cachable) {
 			trb_block->m_bCacheCleand = 0;
-#if 0
 			U3DBG_CACHE("TRB INVALID\n");
 			U3DBG_CACHE("ADDR : 0x%p Size : %lud\n", trb_block->m_a_oTRB,
 					sizeof(USB3_DEV_TRB_o) * trb_block->input_cnt);
 			InvalidateDCache((u64) (trb_block->m_a_oTRB),
 					sizeof(USB3_DEV_TRB_o) *
 					trb_block->input_cnt);
-#endif
 		}
 
 		/* Calculate Real Transfer Size and cache operation */
@@ -154,19 +152,19 @@ u32 __usb3_dev_trb_CompleteOP(USB3_DEV_TRB_HANDLER hTRB, u8 bEnClear, USB_DIR eE
 				continue;
 			if (eEpDir != USBDIR_OUT)
 				continue;
-#if 0
 			if (trb->status.b.buf_siz) {
 				U3DBG_CACHE("DATA BUFFER INAVLID\n");
 				U3DBG_CACHE("ADDR : 0x%x Size : %d\n",
 					    trb->buf_ptr_l,
 					    trb->status.b.buf_siz);
-				t_val = get_timer(0);
+				//t_val = get_timer(0);
 				InvalidateDCache(trb->buf_ptr_l,
 						 trb->status.b.buf_siz);
+				/*
 				U3DBG_CACHE("Time : %d\n",
 					    ticks2usec(get_timer(t_val)));
+				*/
 			}
-#endif
 		}
 
 		if (!trb_block->m_p_oNext) {
@@ -307,9 +305,11 @@ void *usb3_dev_trb_prepare(USB3_DEV_TRB_HANDLER hTRB, u8 bCacheOp,
 				 * in-progress event*/
 				if (bCircular)
 					trb->control.b.ioc = 1;
-#if 0
 				/* Skip cache operation is not needed if used
 				 * does not needed or buf size is zero */
+				if (hTRB->non_cachable == true)
+					continue;
+
 				if (!bCacheOp || !(trb->status.b.buf_siz))
 					continue;
 
@@ -328,13 +328,11 @@ void *usb3_dev_trb_prepare(USB3_DEV_TRB_HANDLER hTRB, u8 bCacheOp,
 					InvalidateDCache(trb->buf_ptr_l,
 							 trb->status.b.buf_siz);
 				}
-#endif
 			}
 		} else
 			hTRB->m_bCachedXfer = 0;
-#if 0
 		// Clean TRB block
-		if (!p_oCurrent->m_bCacheCleand) {
+		if (hTRB->non_cachable==false && !p_oCurrent->m_bCacheCleand) {
 			p_oCurrent->m_bCacheCleand = 1;
 			U3DBG_CACHE("TRB CLEAN\n");
 			U3DBG_CACHE("ADDR : 0x%x Size : %d\n",
@@ -343,7 +341,6 @@ void *usb3_dev_trb_prepare(USB3_DEV_TRB_HANDLER hTRB, u8 bCacheOp,
 			CoCleanDCache((unsigned long) (p_oCurrent->m_a_oTRB),
 				      sizeof(USB3_DEV_TRB_o) * TRB_BLOCK_MAX);
 		}
-#endif
 		p_oCurrent = p_oCurrent->m_p_oNext;
 	}
 	hTRB->m_p_oLastTRB = NULL;
@@ -360,9 +357,8 @@ u32 usb3_dev_trb_reset_hwo(USB3_DEV_TRB_HANDLER hTRB)
 			p_oCurrentBlock = p_oCurrentBlock->m_p_oNext) {
 		u32 uTrbCnt;
 		u32 num_trb = p_oCurrentBlock->input_cnt;
-#if 0
 		/* Cache Invalid for Updated by DMA */
-		if (p_oCurrentBlock->m_bCacheCleand) {
+		if (!hTRB->non_cachable && p_oCurrentBlock->m_bCacheCleand) {
 			U3DBG_CACHE("TRB INVALID\n");
 			U3DBG_CACHE("ADDR : 0x%p Size : %lud\n",
 				    p_oCurrentBlock->m_a_oTRB,
@@ -371,7 +367,6 @@ u32 usb3_dev_trb_reset_hwo(USB3_DEV_TRB_HANDLER hTRB)
 			InvalidateDCache((unsigned long) (p_oCurrentBlock->m_a_oTRB),
 				sizeof(USB3_DEV_TRB_o) * num_trb);
 		}
-#endif
 		p_oCurrentBlock->m_bCacheCleand = 0;
 		for (uTrbCnt = 0; uTrbCnt < num_trb; uTrbCnt++) {
 			USB3_DEV_TRB_p p_oTRB =
@@ -394,8 +389,7 @@ u32 usb3_dev_trb_reset_hwo(USB3_DEV_TRB_HANDLER hTRB)
 			p_oTRB->control.b.hwo = 1;
 		}
 		// Cache Invalid for Updated by CPU
-#if 0
-		if (!p_oCurrentBlock->m_bCacheCleand) {
+		if (!hTRB->non_cachable && !p_oCurrentBlock->m_bCacheCleand) {
 			p_oCurrentBlock->m_bCacheCleand = 1;
 			U3DBG_CACHE("TRB CLEAN\n");
 			U3DBG_CACHE("ADDR : 0x%p Size : %lud\n",
@@ -405,7 +399,6 @@ u32 usb3_dev_trb_reset_hwo(USB3_DEV_TRB_HANDLER hTRB)
 			CoCleanDCache((unsigned long) (p_oCurrentBlock->m_a_oTRB),
 				sizeof(USB3_DEV_TRB_o) * num_trb);
 		}
-#endif
 	}
 	return uRetXferSize;
 }

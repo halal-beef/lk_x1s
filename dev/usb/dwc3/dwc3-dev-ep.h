@@ -845,9 +845,12 @@ static void gadget_ops_set_xfer_done(void *dev_handle, unsigned char ep_id,
 static bool gadget_ops_ep_start(void *dev_handle, unsigned char ep_id)
 {
 	DWC3_DEV_EP_HANDLER ep_handle;
+	DWC3_DEV_HANDLER dwc3_dev_h;
 
 	ep_handle = get_ep_handle_from_gadget_param(dev_handle, ep_id);
-	return dwc3_dev_ep_start_xfer(ep_handle, 0);
+	dwc3_dev_h = ep_handle->dwc3_dev_h;
+
+	return dwc3_dev_ep_start_xfer(ep_handle, !(dwc3_dev_h->non_cachable));
 }
 
 static void gadget_ops_ep_stop(void *dev_handle, unsigned char ep_id)
