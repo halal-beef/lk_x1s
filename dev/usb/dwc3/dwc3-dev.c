@@ -22,6 +22,7 @@
 #include <platform/mmu/barrier.h>
 #include <lib/font_display.h>
 #include <kernel/timer.h>
+#include <platform/mmu/mmu.h>
 
 #include "dev/usb/gadget.h"
 #include "dwc3-reg.h"
@@ -74,7 +75,10 @@ static volatile u32 g_uUSB3DbgEn = UDEV3DBG_E|U3DEVDBG_STDREQ_E|U3DEVDBG_ISR_EP_
 #define U3DBG_EPCMD(x...)	LTRACEF_LEVEL((g_uUSB3DbgEn&U3DEVDBG_EPCMD_E)?INFO:(LK_DEBUGLEVEL+1),x)
 #define U3DBG_TRB(x...)		LTRACEF_LEVEL((g_uUSB3DbgEn&U3DEVDBG_TRB_E)?INFO:(LK_DEBUGLEVEL+1),x)
 #define U3DBG_TIME(x...)	LTRACEF_LEVEL((g_uUSB3DbgEn&U3DEVDBG_TIME_E)?INFO:(LK_DEBUGLEVEL+1),x)
+/*
 #define U3DBG_CACHE(x...)	LTRACEF_LEVEL((g_uUSB3DbgEn&U3DEVDBG_CACHE_e)?INFO:(LK_DEBUGLEVEL+1),x)
+*/
+#define U3DBG_CACHE(x...)
 
 //static DWC3_DEV_HANDLER g_hUSB30;
 
@@ -993,7 +997,6 @@ void dwc3_dev_HandleDevEvent(DWC3_DEV_HANDLER dwc3_dev_h, USB3_DEV_DEVT_o *uDevE
 
 static void dwc3_dev_invaild_evntbuf(DWC3_DEV_HANDLER dwc3_dev_h)
 {
-#if 0
 	if (dwc3_dev_h->non_cachable)
 		return;
 	struct dwc3_dev_config *p_oDevConfig;
@@ -1005,7 +1008,6 @@ static void dwc3_dev_invaild_evntbuf(DWC3_DEV_HANDLER dwc3_dev_h)
 		    4 * p_oDevConfig->m_uEventBufDepth);
 	InvalidateDCache((u64) dwc3_dev_h->m_pEventBuffer,
 			 4 * p_oDevConfig->m_uEventBufDepth);
-#endif
 }
 
 void dwc3_dev_en_event(DWC3_DEV_HANDLER dwc3_dev_h, u8 intr_num, u8 bEn)
@@ -1171,6 +1173,12 @@ void *dwc3_dev_init_once(void)
 	/* configuration Descriptor */
 	dwc3_dev_h->config_desc_buf = dwc3_calloc_align(1024, 64);
 	dwc3_dev_h->config_desc_alloc_sz = 1024;
+
+	if (p_oDevConfig->need_cache_ops)
+		dwc3_dev_h->non_cachable = false;
+	else
+		dwc3_dev_h->non_cachable = true;
+
 	// Initiate All EP Handler
 	for (; uEPCnt < 32; uEPCnt++) {
 		DWC3_DEV_EP_HANDLER hEP;

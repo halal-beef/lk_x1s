@@ -74,6 +74,8 @@ struct dwc3_dev_config {
 	unsigned m_bBESLSupport:1;
 	/* TRB Start Feature */
 	unsigned on_demand:1;
+	/* Use IO coherency unit */
+	unsigned need_cache_ops;
 };
 
 struct dwc3_plat_config {
