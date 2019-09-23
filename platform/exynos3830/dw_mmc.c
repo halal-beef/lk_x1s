@@ -2,6 +2,7 @@
 #include <dev/dw_mmc.h>
 #include <platform/sfr.h>
 #include <platform/delay.h>
+#include <platform/mmu/mmu_func.h>
 #if 0
 #include <dev/pmic_s2mps_19_22.h>
 #include <dev/speedy_multi.h>
@@ -156,6 +157,13 @@ static void sd_voltage_switch(void)
 #endif
 }
 
+static void cache_flush(void)
+{
+#if defined(CONFIG_MMU_ENABLE)
+	clean_invalidate_dcache_all();
+#endif
+}
+
 /* connection call back function and input board data */
 int dwmci_board_get_host(struct dw_mci *host, int channel)
 {
@@ -172,6 +180,9 @@ int dwmci_board_get_host(struct dw_mci *host, int channel)
 			host->bus_clock = 0;
 			host->sd_voltage_switch = 0;;
 			host->fifo_depth = FIFO_DEPTH_DEAFULT;
+#if defined(CONFIG_MMU_ENABLE)
+			host->cache_flush = cache_flush;
+#endif
 			break;
 		case 2 :
 			host->ioaddr = (void __iomem *)MMC_CARD_BASE;
@@ -185,6 +196,9 @@ int dwmci_board_get_host(struct dw_mci *host, int channel)
 			host->bus_clock = 0;
 //			host->sd_voltage_switch = sd_voltage_switch;
 			host->fifo_depth = FIFO_DEPTH_DEAFULT;
+#if defined(CONFIG_MMU_ENABLE)
+			host->cache_flush = cache_flush;
+#endif
 			break;
 		default :
 			return -1;
