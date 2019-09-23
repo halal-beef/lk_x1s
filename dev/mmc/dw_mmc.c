@@ -42,6 +42,12 @@ static void dwmci_clr(struct dw_mci *host, unsigned int value, unsigned int addr
 	dwmci_writel(host, (dwmci_readl(host, addr) & ~(value)), addr);
 }
 
+static void dwmci_cache_flush(struct dw_mci *host)
+{
+	if (host->cache_flush)
+		host->cache_flush();
+}
+
 static void dwmci_dumpregs_err(struct dw_mci *host)
 {
 	printf("dwmci: ============== REGISTER DUMP ==============\n");
@@ -488,6 +494,7 @@ static void dwmci_prepare_data(struct dw_mci *host, struct mmc_data *data)
 		data_cnt -= 8;
 		cur_idmac++;
 	}
+	dwmci_cache_flush(host);
 
 	dwmci_writel(host, (unsigned int)((u64)idmac_desc & 0xFFFFFFFF), DWMCI_DBADDRL);
 	dwmci_writel(host, (unsigned int)((u64)idmac_desc >> 32), DWMCI_DBADDRU);
@@ -690,6 +697,7 @@ static int dwmci_data_transfer(struct dw_mci *host)
 			dbg("dwmci : data transfer done\n");
 			dwmci_end_data(host);
 			dwmci_writel(host, 0x0, DWMCI_IDINTEN);
+			dwmci_cache_flush(host);
 			break;
 		}
 	}
