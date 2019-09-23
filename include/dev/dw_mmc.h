@@ -438,6 +438,7 @@ struct dw_mci {
 	unsigned int (*get_clk)(void);
 	void (*set_clk)(unsigned int freq);
 	void (*sd_voltage_switch)(void);
+	void (*cache_flush)(void);
 };
 int dwmci_init(struct mmc *mmc, int channel);
 int dwmci_board_get_host(struct dw_mci *host, int channel);
