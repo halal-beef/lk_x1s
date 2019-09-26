@@ -122,13 +122,14 @@ int rpmb_get_lock_state(uint32_t *state);
 int rpmb_set_lock_state(uint32_t state);
 
 /* Parameter */
-#define HMAC_SIZE	32
-#define NONCE_SIZE      16
-#define DATA_SIZE	256
-#define HMAC_CALC_SIZE	284
-#define HMAC_START_BYTE	196
-#define DATA_START_BYTE	228
-#define RPMB_SIZE	512
-#define RPMB_BLOCK_PER_PARTITION 512
+#define HMAC_SIZE			32
+#define NONCE_SIZE      		16
+#define DATA_SIZE			256
+#define HMAC_CALC_SIZE			284
+#define HMAC_CALC_SIZE_128_GRANULE	384
+#define HMAC_START_BYTE			196
+#define DATA_START_BYTE			228
+#define RPMB_SIZE			512
+#define RPMB_BLOCK_PER_PARTITION 	512
 
 #endif				/* __RPMB_H__ */

@@ -414,13 +414,14 @@ static void mmc_report(struct rpmb_packet *packet, int sp_in_out)
 
 static int emmc_rpmb_commands(struct rpmb_packet *packet)
 {
-	u8 *buf = NULL;
-	u8 *hmac = NULL;
 	u32 i;
 	int result = -1;
 	u32 addr, start_blk, blk_cnt;
 	u32 *addrp = NULL;
-	uint8_t output_data[HMAC_SIZE];
+	uint8_t buf[RPMB_SIZE] __attribute__((__aligned__(CACHE_WRITEBACK_GRANULE_128)));
+	uint8_t hmac[HMAC_CALC_SIZE_128_GRANULE] __attribute__((__aligned__(CACHE_WRITEBACK_GRANULE_128)));
+	uint8_t output_data[CACHE_WRITEBACK_GRANULE_128] __attribute__((__aligned__(CACHE_WRITEBACK_GRANULE_128)));
+
 	uint32_t ret = RV_SUCCESS;
 	ssize_t cnt;
 	bdev_t *dev;
@@ -432,12 +433,8 @@ static int emmc_rpmb_commands(struct rpmb_packet *packet)
 		dprintf(INFO, "Write authentication KEY\n");
 		dump_packet(packet->Key_MAC, HMAC_SIZE);
 #endif
-		buf = malloc(RPMB_SIZE);
-		if (buf == NULL) {
-			printf("buf Memoery allocation failed\n");
-			ret = -1;
-			break;
-		}
+
+		memset(buf, 0, RPMB_SIZE);
 		swap_packet((u8 *)packet, buf);
 
 		/* Key restore */
@@ -492,9 +489,7 @@ static int emmc_rpmb_commands(struct rpmb_packet *packet)
 #ifdef RPMB_DEBUG
 		mmc_report(packet, SECU_PROT_OUT);
 #endif
-
-		memset((void *)buf, 0, RPMB_SIZE);
-
+		memset(buf, 0, RPMB_SIZE);
 		dev->flags = 0;
 		cnt = dev->new_read(dev, (void *)buf, 0, 1);
 		if (cnt == 0) {
@@ -519,20 +514,8 @@ static int emmc_rpmb_commands(struct rpmb_packet *packet)
 
 	case	2:
 		/* Reading of the Write Counter value request */
-		buf = malloc(RPMB_SIZE);
-		if (buf == NULL) {
-			printf("buf Memoery allocation failed\n");
-			ret = -1;
-			break;
-		}
-
-		hmac = malloc(HMAC_CALC_SIZE);
-		if (hmac == NULL) {
-			printf("hmac Memoery allocation failed\n");
-			ret = -1;
-			break;
-		}
-
+		memset(buf, 0, RPMB_SIZE);
+		memset(hmac, 0, sizeof(hmac));
 		swap_packet((u8 *) packet, buf);
 
 #ifdef RPMB_DEBUG
@@ -544,7 +527,6 @@ static int emmc_rpmb_commands(struct rpmb_packet *packet)
 		dev = bio_open("mmcrpmb");
 		if (dev == NULL) {
 			printf("bio open fail\n");
-			free(hmac);
 			ret = -1;
 			goto out;
 		}
@@ -554,7 +536,6 @@ static int emmc_rpmb_commands(struct rpmb_packet *packet)
 		if (cnt == 0) {
 			printf("Write counter read request fail !!!\n");
 			bio_close(dev);
-			free(hmac);
 			ret = -1;
 			goto out;
 		}
@@ -569,7 +550,6 @@ static int emmc_rpmb_commands(struct rpmb_packet *packet)
 		if (cnt == 0) {
 			printf("Write counter read fail !!!\n");
 			bio_close(dev);
-			free(hmac);
 			ret = -1;
 			goto out;
 		}
@@ -585,7 +565,6 @@ static int emmc_rpmb_commands(struct rpmb_packet *packet)
 		dump_packet(packet->Key_MAC, HMAC_SIZE);
 		mmc_report(packet, SECU_PROT_IN);
 #endif
-		free(hmac);
 		bio_close(dev);
 
 		break;
@@ -596,18 +575,8 @@ static int emmc_rpmb_commands(struct rpmb_packet *packet)
 		addr = *addrp;
 		blk_cnt = packet->count;
 		start_blk = packet->address;
-		buf = malloc(RPMB_SIZE * blk_cnt);
-		if (buf == NULL) {
-			printf("buf Memoery allocation failed\n");
-			ret = -1;
-			break;
-		}
-		hmac = malloc(HMAC_CALC_SIZE * blk_cnt);
-		if (hmac == NULL) {
-			printf("hmac Memoery allocation failed\n");
-			ret = -1;
-			break;
-		}
+		memset(buf, 0, RPMB_SIZE);
+		memset(hmac, 0, sizeof(hmac));
 
 #ifdef RPMB_DEBUG
 		dprintf(INFO, "Authenticated data write request (Data only)\n");
@@ -662,7 +631,6 @@ static int emmc_rpmb_commands(struct rpmb_packet *packet)
 		dev = bio_open("mmcrpmb");
 		if (dev == NULL) {
 			printf("bio open fail\n");
-			free(hmac);
 			ret = -1;
 			goto out;
 		}
@@ -672,7 +640,6 @@ static int emmc_rpmb_commands(struct rpmb_packet *packet)
 		if (cnt == 0) {
 			printf("RPMB: Write fail !!!\n");
 			bio_close(dev);
-			free(hmac);
 			ret = -1;
 			goto out;
 		}
@@ -696,7 +663,6 @@ static int emmc_rpmb_commands(struct rpmb_packet *packet)
 		if (cnt == 0) {
 			printf("RPMB: Request read result fail !!!\n");
 			bio_close(dev);
-			free(hmac);
 			ret = -1;
 			goto out;
 		}
@@ -711,7 +677,6 @@ static int emmc_rpmb_commands(struct rpmb_packet *packet)
 		if (cnt == 0) {
 			printf("RPMB: Read result fail !!!\n");
 			bio_close(dev);
-			free(hmac);
 			ret = -1;
 			goto out;
 		}
@@ -727,7 +692,6 @@ static int emmc_rpmb_commands(struct rpmb_packet *packet)
 		dprintf(INFO, "RPMB: MAC\n");
 		dump_packet(packet->Key_MAC, HMAC_SIZE);
 #endif
-		free(hmac);
 		bio_close(dev);
 		break;
 
@@ -740,19 +704,8 @@ static int emmc_rpmb_commands(struct rpmb_packet *packet)
 		*addrp = 0;
 		*(addrp+1) = 0;
 
-		buf = malloc(512*blk_cnt);
-		if (buf == NULL) {
-			printf("buf Memoery allocation failed\n");
-			ret = -1;
-			break;
-		}
-		hmac = malloc(HMAC_CALC_SIZE * blk_cnt);
-		if (hmac == NULL) {
-			printf("hmac Memoery allocation failed\n");
-			ret = -1;
-			break;
-		}
-
+		memset(buf, 0, RPMB_SIZE);
+		memset(hmac, 0, sizeof(hmac));
 		swap_packet((u8 *) packet, buf);
 
 #ifdef RPMB_DEBUG
@@ -765,7 +718,6 @@ static int emmc_rpmb_commands(struct rpmb_packet *packet)
 		dev = bio_open("mmcrpmb");
 		if (dev == NULL) {
 			printf("bio open fail\n");
-			free(hmac);
 			ret = -1;
 			goto out;
 		}
@@ -775,7 +727,6 @@ static int emmc_rpmb_commands(struct rpmb_packet *packet)
 		if (cnt == 0) {
 			printf("RPMB: Request read data fail !!!\n");
 			bio_close(dev);
-			free(hmac);
 			ret = -1;
 			goto out;
 		}
@@ -790,7 +741,6 @@ static int emmc_rpmb_commands(struct rpmb_packet *packet)
 		if (cnt == 0) {
 			printf("RPMB: Read data fail !!!\n");
 			bio_close(dev);
-			free(hmac);
 			ret = -1;
 			goto out;
 		}
@@ -852,14 +802,11 @@ static int emmc_rpmb_commands(struct rpmb_packet *packet)
 		dprintf(INFO, "RPMB: MAC\n");
 		dump_packet(packet->Key_MAC, HMAC_SIZE);
 #endif
-		free(hmac);
 		bio_close(dev);
 		break;
 	}
 
 out:
-	if (buf != NULL)
-		free(buf);
 	return ret;
 }
 
