@@ -19,6 +19,14 @@
 #define RET_SUCCESS		0	/* 0 = Success */
 #define RET_FAILURE		1	/* 1 = Failure */
 
+#define SWP_LOCK		0
+#define SWP_UNLOCK		1
+
+#define SAMSUNG		0xce
+#define TOSHIBA		0x98
+#define HYNIX			0xad
+#define MICRON		0x2c
+
 #ifdef	SCSI_UFS_DEBUG
 #define	ufs_debug(fmt,args...)	dprintf (INFO, fmt ,##args)
 #else
@@ -741,6 +749,8 @@ struct ufs_host {
 	u32 dev_pwr_shift;
 	u32 support_tw;
 	u32 gear_mode;
+	u16 wManufactureID;
+	int swp;
 
 	struct exynos_ufs_debug  debug;
 };
@@ -751,6 +761,9 @@ int ufs_set_configuration_descriptor(void);
 int ufs_board_init(int host_index, struct ufs_host *ufs);
 void ufs_pre_vendor_setup(struct ufs_host *ufs);
 int ufs_device_reset(void);
+int scsi_swp_check(int lun);
+void do_swp_lock(void);
+void do_swp_unlock(void);
 
 void print_ufs_upiu(struct ufs_host *ufs, int print_level);
 void print_ufs_desc(u8 * desc);
