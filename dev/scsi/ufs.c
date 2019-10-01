@@ -41,6 +41,7 @@ static int ufs_bootlun_enable(int enable);
 static struct ufs_host *_ufs[SCSI_MAX_INITIATOR] = { NULL, };
 static int _ufs_curr_host = 0;
 static int ufs_number_of_lus = 0;
+static u8 *tempbuff;
 
 /* Array index of ufs_query_params */
 typedef enum {
@@ -363,6 +364,7 @@ static u32 __utp_cmd_get_flags(scm *pscm)
 	if (pscm->datalen) {
 		switch (pscm->cdb[0]) {
 		case SCSI_OP_UNMAP:
+		case SCSI_MODE_SEL10:
 		case SCSI_OP_FORMAT_UNIT:
 		case SCSI_OP_WRITE_10:
 		case SCSI_OP_WRITE_BUFFER:
@@ -893,7 +895,9 @@ static void __utp_get_scsi_cxt(struct ufs_host *ufs, scm * pscm) {
 	ufs->scsi_cmd = pscm;
 	ufs->sense_buffer = pscm->sense_buf;
 	ufs->sense_buflen = 64;	/* defined in include/scsi.h */
-	if (pscm->sdev->lun == 0x44)
+	if (pscm->cdb[0] == SCSI_MODE_SEL10 || pscm->cdb[0] == SCSI_MODE_SEN10)
+		lun = ufs->lun;
+	else if (pscm->sdev->lun == 0x44)
 		lun = 0xC4;
 	else if (pscm->sdev->lun == 0x50)
 		lun = 0xD0;
@@ -943,6 +947,46 @@ static int ufs_utp_cmd_process(struct ufs_host *ufs, scm * pscm)
 		printf("UFS utp check result error: %d\n", r);
 		goto end;
 	}
+end:
+	return r;
+}
+
+static int ufs_utp_cmd_process_swp(struct ufs_host *ufs, scm * pscm, u32 lun)
+{
+	int r;
+	u32 type = UPIU_TRANSACTION_COMMAND;
+
+	/* Init context */
+	__utp_init(ufs, lun);
+
+	/* Get context from SCSI */
+	__utp_get_scsi_cxt(ufs, pscm);
+
+	/* Describe all descriptors */
+	r = __utp_write_cmd_all_descs(ufs);
+	if (r != 0) {
+		printf("UFS upt write cmd desc error: %d\n", r);
+		goto end;
+	}
+
+	wmb();
+	/* Submit a command */
+	__utp_send(ufs, type);
+
+	/* Wait for response */
+	r = __utp_wait_for_response(ufs, type);
+	if (r != 0) {
+		printf("UFS upt cmd response error : %d\n", r);
+		goto end;
+	}
+
+	/* Get and check result */
+	r = __utp_check_result(ufs);
+	if (r != 0) {
+		printf("UFS utp check result error: %d\n", r);
+		goto end;
+	}
+	print_ufs_upiu(ufs, UFS_DEBUG_UPIU);
 end:
 	return r;
 }
@@ -1703,6 +1747,8 @@ out:
 
 static void ufs_init_mem(struct ufs_host *ufs)
 {
+	tempbuff = malloc(0x2000);
+
 	ufs_debug("cmd_desc_addr : %p\n", ufs->cmd_desc_addr);
 	ufs_debug("\tresponse_upiu : %p\n", &ufs->cmd_desc_addr->response_upiu);
 	ufs_debug("\tprd_table : %p (size=%lx)\n", ufs->cmd_desc_addr->prd_table,
@@ -2377,6 +2423,8 @@ status_t ufs_init(int mode)
 		scsi_scan_ssu(&ufs_dev_ssu, 0x50, scsi_exec, (get_sdev_t *)scsi_get_ssu_sdev, &ufs_lu_list);
 		if (r)
 			goto out;
+
+		_ufs[i]->wManufactureID = ((_ufs[0]->device_desc.wManufacturerID) & 0xff00) >> 8;
 	}
 
 out:
@@ -2388,6 +2436,108 @@ out:
 
 	return r;
 }
+
+int scsi_swp_check(int lun)
+{
+	scm *pscm = (scm *)malloc(sizeof(struct scsi_command_meta));
+	struct ufs_host *ufs;
+	int res;
+
+	ufs = get_cur_ufs_host();
+	printf("UFS SWP test scsi_swp_check\n");
+
+	ufs->lun = lun;
+	pscm->datalen = 0x14;
+	pscm->buf = (u8 *)tempbuff;
+	memset(pscm->cdb, 0x00, sizeof(pscm->cdb));
+	pscm->cdb[0] = SCSI_MODE_SEN10;
+	pscm->cdb[1] = 0x10;
+	pscm->cdb[2] = 0x0a;
+	pscm->cdb[8] = 0x14;
+
+	res = ufs_utp_cmd_process_swp(ufs, pscm, lun);
+	if (res) {
+		printf("UFS SWP CHECK FAil : %d\n", res);
+		return RET_FAILURE;
+	} else
+		printf("UFS_TEST swp check : 0x%x\n", pscm->buf [12] & 0x08);
+
+	/*Chekc Lock Lun*/
+	if (pscm->buf[12] & 0x08)
+		return SWP_LOCK;
+	else
+		return SWP_UNLOCK;
+}
+
+void sw_lock(u32 lun, u32 set)
+{
+	scm *pscm = (scm *)malloc(sizeof(struct scsi_command_meta));
+	struct ufs_host *ufs;
+	int res;
+	printf("UFS SWP SWP sw_lock: lun: %u\n", lun);
+
+	u8 page[]={0x00,0x12,0x00,0x10, 0x00, 0x00, 0x00, 0x00,
+		0x8a, 0x0a,0x00,0x10, 0x08,0x00,0x00,0x00,
+		0x00,0x03,0x00,0x00};
+	ufs = get_cur_ufs_host();
+
+	ufs->lun = lun;
+	pscm->datalen = sizeof(page);
+	pscm->buf = (u8 *)tempbuff;
+
+	if(!set)
+		page[12]=0x00;
+
+	memcpy(tempbuff, page, pscm->datalen);
+
+	pscm->cdb[0] = SCSI_MODE_SEL10;
+	if ((ufs->wManufactureID == SAMSUNG) || (ufs->wManufactureID == HYNIX))
+		pscm->cdb[1] = 0x11;
+	else if ((ufs->wManufactureID == TOSHIBA)
+		&& (!strcmp(ufs_dev[0]->product,"THGLF2G9J8LBATCA") || !strcmp(ufs_dev[0]->product,"THGLF2G8J4LBATDA")))
+		pscm->cdb[1] = 0x10;
+	else
+		pscm->cdb[1] = 0x11;
+	pscm->cdb[2] = 0;
+	pscm->cdb[3] = 0;
+	pscm->cdb[4] = 0;
+	pscm->cdb[5] = 0;
+	pscm->cdb[6] = 0;
+	pscm->cdb[7] = 0;
+	pscm->cdb[8] = 0x14;
+	pscm->cdb[9] = 0;
+
+	res = ufs_utp_cmd_process_swp(ufs, pscm, lun);
+	if (res) {
+		printf("UFS SW Lock Fail : %d\n", res);
+		return;
+	}
+
+	if (set ==1)
+		printf("UFS SW lock success\n");
+	else if (set ==0)
+		printf("UFS SW unlock success\n");
+}
+
+void do_swp_lock(void)
+{
+	sw_lock(1, 1);
+	sw_lock(2, 1);
+#if defined(CONFIG_SUPPORT_UFS_NV_PART)
+	sw_lock(3, 1);
+#endif
+#if defined(CONFIG_LOAD_LDFW_FROM_USERLU)
+	sw_lock(4, 1);
+#endif
+}
+void do_swp_unlock(void)
+{
+	u8 i;
+
+	for (i = 1; i < ufs_number_of_lus; i++)
+		sw_lock(i, 0);
+}
+
 
 /*
  * This function shall be called only once. These memory would be used

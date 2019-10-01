@@ -65,6 +65,8 @@ enum scsi_opcode {
 	SCSI_OP_FORMAT_UNIT		= 0x04,
 	SCSI_OP_START_STOP_UNIT		= 0x1B,
 	SCSI_OP_UNMAP			= 0x42,
+	SCSI_MODE_SEL10			= 0x55,
+	SCSI_MODE_SEN10			= 0x5A,
 };
 
 /* External Functions */

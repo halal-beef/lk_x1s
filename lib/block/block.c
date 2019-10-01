@@ -112,6 +112,38 @@ int blk_berase(u32 lun, u32 from, u32 size)
 	return cnt;
 }
 
+int blk_set_boot_wp(int enable)
+{
+	int ret = 0;
+	int bMode = get_boot_device();
+
+	if (bMode == BOOT_UFS) {
+#if defined(CONFIG_BOOT_PARTITION_WP_SW)
+		do_swp_lock();
+#endif
+	} else {
+		printf("%s: MMC mode\n", __func__);
+//		ret = mmc_set_boot_wp(enable);
+	}
+
+	return ret;
+}
+
+int blk_set_user_wp(u32 start, u32 size)
+{
+	int ret = 0;
+	int bMode = get_boot_device();
+
+	if (bMode == BOOT_UFS) {
+		printf("%s:NONE\n", __func__);
+	} else {
+		printf("%s: MMC mode\n", __func__);
+//		mmc_set_user_wp(start, size);
+	}
+
+	return ret;
+}
+
 int blk_close(void)
 {
 	int ret = 0;
