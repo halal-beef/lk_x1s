@@ -587,7 +587,7 @@ mem_node_out:
 			part_read_partial(part, (void *)addr_r, 0, 8 * 1024);
 		}
 	}
-
+	set_usb_serialno();
 	noff = fdt_path_offset (fdt_dtb, "/chosen");
 	np = fdt_getprop(fdt_dtb, noff, "bootargs", &len);
 	printf("\nbootargs: %s\n", np);
