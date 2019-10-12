@@ -48,12 +48,12 @@ static u8 model_param2[] = {
 	38, 124
 };
 
-int soc_arr_val[S2MU107_TABLE_SIZE] = {
+int soc_arr_val[TABLE_SIZE] = {
 	10514, 10000, 9485, 8970, 8455, 7941, 7426, 6911, 6396, 5882,
 	5367, 4852, 4338, 3823, 3308, 2793, 2279, 1764, 1249, 734,
 	220, -185
 }; // * 0.01%
-int ocv_arr_val[S2MU107_TABLE_SIZE] = {
+int ocv_arr_val[TABLE_SIZE] = {
 	44179, 43544, 42910, 42315, 41740, 41188, 40683, 40167, 39749, 39351,
 	38791, 38469, 38237, 38054, 37911, 37778, 37574, 37390, 37106, 36900,
 	36236, 32120
@@ -401,10 +401,10 @@ static int s2mu107_get_current(void)
 
 	if (compliment & (0x1 << 15)) { /* Charging */
 		curr = ((~compliment) & 0xFFFF) + 1;
-		curr = (curr * 1000) >> 12;
+		curr = (curr * 1000) >> 11;
 	} else { /* dischaging */
 		curr = compliment & 0x7FFF;
-		curr = (curr * (-1000)) >> 12;
+		curr = (curr * (-1000)) >> 11;
 	}
 
 	printf("%s: current (%d)mA\n", __func__, curr);
@@ -426,10 +426,10 @@ static int s2mu107_get_avgcurrent(void)
 
 	if (compliment & (0x1 << 15)) { /* Charging */
 		curr = ((~compliment) & 0xFFFF) + 1;
-		curr = (curr * 1000) >> 12;
+		curr = (curr * 1000) >> 11;
 	} else { /* dischaging */
 		curr = compliment & 0x7FFF;
-		curr = (curr * (-1000)) >> 12;
+		curr = (curr * (-1000)) >> 11;
 	}
 	IIC_S2MU107_FG_EWrite(S2MU107_FG_SLAVE_ADDR_W, S2MU107_REG_MONOUT_SEL, 0x10);
 	printf("%s: avg current (%d)mA\n", __func__, curr);

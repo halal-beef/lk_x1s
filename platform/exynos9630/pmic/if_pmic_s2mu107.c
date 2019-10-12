@@ -19,8 +19,7 @@
 
 #define m_delay(a) u_delay((a) * 1000)
 
-unsigned char rev_id;
-unsigned char es_id;
+static unsigned char rev_id, es_id;
 
 static void Delay(void)
 {
@@ -293,7 +292,7 @@ void s2mu107_sc_set_mode(int mode)
 
 	IIC_S2MU107_ERead(S2MU107_CHG_R_ADDR, S2MU107_SC_CTRL0, &val);
 
-	if((mode == S2MU107_CHG_MODE_OFF) || (mode == S2MU107_CHG_MODE_BUCK)) {
+	if(((mode == S2MU107_CHG_MODE_OFF) || (mode == S2MU107_CHG_MODE_BUCK)) && (rev_id <= 1)) {
 		/* Set Async mode */
 		IIC_S2MU107_ERead(S2MU107_CHG_R_ADDR, 0x3A, &reg);
 		reg &= ~0x03;
@@ -322,7 +321,7 @@ void s2mu107_sc_set_mode(int mode)
 		reg |= (0x1 << 2);
 		IIC_S2MU107_EWrite(S2MU107_CHG_W_ADDR, 0x34, reg);
 	}
-	if(mode == S2MU107_CHG_MODE_CHG) {
+	if((mode == S2MU107_CHG_MODE_CHG) && (rev_id <= 1)) {
 		/* Set Auto Sync mode */
 		IIC_S2MU107_ERead(S2MU107_CHG_R_ADDR, 0x3A, &reg);
 		reg &= ~0x03;
@@ -423,26 +422,71 @@ void s2mu107_sc_init(void)
 		printf("%s, 0x24(%x)\n", __func__, reg);
 	}
 
-	if((rev_id == 1) && (es_id == 1)) {
-		/* WCIN IVR 4.5V */
-		IIC_S2MU107_ERead(S2MU107_CHG_R_ADDR, 0x1C, &reg);
-		reg &= 0xF8;
-		reg |= (0x5 << 0);
-		IIC_S2MU107_EWrite(S2MU107_CHG_W_ADDR, 0x1C, reg);
+	/* WCIN IVR 4.5V */
+	IIC_S2MU107_ERead(S2MU107_CHG_R_ADDR, 0x1C, &reg);
+	reg &= 0xF8;
+	reg |= (0x5 << 0);
+	IIC_S2MU107_EWrite(S2MU107_CHG_W_ADDR, 0x1C, reg);
 
-		/* CHGIN IVR 4.5V */
-		IIC_S2MU107_ERead(S2MU107_COMMON_R_ADDR, 0x1C, &reg);
-		reg &= 0xC7;
-		reg |= (0x5 << 3);
-		IIC_S2MU107_EWrite(S2MU107_COMMON_W_ADDR, 0x1C, reg);
-		printf("%s, 0x1C(%x)\n", __func__, reg);
-	}
+	/* CHGIN IVR 4.5V */
+	IIC_S2MU107_ERead(S2MU107_CHG_R_ADDR, 0x1C, &reg);
+	reg &= 0xC7;
+	reg |= (0x5 << 3);
+	IIC_S2MU107_EWrite(S2MU107_CHG_W_ADDR, 0x1C, reg);
+	printf("%s, 0x1C(%x)\n", __func__, reg);
 
 	/* Async <-> Sync Debounce time set */
 	IIC_S2MU107_ERead(S2MU107_CHG_R_ADDR, 0x98, &reg);
 	reg &= 0x0F;
-	reg |= (0x3 << 4);
+	reg |= (0xC << 4);
 	IIC_S2MU107_EWrite(S2MU107_CHG_W_ADDR, 0x98, reg);
+
+	/* Vsys Overshoot Work-around */
+	IIC_S2MU107_ERead(S2MU107_CHG_R_ADDR, 0xD5, &reg);
+	reg |= (1 << 2);
+	IIC_S2MU107_EWrite(S2MU107_CHG_W_ADDR, 0xD5, reg);
+
+	/* BAT OCP Debounce time 100 -> 3ms */
+	IIC_S2MU107_ERead(S2MU107_CHG_R_ADDR, 0xCB, &reg);
+	reg &= ~(1 << 5);
+	IIC_S2MU107_EWrite(S2MU107_CHG_W_ADDR, 0xCB, reg);
+
+	/* Enable inpu switch current sensing */
+	IIC_S2MU107_ERead(S2MU107_CHG_R_ADDR, 0x3B, &reg);
+	reg &= 0xF3;
+	reg |= (1 << 2);
+	IIC_S2MU107_EWrite(S2MU107_CHG_W_ADDR, 0x3B, reg);
+
+	/* OTG input switch always-off */
+	IIC_S2MU107_ERead(S2MU107_CHG_R_ADDR, 0x1B, &reg);
+	reg &= 0xCF;
+	reg |= (1 << 4);
+	IIC_S2MU107_EWrite(S2MU107_CHG_W_ADDR, 0x1B, reg);
+
+	/* Change 12V buck frequency for protection */
+	IIC_S2MU107_ERead(S2MU107_CHG_R_ADDR, 0xD1, &reg);
+	reg |= 0x01;
+	IIC_S2MU107_EWrite(S2MU107_CHG_W_ADDR, 0xD1, reg);
+
+	IIC_S2MU107_ERead(S2MU107_CHG_R_ADDR, 0x97, &reg);
+	reg &= 0xF8;
+	reg |= 0x04;
+	IIC_S2MU107_EWrite(S2MU107_CHG_W_ADDR, 0x97, reg);
+
+	IIC_S2MU107_ERead(S2MU107_CHG_R_ADDR, 0x80, &reg);
+	reg &= ~(1 << 3);
+	IIC_S2MU107_EWrite(S2MU107_CHG_W_ADDR, 0x80, reg);
+
+	/* 5V Buck frequency change */
+	IIC_S2MU107_ERead(S2MU107_CHG_R_ADDR, 0x93, &reg);
+	reg &= 0x8F;
+	reg |= 0x30;
+	IIC_S2MU107_EWrite(S2MU107_CHG_W_ADDR, 0x93, reg);
+
+	/* EN_ICR On for protection */
+	IIC_S2MU107_ERead(S2MU107_CHG_R_ADDR, 0x34, &reg);
+	reg |= 0x30;
+	IIC_S2MU107_EWrite(S2MU107_CHG_W_ADDR, 0x34, reg);
 
 	s2mu107_sc_set_mode(S2MU107_CHG_MODE_CHG);
 }

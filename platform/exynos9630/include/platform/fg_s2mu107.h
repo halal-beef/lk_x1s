@@ -26,7 +26,7 @@
 /* SDA: GPP1_3, SCL: GPP1_2 */
 #define GPIO_DAT_FG_S2MU107	GPP1DAT
 #define GPIO_DAT_FG_SHIFT		(3)
-#define GPIO_PUD_FG_S2MU107	GPP1PUD &= ~(0xff << (GPIO_DAT_FG_SHIFT*4))
+#define GPIO_PUD_FG_S2MU107	GPP1PUD &= ~(0xff << ((GPIO_DAT_FG_SHIFT-1)*4))
 
 #define IIC_S2MU107_FG_ESCL_Hi	GPP1DAT |= (0x1 << (GPIO_DAT_FG_SHIFT-1))
 #define IIC_S2MU107_FG_ESCL_Lo	GPP1DAT &= ~(0x1 << (GPIO_DAT_FG_SHIFT-1))
@@ -68,7 +68,7 @@
 
 #define abs(x) (((x)<0) ? -(x):(x))
 
-#define S2MU107_TABLE_SIZE	22
+#define TABLE_SIZE	22
 
 void IIC_S2MU107_FG_EWrite(unsigned char ChipId,
 		unsigned char IicAddr, unsigned char IicData);
