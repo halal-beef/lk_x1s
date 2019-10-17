@@ -8,14 +8,20 @@
  * to third parties without the express written permission of Samsung Electronics.
  */
 
-#ifndef __BOARD_INFO_H__
-#define __BOARD_INFO_H__
+#ifndef __B_REV_GPIO_H__
 
-#define CONFIG_UNIVERSAL3830
-#define CONFIG_BOARD_ID 0x0
+#define REV_GPIO_LINES	1
 
-#define CONFIG_GET_B_REV_FROM_ADC
+/*
+ * HW_REV_M - 0: Advanced, 1: Mass
+ */
 
-#define VOLDOWN_GPIOCON EXYNOS3830_GPA1CON
-#define VOLDOWN_BIT	0
-#endif /*__BOARD_INFO_H__ */
+struct b_rev_gpio_info b_rev_gpio[REV_GPIO_LINES] = {
+	{
+		/*
+		 * Fill in initial value
+		 */
+	},
+};
+
+#endif /*__B_REV_GPIO_H__*/
