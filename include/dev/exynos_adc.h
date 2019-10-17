@@ -32,6 +32,7 @@
 #include <platform/debug.h>
 #include <reg.h>
 #include <platform/delay.h>
+#include <platform/sfr.h>
 
 #define MAX_CHANNEL		11
 #define ADC_CON1		(0x0)
@@ -41,7 +42,7 @@
 #define ADC_INT_EN		(0x10)
 #define ADC_INT_STATUS		(0x14)
 #define ADC_DEBUG_DATA		(0x1C)
-#define ADC_BASE_ADDR		(0x15C40000)
+#define ADC_BASE_ADDR		EXYNOS_ADC_BASE
 
 #define ADC_SOFT_RESET		(1u << 2)
 #define ADC_NON_SOFT_RESET	(1u << 1)
