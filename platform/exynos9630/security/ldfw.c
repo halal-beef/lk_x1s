@@ -263,8 +263,10 @@ int init_ldfws(void)
 	LDFW_INFO("ldfw: init ldfw(s). whole ldfws size 0x%llx\n", size);
 	ret = init_ldfw(addr, size);
 
-	if (ret == -1) {
+	if (ret == SDM_HW_RESET_STATUS) {
 		LDFW_ERR("ldfw: It is dump_gpr state. It does not load ldfw.\n");
+	} else if (ret == SDM_SW_RESET_STATUS) {
+		LDFW_ERR("ldfw: It is kernel panic(SW RESET) state. It does not load ldfw.\n");
 	} else if ((ret < 0) && ((ret & 0xffff0000) == SB_ERROR_PREFIX)) {
 		LDFW_ERR("ldfw: signature of ldfw is corrupted! ret = [0x%X]\n", (uint32_t)ret);
 	} else if (!ret) {
@@ -276,9 +278,10 @@ int init_ldfws(void)
 		          "%d ldfw(s) have been inited done.\n", \
 		          try, try_fail, try - try_fail);
 		ldfw_loaded = 1;
+		ret = 0x0;
 	}
 
-	return 0;
+	return ret;
 }
 
 int init_sp(void)
