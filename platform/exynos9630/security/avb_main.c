@@ -214,13 +214,14 @@ out:
 }
 
 #if defined(CONFIG_USE_AVB20)
-uint32_t avb_main(const char *suffix, char *cmdline, char *verifiedbootstate)
+uint32_t avb_main(const char *suffix, char *cmdline, char *verifiedbootstate, uint32_t recovery_mode)
 {
 	bool unlock;
 	uint32_t ret = 0;
 	uint32_t boot_state;
 	struct AvbOps *ops;
-	const char *partition_arr[] = {"boot", "dtbo", NULL};
+	const char *partition_boot[3] = {"boot", "dtbo", NULL};
+	const char *partition_recovery[2] = {"recovery", NULL};
 	char buf[100];
 	char color[AVB_COLOR_MAX_SIZE];
 	AvbSlotVerifyData *ctx_ptr = NULL;
@@ -230,10 +231,16 @@ uint32_t avb_main(const char *suffix, char *cmdline, char *verifiedbootstate)
 	ops->read_is_device_unlocked(ops, &unlock);
 
 	/* slot verify */
-	ret = avb_slot_verify(ops, partition_arr, suffix,
-			AVB_SLOT_VERIFY_FLAGS_ALLOW_VERIFICATION_ERROR,
-			AVB_HASHTREE_ERROR_MODE_RESTART_AND_INVALIDATE,
-			&ctx_ptr);
+	if ((recovery_mode == 1) && (!ab_update_support()))
+		ret = avb_slot_verify(ops, partition_recovery, suffix,
+				AVB_SLOT_VERIFY_FLAGS_ALLOW_VERIFICATION_ERROR,
+				AVB_HASHTREE_ERROR_MODE_RESTART_AND_INVALIDATE,
+				&ctx_ptr);
+	else
+		ret = avb_slot_verify(ops, partition_boot, suffix,
+				AVB_SLOT_VERIFY_FLAGS_ALLOW_VERIFICATION_ERROR,
+				AVB_HASHTREE_ERROR_MODE_RESTART_AND_INVALIDATE,
+				&ctx_ptr);
 
 	/* get color */
 	if (unlock) {
