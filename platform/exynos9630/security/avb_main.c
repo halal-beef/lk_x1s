@@ -19,15 +19,41 @@
 #include <dev/rpmb.h>
 #include <string.h>
 #include <part.h>
+#if defined(CONFIG_AVB_LCD_LOG)
+#include <lib/font_display.h>
+#endif
 
 /* By convention, when a rollback index is not used the value remains zero. */
 static const uint64_t kRollbackIndexNotUsed = 0;
 static uint8_t avb_pubkey[SB_MAX_PUBKEY_LEN] __attribute__((__aligned__(CACHE_WRITEBACK_GRANULE_128)));
 
-#if defined(CONFIG_AVB_LCD_LOG)
-void avb_print_lcd(const char *str, uint32_t boot_state);
-#else
+#if !defined(CONFIG_AVB_LCD_LOG)
 void avb_print_lcd(const char *str, uint32_t boot_state) {};
+#else
+void avb_print_lcd(const char *str, uint32_t boot_state)
+{
+	uint32_t font_color;
+
+	switch (boot_state) {
+	case ORANGE:
+		font_color = FONT_ORANGE;
+		break;
+	case YELLOW:
+		font_color = FONT_YELLOW;
+		break;
+	case RED:
+		font_color = FONT_RED;
+		break;
+	case GREEN:
+		font_color = FONT_GREEN;
+		break;
+	default:
+		print_lcd_update(FONT_WHITE, FONT_BLACK,
+				"%s : color parsing fail\n", __func__);
+		return;
+	}
+	print_lcd_update(font_color, FONT_BLACK, str);
+}
 #endif
 
 uint32_t avb_set_root_of_trust(uint32_t device_state, uint32_t boot_state)
