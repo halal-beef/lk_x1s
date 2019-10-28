@@ -595,14 +595,12 @@ mem_node_out:
 	set_bootargs();
 
 #if defined(CONFIG_USE_AVB20)
-	if (!(readl(EXYNOS9630_POWER_SYSIP_DAT0) == REBOOT_MODE_RECOVERY)) {
-		/* set AVB args */
-		noff = fdt_path_offset (fdt_dtb, "/chosen");
-		np = fdt_getprop(fdt_dtb, noff, "bootargs", &len);
-		snprintf(str, BUFFER_SIZE, "%s %s %s", np, cmdline, verifiedbootstate);
-		fdt_setprop(fdt_dtb, noff, "bootargs", str, strlen(str) + 1);
-		printf("\nupdated avb bootargs: %s\n", np);
-	}
+	/* set AVB args */
+	noff = fdt_path_offset (fdt_dtb, "/chosen");
+	np = fdt_getprop(fdt_dtb, noff, "bootargs", &len);
+	snprintf(str, BUFFER_SIZE, "%s %s %s", np, cmdline, verifiedbootstate);
+	fdt_setprop(fdt_dtb, noff, "bootargs", str, strlen(str) + 1);
+	printf("\nupdated avb bootargs: %s\n", np);
 #endif
 
 	resize_dt(0);
