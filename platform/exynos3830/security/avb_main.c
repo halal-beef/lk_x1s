@@ -66,6 +66,8 @@ uint32_t avb_set_root_of_trust(uint32_t device_state, uint32_t boot_state)
 	struct boot_img_hdr *b_hdr = (boot_img_hdr *)BOOT_BASE;
 	struct AvbVBMetaImageHeader h;
 	void *part = part_get_ab("vbmeta");
+	uint8_t hash[SHA512_DIGEST_LEN];
+	uint32_t hash_len = 0;
 
 	if (!part) {
 		printf("Partition 'vbmeta' does not exist\n");
@@ -104,6 +106,15 @@ uint32_t avb_set_root_of_trust(uint32_t device_state, uint32_t boot_state)
 	if (ret)
 		goto out;
 	ret = cm_secure_boot_set_boot_state(boot_state);
+	if (ret)
+		goto out;
+	hash_len = SHA256_DIGEST_LEN;
+	ret = el3_sss_hash_digest((uint32_t)(uint64_t)vbmeta_buf, 4 * 1024, ALG_SHA256, hash);
+	if (ret) {
+		printf("[AVB] hash digest fail [0x%X]\n", ret);
+		goto out;
+	}
+	ret = cm_secure_boot_set_verified_boot_hash(hash, hash_len);
 	if (ret)
 		goto out;
 
