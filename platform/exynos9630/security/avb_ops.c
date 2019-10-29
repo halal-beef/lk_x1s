@@ -172,6 +172,73 @@ static AvbIOResult exynos_read_from_partition(AvbOps *ops,
 	return AVB_IO_RESULT_OK;
 }
 
+static uint32_t exynos_remove_unnecessary_region(
+	AvbOps *ops,
+	const char *partition,
+	uint64_t partition_addr,
+	size_t num_bytes)
+{
+	uint32_t ret = 0;
+	uint64_t partition_size = 0;
+	AvbFooter *footer_ptr = NULL;
+	AvbFooter footer;
+	AvbVBMetaImageHeader h;
+	const uint8_t *header_block;
+	AvbDescriptor *descriptor_ptr;
+	AvbHashDescriptor hash_desc;
+	const uint8_t* desc_partition_name = NULL;
+	uint64_t r_address;
+	uint32_t r_size;
+
+	ret = exynos_get_size_of_partition(ops, partition, &partition_size);
+	if (ret) {
+		printf("%s: There is no partition [%s]\n", __func__, partition);
+		goto out;
+	}
+
+	footer_ptr = (AvbFooter *)(partition_addr + partition_size - sizeof(AvbFooter));
+	ret = avb_footer_validate_and_byteswap(footer_ptr, &footer);
+	if (ret == false) {
+		printf("%s: Footer parsing fail [%s]\n", __func__, partition);
+		ret = -1;
+		goto out;
+	}
+
+	header_block = (uint8_t *)(partition_addr + footer.vbmeta_offset);
+	avb_vbmeta_image_header_to_host_byte_order(
+			(const AvbVBMetaImageHeader*)header_block, &h);
+
+	descriptor_ptr = (AvbDescriptor *)(header_block +
+			sizeof(AvbVBMetaImageHeader) +
+			h.authentication_data_block_size +
+			h.descriptors_offset);
+	ret = avb_hash_descriptor_validate_and_byteswap(
+			(AvbHashDescriptor *)descriptor_ptr, &hash_desc);
+	if (ret == false) {
+		printf("%s: Descriptor parsing fail [%s]\n", __func__, partition);
+		ret = -1;
+		goto out;
+	}
+
+	desc_partition_name = ((const uint8_t*)descriptor_ptr) +
+		sizeof(AvbHashDescriptor);
+	ret = memcmp(partition, desc_partition_name, hash_desc.partition_name_len);
+	if (ret) {
+		printf("%s: Descriptor partition is different [%s, %s]\n",
+				__func__, partition, desc_partition_name);
+		goto out;
+	}
+
+	r_address = partition_addr + hash_desc.image_size;
+	r_size = partition_size - hash_desc.image_size;
+	memset((void *)r_address, 0, r_size);
+
+out:
+	if (ret)
+		printf("%s: return = [0x%X]\n", __func__, ret);
+	return ret;
+}
+
 static AvbIOResult exynos_get_preloaded_partition(AvbOps *ops,
 		const char *partition,
 		size_t num_bytes,
