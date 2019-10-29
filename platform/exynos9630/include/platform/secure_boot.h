@@ -13,6 +13,7 @@
 #ifndef _SECURE_BOOT_H_
 #define _SECURE_BOOT_H_
 
+#include <string.h>
 #include "../../../../lib/libavb/libavb.h"
 #include "cm_api.h"
 
@@ -198,5 +199,7 @@ uint32_t avb_main(const char *suffix, char *cmdline, char *verifiedbootstate, ui
 uint32_t get_ops_addr(struct AvbOps **ops_addr);
 
 uint32_t get_avbkey_trust(void);
+
+uint32_t avb_set_patch_level(char *key, char *value, uint64_t value_num_bytes);
 
 #endif /* _SECURE_BOOT_H_ */
