@@ -62,12 +62,15 @@ uint32_t sb_get_avb_key(uint8_t *avb_pubkey, uint64_t pubkey_size,
 static AvbIOResult exynos_read_is_device_unlocked(AvbOps *ops, bool *out_is_unlocked)
 {
 	AvbIOResult ret = AVB_IO_RESULT_OK;
-	int lock_state;
+#if defined(CONFIG_USE_RPMB)
+	uint32_t lock_state;
 
-	lock_state = get_lock_state();
-	if (lock_state == -1)
-		ret = -1;
+	rpmb_get_lock_state(&lock_state);
 	*out_is_unlocked = (bool)!lock_state;
+#else
+	*out_is_unlocked = 1;
+	printf("lock state is read as 0. RPMB was disabled.\n");
+#endif
 
 	return ret;
 }
