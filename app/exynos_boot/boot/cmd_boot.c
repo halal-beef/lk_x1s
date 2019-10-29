@@ -36,6 +36,7 @@
 #include <pit.h>
 #include <dev/scsi.h>
 #include <dev/mmc.h>
+#include <arch/arch_ops.h>
 
 /* Memory node */
 #define SIZE_4GB		(0x100000000)
@@ -619,6 +620,8 @@ int cmd_boot(int argc, const cmd_args *argv)
 
 	/* before jumping to kernel. disble arch_timer */
 	arm_generic_timer_disable();
+	/* before jumping to kernel. disable interrupt */
+	arch_disable_ints();
 
 	clean_invalidate_dcache_all();
 	disable_mmu_dcache();
