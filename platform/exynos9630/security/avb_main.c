@@ -56,9 +56,13 @@ void avb_print_lcd(const char *str, uint32_t boot_state)
 }
 #endif
 
-uint32_t avb_set_root_of_trust(uint32_t device_state, uint32_t boot_state)
+uint32_t avb_set_root_of_trust(
+	uint32_t device_state,
+	uint32_t boot_state,
+	AvbSlotVerifyData *ctx_ptr)
 {
 	uint32_t ret = 0;
+	uint32_t i = 0;
 	uint32_t boot_version = 0;
 	uint32_t boot_patch_level = 0;
 	uint32_t avb_pubkey_len = 0;
@@ -68,6 +72,7 @@ uint32_t avb_set_root_of_trust(uint32_t device_state, uint32_t boot_state)
 	void *part = part_get_ab("vbmeta");
 	uint8_t hash[SHA512_DIGEST_LEN];
 	uint32_t hash_len = 0;
+	struct ace_hash_ctx ctx;
 
 	if (!part) {
 		printf("Partition 'vbmeta' does not exist\n");
@@ -109,9 +114,24 @@ uint32_t avb_set_root_of_trust(uint32_t device_state, uint32_t boot_state)
 	if (ret)
 		goto out;
 	hash_len = SHA256_DIGEST_LEN;
-	ret = el3_sss_hash_digest((uint32_t)(uint64_t)vbmeta_buf, 4 * 1024, ALG_SHA256, hash);
+	ret = el3_sss_hash_init(ALG_SHA256, &ctx);
 	if (ret) {
-		printf("[AVB] hash digest fail [0x%X]\n", ret);
+		printf("[AVB] hash init fail [0x%X]\n", ret);
+		goto out;
+	}
+	for(i = 0; i < ctx_ptr->num_vbmeta_images; i++) {
+		ret = el3_sss_hash_update((uint32_t)(uint64_t)ctx_ptr->vbmeta_images[i].vbmeta_data,
+				ctx_ptr->vbmeta_images[i].vbmeta_size,
+				ctx_ptr->vbmeta_images[i].vbmeta_size,
+				&ctx, 0);
+		if (ret) {
+			printf("[AVB] hash update fail [0x%X]\n", ret);
+			goto out;
+		}
+	}
+	ret = el3_sss_hash_final(&ctx, hash);
+	if (ret) {
+		printf("[AVB] hash final fail [0x%X]\n", ret);
 		goto out;
 	}
 	ret = cm_secure_boot_set_verified_boot_hash(hash, hash_len);
@@ -326,7 +346,7 @@ uint32_t avb_main(const char *suffix, char *cmdline, char *verifiedbootstate, ui
 	uint32_t rot_ret = 0;
 
 	/* Set root of trust */
-	rot_ret = avb_set_root_of_trust(!unlock, boot_state);
+	rot_ret = avb_set_root_of_trust(!unlock, boot_state, ctx_ptr);
 	if (rot_ret)
 		printf("[AVB] Root of trust error ret: 0x%X\n", rot_ret);
 #else
