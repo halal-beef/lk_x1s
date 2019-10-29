@@ -236,20 +236,26 @@ uint32_t avb_main(const char *suffix, char *cmdline, char *verifiedbootstate, ui
 	char buf[100];
 	char color[AVB_COLOR_MAX_SIZE];
 	AvbSlotVerifyData *ctx_ptr = NULL;
+	AvbSlotVerifyFlags flags;
 
 	set_avbops();
 	get_ops_addr(&ops);
 	ops->read_is_device_unlocked(ops, &unlock);
 
+	if (unlock)
+		flags = AVB_SLOT_VERIFY_FLAGS_ALLOW_VERIFICATION_ERROR;
+	else
+		flags = AVB_SLOT_VERIFY_FLAGS_NONE;
+
 	/* slot verify */
 	if ((recovery_mode == 1) && (!ab_update_support()))
 		ret = avb_slot_verify(ops, partition_recovery, suffix,
-				AVB_SLOT_VERIFY_FLAGS_ALLOW_VERIFICATION_ERROR,
+				flags,
 				AVB_HASHTREE_ERROR_MODE_RESTART_AND_INVALIDATE,
 				&ctx_ptr);
 	else
 		ret = avb_slot_verify(ops, partition_boot, suffix,
-				AVB_SLOT_VERIFY_FLAGS_ALLOW_VERIFICATION_ERROR,
+				flags,
 				AVB_HASHTREE_ERROR_MODE_RESTART_AND_INVALIDATE,
 				&ctx_ptr);
 
