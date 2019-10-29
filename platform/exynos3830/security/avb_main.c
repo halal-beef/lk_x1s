@@ -26,6 +26,10 @@
 /* By convention, when a rollback index is not used the value remains zero. */
 static const uint64_t kRollbackIndexNotUsed = 0;
 static uint8_t avb_pubkey[SB_MAX_PUBKEY_LEN] __attribute__((__aligned__(CACHE_WRITEBACK_GRANULE_128)));
+static uint32_t os_version = 0;
+static uint32_t os_patch_level = 0;
+static uint32_t vendor_patch_level = 0;
+static uint32_t boot_patch_level = 0;
 
 #if !defined(CONFIG_AVB_LCD_LOG)
 void avb_print_lcd(const char *str, uint32_t boot_state) {};
@@ -56,6 +60,43 @@ void avb_print_lcd(const char *str, uint32_t boot_state)
 }
 #endif
 
+uint32_t avb_set_patch_level(
+	char *key,
+	char *value,
+	uint64_t value_num_bytes)
+{
+	uint32_t i = 0;
+
+	if (!strcmp(key, "com.android.build.system.os_version"))
+		for (i = 0; i < value_num_bytes; i++) {
+			os_version = os_version << 4;
+			os_version += value[i] - '0';
+		}
+	else if (!strcmp(key, "com.android.build.system.security_patch"))
+		for (i = 0; i < value_num_bytes; i++) {
+			if (value[i] == '-')
+				continue;
+			os_patch_level = os_patch_level << 4;
+			os_patch_level += value[i] - '0';
+		}
+	else if (!strcmp(key, "com.android.build.vendor.security_patch"))
+		for (i = 0; i < value_num_bytes; i++) {
+			if (value[i] == '-')
+				continue;
+			vendor_patch_level = vendor_patch_level << 4;
+			vendor_patch_level += value[i] - '0';
+		}
+	else if (!strcmp(key, "com.android.build.boot.security_patch"))
+		for (i = 0; i < value_num_bytes; i++) {
+			if (value[i] == '-')
+				continue;
+			boot_patch_level = boot_patch_level << 4;
+			boot_patch_level += value[i] - '0';
+		}
+
+	return 0;
+}
+
 uint32_t avb_set_root_of_trust(
 	uint32_t device_state,
 	uint32_t boot_state,
@@ -63,48 +104,74 @@ uint32_t avb_set_root_of_trust(
 {
 	uint32_t ret = 0;
 	uint32_t i = 0;
-	uint32_t boot_version = 0;
-	uint32_t boot_patch_level = 0;
 	uint32_t avb_pubkey_len = 0;
-	uint8_t *vbmeta_buf = NULL;
-	struct boot_img_hdr *b_hdr = (boot_img_hdr *)BOOT_BASE;
 	struct AvbVBMetaImageHeader h;
-	void *part = part_get_ab("vbmeta");
 	uint8_t hash[SHA512_DIGEST_LEN];
 	uint32_t hash_len = 0;
 	struct ace_hash_ctx ctx;
+	struct boot_img_hdr *b_hdr = (boot_img_hdr *)BOOT_BASE;
 
-	if (!part) {
-		printf("Partition 'vbmeta' does not exist\n");
-		return -1;
-	} else {
-		vbmeta_buf = avb_malloc(part_get_size_in_bytes(part));
-		if (vbmeta_buf == NULL) {
-			printf("vbmeta allocation fail\n");
-			return -1;
-		}
-		part_read(part, (void *)vbmeta_buf);
-	}
-	avb_vbmeta_image_header_to_host_byte_order((const AvbVBMetaImageHeader*)vbmeta_buf, &h);
-	avb_pubkey_len = h.public_key_size;
-	if (avb_pubkey_len == 0) {
-		ret = AVB_ERROR_AVBKEY_LEN_ZERO;
+	if (ctx_ptr == NULL) {
+		printf("[AVB] ctx_ptr is Null\n");
+		ret = -1;
 		goto out;
 	}
-	memcpy(avb_pubkey, (void *)((uint64_t)vbmeta_buf +
-				sizeof(AvbVBMetaImageHeader) +
-				h.authentication_data_block_size +
-				h.public_key_offset),
-			avb_pubkey_len);
+	hash_len = SHA256_DIGEST_LEN;
+	ret = el3_sss_hash_init(ALG_SHA256, &ctx);
+	if (ret) {
+		printf("[AVB] hash init fail [0x%X]\n", ret);
+		goto out;
+	}
+	for(i = 0; i < ctx_ptr->num_vbmeta_images; i++) {
+		ret = el3_sss_hash_update(
+				(uint32_t)(uint64_t)ctx_ptr->vbmeta_images[i].vbmeta_data,
+				ctx_ptr->vbmeta_images[i].vbmeta_size,
+				ctx_ptr->vbmeta_images[i].vbmeta_size,
+				&ctx, 0);
+		if (ret) {
+			printf("[AVB] hash update fail [0x%X]\n", ret);
+			goto out;
+		}
+		avb_vbmeta_image_header_to_host_byte_order(
+				(const AvbVBMetaImageHeader*)ctx_ptr->vbmeta_images[i].vbmeta_data, &h);
+		if (i == 0) {
+			avb_pubkey_len = h.public_key_size;
+			if (avb_pubkey_len == 0) {
+				printf("vbmeta[%d]: AVB key length is zero\n", i);
+				ret = AVB_ERROR_AVBKEY_LEN_ZERO;
+				goto out;
+			}
+			memcpy(avb_pubkey, (void *)((uint64_t)ctx_ptr->vbmeta_images[i].vbmeta_data +
+						sizeof(AvbVBMetaImageHeader) +
+						h.authentication_data_block_size +
+						h.public_key_offset),
+					avb_pubkey_len);
+		}
+	}
+	ret = el3_sss_hash_final(&ctx, hash);
+	if (ret) {
+		printf("[AVB] hash final fail [0x%X]\n", ret);
+		goto out;
+	}
+
+	os_version = (b_hdr->os_version & 0xFFFFF800) >> 11;
+
+	if (os_version == 0)
+		printf("[AVB] os_version parsing fail\n");
+	if (os_patch_level == 0)
+		printf("[AVB] os_patch_level parsing fail\n");
+	if (vendor_patch_level == 0)
+		printf("[AVB] vendor_patch_level parsing fail\n");
+	if (boot_patch_level == 0)
+		printf("[AVB] boot_patch_level parsing fail\n");
+
 	ret = cm_secure_boot_set_pubkey(avb_pubkey, avb_pubkey_len);
 	if (ret)
 		goto out;
-	boot_version = (b_hdr->os_version & 0xFFFFF800) >> 11;
-	boot_patch_level = (b_hdr->os_version & 0x7FF) >> 0;
-	ret = cm_secure_boot_set_os_version(boot_version, boot_patch_level);
+	ret = cm_secure_boot_set_os_version(os_version, os_patch_level);
 	if (ret)
 		goto out;
-	ret = cm_secure_boot_set_vendor_boot_version(0, 0);
+	ret = cm_secure_boot_set_vendor_boot_version(vendor_patch_level, boot_patch_level);
 	if (ret)
 		goto out;
 	ret = cm_secure_boot_set_device_state(device_state);
@@ -113,33 +180,11 @@ uint32_t avb_set_root_of_trust(
 	ret = cm_secure_boot_set_boot_state(boot_state);
 	if (ret)
 		goto out;
-	hash_len = SHA256_DIGEST_LEN;
-	ret = el3_sss_hash_init(ALG_SHA256, &ctx);
-	if (ret) {
-		printf("[AVB] hash init fail [0x%X]\n", ret);
-		goto out;
-	}
-	for(i = 0; i < ctx_ptr->num_vbmeta_images; i++) {
-		ret = el3_sss_hash_update((uint32_t)(uint64_t)ctx_ptr->vbmeta_images[i].vbmeta_data,
-				ctx_ptr->vbmeta_images[i].vbmeta_size,
-				ctx_ptr->vbmeta_images[i].vbmeta_size,
-				&ctx, 0);
-		if (ret) {
-			printf("[AVB] hash update fail [0x%X]\n", ret);
-			goto out;
-		}
-	}
-	ret = el3_sss_hash_final(&ctx, hash);
-	if (ret) {
-		printf("[AVB] hash final fail [0x%X]\n", ret);
-		goto out;
-	}
 	ret = cm_secure_boot_set_verified_boot_hash(hash, hash_len);
 	if (ret)
 		goto out;
 
 out:
-	avb_free(vbmeta_buf);
 	cm_secure_boot_block_cmd();
 
 	return ret;
