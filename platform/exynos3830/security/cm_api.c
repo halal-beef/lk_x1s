@@ -91,6 +91,34 @@ uint64_t cm_secure_boot_erase_pubkey(void)
 	return ret;
 }
 
+uint64_t cm_secure_boot_set_verified_boot_hash(
+		uint8_t *verified_boot_hash,
+		uint32_t hash_len)
+{
+	uint64_t ret = RV_SUCCESS;
+	uint64_t r0, r1, r2, r3;
+
+	r0 = SMC_AARCH64_PREFIX | SMC_CM_SECURE_BOOT;
+	r1 = SB_SET_VERIFIED_BOOT_HASH;
+	r2 = VIRT_TO_PHYS(verified_boot_hash);
+	r3 = hash_len;
+
+	printf("[CM] set verified_boot_hash: start\n");
+
+	FLUSH_DCACHE_RANGE(verified_boot_hash, hash_len);
+
+	ret = exynos_cm_smc(&r0, &r1, &r2, &r3);
+	if (ret != RV_SUCCESS) {
+		printf("[CM] set verified_boot_hash: fail: "
+				"r0:0x%llx, r1:0x%llx, r2:0x%llx, r3:0x%llx\n", r0, r1, r2, r3);
+		return ret;
+	}
+
+	printf("[CM] set verified_boot_hash: success\n");
+
+	return ret;
+}
+
 uint64_t cm_secure_boot_set_os_version(
 	uint32_t os_version, uint32_t os_patch_level)
 {
