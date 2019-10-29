@@ -37,6 +37,7 @@
 /* secure boot crypto variable */
 #define SHA512_BLOCK_LEN		(128)
 #define SHA512_DIGEST_LEN		(64)
+#define SHA256_DIGEST_LEN		(32)
 
 #define SB_BL1_RP_COUNT_OFFSET		(16)
 #define SB_SB_CONTEXT_LEN		(2352)

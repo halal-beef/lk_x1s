@@ -75,6 +75,7 @@ enum secure_boot_cmd {
 	SB_CHECK_SIGN_CP_WITH_HASH,
 	SB_GET_AVB_KEY,
 	SB_SET_VENDOR_BOOT_VERSION,
+	SB_SET_VERIFIED_BOOT_HASH,
 };
 
 typedef struct {
@@ -90,6 +91,8 @@ typedef struct {
 
 uint64_t cm_secure_boot_set_pubkey(uint8_t *pub_key_ptr, uint32_t pub_key_len);
 uint64_t cm_secure_boot_erase_pubkey(void);
+uint64_t cm_secure_boot_set_verified_boot_hash(uint8_t *verified_boot_hash,
+		uint32_t hash_len);
 uint64_t cm_secure_boot_set_os_version(uint32_t os_version,
 		uint32_t patch_month_year);
 uint64_t cm_secure_boot_set_vendor_boot_version(uint32_t vendor_patch_level,
