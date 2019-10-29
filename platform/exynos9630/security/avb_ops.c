@@ -261,30 +261,42 @@ static AvbIOResult exynos_get_preloaded_partition(AvbOps *ops,
 		uint8_t **out_pointer,
 		size_t *out_num_bytes_preloaded)
 {
+	AvbIOResult ret = AVB_IO_RESULT_OK;
 	void *part;
 	bool unlock;
 
-	if (!memcmp(partition, "boot", 4)) {
+	if (!strcmp(partition, "boot")) {
 		*out_pointer = (uint8_t *)BOOT_BASE;
-	} else if (!memcmp(partition, "dtbo", 4)) {
+	} else if (!strcmp(partition, "dtbo")) {
 		*out_pointer = (uint8_t *)DTBO_BASE;
 	} else {
-		if (!(part = part_get(partition)))
-			return AVB_IO_RESULT_ERROR_NO_SUCH_PARTITION;
+		if (!(part = part_get(partition))) {
+			ret = AVB_IO_RESULT_ERROR_NO_SUCH_PARTITION;
+			goto out;
+		}
 
-		if (part_read(part, (void *)AVB_PRELOAD_BASE))
-			return AVB_IO_RESULT_ERROR_IO;
+		if (part_read(part, (void *)AVB_PRELOAD_BASE)) {
+			ret = AVB_IO_RESULT_ERROR_IO;
+			goto out;
+		}
 
 		*out_pointer = (uint8_t *)AVB_PRELOAD_BASE;
 	}
+	ret = exynos_read_is_device_unlocked(ops, &unlock);
+	if (ret)
+		goto out;
+
+	if (!unlock) {
+		ret = exynos_remove_unnecessary_region(ops, partition,
+				(uint64_t)*out_pointer, num_bytes);
+		if (ret)
+			goto out;
+	}
+
 	*out_num_bytes_preloaded = num_bytes;
 
-	exynos_read_is_device_unlocked(ops, &unlock);
-	if (unlock)
-		return AVB_IO_RESULT_OK;
-	else
-		return exynos_remove_unnecessary_region(ops, partition,
-				(uint64_t)*out_pointer, num_bytes);
+out:
+	return ret;
 }
 
 static AvbIOResult exynos_write_to_partition(AvbOps *ops,
