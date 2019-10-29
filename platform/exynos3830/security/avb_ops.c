@@ -59,6 +59,19 @@ uint32_t sb_get_avb_key(uint8_t *avb_pubkey, uint64_t pubkey_size,
 	return ret;
 }
 
+static AvbIOResult exynos_read_is_device_unlocked(AvbOps *ops, bool *out_is_unlocked)
+{
+	AvbIOResult ret = AVB_IO_RESULT_OK;
+	int lock_state;
+
+	lock_state = get_lock_state();
+	if (lock_state == -1)
+		ret = -1;
+	*out_is_unlocked = (bool)!lock_state;
+
+	return ret;
+}
+
 static AvbIOResult exynos_get_size_of_partition(AvbOps *ops,
 		const char *partition,
 		uint64_t *out_size_num_bytes)
@@ -248,9 +261,12 @@ static AvbIOResult exynos_get_preloaded_partition(AvbOps *ops,
 		size_t *out_num_bytes_preloaded)
 {
 	void *part;
+	bool unlock;
 
 	if (!memcmp(partition, "boot", 4)) {
 		*out_pointer = (uint8_t *)BOOT_BASE;
+	} else if (!memcmp(partition, "dtbo", 4)) {
+		*out_pointer = (uint8_t *)DTBO_BASE;
 	} else {
 		if (!(part = part_get(partition)))
 			return AVB_IO_RESULT_ERROR_NO_SUCH_PARTITION;
@@ -262,7 +278,12 @@ static AvbIOResult exynos_get_preloaded_partition(AvbOps *ops,
 	}
 	*out_num_bytes_preloaded = num_bytes;
 
-	return AVB_IO_RESULT_OK;
+	exynos_read_is_device_unlocked(ops, &unlock);
+	if (unlock)
+		return AVB_IO_RESULT_OK;
+	else
+		return exynos_remove_unnecessary_region(ops, partition,
+				(uint64_t)*out_pointer, num_bytes);
 }
 
 static AvbIOResult exynos_write_to_partition(AvbOps *ops,
@@ -341,19 +362,6 @@ static AvbIOResult exynos_write_rollback_index(AvbOps *ops,
 #else
 	printf("RP index is not written. RPMB was disabled.\n");
 #endif
-
-	return ret;
-}
-
-static AvbIOResult exynos_read_is_device_unlocked(AvbOps *ops, bool *out_is_unlocked)
-{
-	AvbIOResult ret = AVB_IO_RESULT_OK;
-	int lock_state;
-
-	lock_state = get_lock_state();
-	if (lock_state == -1)
-		ret = -1;
-	*out_is_unlocked = (bool)!lock_state;
 
 	return ret;
 }
