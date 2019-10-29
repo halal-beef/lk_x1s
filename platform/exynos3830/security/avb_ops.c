@@ -59,6 +59,23 @@ uint32_t sb_get_avb_key(uint8_t *avb_pubkey, uint64_t pubkey_size,
 	return ret;
 }
 
+static AvbIOResult exynos_get_size_of_partition(AvbOps *ops,
+		const char *partition,
+		uint64_t *out_size_num_bytes)
+{
+	AvbIOResult ret;
+	void *part = part_get(partition);
+
+	if (part) {
+		*out_size_num_bytes = part_get_size_in_bytes(part);
+		ret = AVB_IO_RESULT_OK;
+	} else {
+		ret = AVB_IO_RESULT_ERROR_NO_SUCH_PARTITION;
+	}
+
+	return ret;
+}
+
 static AvbIOResult exynos_read_from_partition(AvbOps *ops,
 		const char *partition,
 		int64_t offset,
@@ -78,6 +95,17 @@ static AvbIOResult exynos_read_from_partition(AvbOps *ops,
 	uint64_t tmp_offset;
 	size_t tmp_num_bytes;
 	u32 i;
+	uint32_t ret = 0;
+	uint64_t partition_size = 0;
+
+	if (offset < 0) {
+		ret = exynos_get_size_of_partition(ops, partition, &partition_size);
+		if (ret) {
+			printf("There is no partition [%s]\n", partition);
+			return ret;
+		}
+		offset = partition_size + offset;
+	}
 
 	boot_dev = get_boot_device();
 	if (boot_dev == BOOT_UFS)
@@ -278,23 +306,6 @@ static AvbIOResult exynos_get_unique_guid_for_partition(AvbOps *ops,
 		ret = AVB_IO_RESULT_ERROR_IO;
 	else
 		ret = AVB_IO_RESULT_OK;
-
-	return ret;
-}
-
-static AvbIOResult exynos_get_size_of_partition(AvbOps *ops,
-		const char *partition,
-		uint64_t *out_size_num_bytes)
-{
-	AvbIOResult ret;
-	void *part = part_get(partition);
-
-	if (part) {
-		*out_size_num_bytes = part_get_size_in_bytes(part);
-		ret = AVB_IO_RESULT_OK;
-	} else {
-		ret = AVB_IO_RESULT_ERROR_NO_SUCH_PARTITION;
-	}
 
 	return ret;
 }
