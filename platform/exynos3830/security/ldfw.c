@@ -263,7 +263,7 @@ int init_ldfws(void)
 	LDFW_INFO("ldfw: init ldfw(s). whole ldfws size 0x%llx\n", size);
 	ret = init_ldfw(addr, size);
 
-	if (ret == SDM_HW_RESET_STATUS) {
+	if (ret == -1 || ret == SDM_HW_RESET_STATUS) {
 		LDFW_ERR("ldfw: It is dump_gpr state. It does not load ldfw.\n");
 	} else if (ret == SDM_SW_RESET_STATUS) {
 				LDFW_ERR("ldfw: It is kernel panic(SW RESET) state. It does not load ldfw.\n");
@@ -308,8 +308,10 @@ int init_sp(void)
 	}
 
 	ret = (s64)load_sp(addr, size);
-	if (ret == -1) {
+	if (ret == -1 || ret == SDM_HW_RESET_STATUS) {
 		LDFW_INFO("spayload: It is dump_gpr state. It does not load spayload.\n");
+	} else if (ret == SDM_SW_RESET_STATUS) {
+		LDFW_ERR("spayload: It is kernel panic(SW RESET) state. It does not load spayload.\n");
 	} else if (ret == 0) {
 		LDFW_INFO("spayload: It is successfully loaded.\n");
 		secure_os_loaded = 1;
