@@ -66,6 +66,29 @@ void pmic_init (void)
 	reg &= ~MRSEL;
 	i3c_write(0, S2MPU10_PM_ADDR, S2MPU10_PM_CTRL3, reg);
 
+	/* SW W/A : Codec LDO14/15 Enable in bootloader at PMIC EVT0 */
+	i3c_read(1, S2MPU11_COMMON_ADDR, S2MPU11_COMMON_CHIPID, &reg);
+	printf("S2MPU11 CHIPID : 0x%x\n", reg);
+	if (reg == 0) {
+		i3c_read(1, S2MPU11_PM_CLOSE_ADDR, S2MPU11_PM_CLOSE_ETC_OTP3, &reg);
+		reg |= 0x80;
+		i3c_write(1, S2MPU11_PM_CLOSE_ADDR, S2MPU11_PM_CLOSE_ETC_OTP3, reg);
+
+		i3c_read(1, S2MPU11_PM_ADDR, S2MPU11_PM_LDO14_CTRL, &reg);
+		reg |= 0xC0;
+		i3c_write(1, S2MPU11_PM_ADDR, S2MPU11_PM_LDO14_CTRL, reg);
+
+		i3c_read(1, S2MPU11_PM_ADDR, S2MPU11_PM_LDO15_CTRL, &reg);
+		reg |= 0xC0;
+		i3c_write(1, S2MPU11_PM_ADDR, S2MPU11_PM_LDO15_CTRL, reg);
+
+		i3c_read(1, S2MPU11_CODEC_ADDR, S2MPU11_CODEC_DCTR_CM, &reg);
+		reg |= 0x01;
+		i3c_write(1, S2MPU11_CODEC_ADDR, S2MPU11_CODEC_DCTR_CM, reg);
+
+		mdelay(25);
+	}
+
 	/* Enable LCD power */
 	reg = 0xF0;
 	i3c_write(0, S2MPU10_PM_ADDR, S2MPU10_PM_LDO21_CTRL, reg);
