@@ -358,7 +358,8 @@ void platform_init(void)
 
 		if ((rst_stat & (WARM_RESET | LITTLE_WDT_RESET)) &&
 			(dfd_en & EXYNOS3830_EDPCSR_DUMP_EN)) {
-			/* if it's a case of ramdump */
+			/* if it's a case of ramdump, do not load ldfw/sp */
+			printf("Dumpgpr mode. do not load ldfw/sp .\n");
 			goto by_dumpgpr_out;
 		}
 
