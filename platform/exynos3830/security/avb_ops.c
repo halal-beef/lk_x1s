@@ -293,8 +293,10 @@ static AvbIOResult exynos_get_preloaded_partition(AvbOps *ops,
 	}
 
 	*out_num_bytes_preloaded = num_bytes;
+	return ret;
 
 out:
+	*out_pointer = NULL;
 	return ret;
 }
 
