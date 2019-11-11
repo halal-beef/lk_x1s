@@ -22,6 +22,7 @@ int cmd_scatter_load_boot(int argc, const cmd_args *argv)
 	int dtb_offset;
 	int ramdisk_offset;
 	int recovery_dtbo_offset;
+	int second_stage_offset;
 
 	if (argc != 5) goto usage;
 
@@ -36,21 +37,34 @@ int cmd_scatter_load_boot(int argc, const cmd_args *argv)
 	printf("page size: 0x%08x\n", b_hdr->page_size);
 	printf("kernel size: 0x%08x\n", b_hdr->kernel_size);
 	printf("ramdisk size: 0x%08x\n", b_hdr->ramdisk_size);
+#if (BOOT_IMG_HDR_V2 == 1)
+	printf("DTB size: 0x%08x\n", b_hdr->dtb_size);
+#else
 	printf("DTB size: 0x%08x\n", b_hdr->second_size);
+#endif
 	if (recovery_dtbo_addr)
 		printf("recovery DTBO size: 0x%08x\n", b_hdr->recovery_dtbo_size);
 
 	kernel_offset = b_hdr->page_size;
 	ramdisk_offset = kernel_offset + ((b_hdr->kernel_size + b_hdr->page_size - 1) / b_hdr->page_size) * b_hdr->page_size;
-	dtb_offset = ramdisk_offset + ((b_hdr->ramdisk_size + b_hdr->page_size - 1) / b_hdr->page_size) * b_hdr->page_size;
-	recovery_dtbo_offset = dtb_offset + ((b_hdr->second_size + b_hdr->page_size - 1) / b_hdr->page_size) * b_hdr->page_size;
+	second_stage_offset = ramdisk_offset + ((b_hdr->ramdisk_size + b_hdr->page_size - 1) / b_hdr->page_size) * b_hdr->page_size;
+	recovery_dtbo_offset = second_stage_offset + ((b_hdr->second_size + b_hdr->page_size - 1) / b_hdr->page_size) * b_hdr->page_size;
+#if (BOOT_IMG_HDR_V2 == 1)
+	dtb_offset = recovery_dtbo_offset + ((b_hdr->recovery_dtbo_size + b_hdr->page_size - 1) / b_hdr->page_size) * b_hdr->page_size;
+#else
+	dtb_offset = second_stage_offset;
+#endif
 
 	if (kernel_addr)
 		memcpy((void *)kernel_addr, (const void *)(boot_addr + kernel_offset), (size_t)b_hdr->kernel_size);
 	if (ramdisk_addr)
 		memcpy((void *)ramdisk_addr, (const void *)(boot_addr + ramdisk_offset), (size_t)b_hdr->ramdisk_size);
 	if (dtb_addr)
+#if (BOOT_IMG_HDR_V2 == 1)
+		memcpy((void *)dtb_addr, (const void *)(boot_addr + dtb_offset), (size_t)b_hdr->dtb_size);
+#else
 		memcpy((void *)dtb_addr, (const void *)(boot_addr + dtb_offset), (size_t)b_hdr->second_size);
+#endif
 	if (recovery_dtbo_addr)
 		memcpy((void *)recovery_dtbo_addr, (const void *)(boot_addr + recovery_dtbo_offset), (size_t)b_hdr->recovery_dtbo_size);
 
