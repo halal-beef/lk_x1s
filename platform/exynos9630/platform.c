@@ -43,6 +43,7 @@
 #include <dev/lk_acpm_ipc.h>
 #include <dev/debug/dss.h>
 #include <platform/power/flexpmu_dbg.h>
+#include <platform/acpm.h>
 
 #define ARCH_TIMER_IRQ		30
 
@@ -278,6 +279,35 @@ void platform_early_init(void)
 extern bool is_xct_boot(void);
 extern int init_fastboot_variables(void);
 
+void display_acpm_version(void)
+{
+	unsigned int i;
+	unsigned int plugins, num_plugins, plugin_address, plugin_ops_address;
+	struct build_info *info;
+
+	/* Check ACPM STACK Magic */
+	if (readl(EXYNOS9630_ACPM_MAGIC) != 0xD000)
+		return ;
+
+	info = (struct build_info *)(EXYNOS9630_ACPM_APSHARE + APSHARE_BUILDINFO_OFFSET);
+	printf("ACPM: Framework's  version is %s %s\n", info->build_version,
+							info->build_time);
+
+	plugins = readl(EXYNOS9630_ACPM_APSHARE);
+	num_plugins = readl(EXYNOS9630_ACPM_APSHARE + 4);
+
+	for (i = 1; i < num_plugins; i++) {
+		plugin_address = plugins + sizeof(struct plugin) * i;
+		if (readl(get_acpm_plugin_element(plugin, is_attached)) == 1) {
+			plugin_ops_address = readl(get_acpm_plugin_element(plugin, plugin_ops));
+			info = (struct build_info *)((char *)get_acpm_plugin_element(plugin_ops, info));
+			printf("ACPM: Plugin(id:%d) version is %s %s\n",
+					(int)readl(get_acpm_plugin_element(plugin, id)),
+					info->build_version, info->build_time);
+		}
+	}
+}
+
 void platform_init(void)
 {
 	unsigned int rst_stat = readl(EXYNOS9630_POWER_RST_STAT);
@@ -285,6 +315,7 @@ void platform_init(void)
 	unsigned char reg;
 
 	display_flexpmu_dbg();
+	display_acpm_version();
 
 	display_rst_stat(rst_stat);
 #if defined(CONFIG_AB_UPDATE)
