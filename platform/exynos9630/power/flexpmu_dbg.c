@@ -331,8 +331,8 @@ static void print_pmudbg_registers(void)
 	};
 
 	const unsigned int pd_offset[20] = {
-		0x38, 0x3C, 0x58, 0x60, 0x64, 0x6C, 0x70, 0x74, 0x78, 0x7C,
-		0x80, 0x8C, 0x90, 0x94, 0x98, 0x9C, 0xA0, 0xA4, 0xB0, 0xB8,
+		0x34, 0x38, 0x54, 0x5c, 0x60, 0x68, 0x6c, 0x70, 0x74, 0x78,
+		0x7c, 0x88, 0x8c, 0x90, 0x94, 0x98, 0x9c, 0xA0, 0xac, 0xB4,
 	};
 
 	int i;
@@ -343,13 +343,12 @@ static void print_pmudbg_registers(void)
 	printf("%s%s - 0x%x\n", FLEXPMU_DBG_LOG, "CLUSTER0_CPU3_STATES", readl(EXYNOS9630_PMUDBG_BASE + 0xc));
 	printf("%s%s - 0x%x\n", FLEXPMU_DBG_LOG, "CLUSTER0_CPU4_STATES", readl(EXYNOS9630_PMUDBG_BASE + 0x10));
 	printf("%s%s - 0x%x\n", FLEXPMU_DBG_LOG, "CLUSTER0_CPU5_STATES", readl(EXYNOS9630_PMUDBG_BASE + 0x14));
-	printf("%s%s - 0x%x\n", FLEXPMU_DBG_LOG, "CLUSTER0_CPU6_STATES", readl(EXYNOS9630_PMUDBG_BASE + 0x18));
-	printf("%s%s - 0x%x\n", FLEXPMU_DBG_LOG, "CLUSTER0_NONCPU_STATES", readl(EXYNOS9630_PMUDBG_BASE + 0x1c));
-	printf("%s%s - 0x%x\n", FLEXPMU_DBG_LOG, "CLUSTER1_CPU0_STATES", readl(EXYNOS9630_PMUDBG_BASE + 0x20));
-	printf("%s%s - 0x%x\n", FLEXPMU_DBG_LOG, "CLUSTER1_CPU1_STATES", readl(EXYNOS9630_PMUDBG_BASE + 0x24));
-	printf("%s%s - 0x%x\n", FLEXPMU_DBG_LOG, "CLUSTER1_NONCPU_STATES", readl(EXYNOS9630_PMUDBG_BASE + 0x28));
-	printf("%s%s - 0x%x\n", FLEXPMU_DBG_LOG, "MIF_STATES", readl(EXYNOS9630_PMUDBG_BASE + 0xF4));
-	printf("%s%s - 0x%x\n", FLEXPMU_DBG_LOG, "TOP_STATES", readl(EXYNOS9630_PMUDBG_BASE + 0xF8));
+	printf("%s%s - 0x%x\n", FLEXPMU_DBG_LOG, "CLUSTER0_NONCPU_STATES", readl(EXYNOS9630_PMUDBG_BASE + 0x18));
+	printf("%s%s - 0x%x\n", FLEXPMU_DBG_LOG, "CLUSTER1_CPU0_STATES", readl(EXYNOS9630_PMUDBG_BASE + 0x1c));
+	printf("%s%s - 0x%x\n", FLEXPMU_DBG_LOG, "CLUSTER1_CPU1_STATES", readl(EXYNOS9630_PMUDBG_BASE + 0x20));
+	printf("%s%s - 0x%x\n", FLEXPMU_DBG_LOG, "CLUSTER1_NONCPU_STATES", readl(EXYNOS9630_PMUDBG_BASE + 0x24));
+	printf("%s%s - 0x%x\n", FLEXPMU_DBG_LOG, "MIF_STATES", readl(EXYNOS9630_PMUDBG_BASE + 0xF0));
+	printf("%s%s - 0x%x\n", FLEXPMU_DBG_LOG, "TOP_STATES", readl(EXYNOS9630_PMUDBG_BASE + 0xF4));
 
 	for (i = 0; i < 20; i++) {
 		if (i % 4 == 0)
