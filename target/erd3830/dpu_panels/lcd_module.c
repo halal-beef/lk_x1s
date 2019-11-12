@@ -100,7 +100,7 @@ int cm_fill_id(struct dsim_device *dsim)
 	return 0;
 }
 
-u32 ddi_id = 0x34090;
+u32 ddi_id;
 /* read ddi's id(panel_ids[]) for matching expected id */
 int cm_read_id(struct dsim_device *dsim)
 {
