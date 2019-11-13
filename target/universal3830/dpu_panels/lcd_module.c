@@ -24,35 +24,35 @@
 
 #define GAMMA_PARAM_SIZE	26
 
-#define S6E3FA0_CMD_VBP		10
-#define S6E3FA0_CMD_VFP		3
-#define S6E3FA0_CMD_VSA		1
-#define S6E3FA0_CMD_HBP		2
-#define S6E3FA0_CMD_HFP		2
-#define S6E3FA0_CMD_HSA		2
+#define EA8076_CMD_VBP		15
+#define EA8076_CMD_VFP		3
+#define EA8076_CMD_VSA		1
+#define EA8076_CMD_HBP		2
+#define EA8076_CMD_HFP		2
+#define EA8076_CMD_HSA		2
 
-#define S6E3FA0_HORIZONTAL	1080
-#define S6E3FA0_VERTICAL	1920
+#define EA8076_HORIZONTAL	1080
+#define EA8076_VERTICAL	2340
 
 //#define CONFIG_DECON_LCD_VIDEO_MODE
 
 struct exynos_panel_info common_lcd_info = {
 	.mode = DECON_MIPI_COMMAND_MODE,
-	.vfp = S6E3FA0_CMD_VFP,
-	.vbp = S6E3FA0_CMD_VBP,
-	.hfp = S6E3FA0_CMD_HFP,
-	.hbp = S6E3FA0_CMD_HBP,
-	.vsa = S6E3FA0_CMD_VSA,
-	.hsa = S6E3FA0_CMD_HSA,
-	.xres = S6E3FA0_HORIZONTAL,
-	.yres = S6E3FA0_VERTICAL,
+	.vfp = EA8076_CMD_VFP,
+	.vbp = EA8076_CMD_VBP,
+	.hfp = EA8076_CMD_HFP,
+	.hbp = EA8076_CMD_HBP,
+	.vsa = EA8076_CMD_VSA,
+	.hsa = EA8076_CMD_HSA,
+	.xres = EA8076_HORIZONTAL,
+	.yres = EA8076_VERTICAL,
 
 	/* Mhz */
-	.hs_clk = 898,
-	.esc_clk = 20,
+	.hs_clk = 1200,
+	.esc_clk = 16,
 
-	.dphy_pms = {2, 276, 2, 20165}, /* pmsk */
-	.cmd_underrun_cnt = {583},
+	.dphy_pms = {2, 185, 1, 0x9D8A}, /* pmsk */
+	.cmd_underrun_cnt = {1695},
 	/* Maybe, width and height will be removed */
 	.width = 70,
 	.height = 121,
@@ -74,12 +74,14 @@ struct exynos_panel_info *common_get_lcd_info(void)
 	return &common_lcd_info;
 }
 
+extern struct dsim_lcd_driver ea8076_mipi_lcd_driver;
 extern struct dsim_lcd_driver s6e3fa0_mipi_lcd_driver;
 extern struct dsim_lcd_driver nt36672a_mipi_lcd_driver;
 extern struct dsim_lcd_driver s6e3ha8_mipi_lcd_driver;
 extern struct dsim_lcd_driver s6e3ha9_mipi_lcd_driver;
 
 struct dsim_lcd_driver *panel_list[NUM_OF_VERIFIED_PANEL] = {
+	&ea8076_mipi_lcd_driver,
 	&s6e3fa0_mipi_lcd_driver,
 	&nt36672a_mipi_lcd_driver,
 	&s6e3ha8_mipi_lcd_driver,

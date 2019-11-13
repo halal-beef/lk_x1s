@@ -101,7 +101,14 @@ static void set_gpio_lcd_power(enum board_gpio_type gpio_type)
 {
 	/* Enable Power */
 	printf("%s: +\n", __func__);
+
+#if 0
+	/*
+	 * universal3830 doesn't need this function
+	 * because pmic can cover all power of lcd module
+	 */
 	display_panel_power();
+#endif
 	printf("%s: -\n", __func__);
 	mdelay(10);
 }

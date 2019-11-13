@@ -42,46 +42,46 @@ display_te_init:
 
 	.global display_panel_init
 display_panel_init:
-	/* Set MLCD_RSTB (GPG2_5) to Pull-up enable, Reset is active low */
+	/* Set MLCD_RSTB (GPG2_4) to Pull-up enable, Reset is active low */
 	ldr	x0, =EXYNOS3830_GPG2PUD
 	ldr	w1, [x0]
-	bic	w1, w1, #(0xF << 20)
-	orr	w1, w1, #(0x3 << 20)
+	bic	w1, w1, #(0xF << 16)
+	orr	w1, w1, #(0x3 << 16)
 	str	w1, [x0]
 
-	/* Set MLCD_RSTB (GPG2_5) to Output */
+	/* Set MLCD_RSTB (GPG2_4) to Output */
 	ldr	x0, =EXYNOS3830_GPG2CON
 	ldr	w1, [x0]
-	bic	w1, w1, #(0xF << 20)
-	orr	w1, w1, #(0x1 << 20)
+	bic	w1, w1, #(0xF << 16)
+	orr	w1, w1, #(0x1 << 16)
 	str	w1, [x0]
 
-	/* Set MLCD_RSTB (GPG2_5) to DRV 4X */
+	/* Set MLCD_RSTB (GPG2_4) to DRV 4X */
 	ldr	x0, =EXYNOS3830_GPG2DRV
 	ldr	w1, [x0]
-	bic	w1, w1, #(0xF << 20)
-	orr	w1, w1, #(0x3 << 20)
+	bic	w1, w1, #(0xF << 16)
+	orr	w1, w1, #(0x3 << 16)
 	str	w1, [x0]
 
 	ret
 
 	.global display_panel_reset
 display_panel_reset:
-	/* Set MLCD_RSTB (GPG2_5) to low */
+	/* Set MLCD_RSTB (GPG2_4) to low */
 	ldr	x0, =EXYNOS3830_GPG2DAT
 	ldr	w1, [x0]
-	bic	w1, w1, #(0x1 << 5)
+	bic	w1, w1, #(0x1 << 4)
 	str	w1, [x0]
 
 	ret
 
 	.global display_panel_release
 display_panel_release:
-	/* Set MLCD_RSTB (GPG2_5) to high */
+	/* Set MLCD_RSTB (GPG2_4) to high */
 	ldr	x0, =EXYNOS3830_GPG2DAT
 	ldr	w1, [x0]
-	bic	w1, w1, #(0x1 << 5)
-	orr	w1, w1, #(0x1 << 5)
+	bic	w1, w1, #(0x1 << 4)
+	orr	w1, w1, #(0x1 << 4)
 	str	w1, [x0]
 
 	ret
