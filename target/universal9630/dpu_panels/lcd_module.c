@@ -82,6 +82,8 @@ extern struct dsim_lcd_driver nt36672a_mipi_lcd_driver;
 extern struct dsim_lcd_driver s6e3ha8_mipi_lcd_driver;
 extern struct dsim_lcd_driver s6e3ha9_mipi_lcd_driver;
 extern struct dsim_lcd_driver ana6705_mipi_lcd_driver;
+extern struct dsim_lcd_driver s6e3fa9octa_mipi_lcd_driver;
+extern struct dsim_lcd_driver s6e3fa9ub_mipi_lcd_driver;
 
 struct dsim_lcd_driver *panel_list[NUM_OF_VERIFIED_PANEL] = {
 	&s6e3fa0_mipi_lcd_driver,
@@ -89,6 +91,8 @@ struct dsim_lcd_driver *panel_list[NUM_OF_VERIFIED_PANEL] = {
 	&s6e3ha8_mipi_lcd_driver,
 	&s6e3ha9_mipi_lcd_driver,
 	&ana6705_mipi_lcd_driver,
+	&s6e3fa9octa_mipi_lcd_driver,
+	&s6e3fa9ub_mipi_lcd_driver,
 };
 
 /* fill panel id to panel_ids arrary from panel driver each */
