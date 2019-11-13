@@ -27,6 +27,12 @@
 
 // #define ARRAY_SIZE(x) (sizeof(x) / sizeof((x)[0]))
 
+void ea8076_lcd_init(unsigned int id, struct exynos_panel_info *lcd);
+void ea8076_lcd_enable_exynos(unsigned int id);
+void ea8076_lcd_disable_exynos(unsigned int id);
+int ea8076_lcd_gamma_ctrl(unsigned int id, unsigned int backlightlevel);
+int ea8076_lcd_gamma_update(int id);
+
 void s6e3fa0_lcd_init(unsigned int id, struct exynos_panel_info *lcd);
 void s6e3fa0_lcd_enable_exynos(unsigned int id);
 void s6e3fa0_lcd_disable_exynos(unsigned int id);

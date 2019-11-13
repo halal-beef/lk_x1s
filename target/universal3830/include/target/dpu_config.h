@@ -63,7 +63,7 @@
 #define CONFIG_DISPLAY_TEMP_BASE_ADDRESS	0xfc000000
 
 #define LCD_WIDTH		1080
-#define LCD_HEIGHT		1920
+#define LCD_HEIGHT		2340
 
 
 /* =================================================== */
