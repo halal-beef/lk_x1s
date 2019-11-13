@@ -88,6 +88,18 @@ display_panel_release:
 
 	.global display_panel_power
 display_panel_power:
+        /* Set UB_DDR_EN (GPF1_6) to Output */
+        ldr             x0, =EXYNOS9630_GPF1CON
+        ldr             w1, [x0]
+        bic             w1, w1, #(0xF << 24)
+        orr             w1, w1, #(0x1 << 24)
+        str             w1, [x0]
 
-	ret
+        ldr             x0, =EXYNOS9630_GPF1DAT
+        ldr             w1, [x0]
+        bic             w1, w1, #(0x1 << 6)
+        orr             w1, w1, #(0x1 << 6)
+        str             w1, [x0]
+
+        ret
 

@@ -22,6 +22,10 @@ MODULE_SRCS += \
 	$(LOCAL_DIR)/dpu_panels/s6e3ha9_mipi_lcd.c \
 	$(LOCAL_DIR)/dpu_panels/ana6705_lcd_ctrl.c \
 	$(LOCAL_DIR)/dpu_panels/ana6705_mipi_lcd.c \
+	$(LOCAL_DIR)/dpu_panels/s6e3fa9octa_lcd_ctrl.c \
+	$(LOCAL_DIR)/dpu_panels/s6e3fa9octa_mipi_lcd.c \
+	$(LOCAL_DIR)/dpu_panels/s6e3fa9ub_lcd_ctrl.c \
+	$(LOCAL_DIR)/dpu_panels/s6e3fa9ub_mipi_lcd.c \
 	$(LOCAL_DIR)/dpu_panels/lcd_module.c \
 
 include make/module.mk
