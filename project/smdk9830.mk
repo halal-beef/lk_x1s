@@ -17,6 +17,7 @@ MODULES += \
 	app/exynos_boot
 
 MODULE_DEPS += \
+	platform/exynos \
 	lib/gpt \
 	lib/font \
 	lib/logo \
@@ -24,17 +25,18 @@ MODULE_DEPS += \
 	lib/cksum \
 	lib/fdt \
 	lib/ufdt \
+	lib/fdtapi \
 	lib/ab_update \
 	lib/lock \
 	lib/fastboot \
 	lib/block \
 	dev/scsi \
+	dev/mmc \
 	dev/rpmb \
-	dev/boot \
 	dev/adc \
 	dev/pmucal \
 	dev/speedy \
-	dev/mmc \
 	dev/power/pmic/s2mps_19_22 \
 	dev/power/pmic/s2mpb02 \
-	dev/battery/charger
+	dev/battery/charger \
+	dev/debug
