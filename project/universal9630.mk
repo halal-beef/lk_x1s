@@ -24,6 +24,7 @@ MODULE_DEPS += \
 	dev/rpmb \
 	dev/acpm_ipc \
 	dev/debug \
+	dev/adc \
 
 GLOBAL_DEFINES += \
 	INPUT_GPT_AS_PT=1 \
