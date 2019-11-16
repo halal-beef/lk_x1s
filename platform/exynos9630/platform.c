@@ -44,6 +44,7 @@
 #include <dev/debug/dss.h>
 #include <platform/power/flexpmu_dbg.h>
 #include <platform/acpm.h>
+#include <platform/b_rev.h>
 
 #define ARCH_TIMER_IRQ		30
 
@@ -316,6 +317,8 @@ void platform_init(void)
 
 	display_flexpmu_dbg();
 	display_acpm_version();
+
+	board_rev = get_board_rev();
 
 	display_rst_stat(rst_stat);
 #if defined(CONFIG_AB_UPDATE)
