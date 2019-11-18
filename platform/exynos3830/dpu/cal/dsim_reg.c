@@ -1039,6 +1039,89 @@ static void dsim_reg_set_porch(u32 id, struct exynos_panel_info *lcd)
 	}
 }
 
+static void dsim_reg_set_hact_period(u32 id, u32 hact_period)
+{
+	u32 val = DSIM_VT_HTIMING0_HACT_PERIOD(hact_period);
+
+	dsim_write_mask(id, DSIM_VT_HTIMING0, val,
+			DSIM_VT_HTIMING0_HACT_PERIOD_MASK);
+}
+
+static void dsim_reg_set_hsa_period(u32 id, u32 hsa_period)
+{
+	u32 val = DSIM_VT_HTIMING0_HSA_PERIOD(hsa_period);
+
+	dsim_write_mask(id, DSIM_VT_HTIMING0, val,
+			DSIM_VT_HTIMING0_HSA_PERIOD_MASK);
+}
+
+static void dsim_reg_set_hbp_period(u32 id, u32 hbp_period)
+{
+	u32 val = DSIM_VT_HTIMING1_HBP_PERIOD(hbp_period);
+
+	dsim_write_mask(id, DSIM_VT_HTIMING1, val,
+			DSIM_VT_HTIMING1_HBP_PERIOD_MASK);
+}
+
+static void dsim_reg_set_hfp_period(u32 id, u32 hfp_period)
+{
+	u32 val = DSIM_VT_HTIMING1_HFP_PERIOD(hfp_period);
+
+	dsim_write_mask(id, DSIM_VT_HTIMING1, val,
+			DSIM_VT_HTIMING1_HFP_PERIOD_MASK);
+}
+
+/*
+ * Divide positive or negative dividend by positive or negative divisor
+ * and round to closest integer. Result is undefined for negative
+ * divisors if the dividend variable type is unsigned and for negative
+ * dividends if the divisor variable type is unsigned.
+ */
+#define DIV_ROUND_CLOSEST(x, divisor)(          \
+		{                           \
+		typeof(x) __x = x;              \
+		typeof(divisor) __d = divisor;          \
+		(((typeof(x))-1) > 0 ||             \
+		 ((typeof(divisor))-1) > 0 ||           \
+		 (((__x) > 0) == ((__d) > 0))) ?        \
+		(((__x) + ((__d) / 2)) / (__d)) :   \
+		(((__x) - ((__d) / 2)) / (__d));    \
+		}                           \
+		)
+
+static void dsim_reg_set_hperiod(u32 id, struct exynos_panel_info *lcd)
+{
+	u32 vclk,  wclk;
+	u32 hblank, vblank;
+	u32 width, height;
+	u32 hact_period, hsa_period, hbp_period, hfp_period;
+
+	if (lcd->dsc.en)
+		width = lcd->xres / 3;
+	else
+		width = lcd->xres;
+
+	height = lcd->yres;
+
+	if (lcd->mode == DECON_VIDEO_MODE) {
+		hblank = lcd->hsa + lcd->hbp + lcd->hfp;
+		vblank = lcd->vsa + lcd->vbp + lcd->vfp;
+		vclk = DIV_ROUND_CLOSEST((width + hblank) * (height + vblank) * lcd->fps, 1000); /* khz */
+		wclk = DIV_ROUND_CLOSEST(lcd->hs_clk * 1000, 16); /* khz */
+
+		/* round calculation to reduce fps error */
+		hact_period = DIV_ROUND_CLOSEST(width * wclk, vclk);
+		hsa_period = DIV_ROUND_CLOSEST(lcd->hsa * wclk, vclk);
+		hbp_period = DIV_ROUND_CLOSEST(lcd->hbp * wclk, vclk);
+		hfp_period = DIV_ROUND_CLOSEST(lcd->hfp * wclk, vclk);
+
+		dsim_reg_set_hact_period(id, hact_period);
+		dsim_reg_set_hsa_period(id, hsa_period);
+		dsim_reg_set_hbp_period(id, hbp_period);
+		dsim_reg_set_hfp_period(id, hfp_period);
+	}
+}
+
 static void dsim_reg_set_pixel_format(u32 id, u32 pixformat)
 {
 	u32 val = DSIM_CONFIG_PIXEL_FORMAT(pixformat);
@@ -1466,14 +1549,6 @@ static void dsim_reg_enable_eotp(u32 id, u32 en)
 	dsim_write_mask(id, DSIM_CONFIG, val, DSIM_CONFIG_EOTP_EN);
 }
 
-static void dsim_reg_set_vt_compensate(u32 id, u32 compensate)
-{
-	u32 val = DSIM_VIDEO_TIMER_COMPENSATE(compensate);
-
-	dsim_write_mask(id, DSIM_VIDEO_TIMER, val,
-			DSIM_VIDEO_TIMER_COMPENSATE_MASK);
-}
-
 static void dsim_reg_set_vstatus_int(u32 id, u32 vstatus)
 {
 	u32 val = DSIM_VIDEO_TIMER_VSTATUS_INTR_SEL(vstatus);
@@ -1705,7 +1780,8 @@ static void dsim_reg_set_config(u32 id, struct exynos_panel_info *lcd_info,
 	dsim_reg_enable_dsc(id, lcd_info->dsc.en);
 
 	/* shadow disable */
-	dsim_reg_enable_shadow(id, 0);
+	if (lcd_info->mode == DECON_MIPI_COMMAND_MODE)
+		dsim_reg_enable_shadow(id, 0);
 
 	if (lcd_info->mode == DECON_VIDEO_MODE) {
 		dsim_reg_disable_hsa(id, 0);
@@ -1737,7 +1813,7 @@ static void dsim_reg_set_config(u32 id, struct exynos_panel_info *lcd_info,
 	if (lcd_info->mode == DECON_MIPI_COMMAND_MODE) {
 		dsim_reg_set_cmd_ctrl(id, lcd_info, clks);
 	} else if (lcd_info->mode == DECON_VIDEO_MODE) {
-		dsim_reg_set_vt_compensate(id, lcd_info->vt_compensation);
+		dsim_reg_set_hperiod(id, lcd_info);
 		dsim_reg_set_vstatus_int(id, DSIM_VSYNC);
 	}
 
