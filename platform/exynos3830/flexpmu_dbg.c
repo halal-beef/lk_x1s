@@ -305,6 +305,52 @@ static void print_last_powermode(struct dbg_list *dbg)
 	}
 }
 
+#define setbit(addr, bit, value)	writel((readl(addr) & ~(1 << (bit))) | (((value) & 0x1) << (bit)), (addr))
+
+// CMU_CORE, CMU_MIF0, CMU_MIF1, CMU_PERI
+unsigned cmu_base[] = {
+	0x12000000,
+	0x10400000,
+	0x10500000,
+	0x10030000,
+};
+
+// DBG_NFO_QCH_* register offset for MIF master block above {start, end}
+unsigned short offset_evt0[][2] = {
+	{0x70a4, 0x7194},
+	{0x7018, 0x704c},
+	{0x7018, 0x704c},
+	{0x7004, 0x705c},
+};
+
+void cmu_dump(void)
+{
+
+	unsigned len_list_base = sizeof(cmu_base) / sizeof(unsigned);
+	unsigned i, start, end, addr;
+
+	for(i = 0; i < len_list_base; i++) {
+		start = cmu_base[i] + offset_evt0[i][0];
+		end = cmu_base[i] + offset_evt0[i][1];
+
+		for (addr = start; addr <= end; addr += 4) {
+			if (readl(addr) == 0)
+				printf("Non-idle QCH Address: 0x%x\n", addr);
+		}
+	}
+}
+
+void enable_qch_dbg_nfo(void)
+{
+	unsigned len_list_base = sizeof(cmu_base) / sizeof(unsigned);
+	unsigned i, addr;
+
+	for(i = 0; i < len_list_base; i++) {
+		addr = cmu_base[i] + 0x800;
+		setbit(addr, 31, 1);
+	}
+}
+
 static void print_pmudbg_registers(void)
 {
 	const char *pd_name[6] = {
@@ -320,7 +366,7 @@ static void print_pmudbg_registers(void)
 		0x4c, 0x50, 0x54, 0x68, 0x6c, 0x70,
 	};
 
-	int i;
+	int i, mif_states;
 
 	printf("%s%s - 0x%x\n", FLEXPMU_DBG_LOG, "CLUSTER0_CPU0_STATES", readl(EXYNOS3830_PMUDBG_BASE));
 	printf("%s%s - 0x%x\n", FLEXPMU_DBG_LOG, "CLUSTER0_CPU1_STATES", readl(EXYNOS3830_PMUDBG_BASE + 0x4));
@@ -332,8 +378,17 @@ static void print_pmudbg_registers(void)
 	printf("%s%s - 0x%x\n", FLEXPMU_DBG_LOG, "CLUSTER1_CPU2_STATES", readl(EXYNOS3830_PMUDBG_BASE + 0x1c));
 	printf("%s%s - 0x%x\n", FLEXPMU_DBG_LOG, "CLUSTER1_CPU3_STATES", readl(EXYNOS3830_PMUDBG_BASE + 0x20));
 	printf("%s%s - 0x%x\n", FLEXPMU_DBG_LOG, "CLUSTER1_NONCPU_STATES", readl(EXYNOS3830_PMUDBG_BASE + 0x24));
-	printf("%s%s - 0x%x\n", FLEXPMU_DBG_LOG, "MIF_STATES", readl(EXYNOS3830_PMUDBG_BASE + 0x84));
-	printf("%s%s - 0x%x\n", FLEXPMU_DBG_LOG, "TOP_STATES", readl(EXYNOS3830_PMUDBG_BASE + 0x8c));
+	printf("%s%s - 0x%x\n", FLEXPMU_DBG_LOG, "MIF_STATES", readl(EXYNOS3830_PMUDBG_BASE + 0x94));
+	printf("%s%s - 0x%x\n", FLEXPMU_DBG_LOG, "TOP_STATES", readl(EXYNOS3830_PMUDBG_BASE + 0x98));
+
+	mif_states = readl(EXYNOS3830_PMUDBG_BASE + 0x94);
+	if (mif_states != 0x10 && mif_states != 0x80 && mif_states != 0x0) {
+		printf("\n");
+		printf("%sNon-idle qch dump for MIF masters\n", FLEXPMU_DBG_LOG);
+		cmu_dump();
+	}
+
+	enable_qch_dbg_nfo();
 
 	for (i = 0; i < 6; i++) {
 		if (i % 4 == 0)
