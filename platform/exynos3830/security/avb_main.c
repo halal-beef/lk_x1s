@@ -36,27 +36,24 @@ void avb_print_lcd(const char *str, uint32_t boot_state) {};
 #else
 void avb_print_lcd(const char *str, uint32_t boot_state)
 {
-	uint32_t font_color;
-
 	switch (boot_state) {
 	case ORANGE:
-		font_color = FONT_ORANGE;
+		print_lcd_update(FONT_ORANGE, FONT_BLACK, str);
 		break;
 	case YELLOW:
-		font_color = FONT_YELLOW;
+		print_lcd_update(FONT_YELLOW, FONT_BLACK, str);
 		break;
 	case RED:
-		font_color = FONT_RED;
+		print_lcd_update(FONT_RED, FONT_BLACK, str);
 		break;
 	case GREEN:
-		font_color = FONT_GREEN;
+		print_lcd_update(FONT_GREEN, FONT_BLACK, str);
 		break;
 	default:
 		print_lcd_update(FONT_WHITE, FONT_BLACK,
 				"%s : color parsing fail\n", __func__);
 		return;
 	}
-	print_lcd_update(font_color, FONT_BLACK, str);
 }
 #endif
 
