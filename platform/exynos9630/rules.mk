@@ -33,7 +33,8 @@ MODULE_SRCS += \
 	$(LOCAL_DIR)/power/flexpmu_dbg.c \
 	$(LOCAL_DIR)/debug/dfd.c \
 	$(LOCAL_DIR)/debug/dfd_asm_helper.S \
-	$(LOCAL_DIR)/board_rev/board_rev.c
+	$(LOCAL_DIR)/board_rev/board_rev.c \
+	$(LOCAL_DIR)/dvfs_info.c \
 
 MODULE_DEPS += \
 	dev/interrupt/arm_gic \
