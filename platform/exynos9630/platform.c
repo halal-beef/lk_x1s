@@ -45,6 +45,7 @@
 #include <platform/power/flexpmu_dbg.h>
 #include <platform/acpm.h>
 #include <platform/b_rev.h>
+#include <platform/dvfs_info.h>
 
 #define ARCH_TIMER_IRQ		30
 
@@ -456,4 +457,7 @@ void platform_init(void)
 by_dumpgpr_out:
 		print_el3_monitor_version();
 	}
+
+	display_dvfs_info();
+
 }
