@@ -346,7 +346,7 @@ static uint bio_new_read(struct bdev *dev, void *_buf, bnum_t _block, uint count
 
 	/* Loop */
 	while (count - block_read >= native_block_size) {
-		block_per_time = count - block_read;
+		block_per_time = ((count - block_read) / native_block_size) * native_block_size;
 		if (block_per_time) {
 			if (block_per_time >= max_blkcnt)
 				block_per_time = max_blkcnt;
@@ -429,7 +429,7 @@ static uint bio_new_write(struct bdev *dev, const void *_buf, bnum_t _block, uin
 
 	/* Loop */
 	while (count - block_written >= native_block_size) {
-		block_per_time = count - block_written;
+		block_per_time = ((count - block_written) / native_block_size) * native_block_size;
 		if (block_per_time) {
 			if (block_per_time >= max_blkcnt)
 				block_per_time = max_blkcnt;
