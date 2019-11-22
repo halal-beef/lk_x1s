@@ -506,23 +506,25 @@ int fb_do_flash(const char *cmd_buffer, unsigned int rx_sz)
 
 	LTRACE_ENTRY;
 
-#if defined(CONFIG_CHECK_LOCK_STATE) || defined(CONFIG_USE_RPMB)
-	if (is_first_boot()) {
-		uint32_t lock_state;
-		rpmb_get_lock_state(&lock_state);
-		printf("Lock state: %d\n", lock_state);
-		if (lock_state) {
+#if defined(CONFIG_CHECK_LOCK_STATE)
+	if(is_first_boot() && get_ldfw_load_flag()) {
+		int lock_state;
+
+		lock_state = get_lock_state();
+		if (lock_state >= 0)
+			LTRACEF_LEVEL(INFO, "Lock state: %d\n", lock_state);
+		if (lock_state == 1) {
 			sprintf(response, "FAILDevice is locked");
 			fastboot_send_status(response, strlen(response), FASTBOOT_TX_ASYNC);
 			return 1;
 		}
 	}
 #endif
-
 	dprintf(ALWAYS, "flash\n");
+
 	strcpy(response,"OKAY");
 	flash_using_part((char *)cmd_buffer + 6, response,
-	                downloaded_data_size, (void *)interface.transfer_buffer);
+			downloaded_data_size, (void *)interface.transfer_buffer);
 
 	fastboot_send_status(response, strlen(response), FASTBOOT_TX_ASYNC);
 
@@ -680,19 +682,18 @@ int fb_do_flashing(const char *cmd_buffer, unsigned int rx_sz)
 	char buf[FB_RESPONSE_BUFFER_SIZE];
 	char *response = (char *)(((unsigned long)buf + 8) & ~0x07);
 
-	sprintf(response, "OKAY");
-#if defined(CONFIG_USE_RPMB)
+	sprintf(response,"OKAY");
 	if (!strcmp(cmd_buffer + 9, "lock")) {
 		printf("Lock this device.\n");
 		print_lcd_update(FONT_GREEN, FONT_BLACK, "Lock this device.");
-		if (rpmb_set_lock_state(1))
-			sprintf(response, "FAILRPBM error: failed to change lock state on RPMB");
+		if(set_lock_state(1))
+			sprintf(response, "FAILRPMB error: failed to change lock state on RPMB");
 	} else if (!strcmp(cmd_buffer + 9, "unlock")) {
 		if (get_unlock_ability()) {
 			printf("Unlock this device.\n");
 			print_lcd_update(FONT_GREEN, FONT_BLACK, "Unlock this device.");
-			if (rpmb_set_lock_state(0))
-				sprintf(response, "FAILRPBM error: failed to change lock state on RPMB");
+			if(set_lock_state(0))
+				sprintf(response, "FAILRPMB error: failed to change lock state on RPMB");
 		} else {
 			sprintf(response, "FAILunlock_ability is 0");
 		}
@@ -711,7 +712,6 @@ int fb_do_flashing(const char *cmd_buffer, unsigned int rx_sz)
 	} else {
 		sprintf(response, "FAILunsupported command");
 	}
-#endif
 
 	fastboot_send_status(response, strlen(response), FASTBOOT_TX_ASYNC);
 
