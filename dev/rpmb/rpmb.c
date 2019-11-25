@@ -25,9 +25,6 @@
 #define SECU_PROT_IN    0
 #define SECU_PROT_OUT   1
 
-//#define RPMB_DEBUG
-#define ENABLE_CM_NONCE
-
 #define RPMB_BLOCK_SIZE         256
 #define BOOT_RI_PARTITION       2  // Rollback Index Partiition number
 #define BOOT_RI_TABLE_BLOCK     1  // Rollback Index block base
