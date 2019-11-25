@@ -22,6 +22,8 @@
 
 /* SMC id for CryptoManager function call */
 #include <platform/cm_api.h>
+//#define RPMB_DEBUG
+#define ENABLE_CM_NONCE
 #define SMC_CM_RPMB				0x1018
 #define SMC_CM_DRBG				0x1019
 #define SMC_SRPMB_PROVISION			0x3818
