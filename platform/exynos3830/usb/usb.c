@@ -267,6 +267,7 @@ static struct dwc3_dev_config dwc3_dev_config = {
 	.m_uCtrlBufSize = 128,
 	.m_ucU1ExitValue = 10,
 	.m_usU2ExitValue = 257,
+	.need_cache_ops = 1,
 };
 
 int dwc3_dev_plat_init(void **base_addr, struct dwc3_dev_config **plat_config)
