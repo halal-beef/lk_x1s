@@ -735,9 +735,10 @@ static int emmc_rpmb_commands(struct rpmb_packet *packet)
 		/* Authenticated data read request */
 		addrp = (u32 *)(packet->data);
 		addr = *addrp;
-		blk_cnt = packet->count;
+		blk_cnt = *((u32 *)(packet->data)+1);
 		start_blk = packet->address;
 		*addrp = 0;
+		*(addrp+1) = 0;
 
 		buf = malloc(512*blk_cnt);
 		if (buf == NULL) {
