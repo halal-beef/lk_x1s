@@ -49,7 +49,7 @@ extern unsigned int uart_log_mode;
 
 static void exynos_boot_task(const struct app_descriptor *app, void *args)
 {
-	unsigned int rst_stat = readl(EXYNOS9630_POWER_RST_STAT);
+	unsigned int rst_stat = readl(EXYNOS_POWER_RST_STAT);
 	/* struct pit_entry *ptn; */
 	struct exynos_gpio_bank *bank = (struct exynos_gpio_bank *)EXYNOS9630_GPA1CON;
 	int vol_up_val;
@@ -129,10 +129,10 @@ static void exynos_boot_task(const struct app_descriptor *app, void *args)
 		sdm_encrypt_secdram();
 		dfd_set_dump_en(0);
 		goto fastboot;
-	} else if (readl(EXYNOS9630_POWER_SYSIP_DAT0) == REBOOT_MODE_FASTBOOT) {
+	} else if (readl(EXYNOS_POWER_SYSIP_DAT0) == REBOOT_MODE_FASTBOOT) {
 		printf("Entering fastboot: reboot bootloader command\n");
 		writel(0, CONFIG_RAMDUMP_SCRATCH);
-		writel(0, EXYNOS9630_POWER_SYSIP_DAT0);
+		writel(0, EXYNOS_POWER_SYSIP_DAT0);
 		goto download;
 	} else if ((readl(CONFIG_RAMDUMP_SCRATCH) == CONFIG_RAMDUMP_MODE) && get_charger_mode() == 0) {
 		printf("Entering fastboot: Ramdump_Scratch & Charger\n");

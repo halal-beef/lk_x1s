@@ -92,4 +92,6 @@
 #define UARTGPIO_CON_SET							0x22
 #define UARTGPIO_CON_BASE_BIT							(0 * 4)
 
+#define EXYNOS_POWER_RST_STAT				EXYNOS9630_POWER_RST_STAT
+
 #endif	/* __SFR_H__ */
