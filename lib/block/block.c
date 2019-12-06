@@ -45,6 +45,14 @@ bdev_t *blk_get_dev(unsigned int lun)
 		str[4] = '0' + lun;
 		str[5] = '\0';
 	} else if (bMode == BOOT_EMMC) {
+		if (lun == MMC_PARTITION_MMC_RPMB) {
+			memcpy(str, "mmcrpmb", 7);
+			str[7] = '\0';
+		} else {
+			memcpy(str, "mmc", 3);
+			str[3] = '0' + lun;
+			str[4] = '\0';
+		}
 	}
 
 	dev = bio_open(str);
