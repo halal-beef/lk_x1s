@@ -28,11 +28,9 @@
 #include <dev/debug/dss.h>
 #include <dev/debug/dss_store_ramdump.h>
 #include <platform/gpio.h>
-#include <platform/gpio.h>
 #include <platform/smc.h>
 #include <lib/font_display.h>
 #include <lib/logo_display.h>
-#include "recovery.h"
 
 #define CONFIG_PIT_IMAMGE_BASE 0x80100000
 #define CONFIG_FWBL1_IMAMGE_BASE 0x80200000
@@ -149,7 +147,6 @@ reboot:
 	dfd_set_dump_en(1);
 	set_debug_level("mid");
 #endif
-	recovery_init();
 	cmd_boot(0, 0);
 	return;
 }
