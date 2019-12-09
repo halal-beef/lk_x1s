@@ -28,5 +28,6 @@ MODULE_SRCS += \
 	$(LOCAL_DIR)/dpu_panels/s6e3fa9ub_mipi_lcd.c \
 	$(LOCAL_DIR)/dpu_panels/lcd_module.c \
 	$(LOCAL_DIR)/pmic/pmic.c \
+	$(LOCAL_DIR)/gpio/exynos_key.c \
 
 include make/module.mk
