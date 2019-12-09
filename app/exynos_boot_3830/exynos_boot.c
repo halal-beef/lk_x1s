@@ -126,6 +126,9 @@ static void exynos_boot_task(const struct app_descriptor *app, void *args)
 
 download:
 	uart_log_mode = 1;
+#ifndef RAMDUMP_MODE_OFF
+	debug_store_ramdump();
+#endif
 	start_usb_gadget();
 	return;
 
