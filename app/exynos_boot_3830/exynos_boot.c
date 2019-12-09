@@ -49,10 +49,32 @@ static void do_memtester(unsigned int loop);
 extern unsigned int uart_log_mode;
 extern unsigned int board_rev;
 
+int fastboot_fail_check(void)
+{
+	if (is_first_boot()) {
+		unsigned int env_val = 0;
+
+		if (sysparam_read("fb_mode_set", &env_val, sizeof(env_val)) > 0) {
+			if (env_val == FB_MODE_FLAG) {
+				printf("Fastboot is not completed on a prior booting.\n");
+				printf("Entering fastboot.\n");
+				print_lcd_update(FONT_RED, FONT_BLACK,
+						"Fastboot is not completed on a prior booting.");
+				print_lcd_update(FONT_RED, FONT_BLACK,
+						"Entering fastboot.");
+				return FASTBOOT_ERROR;
+			}
+		}
+	}
+	return FASTBOOT_OK;
+}
+
+
 static void exynos_boot_task(const struct app_descriptor *app, void *args)
 {
 	unsigned int rst_stat = readl(EXYNOS_POWER_RST_STAT);
 	int chk_wtsr_smpl;
+	int fb_mode_failed = FASTBOOT_OK;
 
 	print_lcd_update(FONT_WHITE, FONT_BLACK, "Board revision : 0x%X", board_rev);
 
@@ -70,6 +92,9 @@ static void exynos_boot_task(const struct app_descriptor *app, void *args)
 		return;
 	}
 
+#ifdef CONFIG_CHECK_FASTBOOT_FAIL
+	fb_mode_failed = fastboot_fail_check();
+#endif
 
 #ifdef CONFIG_WDT_RECOVERY_USB_BOOT
 	clear_wdt_recovery_settings();
@@ -118,6 +143,9 @@ static void exynos_boot_task(const struct app_descriptor *app, void *args)
 	} else if ((readl(CONFIG_RAMDUMP_SCRATCH) == CONFIG_RAMDUMP_MODE) && get_charger_mode() == 0) {
 		printf("Entering fastboot: Ramdump_Scratch & Charger\n");
 		sdm_encrypt_secdram();
+		goto fastboot;
+	} else if (fb_mode_failed == FASTBOOT_ERROR) {
+		printf("Entering fastboot: fastboot_reg | fb_mode\n");
 		goto fastboot;
 	} else {
 		goto reboot;
