@@ -6,7 +6,7 @@ WITH_KERNEL_VM := 0
 WITH_LINKER_GC := 1
 
 MODULES += \
-	app/exynos_boot_3830 \
+	app/exynos_main \
 	dev/acpm_ipc \
 	dev/mmc
 
