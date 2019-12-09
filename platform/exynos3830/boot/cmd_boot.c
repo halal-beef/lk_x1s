@@ -20,7 +20,6 @@
 #include <dev/boot.h>
 #include <dev/rpmb.h>
 #include <dev/usb/gadget.h>
-#include <dev/phy-usb.h>
 #include <platform/mmu/mmu_func.h>
 #include <platform/sfr.h>
 #include <platform/smc.h>
