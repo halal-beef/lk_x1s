@@ -26,7 +26,7 @@
 #include <platform/ab_update.h>
 #include <platform/secure_boot.h>
 #include <platform/sizes.h>
-#include <platform/fastboot.h>
+#include <lib/fastboot.h>
 #include <platform/bootimg.h>
 #include <platform/fdt.h>
 #include <platform/chip_id.h>

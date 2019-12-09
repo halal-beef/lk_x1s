@@ -21,7 +21,7 @@
 #include <target/pmic.h>
 #include <platform/sfr.h>
 #include <platform/charger.h>
-#include <platform/fastboot.h>
+#include <lib/fastboot.h>
 #include <platform/xct.h>
 #include <dev/boot.h>
 #include <dev/usb/gadget.h>

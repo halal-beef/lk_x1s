@@ -28,7 +28,7 @@
 #include <platform/bl_sys_info.h>
 #include <platform/dram_training.h>
 #include <platform/mmu/mmu_func.h>
-#include <platform/fastboot.h>
+#include <lib/fastboot.h>
 #include <platform/uart.h>
 #include <part.h>
 

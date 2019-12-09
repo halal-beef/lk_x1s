@@ -15,7 +15,7 @@
 #include <part_gpt.h>
 #include <lib/console.h>
 #include <platform/fdt.h>
-#include <platform/fastboot.h>
+#include <lib/fastboot.h>
 #include <ufdt_overlay.h>
 
 #define BUFFER_SIZE 4096
