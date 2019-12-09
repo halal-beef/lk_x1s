@@ -17,7 +17,7 @@
 #include <platform/dfd.h>
 #include <platform/delay.h>
 #include <platform/dss_store_ramdump.h>
-#include <platform/fastboot.h>
+#include <lib/fastboot.h>
 #include <platform/gpio.h>
 #include <target/pmic.h>
 #include <platform/mmu/mmu_func.h>
