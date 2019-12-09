@@ -92,10 +92,12 @@ static void exynos_boot_task(const struct app_descriptor *app, void *args)
 #ifdef CONFIG_WDT_RECOVERY_USB_BOOT
 	clear_wdt_recovery_settings();
 #endif
-/*
+
+#ifdef CONFIG_AB_UPDATE
 	if (is_first_boot())
 		ab_update_slot_info_bootloader();
-*/
+#endif
+
 	/* check SMPL & WTSR */
 	chk_wtsr_smpl = chk_smpl_wtsr();
 	if (chk_wtsr_smpl == PMIC_DETECT_WTSR) {
