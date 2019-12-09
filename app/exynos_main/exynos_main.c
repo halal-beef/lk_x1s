@@ -31,6 +31,7 @@
 #include <platform/smc.h>
 #include <lib/font_display.h>
 #include <lib/logo_display.h>
+#include <target/exynos_key.h>
 
 #define CONFIG_PIT_IMAMGE_BASE 0x80100000
 #define CONFIG_FWBL1_IMAMGE_BASE 0x80200000
@@ -52,10 +53,7 @@ static void exynos_boot_task(const struct app_descriptor *app, void *args)
 {
 	unsigned int rst_stat = readl(EXYNOS_POWER_RST_STAT);
 	/* struct pit_entry *ptn; */
-	struct exynos_gpio_bank *bank = (struct exynos_gpio_bank *)EXYNOS9630_GPA1CON;
-	int vol_up_val;
 	int chk_wtsr_smpl;
-	int i;
 
 	print_lcd_update(FONT_WHITE, FONT_BLACK, "Board revision : 0x%X", board_rev);
 
@@ -66,15 +64,9 @@ static void exynos_boot_task(const struct app_descriptor *app, void *args)
 		return;
 	}
 
-	/* Volume up set Input & Pull up */
-	exynos_gpio_set_pull(bank, 0, GPIO_PULL_NONE);
-	exynos_gpio_cfg_pin(bank, 0, GPIO_INPUT);
-	for (i = 0; i < 10; i++) {
-		vol_up_val = exynos_gpio_get_value(bank, 0);
-		printf("Volume up key: %d\n", vol_up_val);
-	}
-	if (vol_up_val == 0) {
-		printf("Volume up key is pressed. Entering fastboot mode!\n");
+	exynos_key_init();
+
+	if ( exynos_key_check() == KEY_DETECT ) {
 		start_usb_gadget();
 		return;
 	}
