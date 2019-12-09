@@ -21,7 +21,7 @@
 #include <platform/interrupts.h>
 #include <platform/sfr.h>
 #include <platform/smc.h>
-#include <platform/pmic_s2mpu12.h>
+#include <dev/pmic_s2mpu12.h>
 #include <platform/if_pmic_s2mu106.h>
 #include <platform/fg_s2mu106.h>
 #include <platform/tmu.h>

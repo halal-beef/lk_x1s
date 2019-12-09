@@ -19,7 +19,7 @@
 #include <platform/dss_store_ramdump.h>
 #include <platform/fastboot.h>
 #include <platform/gpio.h>
-#include <platform/pmic_s2mpu12.h>
+#include <dev/pmic_s2mpu12.h>
 #include <platform/mmu/mmu_func.h>
 #include "../fastboot/fastboot.h"
 
