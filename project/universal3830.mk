@@ -24,6 +24,7 @@ MODULE_DEPS += \
 	external/lib/ufdt \
 	dev/adc \
 	dev/debug \
+	dev/power/pmic/s2mpu12 \
 
 GLOBAL_DEFINES += \
 	INPUT_GPT_AS_PT=1 \

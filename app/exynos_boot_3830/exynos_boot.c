@@ -18,7 +18,7 @@
 #include <platform/mmu/mmu_func.h>
 #include <lib/sysparam.h>
 #include <platform/wdt_recovery.h>
-#include <platform/pmic_s2mpu12.h>
+#include <dev/pmic_s2mpu12.h>
 #include <platform/sfr.h>
 #include <platform/charger.h>
 #include <platform/fastboot.h>

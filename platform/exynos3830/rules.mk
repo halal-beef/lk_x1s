@@ -17,7 +17,6 @@ MODULE_SRCS += \
 	$(LOCAL_DIR)/security/sb_api.c \
 	$(LOCAL_DIR)/security/cm_api.c \
 	$(LOCAL_DIR)/security/otp_v20.c \
-	$(LOCAL_DIR)/pmic/pmic_s2mpu12.c \
 	$(LOCAL_DIR)/pmic/if_pmic_s2mu106.c \
 	$(LOCAL_DIR)/pmic/fg_s2mu106.c \
 	$(LOCAL_DIR)/ab_update/ab_update.c \

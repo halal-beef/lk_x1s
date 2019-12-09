@@ -11,7 +11,7 @@
 #include <debug.h>
 #include <sys/types.h>
 #include <platform/delay.h>
-#include <platform/pmic_s2mpu12.h>
+#include <dev/pmic_s2mpu12.h>
 #include <platform/if_pmic_s2mu107.h>
 #include <dev/lk_acpm_ipc.h>
 #include <platform/gpio.h>
