@@ -3,6 +3,5 @@ MODULE := $(LOCAL_DIR)
 
 MODULE_SRCS += \
 	$(LOCAL_DIR)/exynos_boot.c \
-	$(LOCAL_DIR)/recovery.c
 
 include make/module.mk
