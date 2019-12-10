@@ -12,7 +12,7 @@
 #include <sys/types.h>
 #include <platform/delay.h>
 #include <dev/pmic_s2mpu12.h>
-#include <dev/if_pmic_s2mu106.h>
+#include <target/pmic.h>
 #include <dev/lk_acpm_ipc.h>
 #include <platform/gpio.h>
 #include <platform/sfr.h>
