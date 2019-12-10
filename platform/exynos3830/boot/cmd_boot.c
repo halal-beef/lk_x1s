@@ -350,7 +350,8 @@ static int bootargs_process(void)
 	}
 
 	/* Recovery */
-	if (readl(EXYNOS_POWER_SYSIP_DAT0) == REBOOT_MODE_RECOVERY) {
+	if ((readl(EXYNOS_POWER_SYSIP_DAT0) == REBOOT_MODE_RECOVERY) ||
+		   (readl(EXYNOS_POWER_SYSIP_DAT0) == REBOOT_MODE_FASTBOOT_USER)){
 		/* remove some bootargs to Set recovery boot mode */
 		if(remove_val("skip_initramfs", NULL))
 			printf("bootargs cannot delete, checkit: skip_initramfs\n");
@@ -659,7 +660,9 @@ int load_boot_images(void)
 	argv[3].u = RAMDISK_BASE;
 	argv[4].u = DT_BASE;
 
-	if (boot_val == REBOOT_MODE_RECOVERY) {
+	if (boot_val == REBOOT_MODE_RECOVERY ||
+		boot_val == REBOOT_MODE_FACTORY ||
+		boot_val == REBOOT_MODE_FASTBOOT_USER) {
 		argv[5].u = DTBO_BASE;
 		if (!ab_support)
 			sprintf(boot_part_name, "recovery");
@@ -789,6 +792,20 @@ int cmd_boot(int argc, const cmd_args *argv)
 
 	configure_dtb();
 	configure_ddi_id();
+
+	if (readl(EXYNOS_POWER_SYSIP_DAT0) == REBOOT_MODE_FASTBOOT_USER) {
+		void *part;
+		char command[32];
+
+		part = part_get("misc");
+		if (!part) {
+			printf("partition misc not found\n");
+			return -1;
+		}
+
+		memcpy(command, "boot-fastboot", 15);
+		part_write(part, (void *)command);
+	}
 
 #if 0
 	val = readl(EXYNOS9630_POWER_SYSIP_DAT0);
