@@ -15,5 +15,8 @@
 #include <dev/if_pmic_s2mu106.h>
 #include <dev/fg_s2mu106.h>
 
+void read_pmic_info(void);
+int chk_smpl_wtsr(void);
+
 #endif /*__S2MPU12_PMIC_H__*/
 
