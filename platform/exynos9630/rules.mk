@@ -20,7 +20,6 @@ MODULE_SRCS += \
 	$(LOCAL_DIR)/security/cm_api.c \
 	$(LOCAL_DIR)/security/otp_v20.c \
 	$(LOCAL_DIR)/speedy/speedy.c \
-	$(LOCAL_DIR)/pmic/pmic_s2mpu10_11.c \
 	$(LOCAL_DIR)/pmic/if_pmic_s2mu107.c \
 	$(LOCAL_DIR)/pmic/fg_s2mu107.c \
 	$(LOCAL_DIR)/ab_update/ab_update.c \
