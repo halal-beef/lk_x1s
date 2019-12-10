@@ -127,6 +127,7 @@ void pmic_enable_manual_reset(pmic_mrdt);
 void read_smpl_wtsr(unsigned char read_int1, unsigned char read_int2, unsigned char read_pwronsrc, unsigned char read_wtsr_smpl);
 int chk_smpl_wtsr_s2mpu12(void);
 int get_pmic_rtc_time(char *buf);
+void pmic_int_mask(unsigned int chan, unsigned int addr, unsigned int interrupt);
 
 #endif /*__S2MPU12_PMIC_H__*/
 
