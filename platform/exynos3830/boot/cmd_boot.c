@@ -599,6 +599,7 @@ mem_node_out:
 			part_read_partial(part, (void *)addr_r, 0, 8 * 1024);
 		}
 	}
+	set_usb_serialno();
 
 	if (b_hdr->cmdline[0] && (!b_hdr->cmdline[BOOT_ARGS_SIZE - 1])) {
 		noff = fdt_path_offset(fdt_dtb, "/chosen");
