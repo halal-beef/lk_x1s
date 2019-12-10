@@ -3,5 +3,8 @@ MODULE := $(LOCAL_DIR)
 
 MODULE_SRCS += \
 	$(LOCAL_DIR)/exynos_main.c \
+	$(LOCAL_DIR)/boot/cmd_boot.c \
+	$(LOCAL_DIR)/boot/cmd_display.c \
+	$(LOCAL_DIR)/boot/cmd_scatter_load_boot.c \
 
 include make/module.mk

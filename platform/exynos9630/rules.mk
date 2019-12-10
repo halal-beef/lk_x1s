@@ -9,9 +9,6 @@ MODULE_SRCS += \
 	$(LOCAL_DIR)/ufs.c \
 	$(LOCAL_DIR)/ufs-cal-9630.c \
 	$(LOCAL_DIR)/usb/usb.c \
-	$(LOCAL_DIR)/boot/cmd_scatter_load_boot.c \
-	$(LOCAL_DIR)/boot/cmd_boot.c \
-	$(LOCAL_DIR)/boot/cmd_display.c \
 	$(LOCAL_DIR)/security/smc_aarch64.c \
 	$(LOCAL_DIR)/security/ldfw.c \
 	$(LOCAL_DIR)/security/avb_ops.c \
