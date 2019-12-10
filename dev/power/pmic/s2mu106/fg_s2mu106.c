@@ -22,7 +22,7 @@
 #include <dev/fg_s2mu106.h>
 #include <dev/if_pmic_s2mu106.h>
 //#include <platform/pmic_s2mpu09.h>
-#include <platform/exynos9830.h>
+#include <platform/sfr.h>
 //#include <platform/wdt_recovery.h>
 
 #define min(a, b) (a) < (b) ? a : b

@@ -14,7 +14,7 @@
 #include <dev/if_pmic_s2mu106.h>
 #include <platform/gpio.h>
 #include <platform/interrupts.h>
-#include <platform/exynos9830.h>
+#include <platform/sfr.h>
 #include <reg.h>
 
 #define SMALL_CHARGER_CURRENT 100
