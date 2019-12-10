@@ -808,6 +808,14 @@ int cmd_boot(int argc, const cmd_args *argv)
 		part_write(part, (void *)command);
 	}
 
+	/*
+	 * Send SSU to UFS. Something wrong on SSU should not
+	 * affect kernel boot.
+	 */
+#ifndef CONFIG_NOT_SCSI
+	scsi_do_ssu();
+#endif
+
 #if 0
 	val = readl(EXYNOS9630_POWER_SYSIP_DAT0);
 	if (val == REBOOT_MODE_RECOVERY || val == REBOOT_MODE_FACTORY) {
