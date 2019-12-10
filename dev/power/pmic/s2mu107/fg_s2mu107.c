@@ -21,7 +21,7 @@
 #include <platform/delay.h>
 #include <dev/fg_s2mu107.h>
 #include <dev/if_pmic_s2mu107.h>
-#include <platform/exynos9630.h>
+#include <platform/sfr.h>
 #include <platform/wdt_recovery.h>
 
 
