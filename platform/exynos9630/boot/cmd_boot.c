@@ -61,7 +61,7 @@ static char verifiedbootstate[AVB_VBS_MAX_SIZE]="androidboot.verifiedbootstate="
 static void update_boot_reason(char *buf)
 {
 	u32 val = readl(CONFIG_RAMDUMP_REASON);
-	unsigned int rst_stat = readl(EXYNOS9630_POWER_RST_STAT);
+	unsigned int rst_stat = readl(EXYNOS_POWER_RST_STAT);
 
 	if (rst_stat & WARM_RESET)
 		snprintf(buf, 16, "hard_reset");
@@ -309,7 +309,7 @@ static int bootargs_process(void)
 	}
 
 	/* mode: Factory mode */
-	if (readl(EXYNOS9630_POWER_SYSIP_DAT0) == REBOOT_MODE_FACTORY) {
+	if (readl(EXYNOS_POWER_SYSIP_DAT0) == REBOOT_MODE_FACTORY) {
 		if (add_val("androidboot.mode", "sfactory")) {
 			printf("bootmode set sfactory failed\n");
 			return -1;
@@ -319,7 +319,7 @@ static int bootargs_process(void)
 	}
 
 	/* mode: Charger mode - decision : Pin reset && ACOK && !Factory mode */
-	if (get_charger_mode() && readl(EXYNOS9630_POWER_SYSIP_DAT0) != REBOOT_MODE_FACTORY) {
+	if (get_charger_mode() && readl(EXYNOS_POWER_SYSIP_DAT0) != REBOOT_MODE_FACTORY) {
 		if (add_val("androidboot.mode", "charger")) {
 			printf("bootmode set charger failed\n");
 			return -1;
@@ -342,8 +342,8 @@ static int bootargs_process(void)
 	}
 
 	/* Recovery */
-	if ((readl(EXYNOS9630_POWER_SYSIP_DAT0) == REBOOT_MODE_RECOVERY) ||
-		   (readl(EXYNOS9630_POWER_SYSIP_DAT0) == REBOOT_MODE_FASTBOOT_USER)) {
+	if ((readl(EXYNOS_POWER_SYSIP_DAT0) == REBOOT_MODE_RECOVERY) ||
+		   (readl(EXYNOS_POWER_SYSIP_DAT0) == REBOOT_MODE_FASTBOOT_USER)) {
 		/* remove some bootargs to Set recovery boot mode */
 		if(remove_val("skip_initramfs", NULL))
 			printf("bootargs cannot delete, checkit: skip_initramfs\n");
@@ -631,7 +631,7 @@ int load_boot_images(void)
 	unsigned int boot_val = 0;
 
 	ab_support = ab_update_support();
-	boot_val = readl(EXYNOS9630_POWER_SYSIP_DAT0);
+	boot_val = readl(EXYNOS_POWER_SYSIP_DAT0);
 	printf("%s: AB[%d], boot_val[0x%02X]\n", __func__, ab_support, boot_val);
 	if (ab_support)
 		print_lcd_update(FONT_WHITE, FONT_BLACK, "AB Update support");
@@ -718,7 +718,7 @@ int cmd_boot(int argc, const cmd_args *argv)
 
 	load_boot_images();
 
-	val = readl(EXYNOS9630_POWER_SYSIP_DAT0);
+	val = readl(EXYNOS_POWER_SYSIP_DAT0);
 	if (val == REBOOT_MODE_RECOVERY)
 		recovery_mode = 1;
 
@@ -743,7 +743,7 @@ int cmd_boot(int argc, const cmd_args *argv)
 			/* Delay for data write HW operation of ab_update_slot_info()
 				on AB_SLOTINFO_PART partition. */
 			mdelay(500);
-			writel(readl(EXYNOS9630_SYSTEM_CONFIGURATION) | 0x2, EXYNOS9630_SYSTEM_CONFIGURATION);
+			writel(readl(EXYNOS_POWER_SYSTEM_CONFIGURATION) | 0x2, EXYNOS_POWER_SYSTEM_CONFIGURATION);
 			do {
 				asm volatile("wfi");
 			} while(1);
@@ -754,7 +754,7 @@ int cmd_boot(int argc, const cmd_args *argv)
 	configure_dtb();
 	configure_ddi_id();
 
-	if (readl(EXYNOS9630_POWER_SYSIP_DAT0) == REBOOT_MODE_FASTBOOT_USER) {
+	if (readl(EXYNOS_POWER_SYSIP_DAT0) == REBOOT_MODE_FASTBOOT_USER) {
 		void *part;
 		char command[32];
 
