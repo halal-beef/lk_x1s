@@ -588,6 +588,14 @@ mem_node_out:
 		}
 	}
 	set_usb_serialno();
+
+	if (b_hdr->cmdline[0] && (!b_hdr->cmdline[BOOT_ARGS_SIZE - 1])) {
+		noff = fdt_path_offset (fdt_dtb, "/chosen");
+		np = fdt_getprop(fdt_dtb, noff, "bootargs", &len);
+		snprintf(str, BUFFER_SIZE, "%s %s", np, b_hdr->cmdline);
+		fdt_setprop(fdt_dtb, noff, "bootargs", str, strlen(str) + 1);
+	}
+
 	noff = fdt_path_offset (fdt_dtb, "/chosen");
 	np = fdt_getprop(fdt_dtb, noff, "bootargs", &len);
 	printf("\nbootargs: %s\n", np);
