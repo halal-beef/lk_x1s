@@ -788,7 +788,9 @@ int cmd_boot(int argc, const cmd_args *argv)
 	 * Send SSU to UFS. Something wrong on SSU should not
 	 * affect kerel boot.
 	 */
+#ifndef CONFIG_NOT_SCSI
 	scsi_do_ssu();
+#endif
 
 	/* notify EL3 Monitor end of bootloader */
 	exynos_smc(SMC_CMD_END_OF_BOOTLOADER, 0, 0, 0);
