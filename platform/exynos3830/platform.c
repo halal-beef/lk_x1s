@@ -291,12 +291,6 @@ void platform_init(void)
 			bl_sys->bl1_info.epbl_start * (UFS_BSIZE / MMC_BSIZE));
 #endif
 
-	if (*(unsigned int *)DRAM_BASE == 0xabcdef) {
-		pmic_init();
-		read_pmic_info();
-		s2mu106_charger_init();
-		fg_init_s2mu106();
-	}
 
 	if (*(unsigned int *)DRAM_BASE == 0xabcdef)
 		check_charger_connect();
