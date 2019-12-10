@@ -22,8 +22,8 @@
 #include <platform/sfr.h>
 #include <platform/smc.h>
 #include <dev/pmic_s2mpu12.h>
-#include <platform/if_pmic_s2mu106.h>
-#include <platform/fg_s2mu106.h>
+#include <dev/if_pmic_s2mu106.h>
+#include <dev/fg_s2mu106.h>
 #include <platform/tmu.h>
 #include <platform/ldfw.h>
 #include <platform/gpio.h>

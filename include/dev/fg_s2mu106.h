@@ -18,26 +18,26 @@
 #ifndef __FG_S2MU106_H__
 #define __FG_S2MU106_H__
 
-#define GPP1BASE_FG	(0x10430000)
-#define GPP1CON_FG		*(volatile unsigned int *)(GPP1BASE_FG + 0x20)
-#define GPP1DAT_FG		*(volatile unsigned int *)(GPP1BASE_FG + 0x24)
-#define GPP1PUD_FG		*(volatile unsigned int *)(GPP1BASE_FG + 0x28)
+#define GPP0BASE	(0x139b0000)
+#define GPP0CON		*(volatile unsigned int *)(GPP0BASE + 0x20)
+#define GPP0DAT		*(volatile unsigned int *)(GPP0BASE + 0x24)
+#define GPP0PUD		*(volatile unsigned int *)(GPP0BASE + 0x28)
 
-/* SDA: GPP1_0, SCL: GPP1_1 */
-#define GPIO_DAT_FG_S2MU106	GPP1DAT_FG
+/* SDA: GPP0_0, SCL: GPP0_1 */
+#define GPIO_DAT_FG_S2MU106	GPP0DAT
 #define GPIO_DAT_FG_SHIFT		(0)
-#define GPIO_PUD_FG_S2MU106	GPP1PUD_FG &= ~(0xff << (GPIO_DAT_FG_SHIFT*4))
+#define GPIO_PUD_FG_S2MU106	GPP0PUD &= ~(0xff << (GPIO_DAT_FG_SHIFT*4))
 
-#define IIC_S2MU106_FG_ESCL_Hi	GPP1DAT_FG |= (0x1 << (GPIO_DAT_FG_SHIFT+1))
-#define IIC_S2MU106_FG_ESCL_Lo	GPP1DAT_FG &= ~(0x1 << (GPIO_DAT_FG_SHIFT+1))
-#define IIC_S2MU106_FG_ESDA_Hi	GPP1DAT_FG |= (0x1 << GPIO_DAT_FG_SHIFT)
-#define IIC_S2MU106_FG_ESDA_Lo	GPP1DAT_FG &= ~(0x1 << GPIO_DAT_FG_SHIFT)
+#define IIC_S2MU106_FG_ESCL_Hi	GPP0DAT |= (0x1 << (GPIO_DAT_FG_SHIFT+1))
+#define IIC_S2MU106_FG_ESCL_Lo	GPP0DAT &= ~(0x1 << (GPIO_DAT_FG_SHIFT+1))
+#define IIC_S2MU106_FG_ESDA_Hi	GPP0DAT |= (0x1 << GPIO_DAT_FG_SHIFT)
+#define IIC_S2MU106_FG_ESDA_Lo	GPP0DAT &= ~(0x1 << GPIO_DAT_FG_SHIFT)
 
-#define IIC_S2MU106_FG_ESCL_INP	GPP1CON_FG &= ~(0xf << ((GPIO_DAT_FG_SHIFT+1)*4))
-#define IIC_S2MU106_FG_ESCL_OUTP	GPP1CON_FG = (GPP1CON_FG & ~(0xf << ((GPIO_DAT_FG_SHIFT+1)*4))) \
+#define IIC_S2MU106_FG_ESCL_INP	GPP0CON &= ~(0xf << ((GPIO_DAT_FG_SHIFT+1)*4))
+#define IIC_S2MU106_FG_ESCL_OUTP	GPP0CON = (GPP0CON & ~(0xf << ((GPIO_DAT_FG_SHIFT+1)*4))) \
 					| (0x1 << ((GPIO_DAT_FG_SHIFT+1)*4))
-#define IIC_S2MU106_FG_ESDA_INP	GPP1CON_FG &= ~(0xf << (GPIO_DAT_FG_SHIFT*4))
-#define IIC_S2MU106_FG_ESDA_OUTP	GPP1CON_FG = (GPP1CON_FG & ~(0xf << (GPIO_DAT_FG_SHIFT*4))) \
+#define IIC_S2MU106_FG_ESDA_INP	GPP0CON &= ~(0xf << (GPIO_DAT_FG_SHIFT*4))
+#define IIC_S2MU106_FG_ESDA_OUTP	GPP0CON = (GPP0CON & ~(0xf << (GPIO_DAT_FG_SHIFT*4))) \
 					 | (0x1 << (GPIO_DAT_FG_SHIFT*4))
 
 #define DELAY		100

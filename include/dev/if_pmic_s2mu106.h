@@ -11,26 +11,26 @@
 #ifndef __IF_PMIC_S2MU106_H__
 #define __IF_PMIC_S2MU106_H__
 
-#define GPP9BASE	(0x10730000)
-#define GPP9CON		*(volatile unsigned int *)(GPP9BASE + 0x80)
-#define GPP9DAT		*(volatile unsigned int *)(GPP9BASE + 0x84)
-#define GPP9PUD		*(volatile unsigned int *)(GPP9BASE + 0x88)
+#define GPP0BASE	(0x139b0000)
+#define GPP0CON		*(volatile unsigned int *)(GPP0BASE + 0x20)
+#define GPP0DAT		*(volatile unsigned int *)(GPP0BASE + 0x24)
+#define GPP0PUD		*(volatile unsigned int *)(GPP0BASE + 0x28)
 
-/* SDA: GPP9_6, SCL: GPP9_7 */
-#define GPIO_DAT_S2MU106	GPP9DAT
-#define GPIO_DAT_SHIFT		(6)
-#define GPIO_PUD_S2MU106	GPP9PUD &= ~(0xff << (GPIO_DAT_SHIFT*4))
+/* SDA: GPP0_0, SCL: GPP0_1 */
+#define GPIO_DAT_S2MU106	GPP0DAT
+#define GPIO_DAT_SHIFT		(0)
+#define GPIO_PUD_S2MU106	GPP0PUD &= ~(0xff << (GPIO_DAT_SHIFT*4))
 
-#define IIC_S2MU106_ESCL_Hi	GPP9DAT |= (0x1 << (GPIO_DAT_SHIFT+1))
-#define IIC_S2MU106_ESCL_Lo	GPP9DAT &= ~(0x1 << (GPIO_DAT_SHIFT+1))
-#define IIC_S2MU106_ESDA_Hi	GPP9DAT |= (0x1 << GPIO_DAT_SHIFT)
-#define IIC_S2MU106_ESDA_Lo	GPP9DAT &= ~(0x1 << GPIO_DAT_SHIFT)
+#define IIC_S2MU106_ESCL_Hi	GPP0DAT |= (0x1 << (GPIO_DAT_SHIFT+1))
+#define IIC_S2MU106_ESCL_Lo	GPP0DAT &= ~(0x1 << (GPIO_DAT_SHIFT+1))
+#define IIC_S2MU106_ESDA_Hi	GPP0DAT |= (0x1 << GPIO_DAT_SHIFT)
+#define IIC_S2MU106_ESDA_Lo	GPP0DAT &= ~(0x1 << GPIO_DAT_SHIFT)
 
-#define IIC_S2MU106_ESCL_INP	GPP9CON &= ~(0xf << ((GPIO_DAT_SHIFT+1)*4))
-#define IIC_S2MU106_ESCL_OUTP	GPP9CON = (GPP9CON & ~(0xf << ((GPIO_DAT_SHIFT+1)*4))) \
+#define IIC_S2MU106_ESCL_INP	GPP0CON &= ~(0xf << ((GPIO_DAT_SHIFT+1)*4))
+#define IIC_S2MU106_ESCL_OUTP	GPP0CON = (GPP0CON & ~(0xf << ((GPIO_DAT_SHIFT+1)*4))) \
 					| (0x1 << ((GPIO_DAT_SHIFT+1)*4))
-#define IIC_S2MU106_ESDA_INP	GPP9CON &= ~(0xf << (GPIO_DAT_SHIFT*4))
-#define IIC_S2MU106_ESDA_OUTP	GPP9CON = (GPP9CON & ~(0xf << (GPIO_DAT_SHIFT*4))) \
+#define IIC_S2MU106_ESDA_INP	GPP0CON &= ~(0xf << (GPIO_DAT_SHIFT*4))
+#define IIC_S2MU106_ESDA_OUTP	GPP0CON = (GPP0CON & ~(0xf << (GPIO_DAT_SHIFT*4))) \
 					| (0x1 << (GPIO_DAT_SHIFT*4))
 
 #define DELAY 100
@@ -95,6 +95,7 @@ void muic_sw_usb(void);
 void muic_sw_uart(void);
 int s2mu106_muic_get_vbus(void);
 void init_muic_interrupt(void);
+
 void s2mu106_charger_set_mode(int mode);
 int s2mu106_charger_get_mode(void);
 void s2mu106_charger_reg_init(void);
