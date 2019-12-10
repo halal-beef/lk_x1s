@@ -13,7 +13,7 @@
 #include <platform/speedy.h>
 #include <platform/delay.h>
 #include <dev/pmic_s2mpu10_11.h>
-#include <platform/if_pmic_s2mu107.h>
+#include <dev/if_pmic_s2mu107.h>
 #include <dev/lk_acpm_ipc.h>
 #include <platform/gpio.h>
 #include <platform/exynos9630.h>
