@@ -11,7 +11,7 @@
 #include <debug.h>
 #include <sys/types.h>
 #include <platform/delay.h>
-#include <platform/if_pmic_s2mu107.h>
+#include <dev/if_pmic_s2mu107.h>
 #include <platform/gpio.h>
 #include <platform/interrupts.h>
 #include <platform/exynos9630.h>

@@ -19,8 +19,8 @@
 #include <debug.h>
 #include <sys/types.h>
 #include <platform/delay.h>
-#include <platform/fg_s2mu107.h>
-#include <platform/if_pmic_s2mu107.h>
+#include <dev/fg_s2mu107.h>
+#include <dev/if_pmic_s2mu107.h>
 #include <platform/exynos9630.h>
 #include <platform/wdt_recovery.h>
 
