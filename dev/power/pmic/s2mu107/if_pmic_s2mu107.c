@@ -14,7 +14,7 @@
 #include <dev/if_pmic_s2mu107.h>
 #include <platform/gpio.h>
 #include <platform/interrupts.h>
-#include <platform/exynos9630.h>
+#include <platform/sfr.h>
 #include <reg.h>
 
 #define m_delay(a) u_delay((a) * 1000)
