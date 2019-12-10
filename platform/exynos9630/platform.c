@@ -312,7 +312,6 @@ void platform_init(void)
 {
 	unsigned int rst_stat = readl(EXYNOS9630_POWER_RST_STAT);
 	u32 ret = 0;
-	unsigned char reg;
 
 	display_flexpmu_dbg();
 	display_acpm_version();
@@ -326,26 +325,6 @@ void platform_init(void)
 	printf("bootloader partition start block(512 Byte): %d\n",
 			bl_sys->bl1_info.epbl_start * (UFS_BSIZE / MMC_BSIZE));
 #endif
-
-	if (*(unsigned int *)DRAM_BASE == 0xabcdef) {
-		pmic_init();
-		read_pmic_info();
-		s2mu107_sc_init();
-		fg_init_s2mu107();
-
-		/* UFS manually always-on */
-		reg = 0xEC;
-		i3c_write(0, 1, 0x46, reg);
-		reg = 0;
-		i3c_read(0, 1, 0x46, &reg);
-		printf("LDO 17 set! value : %08x\n" ,reg);
-
-		reg = 0xEE;
-		i3c_write(0, 1, 0x47, reg);
-		reg = 0;
-		i3c_read(0, 1, 0x47, &reg);
-		printf("LDO 18 set! value : %08xx\n" ,reg);
-	}
 
 	if (*(unsigned int *)DRAM_BASE == 0xabcdef)
 		check_charger_connect();
