@@ -21,5 +21,6 @@ MODULE_SRCS += \
 	$(LOCAL_DIR)/dpu_panels/s6e3ha9_lcd_ctrl.c \
 	$(LOCAL_DIR)/dpu_panels/s6e3ha9_mipi_lcd.c \
 	$(LOCAL_DIR)/dpu_panels/lcd_module.c \
+	$(LOCAL_DIR)/pmic/pmic.c \
 
 include make/module.mk

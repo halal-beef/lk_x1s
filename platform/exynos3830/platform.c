@@ -293,7 +293,7 @@ void platform_init(void)
 
 	if (*(unsigned int *)DRAM_BASE == 0xabcdef) {
 		pmic_init();
-		read_pmic_info_s2mpu12();
+		read_pmic_info();
 		s2mu106_charger_init();
 		fg_init_s2mu106();
 	}
