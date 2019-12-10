@@ -341,6 +341,14 @@ static int bootargs_process(void)
 		print_lcd_update(FONT_GREEN, FONT_BLACK, "AB Slot suffix set %s", buf);
 	}
 
+	/* Add Board_rev to bootargs */
+	memset(buf, 0, sizeof(buf));
+	snprintf(buf, 5, "0x%x", board_rev);
+	if (add_val("revision", buf)) {
+		printf("Board Revision set failed\n");
+		return -1;
+	}
+
 	/* Recovery */
 	if ((readl(EXYNOS_POWER_SYSIP_DAT0) == REBOOT_MODE_RECOVERY) ||
 		   (readl(EXYNOS_POWER_SYSIP_DAT0) == REBOOT_MODE_FASTBOOT_USER)) {
