@@ -160,6 +160,15 @@ void read_pmic_info_s2mpu12 (void)
 	printf("S2MPU12_PM_LDO28_CTRL: 0x%x\n", read_ldo28_ctrl);
 	printf("S2MPU12_RTC_WTSR_SMPL : 0x%x\n", read_wtsr_smpl);
 
+	read_smpl_wtsr(read_int1, read_int2, read_pwronsrc, read_wtsr_smpl);
+
+	get_pmic_rtc_time(NULL);
+
+	return;
+}
+
+void read_smpl_wtsr(unsigned char read_int1, unsigned char read_int2, unsigned char read_pwronsrc, unsigned char read_wtsr_smpl)
+{
 	if ((read_pwronsrc & (1 << 7)) && (read_int2 & (1 << 5)) && !(read_int1 & (1 << 7))) {
 		/* WTSR detect condition - WTSR_ON && WTSR_INT && ! MRB_INT */
 		chk_wtsr_smpl = PMIC_DETECT_WTSR;
@@ -173,7 +182,7 @@ void read_pmic_info_s2mpu12 (void)
 	}
 
 	read_int_first = 1;
-	get_pmic_rtc_time(NULL);
+	return;
 }
 
 int chk_smpl_wtsr_s2mpu12(void)

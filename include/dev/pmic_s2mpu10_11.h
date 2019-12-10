@@ -149,6 +149,7 @@ typedef enum {
 void pmic_init(void);
 void pmic_enable_manual_reset(pmic_mrdt);
 void read_pmic_info_s2mpu10(void);
+void read_smpl_wtsr(unsigned char read_int1, unsigned char read_int2, unsigned char read_pwronsrc, unsigned char read_wtsr_smpl);
 int chk_smpl_wtsr_s2mpu10(void);
 int get_pmic_rtc_time(char *buf);
 
