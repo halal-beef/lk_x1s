@@ -25,6 +25,7 @@ MODULE_DEPS += \
 	dev/acpm_ipc \
 	dev/debug \
 	dev/adc \
+	dev/power/pmic/s2mpu10_11 \
 
 GLOBAL_DEFINES += \
 	INPUT_GPT_AS_PT=1 \
