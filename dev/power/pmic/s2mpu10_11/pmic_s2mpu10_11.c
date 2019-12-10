@@ -16,7 +16,7 @@
 #include <dev/if_pmic_s2mu107.h>
 #include <dev/lk_acpm_ipc.h>
 #include <platform/gpio.h>
-#include <platform/exynos9630.h>
+#include <platform/sfr.h>
 
 static int chk_wtsr_smpl = 0;
 static int read_int_first = 0;
