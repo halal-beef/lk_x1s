@@ -16,6 +16,7 @@
 #include <lib/bio.h>
 #include <lib/console.h>
 #include <lib/font_display.h>
+#include <lib/fdtapi.h>
 #include <dev/boot.h>
 #include <dev/rpmb.h>
 #include <dev/usb/gadget.h>
@@ -84,7 +85,6 @@ struct bootargs_prop {
 };
 static struct bootargs_prop prop[64] = { { {0, }, {0, } }, };
 static int prop_cnt = 0;
-extern char dtbo_idx[4];
 
 static int bootargs_init(void)
 {
@@ -294,11 +294,17 @@ static void remove_string_from_bootargs(const char *str)
 static int bootargs_process(void)
 {
 	char buf[16];
+	int local_dtbo_idx;
 	int ret = 0;
 
 	/* Below console value can be used for bootargs change */
 	/* update_val("console", "ttySAC0,115200n8"); */
-	update_val("androidboot.dtbo_idx", dtbo_idx);
+
+	/* Update dtbo_idx value */
+	memset(buf, 0, sizeof(buf));
+	local_dtbo_idx = get_selected_dtbo_idx();
+	snprintf(buf, 4, "%d", local_dtbo_idx);
+	update_val("androidboot.dtbo_idx", buf);
 
 	/* reason */
 	memset(buf, 0, sizeof(buf));
