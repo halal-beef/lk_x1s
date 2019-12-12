@@ -18,4 +18,7 @@
 
 #define VOLDOWN_GPIOCON EXYNOS3830_GPA1CON
 #define VOLDOWN_BIT	0
+
+#define CONFIG_USE_RPMB
+#define USE_MMC0
 #endif /*__BOARD_INFO_H__ */
