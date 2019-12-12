@@ -21,10 +21,17 @@
 struct fdt_header *fdt_dtb;
 struct dt_table_header *dtbo_table;
 struct fdt_header *fdt_dpm;
-int dtbo_idx = -1;
+int dtbo_idx = -EINVAL;
 
+/*
+ * function dependency : to get exact dtbo_idx value,
+ * get_selected_dtbo_idx function must be referenced after merge_dto_to_main_dtb function
+ */
 int get_selected_dtbo_idx(void)
 {
+	if (dtbo_idx == -EINVAL)
+		printf("%s: dtbo_idx is not initialized (%d)", __func__, dtbo_idx);
+
 	return dtbo_idx;
 }
 
@@ -53,9 +60,10 @@ int merge_dto_to_main_dtb(unsigned int board_id, unsigned int board_rev)
 		u32 rev = fdt32_to_cpu(dt_entry->rev);
 
 		if ((id == board_id) && (rev == board_rev)) {
-			printf("DTBO: id: 0x%x, rev: 0x%x\n", id, rev);
-			print_lcd_update(FONT_YELLOW, FONT_BLACK, "DTBO: id: 0x%x, rev: 0x%x\n", id, rev);
 			dtbo_idx = i;
+			printf("DTBO: id: 0x%x, rev: 0x%x, dtbo_idx: %d\n", id, rev, dtbo_idx);
+			print_lcd_update(FONT_YELLOW, FONT_BLACK,
+			       "DTBO: id: 0x%x, rev: 0x%x, dtbo_idx: %d", id, rev, dtbo_idx);
 			break;
 		}
 	}
