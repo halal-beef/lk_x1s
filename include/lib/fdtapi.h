@@ -10,6 +10,7 @@
 
 #ifndef __FDTAPI_H__
 #define __FDTAPI_H__
+int get_selected_dtbo_idx(void);
 int merge_dto_to_main_dtb(unsigned int board_id, unsigned int board_rev);
 int resize_dt(unsigned int sz);
 int make_fdt_node(const char *path, char *node);
