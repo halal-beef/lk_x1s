@@ -23,6 +23,11 @@
 
 #define TIMEOUT	100000
 
+const u32 dbg_base[NR_CPUS] = {
+	0x16410000, 0x16510000, 0x16610000, 0x16710000,
+	0x16810000, 0x16910000, 0x16A10000, 0x16B10000
+};
+
 static inline void pmu_set_bit_atomic(u32 offset, u32 bit)
 {
         writel(bit, EXYNOS_PMU_BASE + (offset | 0xc000));
@@ -127,7 +132,6 @@ static void dfd_set_cache_flush_level(void)
 				cl1_on = cpu;
 		}
 		writel(stat, CONFIG_RAMDUMP_GPR_POWER_STAT + offset);
-		printf("Core%llu: Initial policy - Cache Flush Level %llu\n", cpu, stat);
 	}
 
 	/* conclude core which runs cache flush level 2 in little cluster */
@@ -141,12 +145,10 @@ static void dfd_set_cache_flush_level(void)
 
 	stat = val;
 	writel(stat, CONFIG_RAMDUMP_GPR_POWER_STAT + (cl0_on * REG_OFFSET));
-	printf("Core%d: Cache Flush Level changed => %llu\n", cl0_on, stat);
 
 	if (cl1_on >= 0) {
 		stat = FLUSH_LEVEL3;
 		writel(stat, CONFIG_RAMDUMP_GPR_POWER_STAT + (cl1_on * REG_OFFSET));
-		printf("Core%d: Cache Flush Level changed => %llu\n", cl1_on, stat);
 	}
 }
 
@@ -212,6 +214,268 @@ static void dfd_clear_reset_disable(void)
 	pmu_clr_bit_atomic(PMU_CL1_NCPU_OUT_OFFSET, NCPU_CLR_DBGL3RSTDIS);
 }
 
+static bool dfd_is_cpu_power_up(u32 cpu)
+{
+	u32 pmu_status = readl(EXYNOS_PMU_BASE + PMU_CPU_STATUS + pmu_cpu_offset(cpu));
+
+	return ((pmu_status & PMU_CPU_STAT_MASK) == PMU_CPU_ON);
+}
+
+static bool dfd_is_cpu_halted(u32 cpu)
+{
+	u32 dbg_prsr = readl(dbg_base[cpu] + DBGPRSR);
+
+	return ((dbg_prsr & (DBGPRSR_HALTED | DBGPRSR_R | DBGPRSR_PU))
+				== (DBGPRSR_HALTED | DBGPRSR_PU));
+}
+
+static void dfd_os_unlock(u32 cpu)
+{
+	writel(MAGIC, dbg_base[cpu] + DBGLAR);
+	writel(OS_UNLOCK, dbg_base[cpu] + DBGOSLAR);
+}
+
+static void dfd_enter_debug_state(u32 cpu)
+{
+	writel(MAGIC, dbg_base[cpu] + CTI_OFFSET + DBGLAR);
+	writel(0x0, dbg_base[cpu] + CTI_OFFSET + CTIGATE);
+	writel(CTICH0, dbg_base[cpu] + CTI_OFFSET + CTIOUTEN(0));
+	writel(CTICH1, dbg_base[cpu] + CTI_OFFSET + CTIOUTEN(1));
+	writel(CTIAPPSETCH0, dbg_base[cpu] + CTI_OFFSET + CTIAPPSET);
+	writel(CTICONTROLEN, dbg_base[cpu] + CTI_OFFSET + CTICONTROL);
+}
+
+static void dfd_exit_debug_state(u32 cpu)
+{
+	writel(CTIAPPSETCH0, dbg_base[cpu] + CTI_OFFSET + CTIAPPCLEAR);
+	writel(CTICH0, dbg_base[cpu] + CTI_OFFSET + CTIINTACK);
+	writel(CTICH1, dbg_base[cpu] + CTI_OFFSET + CTIAPPPULSE);
+	writel(!CTICONTROLEN, dbg_base[cpu] + CTI_OFFSET + CTICONTROL);
+}
+
+static u32 dfd_check_edscr(u32 cpu)
+{
+	union EDSCR_REG edscr_reg;
+
+	do {
+		edscr_reg.word = readl(dbg_base[cpu] + EDSCR_OFFSET);
+	} while (edscr_reg.bits.ITE == 0);
+
+	return edscr_reg.word;
+}
+
+static void dfd_write_instruction(u32 instr, u32 cpu)
+{
+	union EDSCR_REG edscr_reg;
+	edscr_reg.word = dfd_check_edscr(cpu);
+	if (edscr_reg.bits.ERR | edscr_reg.bits.TXU | edscr_reg.bits.RXO)
+		writel(1 << 2, dbg_base[cpu] + DBGRCR);
+
+	writel(instr, dbg_base[cpu] + ITR_OFFSET);
+}
+
+static u64 dfd_read_gpr_aarch64(u32 gpr_number, u32 cpu)
+{
+	u32 instr;
+	u32 low;
+	u64 high;
+
+	instr = MSR_DTR_XX + gpr_number;
+	dfd_write_instruction(instr, cpu);
+	dfd_check_edscr(cpu);
+	high = readl(dbg_base[cpu] + DBGDTRRX_OFFSET);
+	low = readl(dbg_base[cpu] + DBGDTRTX_OFFSET);
+
+	return (high << 32) | low;
+}
+
+static void dfd_write_gpr_aarch64(u64 value, u32 gpr_number, u32 cpu)
+{
+	u32 instr;
+	u32 low = value;
+	u32 high = value >> 32;
+
+	writel(high, dbg_base[cpu] + DBGDTRTX_OFFSET);
+	writel(low, dbg_base[cpu] + DBGDTRRX_OFFSET);
+	instr = MRS_XX_DTR + gpr_number;
+	dfd_write_instruction(instr, cpu);
+	dfd_check_edscr(cpu);
+}
+
+static u64 dfd_read_spr(u32 addr, u32 cpu)
+{
+	u32 instr_mrs;
+	union SPR_ADDR_REG spr_addr;
+	u64 temp_reg, result_reg;
+
+	temp_reg = dfd_read_gpr_aarch64(0, cpu);
+	spr_addr.word = addr;
+	instr_mrs = (0xd52 << 20) | ((spr_addr.bits.OP0) << 19) |
+		(spr_addr.bits.OP1 << 16) | (spr_addr.bits.CRn << 12) |
+		(spr_addr.bits.CRm << 8) | (spr_addr.bits.OP2 << 5);
+	dfd_write_instruction(instr_mrs, cpu);
+	dfd_check_edscr(cpu);
+	result_reg = dfd_read_gpr_aarch64(0, cpu);
+	dfd_write_gpr_aarch64(temp_reg, 0, cpu);
+
+	return result_reg;
+}
+
+static void dfd_write_spr(u64 value, u32 addr, u32 cpu)
+{
+	u32 instr_msr;
+	union SPR_ADDR_REG spr_addr;
+	u64 temp_reg;
+
+	temp_reg = dfd_read_gpr_aarch64(0, cpu);
+	spr_addr.word = addr;
+	dfd_write_gpr_aarch64(value, 0, cpu);
+	instr_msr = (0xd50 << 20) | ((spr_addr.bits.OP0) << 19) |
+		(spr_addr.bits.OP1 << 16) | (spr_addr.bits.CRn << 12) |
+		(spr_addr.bits.CRm << 8) | (spr_addr.bits.OP2 << 5);
+	dfd_write_instruction(instr_msr, cpu);
+	dfd_check_edscr(cpu);
+	dfd_write_gpr_aarch64(temp_reg, 0, cpu);
+}
+
+static void dfd_arrdump_ananke_dcache(u32 cpu, u32 **parray_offset)
+{
+	u32 set, way, offset;
+	u64 tag0, tag1;
+	u64 data0, data1;
+	union CDBGDCT_REG cdbgdct;
+
+	for (set = 0; set < AN_DC_SET_END; set++) {
+		for (way = 0; way < AN_DC_WAY_END; way++) {
+			cdbgdct.word = 0;
+			cdbgdct.bits.SET = set;
+			cdbgdct.bits.WAY = way;
+
+			dfd_write_spr(cdbgdct.word, CDBGDCT_EL3, cpu);
+			tag0 = dfd_read_spr(CDBGDR0_EL3, cpu);
+			tag1 = dfd_read_spr(CDBGDR1_EL3, cpu);
+
+			writel((u32)tag0, (*parray_offset)++);
+			writel((u32)tag1, (*parray_offset)++);
+
+			for (offset = 0; offset < AN_DC_OFFSET_END; offset++) {
+				cdbgdct.bits.OFFSET = offset;
+				dfd_write_spr(cdbgdct.word, CDBGDCD_EL3, cpu);
+				data0 = dfd_read_spr(CDBGDR0_EL3, cpu);
+				data1 = dfd_read_spr(CDBGDR1_EL3, cpu);
+
+				writel((u32)data0, (*parray_offset)++);
+				writel((u32)data1, (*parray_offset)++);
+			}
+		}
+	}
+}
+
+static void dfd_arrdump_ananke_icache(u32 cpu, u32 **parray_offset)
+{
+	u32 set, way, offset;
+	u64 tag0;
+	u64 data0, data1;
+	union CDBGICT_REG cdbgict;
+
+	for (set = 0; set < AN_IC_SET_END; set++) {
+		for (way = 0; way < AN_IC_WAY_END; way++) {
+			cdbgict.word = 0;
+			cdbgict.bits.SET = set;
+			cdbgict.bits.WAY = way;
+			dfd_write_spr(cdbgict.word, CDBGICT_EL3, cpu);
+
+			tag0 = dfd_read_spr(CDBGDR0_EL3, cpu);
+			writel((u32)tag0, (*parray_offset)++);
+
+			for (offset = 0; offset < AN_IC_OFFSET_END; offset++) {
+				cdbgict.bits.OFFSET = offset;
+				dfd_write_spr(cdbgict.word, CDBGICD_EL3, cpu);
+				data0 = dfd_read_spr(CDBGDR0_EL3, cpu);
+				data1 = dfd_read_spr(CDBGDR1_EL3, cpu);
+
+				writel((u32)data0, (*parray_offset)++);
+				writel((u32)data1, (*parray_offset)++);
+			}
+		}
+	}
+}
+
+static void dfd_arrdump_ananke_l2tlb(u32 cpu, u32 **parray_offset)
+{
+	u32 set, way;
+	u64 tag0, tag1, tag2;
+	u64 data0, data1;
+	union CDBGTT_REG cdbgtt;
+
+	for (set = 0; set < AN_L2TLB_SET_END; set++) {
+		for (way = 0; way < AN_L2TLB_WAY_END; way++) {
+			cdbgtt.word = 0;
+			cdbgtt.bits.INDEX = set;
+			cdbgtt.bits.WAY = way;
+
+			dfd_write_spr(cdbgtt.word, CDBGTT_EL3, cpu);
+			tag0 = dfd_read_spr(CDBGDR0_EL3, cpu);
+			tag1 = dfd_read_spr(CDBGDR1_EL3, cpu);
+			tag2 = dfd_read_spr(CDBGDR2_EL3, cpu);
+
+			writel((u32)tag0, (*parray_offset)++);
+			writel((u32)tag1, (*parray_offset)++);
+			writel((u32)tag2, (*parray_offset)++);
+
+			dfd_write_spr(cdbgtt.word, CDBGTD_EL3, cpu);
+			data0 = dfd_read_spr(CDBGDR0_EL3, cpu);
+			data1 = dfd_read_spr(CDBGDR1_EL3, cpu);
+
+			writel((u32)data0, (*parray_offset)++);
+			writel((u32)data1, (*parray_offset)++);
+		}
+	}
+}
+
+static int dfd_ananke_arrays(int cpu)
+{
+	u32 *array_offset, ret = 0;
+	union EDSCR_REG	edscr;
+	u64 dlr_el0 = 0;
+	u64 dspsr_el0 = 0;
+
+	dfd_enter_debug_state(cpu);
+	mdelay(100);
+	if (dfd_is_cpu_power_up(cpu) && dfd_is_cpu_halted(cpu)) {
+		dfd_os_unlock(cpu);
+
+		edscr.word = dfd_check_edscr(cpu);
+		if (edscr.bits.EL != 0x3) {
+			dlr_el0 = dfd_read_spr(DLR_EL0, cpu);
+			dspsr_el0 = dfd_read_spr(DSPSR_EL0, cpu);
+			dfd_write_instruction(DCPS3, cpu);
+		}
+		array_offset=(u32*)(AN_DUMP_ADDR + (AN_CORE_DUMP_SIZE * cpu));
+		dfd_arrdump_ananke_dcache(cpu, &array_offset);
+		dfd_arrdump_ananke_icache(cpu, &array_offset);
+		dfd_arrdump_ananke_l2tlb(cpu, &array_offset);
+
+		if (edscr.bits.EL != 0x3) {
+			if (edscr.bits.EL == 0x2)
+				dfd_write_instruction(DCPS2, cpu);
+			else
+				dfd_write_instruction(DCPS1, cpu);
+
+			dfd_write_spr(dlr_el0, DLR_EL0, cpu);
+			dfd_write_spr(dspsr_el0, DSPSR_EL0, cpu);
+		}
+
+		ret = 0;
+	} else {
+		ret = 1;
+	}
+	dfd_exit_debug_state(cpu);
+	mdelay(100);
+
+	return ret;
+}
+
 void dfd_soc_run_post_processing(void)
 {
 	u32 cpu_logical_map[NR_CPUS] = {
@@ -265,6 +529,9 @@ void dfd_soc_run_post_processing(void)
 	}
 
 	for (cpu = 0; cpu < NR_CPUS; cpu++) {
+		if (cpu && cpu_mask & (1 << cpu))
+			dfd_ananke_arrays(cpu);
+
 		val = readl(CONFIG_RAMDUMP_WAKEUP_WAIT);
 		writel(val | (1 << cpu), CONFIG_RAMDUMP_WAKEUP_WAIT);
 		if (cpu == 0)
