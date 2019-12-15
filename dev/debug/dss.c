@@ -82,12 +82,13 @@ void dss_boot_cnt(void)
 
 static void dss_get_items(void)
 {
+	u32 rst_stat = readl(EXYNOS_POWER_RST_STAT);
 	char path[64];
 	u32 ret[8];
 	u32 i;
 
-	if (readl(CONFIG_RAMDUMP_DSS_ITEM_INFO) == 0x01234567
-	    && readl(CONFIG_RAMDUMP_DSS_ITEM_INFO + 0x4) == 0x89ABCDEF) {
+	if (!(rst_stat & PIN_RESET) && (readl(CONFIG_RAMDUMP_DSS_ITEM_INFO) == 0x01234567
+	    && readl(CONFIG_RAMDUMP_DSS_ITEM_INFO + 0x4) == 0x89ABCDEF)) {
 		dss_bl_p = (struct dss_bl *)CONFIG_RAMDUMP_DSS_ITEM_INFO;
 	} else {
 		load_boot_images();
