@@ -166,12 +166,14 @@ void dfd_secondary_cpu_cache_flush(u32 cpu)
 {
 	u32 val;
 
-	dfd_get_gpr(cpu);
-	do {
-		val = readl(CONFIG_RAMDUMP_WAKEUP_WAIT);
-		if (val & (1 << cpu))
-			break;
-	} while (1);
+	if (cpu) {
+		dfd_get_gpr(cpu);
+		do {
+			val = readl(CONFIG_RAMDUMP_WAKEUP_WAIT);
+			if (val & (1 << cpu))
+				break;
+		} while (1);
+	}
 
 	/* Get Cache Flush Level */
 	val = readl(CONFIG_RAMDUMP_GPR_POWER_STAT + (cpu * REG_OFFSET));
@@ -499,6 +501,9 @@ void dfd_soc_run_post_processing(void)
 	dfd_set_dump_en(0);
 	dfd_clear_reset_disable();
 
+	writel(0, CONFIG_RAMDUMP_DUMP_GPR_WAIT);
+	writel(0, CONFIG_RAMDUMP_WAKEUP_WAIT);
+
 	printf("---------------------------------------------------------\n");
 	printf("Watchdog or Warm Reset Detected.\n");
 
@@ -507,7 +512,6 @@ void dfd_soc_run_post_processing(void)
 	dfd_get_gpr(0);
 
 	//llc_flush_disable();
-
 	dfd_set_cache_flush_level();
 	//Wake up secondary CPUs.
 	for (cpu = 0; cpu < NR_CPUS; cpu++) {
