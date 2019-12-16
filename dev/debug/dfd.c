@@ -93,6 +93,35 @@ void dfd_display_core_stat(void)
 	int val;
 	u32 ret;
 
+	printf("Core stat at previous(IRAM)\n");
+	for (val = 0; val < NR_CPUS; val++) {
+		ret = readl(CORE_STAT + (val * REG_OFFSET));
+		printf("Core%d: ", val);
+		switch (ret) {
+			case RUNNING:
+				printf("Running\n");
+				break;
+			case RESET:
+				printf("Reset\n");
+				break;
+			case RESERVED:
+				printf("Reserved\n");
+				break;
+			case HOTPLUG:
+				printf("Hotplug\n");
+				break;
+			case C2_STATE:
+				printf("C2\n");
+				break;
+			case CLUSTER_OFF:
+				printf("CLUSTER_OFF\n");
+				break;
+			default:
+				printf("Unknown: 0x%x\n", ret);
+				break;
+		}
+	}
+
 	printf("Core stat at previous(KERNEL)\n");
 	for (val = 0; val < NR_CPUS; val++) {
 		ret = readl(CONFIG_RAMDUMP_CORE_POWER_STAT + (val * REG_OFFSET));
