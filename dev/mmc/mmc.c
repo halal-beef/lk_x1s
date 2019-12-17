@@ -1188,6 +1188,7 @@ int mmc_boot_sd_tuning(struct mmc *mmc)
 	int mask_bit[8] = { 9, 7, 6, 5, 3, 2, 1, 0};
 	struct mmc_cmd cmd;
 	struct mmc_data data;
+	int err = 0;
 
 	/* basic check */
 	if (mmc == NULL)
@@ -1223,6 +1224,7 @@ int mmc_boot_sd_tuning(struct mmc *mmc)
 		max_index = 0;
 		max = 16;
 		printf("tuning pattern all pass\n");
+		err = ERR_GENRERIC;
 		goto out;
 	}
 
@@ -1457,6 +1459,7 @@ static status_t mmc_rpmb_bwrite(struct bdev *dev, const void *buf, bnum_t block,
 	struct mmc *mmc = (struct mmc *)mdev->mmc;
 	struct mmc_cmd cmd;
 	struct mmc_data data;
+	int ret = NO_ERROR;
 	int mmc_return = NO_ERROR;
 	u32 backup;
 
@@ -1464,7 +1467,8 @@ static status_t mmc_rpmb_bwrite(struct bdev *dev, const void *buf, bnum_t block,
 		mmc_return = mmc_select_partition(mdev, mmc);
 		if (mmc_return != NO_ERROR) {
 			printf("Select partition failed\n");
-			return mmc_return;
+			ret = mmc_return;
+			goto part_change;
 		}
 	}
 
@@ -1495,9 +1499,11 @@ static status_t mmc_rpmb_bwrite(struct bdev *dev, const void *buf, bnum_t block,
 	mmc_return = mmc_send_command(mmc, &cmd);
 	if (mmc_return != NO_ERROR) {
 		printf("mmc fail to send write cmd\n");
-		return mmc_return;
+		ret = mmc_return;
+		goto part_change;
 	}
 
+part_change:
 	if (mdev->partition != 0) {
 		backup = mdev->partition;
 		mdev->partition = 0;
@@ -1505,13 +1511,11 @@ static status_t mmc_rpmb_bwrite(struct bdev *dev, const void *buf, bnum_t block,
 		mdev->partition = backup;
 		if (mmc_return != NO_ERROR) {
 			printf("Select partition failed\n");
-			goto err;
+			ret = mmc_return;
 		}
 	}
 
-	return NO_ERROR;
-err:
-	return -1;
+	return ret;
 }
 
 /*
@@ -1523,6 +1527,7 @@ static status_t mmc_bwrite(struct bdev *dev, const void *buf, bnum_t block, uint
 	struct mmc *mmc = (struct mmc *)mdev->mmc;
 	struct mmc_cmd cmd;
 	struct mmc_data data;
+	int ret = NO_ERROR;
 	int mmc_return = NO_ERROR;
 	u32 backup;
 
@@ -1530,7 +1535,8 @@ static status_t mmc_bwrite(struct bdev *dev, const void *buf, bnum_t block, uint
 		mmc_return = mmc_select_partition(mdev, mmc);
 		if (mmc_return != NO_ERROR) {
 			printf("Select partition failed\n");
-			return mmc_return;
+			ret = mmc_return;
+			goto part_change;
 		}
 	}
 
@@ -1566,7 +1572,8 @@ static status_t mmc_bwrite(struct bdev *dev, const void *buf, bnum_t block, uint
 	mmc_return = mmc_send_command(mmc, &cmd);
 	if (mmc_return != NO_ERROR) {
 		printf("mmc fail to send write cmd\n");
-		return mmc_return;
+		ret = mmc_return;
+		goto part_change;
 	}
 
 	if (count > 1 && mdev->partition != MMC_PARTITION_MMC_RPMB) {
@@ -1577,10 +1584,13 @@ static status_t mmc_bwrite(struct bdev *dev, const void *buf, bnum_t block, uint
 		mmc_return = mmc_send_command(mmc, &cmd);
 		if (mmc_return != NO_ERROR) {
 			printf("mmc fail to send stop cmd\n");
-			return mmc_return;
+			ret = mmc_return;
+			goto part_change;
 		}
 	}
 
+
+part_change:
 	if (mdev->partition != 0) {
 		backup = mdev->partition;
 		mdev->partition = 0;
@@ -1588,13 +1598,11 @@ static status_t mmc_bwrite(struct bdev *dev, const void *buf, bnum_t block, uint
 		mdev->partition = backup;
 		if (mmc_return != NO_ERROR) {
 			printf("Select partition failed\n");
-			goto err;
+			ret = mmc_return;
 		}
 	}
 
-	return NO_ERROR;
-err:
-	return -1;
+	return ret;
 }
 
 /*
@@ -1617,6 +1625,7 @@ static status_t mmc_rpmb_bread(struct bdev *dev, void *buf, bnum_t block, uint c
 	struct mmc *mmc = (struct mmc *)mdev->mmc;
 	struct mmc_cmd cmd;
 	struct mmc_data data;
+	int ret = NO_ERROR;
 	int mmc_return = NO_ERROR;
 	u32 backup;
 
@@ -1624,7 +1633,8 @@ static status_t mmc_rpmb_bread(struct bdev *dev, void *buf, bnum_t block, uint c
 		mmc_return = mmc_select_partition(mdev, mmc);
 		if (mmc_return != NO_ERROR) {
 			printf("Select partition failed\n");
-			return mmc_return;
+			ret = mmc_return;
+			goto part_change;
 		}
 	}
 
@@ -1652,9 +1662,11 @@ static status_t mmc_rpmb_bread(struct bdev *dev, void *buf, bnum_t block, uint c
 	mmc_return = mmc_send_command(mmc, &cmd);
 	if (mmc_return != NO_ERROR) {
 		printf("mmc fail to send read cmd\n");
-		return mmc_return;
+		ret = mmc_return;
+		goto part_change;
 	}
 
+part_change:
 	if (mdev->partition != 0) {
 		backup = mdev->partition;
 		mdev->partition = 0;
@@ -1662,13 +1674,11 @@ static status_t mmc_rpmb_bread(struct bdev *dev, void *buf, bnum_t block, uint c
 		mdev->partition = backup;
 		if (mmc_return != NO_ERROR) {
 			printf("Select partition failed\n");
-			goto err;
+			ret = mmc_return;
 		}
 	}
 
-	return NO_ERROR;
-err:
-	return -1;
+	return ret;
 }
 
 
@@ -1688,7 +1698,7 @@ static status_t mmc_bread(struct bdev *dev, void *buf, bnum_t block, uint count)
 		mmc_return = mmc_select_partition(mdev, mmc);
 		if (mmc_return != NO_ERROR) {
 			printf("Select partition failed\n");
-			return mmc_return;
+			goto part_change;
 		}
 	}
 
@@ -1723,7 +1733,8 @@ static status_t mmc_bread(struct bdev *dev, void *buf, bnum_t block, uint count)
 	mmc_return = mmc_send_command(mmc, &cmd);
 	if (mmc_return != NO_ERROR) {
 		printf("mmc fail to send read cmd\n");
-		return mmc_return;
+		ret = mmc_return;
+		goto part_change;
 	}
 
 	if (count > 1 && mdev->partition != MMC_PARTITION_MMC_RPMB) {
@@ -1734,10 +1745,12 @@ static status_t mmc_bread(struct bdev *dev, void *buf, bnum_t block, uint count)
 		mmc_return = mmc_send_command(mmc, &cmd);
 		if (mmc_return != NO_ERROR) {
 			printf("mmc fail to send stop cmd\n");
-			return mmc_return;
+			ret = mmc_return;
+			goto part_change;
 		}
 	}
 
+part_change:
 	if (mdev->partition != 0) {
 		backup = mdev->partition;
 		mdev->partition = 0;
@@ -1745,13 +1758,11 @@ static status_t mmc_bread(struct bdev *dev, void *buf, bnum_t block, uint count)
 		mdev->partition = backup;
 		if (mmc_return != NO_ERROR) {
 			printf("Select partition failed\n");
-			goto err;
+			ret = mmc_return;
 		}
 	}
 
-	return NO_ERROR;
-err:
-	return -1;
+	return ret;
 }
 
 /*
