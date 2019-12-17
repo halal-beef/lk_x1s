@@ -1175,7 +1175,6 @@ static int mmc_boot_identify_card(struct mmc *mmc)
  */
 int mmc_boot_sd_tuning(struct mmc *mmc)
 {
-	int err;
 	unsigned int i;
 	unsigned int original;
 	unsigned int sample_good = 0;
@@ -1224,7 +1223,7 @@ int mmc_boot_sd_tuning(struct mmc *mmc)
 		max_index = 0;
 		max = 16;
 		printf("tuning pattern all pass\n");
-		err = ERR_GENRERIC;
+		err = ERR_GENERIC;
 		goto out;
 	}
 
@@ -1693,11 +1692,13 @@ static status_t mmc_bread(struct bdev *dev, void *buf, bnum_t block, uint count)
 	struct mmc_data data;
 	int mmc_return = NO_ERROR;
 	u32 backup;
+	int ret = 0;
 
 	if (mdev->partition != 0) {
 		mmc_return = mmc_select_partition(mdev, mmc);
 		if (mmc_return != NO_ERROR) {
 			printf("Select partition failed\n");
+			ret = mmc_return;
 			goto part_change;
 		}
 	}
