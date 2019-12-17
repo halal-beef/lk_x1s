@@ -697,7 +697,6 @@ static int dwmci_data_transfer(struct dw_mci *host)
 			dbg("dwmci : data transfer done\n");
 			dwmci_end_data(host);
 			dwmci_writel(host, 0x0, DWMCI_IDINTEN);
-			dwmci_cache_flush(host);
 			break;
 		}
 	}
@@ -737,6 +736,9 @@ static int dwmci_send_command(struct mmc *mmc, struct mmc_cmd *cmd)
 	if (&(mmc->abort_cmd) == cmd)
 		dwmci_ready_abort_cmd(&flag);
 
+	dwmci_cache_flush(host);
+	wmb();
+
 	err = dwmci_start_cmd(host, cmd, flag);
 	if (err)
 		goto err;
@@ -744,6 +746,9 @@ static int dwmci_send_command(struct mmc *mmc, struct mmc_cmd *cmd)
 	dwmci_response_parse(host, cmd);
 	if (data)
 		err = dwmci_data_transfer(host);
+
+	dwmci_cache_flush(host);
+
 	if (err)
 		goto err;
 
