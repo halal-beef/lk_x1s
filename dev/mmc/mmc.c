@@ -1973,7 +1973,9 @@ void mmc_init(void)
 	}
 
 	part_set_def_dev(DEV_MMC);
+#ifdef MMC_TEST
 	mmc_test();
+#endif
 }
 
 int mmc_reinit(struct bdev *dev)
