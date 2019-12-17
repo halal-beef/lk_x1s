@@ -13,6 +13,8 @@
 
 #include <dev/dw_mmc.h>
 #include <platform/delay.h>
+#include <platform/mmu/barrier.h>
+#include <platform/mmu/mmu_func.h>
 
 #define MAX_DIV 0xFF
 
