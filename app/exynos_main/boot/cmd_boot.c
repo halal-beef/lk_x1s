@@ -36,6 +36,7 @@
 #include <platform/gpio.h>
 #include <part.h>
 #include <dev/scsi.h>
+#include <arch/arch_ops.h>
 
 /* Memory node */
 #define SIZE_2GB 	(0x80000000)
@@ -803,6 +804,9 @@ int cmd_boot(int argc, const cmd_args *argv)
 
 	/* before jumping to kernel. disble arch_timer */
 	arm_generic_timer_disable();
+
+	/* before jumping to kernel, disable arch interrupt */
+	arch_disable_ints();
 
 #if defined(CONFIG_MMU_ENABLE)
 	clean_invalidate_dcache_all();
