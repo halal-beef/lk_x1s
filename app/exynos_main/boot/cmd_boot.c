@@ -742,7 +742,7 @@ int cmd_boot(int argc, const cmd_args *argv)
 	load_boot_images();
 
 	val = readl(EXYNOS_POWER_SYSIP_DAT0);
-	if (val == REBOOT_MODE_RECOVERY)
+	if ((val == REBOOT_MODE_RECOVERY) || (val == REBOOT_MODE_FASTBOOT_USER))
 		recovery_mode = 1;
 
 #if defined(CONFIG_USE_AVB20)
