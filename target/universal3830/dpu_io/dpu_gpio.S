@@ -88,30 +88,18 @@ display_panel_release:
 
 	.global display_panel_power
 display_panel_power:
-	/* Set VDD_DISP_1P6_EN (GPG1_1) to Output */
-	ldr             x0, =EXYNOS3830_GPG1CON
-	ldr             w1, [x0]
-	bic             w1, w1, #(0xF << 4)
-	orr             w1, w1, #(0x1 << 4)
-	str             w1, [x0]
+	/* Set LCD_BL_EN(GPG2_1) to Output */
+	ldr     x0, =EXYNOS3830_GPG2CON
+	ldr     w1, [x0]
+	bic     w1, w1, #(0xF << 4)
+	orr     w1, w1, #(0x1 << 4)
+	str     w1, [x0]
 
-	ldr             x0, =EXYNOS3830_GPG1DAT
-	ldr             w1, [x0]
-	bic             w1, w1, #(0x1 << 1)
-	orr             w1, w1, #(0x1 << 1)
-	str             w1, [x0]
+	ldr     x0, =EXYNOS3830_GPG2DAT
+	ldr     w1, [x0]
+	bic     w1, w1, #(0x1 << 1)
+	orr     w1, w1, #(0x1 << 1)
+	str     w1, [x0]
 
-	ldr	x0, =EXYNOS3830_GPG2CON
-	ldr	w1, [x0]
-	bic	w1, w1, #(0xF << 24)
-	orr	w1, w1, #(0x1 << 24)
-	str	w1, [x0]
-
-	ldr	x0, =EXYNOS3830_GPG2DAT
-	ldr	w1, [x0]
-	bic	w1, w1, #(0x1 << 6)
-	orr	w1, w1, #(0x1 << 6)
-	str	w1, [x0]
-	/* Set MLCD_RSTB (GPG2_5) to DRV 4X */
 	ret
 

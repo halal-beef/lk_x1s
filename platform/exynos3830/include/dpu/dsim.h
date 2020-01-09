@@ -230,7 +230,7 @@ struct dsim_device {
  * and calls these callback functions in appropriate time.
  */
 struct lcd_driver {
-#define NUM_OF_VERIFIED_PANEL	5
+#define NUM_OF_VERIFIED_PANEL	6
 	u32 panel_ids[NUM_OF_VERIFIED_PANEL];	/* unique ID for each panel */
 	u32 id;					/* read ID */
 

@@ -374,7 +374,7 @@ static int dsim_enable(struct dsim_device *dsim)
 	bool panel_ctrl;
 	int ret = 0;
 
-	if (dsim->state == DSIM_STATE_ON) 
+	if (dsim->state == DSIM_STATE_ON)
 		return 0;
 
 	/* DPHY power on */
@@ -464,12 +464,14 @@ int dsim_probe(u32 dev_id)
 		ret = -ENXIO;
 		goto err;
 	}
+
+	dsim->lcd_info = common_get_lcd_info();
+
 	/* TODO : get_gpios is needed to change name,
 	 * here is a TE setting but TE setting may be moved to decon
 	 */
-	dsim_get_gpios(dsim);
-
-	dsim->lcd_info = common_get_lcd_info();
+	if(dsim->lcd_info->mode == DECON_MIPI_COMMAND_MODE)
+		dsim_get_gpios(dsim);
 
 	dsim->data_lane_cnt = dsim->lcd_info->data_lane;
 	dsim_info("using data lane count(%d)\n", dsim->data_lane_cnt);
