@@ -1775,9 +1775,20 @@ static status_t mmc_berase(struct bdev *dev, bnum_t block, uint count)
 	struct mmc *mmc = (struct mmc *)mdev->mmc;
 	struct mmc_cmd cmd;
 	int mmc_return = NO_ERROR;
+	u32 backup;
 	ulong end;
 	u32 start;
 	int start_cmd, end_cmd;
+	int ret;
+
+	if (mdev->partition != 0) {
+		mmc_return = mmc_select_partition(mdev, mmc);
+		if (mmc_return != NO_ERROR) {
+			printf("Select partition failed\n");
+			ret = mmc_return;
+			goto out;
+		}
+	}
 
 	memset((struct mmc_cmd *)&cmd, 0,
 	       sizeof(struct mmc_cmd));
@@ -1804,14 +1815,14 @@ static status_t mmc_berase(struct bdev *dev, bnum_t block, uint count)
 
 	mmc_return = mmc_send_command(mmc, &cmd);
 	if (mmc_return != NO_ERROR)
-		goto err_out;
+		goto out;
 
 	cmd.cmdidx = end_cmd;
 	cmd.argument = end;
 
 	mmc_return = mmc_send_command(mmc, &cmd);
 	if (mmc_return != NO_ERROR)
-		goto err_out;
+		goto out;
 
 	cmd.argument = NORMAL_ERASE;
 
@@ -1820,13 +1831,24 @@ static status_t mmc_berase(struct bdev *dev, bnum_t block, uint count)
 
 	mmc_return = mmc_send_command(mmc, &cmd);
 	if (mmc_return != NO_ERROR)
-		goto err_out;
+		goto out;
 
-	return NO_ERROR;
-err_out:
-	puts("mmc erase failed\n");
+out:
+	if (mmc_return != NO_ERROR)
+		puts("mmc erase failed\n");
+	ret = mmc_return;
 
-	return mmc_return;
+	if (mdev->partition != 0) {
+		backup = mdev->partition;
+		mdev->partition = 0;
+		mmc_return = mmc_select_partition(mdev, mmc);
+		mdev->partition = backup;
+		if (mmc_return != NO_ERROR) {
+			printf("Select partition failed\n");
+			ret = mmc_return;
+		}
+	}
+	return ret;
 }
 
 /*
