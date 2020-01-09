@@ -24,48 +24,42 @@
 
 #define GAMMA_PARAM_SIZE	26
 
-#define EA8076_CMD_VBP		15
-#define EA8076_CMD_VFP		3
-#define EA8076_CMD_VSA		1
-#define EA8076_CMD_HBP		2
-#define EA8076_CMD_HFP		2
-#define EA8076_CMD_HSA		2
+#define TD4150_VDO_VBP		4
+#define TD4150_VDO_VFP		24
+#define TD4150_VDO_VSA		2
+#define TD4150_VDO_HBP		80
+#define TD4150_VDO_HFP		508
+#define TD4150_VDO_HSA		2
 
-#define EA8076_HORIZONTAL	1080
-#define EA8076_VERTICAL	2340
+#define TD4150_HORIZONTAL	720
+#define TD4150_VERTICAL		1600
 
 //#define CONFIG_DECON_LCD_VIDEO_MODE
 
 struct exynos_panel_info common_lcd_info = {
-	.mode = DECON_MIPI_COMMAND_MODE,
-	.vfp = EA8076_CMD_VFP,
-	.vbp = EA8076_CMD_VBP,
-	.hfp = EA8076_CMD_HFP,
-	.hbp = EA8076_CMD_HBP,
-	.vsa = EA8076_CMD_VSA,
-	.hsa = EA8076_CMD_HSA,
-	.xres = EA8076_HORIZONTAL,
-	.yres = EA8076_VERTICAL,
+	.mode = DECON_VIDEO_MODE,
+	.vfp = TD4150_VDO_VFP,
+	.vbp = TD4150_VDO_VBP,
+	.hfp = TD4150_VDO_HFP,
+	.hbp = TD4150_VDO_HBP,
+	.vsa = TD4150_VDO_VSA,
+	.hsa = TD4150_VDO_HSA,
+	.xres = TD4150_HORIZONTAL,
+	.yres = TD4150_VERTICAL,
 
 	/* Mhz */
-	.hs_clk = 1200,
-	.esc_clk = 16,
+	.hs_clk = 830,
+	.esc_clk = 20,
+	.dphy_pms = {2, 255, 2, 25206}, /* pmsk */
 
-	.dphy_pms = {2, 185, 1, 0x9D8A}, /* pmsk */
-	.cmd_underrun_cnt = {1695},
-	/* Maybe, width and height will be removed */
-	.width = 70,
-	.height = 121,
+	//.vt_compensation = 0,
+
+	.width = 68,
+	.height = 147,
 
 	.fps = 60,
-//	.mic_enabled = 0,
-//	.mic_ver = 0,
 
 	.dsc = {0, 0, 0, 40, 720, 240},
-//	.dsc_enabled = 1,
-//	.dsc_cnt = 1,
-//	.dsc_slice_num = 2,
-//	.dsc_slice_h = 40,
 	.data_lane = 4,
 };
 
@@ -74,6 +68,7 @@ struct exynos_panel_info *common_get_lcd_info(void)
 	return &common_lcd_info;
 }
 
+extern struct dsim_lcd_driver td4150_mipi_lcd_driver;
 extern struct dsim_lcd_driver ea8076_mipi_lcd_driver;
 extern struct dsim_lcd_driver s6e3fa0_mipi_lcd_driver;
 extern struct dsim_lcd_driver nt36672a_mipi_lcd_driver;
@@ -81,6 +76,7 @@ extern struct dsim_lcd_driver s6e3ha8_mipi_lcd_driver;
 extern struct dsim_lcd_driver s6e3ha9_mipi_lcd_driver;
 
 struct dsim_lcd_driver *panel_list[NUM_OF_VERIFIED_PANEL] = {
+	&td4150_mipi_lcd_driver,
 	&ea8076_mipi_lcd_driver,
 	&s6e3fa0_mipi_lcd_driver,
 	&nt36672a_mipi_lcd_driver,
@@ -113,7 +109,7 @@ int cm_read_id(struct dsim_device *dsim)
 
 	/* dsim sends the request for the lcd id and gets it buffer */
 	err = dsim_read_data(dsim, MIPI_DSI_DCS_READ,
-		MIPI_DCS_GET_DISPLAY_ID, DSIM_DDI_ID_LEN, buf);
+			MIPI_DCS_GET_DISPLAY_ID, DSIM_DDI_ID_LEN, buf);
 	if (err < 0) {
 		printf("Failed to read panel id!\n");
 		return -EINVAL;
