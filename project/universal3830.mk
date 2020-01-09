@@ -26,6 +26,7 @@ MODULE_DEPS += \
 	dev/debug \
 	dev/power/pmic/s2mpu12 \
 	dev/power/pmic/s2mu106 \
+	dev/backlight_ic \
 
 GLOBAL_DEFINES += \
 	INPUT_GPT_AS_PT=1 \
