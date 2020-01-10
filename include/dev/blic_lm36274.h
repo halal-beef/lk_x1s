@@ -19,30 +19,30 @@
 #define __BLIC_LM36274_H__
 
 /* SCL */
-#define GPP05CON		*(volatile unsigned int *)(0x139B0020)
-#define GPP05DAT		*(volatile unsigned int *)(0x139B0024)
-#define GPP05PUD		*(volatile unsigned int *)(0x139B0028)
+#define GPP03CON		*(volatile unsigned int *)(0x139B0020)
+#define GPP03DAT		*(volatile unsigned int *)(0x139B0024)
+#define GPP03PUD		*(volatile unsigned int *)(0x139B0028)
 
 /* SDA */
-#define GPP04CON		*(volatile unsigned int *)(0x139B0020)
-#define GPP04DAT		*(volatile unsigned int *)(0x139B0024)
-#define GPP04PUD		*(volatile unsigned int *)(0x139B0028)
+#define GPP02CON		*(volatile unsigned int *)(0x139B0020)
+#define GPP02DAT		*(volatile unsigned int *)(0x139B0024)
+#define GPP02PUD		*(volatile unsigned int *)(0x139B0028)
 
-#define GPIO_DAT_LM36274	GPP04DAT
-#define GPIO_DAT_SHIFT		(5)
-#define GPIO_DAT_SHIFT2		(4)
-#define GPIO_PUD_LM36274	GPP05PUD &= ~(0xf << (GPIO_DAT_SHIFT * 4)); GPP04PUD &= ~(0xf << (GPIO_DAT_SHIFT2 * 4))
+#define GPIO_DAT_LM36274	GPP02DAT
+#define GPIO_DAT_SHIFT		(3)
+#define GPIO_DAT_SHIFT2		(2)
+#define GPIO_PUD_LM36274	GPP03PUD &= ~(0xf << (GPIO_DAT_SHIFT * 4)); GPP02PUD &= ~(0xf << (GPIO_DAT_SHIFT2 * 4))
 
-#define IIC_LM36274_ESCL_Hi	GPP05DAT |= (0x1 << (GPIO_DAT_SHIFT))
-#define IIC_LM36274_ESCL_Lo	GPP05DAT &= ~(0x1 << (GPIO_DAT_SHIFT))
-#define IIC_LM36274_ESDA_Hi	GPP04DAT |= (0x1 << GPIO_DAT_SHIFT2)
-#define IIC_LM36274_ESDA_Lo	GPP04DAT &= ~(0x1 << GPIO_DAT_SHIFT2)
+#define IIC_LM36274_ESCL_Hi	GPP03DAT |= (0x1 << (GPIO_DAT_SHIFT))
+#define IIC_LM36274_ESCL_Lo	GPP03DAT &= ~(0x1 << (GPIO_DAT_SHIFT))
+#define IIC_LM36274_ESDA_Hi	GPP02DAT |= (0x1 << GPIO_DAT_SHIFT2)
+#define IIC_LM36274_ESDA_Lo	GPP02DAT &= ~(0x1 << GPIO_DAT_SHIFT2)
 
-#define IIC_LM36274_ESCL_INP	GPP05CON &= ~(0xf << ((GPIO_DAT_SHIFT) * 4))
-#define IIC_LM36274_ESCL_OUTP	GPP05CON = (GPP05CON & ~(0xf << ((GPIO_DAT_SHIFT) * 4))) \
+#define IIC_LM36274_ESCL_INP	GPP03CON &= ~(0xf << ((GPIO_DAT_SHIFT) * 4))
+#define IIC_LM36274_ESCL_OUTP	GPP03CON = (GPP03CON & ~(0xf << ((GPIO_DAT_SHIFT) * 4))) \
 	                                   | (0x1 << ((GPIO_DAT_SHIFT) * 4))
-#define IIC_LM36274_ESDA_INP	GPP04CON &= ~(0xf << (GPIO_DAT_SHIFT2 * 4))
-#define IIC_LM36274_ESDA_OUTP	GPP04CON = (GPP04CON & ~(0xf << (GPIO_DAT_SHIFT2 * 4))) \
+#define IIC_LM36274_ESDA_INP	GPP02CON &= ~(0xf << (GPIO_DAT_SHIFT2 * 4))
+#define IIC_LM36274_ESDA_OUTP	GPP02CON = (GPP02CON & ~(0xf << (GPIO_DAT_SHIFT2 * 4))) \
 	                                   | (0x1 << (GPIO_DAT_SHIFT2 * 4))
 
 #define DELAY			100

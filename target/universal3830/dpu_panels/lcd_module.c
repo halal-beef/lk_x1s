@@ -108,15 +108,16 @@ int cm_read_id(struct dsim_device *dsim)
 	u8 buf[DSIM_DDI_ID_LEN] = {0, };
 
 	/* dsim sends the request for the lcd id and gets it buffer */
-	err = dsim_read_data(dsim, MIPI_DSI_DCS_READ,
-			MIPI_DCS_GET_DISPLAY_ID, DSIM_DDI_ID_LEN, buf);
+	err += dsim_read_data(dsim, MIPI_DSI_DCS_READ, 0xDA, 1, &buf[0]);
+	err += dsim_read_data(dsim, MIPI_DSI_DCS_READ, 0xDB, 1, &buf[1]);
+	err += dsim_read_data(dsim, MIPI_DSI_DCS_READ, 0xDC, 1, &buf[2]);
 	if (err < 0) {
 		printf("Failed to read panel id!\n");
 		return -EINVAL;
 	} else {
 		for (i = 0; i < DSIM_DDI_ID_LEN; i++) {
-			//id |= buf[i] << (24 - i * 8);	/* LSB is left */
-			id |= buf[i] << (i * 8);	/* LSB is right */
+			id |= buf[i] << (16 - i * 8);	/* LSB is left */
+			//id |= buf[i] << (i * 8);	/* LSB is right */
 			printf("id : 0x%06x\n", id);
 		}
 

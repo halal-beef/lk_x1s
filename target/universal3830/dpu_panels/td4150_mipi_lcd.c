@@ -29,7 +29,7 @@
 #define DEFAULT_BRIGHTNESS 0
 
 extern struct exynos_panel_info td4150_lcd_info;
-#define PANEL_ID       0x1e1121 /* value was confirmed when bringup */
+#define PANEL_ID       0x8a6220 /* value was confirmed when bringup */
 
 void td4150_lcd_init(unsigned int id, struct exynos_panel_info *lcd);
 void td4150_lcd_exit(unsigned int id, struct exynos_panel_info *lcd);
@@ -52,13 +52,13 @@ static struct exynos_panel_info *td4150_get_lcd_info(void)
 
 static int td4150_probe(struct dsim_device *dsim)
 {
-	td4150_lcd_init(dsim->id, dsim->lcd_info);
 	return 1;
 }
 
 static int td4150_displayon(struct dsim_device *dsim)
 {
 	dsim_info("%s\n", __func__);
+	td4150_lcd_init(dsim->id, dsim->lcd_info);
 	td4150_lcd_enable_exynos(dsim->id);
 	return 1;
 }
