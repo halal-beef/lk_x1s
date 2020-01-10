@@ -25,6 +25,7 @@
 #include <platform/sfr.h>
 #include <platform/delay.h>
 #include <target/dpu_io_ctrl.h>
+#include <dev/blic_lm36274.h>
 
 void display_te_init(void);
 void display_panel_reset(void);
@@ -103,6 +104,8 @@ static void set_gpio_lcd_power(enum board_gpio_type gpio_type)
 	printf("%s: +\n", __func__);
 
 	display_panel_power();
+
+	blic_init_LM36274();
 
 	printf("%s: -\n", __func__);
 	mdelay(10);
