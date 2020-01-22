@@ -1241,8 +1241,8 @@ int read_write_counter(void)
 {
 	int ret;
 	struct rpmb_packet packet;
-	memset((void *)&packet, 0, RPMB_SIZE);
 
+	memset((void *)&packet, 0, RPMB_SIZE);
 	packet.request = 0x02;
 #ifdef ENABLE_CM_NONCE
 	memset(nonce, 0, NONCE_SIZE);
@@ -1317,7 +1317,7 @@ int authentication_key_programming(void)
 	}
 
 	if (packet.result != 0) {
-		printf("authentication_key_programming rpmb_commands result error = %d\n", packet.result );
+		printf("%s rpmb_commands result error = %d\n", __func__, packet.result);
 		return -1;
 	}
 	return RV_SUCCESS;
