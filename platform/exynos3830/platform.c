@@ -44,6 +44,7 @@
 
 #include <dev/lk_acpm_ipc.h>
 #include "flexpmu_dbg.h"
+#include <platform/dvfs_info.h>
 
 #define ARCH_TIMER_IRQ		30
 
@@ -402,4 +403,6 @@ by_dumpgpr_out:
 
 	if (rst_stat & (WARM_RESET | LITTLE_WDT_RESET))
 		dfd_run_post_processing();
+
+	display_dvfs_info();
 }
