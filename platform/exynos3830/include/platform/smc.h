@@ -230,6 +230,7 @@ typedef struct reg_arr {
 } reg_arr_t;
 
 u64 exynos_smc(u64 cmd, u64 arg1, u64 arg2, u64 arg3);
+u64 exynos_smc_read(u64 cmd, u64 arg1);
 unsigned long load_sp_image(u32 boot_device);
 unsigned int load_uboot_image(u32 boot_device);
 unsigned int coldboot(u32 boot_device);
