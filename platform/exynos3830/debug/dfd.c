@@ -22,6 +22,14 @@
 #include <dev/debug/dss.h>
 
 #define TIMEOUT	100000
+static int dfd_sjtag_status = 0;
+
+void dfd_set_sjtag_status(void)
+{
+	dfd_sjtag_status = exynos_smc(SMC_CMD_GET_SJTAG_STATUS, 0x3, 0, 0);
+	printf("DFD: sjtag is %sabled(%d)\n",
+		(dfd_sjtag_status == 0) ? "dis" : "en", dfd_sjtag_status);
+}
 
 const u32 dbg_base[NR_CPUS] = {
 	0x16410000, 0x16510000, 0x16610000, 0x16710000,

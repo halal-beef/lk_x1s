@@ -36,6 +36,7 @@
 #include <dev/mmc.h>
 #include <dev/debug/dss.h>
 #include <platform/secure_boot.h>
+#include <platform/dfd.h>
 
 #include <lib/font_display.h>
 #include <lib/logo_display.h>
@@ -436,6 +437,7 @@ by_dumpgpr_out:
 		print_el3_monitor_version();
 	}
 
+	dfd_set_sjtag_status();
 	if (rst_stat & (WARM_RESET | LITTLE_WDT_RESET))
 		dfd_run_post_processing();
 
