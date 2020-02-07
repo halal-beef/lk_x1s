@@ -8,6 +8,7 @@
  * to third parties without the express written permission of Samsung Electronics.
  */
 
+#include <err.h>
 #include <platform/sfr.h>
 #include <platform/bl_sys_info.h>
 #include <platform/dram_training.h>
@@ -37,13 +38,15 @@ void write_dram_training_data(void)
 	printf("Write magic code: 0x%X\n", *(unsigned int *)DRAM_TRAINING_WRITE_MAGIC_CODE_BASE);
 	if ((*(unsigned int *)DRAM_TRAINING_ACPM_MAGIC_CODE_BASE == DRAM_TRAINING_ACPM_MAGIC_CODE)
 		&& (*(unsigned int *)DRAM_TRAINING_WRITE_MAGIC_CODE_BASE != DRAM_TRAINING_WRITE_MAGIC_CODE)) {
-		struct bl_sys_info *bl_sys = (struct bl_sys_info *)BL_SYS_INFO;
 		unsigned int boot_dev;
+		unsigned int blks;
 		bdev_t *dev;
 
 		boot_dev = get_boot_device();
 		if (boot_dev == BOOT_UFS) {
 			dev = bio_open("scsi0");
+		} else if (boot_dev == BOOT_EMMC) {
+			dev = bio_open("mmc1");
 		} else {
 			printf("write_dram_training_data: 'block dev' is not setted.\n");
 			return;
@@ -54,10 +57,13 @@ void write_dram_training_data(void)
 
 		/* write DRAM training data to first booting device */
 		if (dev) {
-			printf("Writing DRAM training data..\n");
-			dev->new_write(dev, (void *)DRAM_TRAINING_AREA_BASE, bl_sys->bl1_info.epbl_start * 8
-						+ CONFIG_DRAM_TRAINING_AREA_BLOCK_OFFSET, DRAM_TRAINING_AREA_SIZE
-						/ USER_BLOCK_SIZE);
+			printf("Writing DRAM training data on %d\n", CONFIG_DRAM_TRAINING_AREA_BLOCK_OFFSET);
+
+			blks = dev->new_write(dev, (void *)DRAM_TRAINING_AREA_BASE, CONFIG_DRAM_TRAINING_AREA_BLOCK_OFFSET,
+							DRAM_TRAINING_AREA_SIZE / USER_BLOCK_SIZE);
+
+			if (blks != DRAM_TRAINING_AREA_SIZE / USER_BLOCK_SIZE)
+				printf("DRAM training data writing failed!\n");
 
 			bio_close(dev);
 		}

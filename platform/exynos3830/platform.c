@@ -384,6 +384,10 @@ void platform_init(void)
 	if (*(unsigned int *)DRAM_BASE == 0xabcdef) {
 		unsigned int dfd_en = readl(EXYNOS3830_POWER_RESET_SEQUENCER_CONFIGURATION);
 
+		if (!(rst_stat & (WARM_RESET | LITTLE_WDT_RESET | BIG_WDT_RESET))
+			&& (get_current_boot_device() == BOOT_EMMC))
+			write_dram_training_data();
+
 		if ((rst_stat & (WARM_RESET | LITTLE_WDT_RESET)) &&
 			(dfd_en & EXYNOS3830_EDPCSR_DUMP_EN)) {
 			/* if it's a case of ramdump, do not load ldfw/sp */
