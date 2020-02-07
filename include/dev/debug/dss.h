@@ -34,4 +34,6 @@ void dfd_run_post_processing(void);
 void dfd_set_dump_en(int en);
 void dfd_get_dbgc_version(void);
 int dfd_get_revision(void);
+bool is_cache_disable_mode(void);
+unsigned int dfd_get_dump_en_before_reset(void);
 #endif /* __DSS_H__ */
