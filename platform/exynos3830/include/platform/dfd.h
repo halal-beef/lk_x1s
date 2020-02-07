@@ -314,12 +314,16 @@ u64 cpu_boot(u64 id, u64 cpu, u64 fn);
 void dfd_soc_run_post_processing(void);
 void dfd_soc_get_dbgc_version(void);
 void llc_flush_disable(void);
+void dfd_set_sjtag_status(void);
 #else
 inline static void dfd_run_post_processing(void)
 {
 }
 
 inline static void llc_flush_disable(void)
+{
+}
+inline static void dfd_set_sjtag_status(void)
 {
 }
 #endif

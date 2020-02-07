@@ -56,6 +56,9 @@
 
 #define SMC_DRM_GET_SOC_INFO			(0x82002060)
 
+/* For checking for debug */
+#define SMC_CMD_GET_SJTAG_STATUS		(0x8200012E)
+
 /* ERROR return for load LDFW and Secure OS  */
 #define SDM_HW_RESET_STATUS			(0x1230)
 #define SDM_SW_RESET_STATUS			(0x1231)
