@@ -236,16 +236,11 @@ void arm_generic_timer_disable(void)
 
 void platform_early_init(void)
 {
-#if defined(CONFIG_UART_LOG_MODE) || defined(CONFIG_MMU_ENABLE)
-	unsigned int rst_stat = readl(EXYNOS3830_POWER_RST_STAT);
-#endif
-#if defined(CONFIG_MMU_ENABLE)
-	unsigned int dfd_en = readl(EXYNOS3830_POWER_RESET_SEQUENCER_CONFIGURATION);
-#endif
+	dfd_get_dump_en_before_reset();
+	dfd_set_dump_en(0);
 
 #if defined(CONFIG_MMU_ENABLE)
-	if (!((rst_stat & (WARM_RESET | LITTLE_WDT_RESET)) &&
-			dfd_en & EXYNOS3830_EDPCSR_DUMP_EN)) {
+	if (!is_cache_disable_mode()) {
 		invalidate_dcache_all();
 		cpu_common_init();
 		clean_invalidate_dcache_all();
@@ -336,6 +331,12 @@ void platform_init(void)
 	if (is_first_boot() && *(unsigned int *)DRAM_BASE == 0xabcdef)
 		dss_fdt_init();
 
+	dfd_display_reboot_reason();
+	dfd_display_core_stat();
+	dfd_set_sjtag_status();
+	if (rst_stat & (WARM_RESET | LITTLE_WDT_RESET))
+		dfd_run_post_processing();
+
 #if defined(CONFIG_UART_LOG_MODE)
 	if (get_current_boot_device() != BOOT_USB &&
 		*(unsigned int *)DRAM_BASE == 0xabcdef) {
@@ -366,9 +367,6 @@ void platform_init(void)
 	print_lcd_update(FONT_BLUE, FONT_BLACK, "LK display is enabled!");
 #endif
 
-	dfd_display_reboot_reason();
-	dfd_display_core_stat();
-
 	read_dram_info();
 
 	display_tmu_info();
@@ -383,14 +381,11 @@ void platform_init(void)
 	*/
 
 	if (*(unsigned int *)DRAM_BASE == 0xabcdef) {
-		unsigned int dfd_en = readl(EXYNOS3830_POWER_RESET_SEQUENCER_CONFIGURATION);
-
 		if (!(rst_stat & (WARM_RESET | LITTLE_WDT_RESET | BIG_WDT_RESET))
 			&& (get_current_boot_device() == BOOT_EMMC))
 			write_dram_training_data();
 
-		if ((rst_stat & (WARM_RESET | LITTLE_WDT_RESET)) &&
-			(dfd_en & EXYNOS3830_EDPCSR_DUMP_EN)) {
+		if (is_cache_disable_mode()) {
 			/* if it's a case of ramdump, do not load ldfw/sp */
 			printf("Dumpgpr mode. do not load ldfw/sp .\n");
 			goto by_dumpgpr_out;
@@ -436,10 +431,6 @@ void platform_init(void)
 by_dumpgpr_out:
 		print_el3_monitor_version();
 	}
-
-	dfd_set_sjtag_status();
-	if (rst_stat & (WARM_RESET | LITTLE_WDT_RESET))
-		dfd_run_post_processing();
 
 	display_dvfs_info();
 }

@@ -21,6 +21,27 @@
 #include <platform/delay.h>
 #include <platform/dfd.h>
 
+unsigned int dump_en_before_reset = 0xFFFFFFFF;
+
+unsigned int dfd_get_dump_en_before_reset(void)
+{
+	static bool once = false;
+	if ((dump_en_before_reset == 0xFFFFFFFF) && !once) {
+		dump_en_before_reset = readl(EXYNOS_PMU_RESET_SEQ_CONFIG);
+		once = true;
+	}
+
+	return dump_en_before_reset;
+}
+
+bool is_cache_disable_mode(void)
+{
+	unsigned int rst_stat = readl(EXYNOS_PMU_RST_STAT);
+	unsigned int dump_en = dfd_get_dump_en_before_reset();
+
+	return ((rst_stat & (WARM_RESET | LITTLE_WDT_RESET)) && (dump_en & DUMP_EN));
+}
+
 static inline void pmu_set_bit_atomic(u32 offset, u32 bit)
 {
         writel(bit, EXYNOS_PMU_BASE + (offset | 0xc000));

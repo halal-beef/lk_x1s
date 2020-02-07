@@ -501,7 +501,7 @@ void dfd_soc_run_post_processing(void)
 	u32 cpu, val, cpu_mask = 0;
 	int ret;
 
-	if (!(readl(EXYNOS3830_POWER_BASE + RESET_SEQUENCER_OFFSET) & DUMP_EN)) {
+	if (!(dfd_get_dump_en_before_reset() & DUMP_EN)) {
 		printf("DUMP_EN disabled. Skip debug info.\n");
 		return;
 	}
