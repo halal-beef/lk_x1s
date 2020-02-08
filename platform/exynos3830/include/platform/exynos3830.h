@@ -97,6 +97,9 @@
 #define EXYNOS3830_ACPM_MAGIC							(EXYNOS3830_ACPM_BASE + 0x3000)
 #define EXYNOS3830_ACPM_APSHARE							(EXYNOS3830_ACPM_BASE + 0x7000)
 
+#define CONFIG_RAMDUMP_SRAM_LOG_BASE                    			(0x14B04000 + 0x28000)
+#define CONFIG_RAMDUMP_BL_LOG_MAGIC						(0xb1109)
+
 #define SWRESET									(1 << 29)
 #define WARM_RESET								(1 << 28)
 #define LITTLE_WDT_RESET							(1 << 24)
