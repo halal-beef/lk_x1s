@@ -58,13 +58,29 @@ static u32 pmu_cpu_offset(u32 cpu)
 	return tmp + (0x80 * cpu);
 }
 
-static int dfd_wait_complete(u32 cpu)
+static int dfd_wait_dumpgpr_complete(u32 cpu)
 {
 	u32 ret;
 	u32 loop = 1000;
 
 	do {
 		ret = readl(CONFIG_RAMDUMP_DUMP_GPR_WAIT);
+		if (ret & (1 << cpu))
+			return 1;
+
+		udelay(100);
+	} while (loop--);
+
+	return 0;
+}
+
+static int dfd_wait_cacheflush_complete(u32 cpu)
+{
+	u32 ret;
+	u32 loop = 1000;
+
+	do {
+		ret = readl(CONFIG_RAMDUMP_CACHE_FLUSH_WAIT);
 		if (ret & (1 << cpu))
 			return 1;
 
@@ -191,6 +207,9 @@ void dfd_secondary_cpu_cache_flush(u32 cpu)
 
 	if (cpu) {
 		dfd_get_gpr(cpu);
+		/* Write own bit to inform finishing dumpGPR */
+		val = readl(CONFIG_RAMDUMP_DUMP_GPR_WAIT);
+		writel((val | (1 << cpu)), CONFIG_RAMDUMP_DUMP_GPR_WAIT);
 		do {
 			val = readl(CONFIG_RAMDUMP_WAKEUP_WAIT);
 			if (val & (1 << cpu))
@@ -218,9 +237,9 @@ void dfd_secondary_cpu_cache_flush(u32 cpu)
 	default:
 		break;
 	}
-	/* Write own bit to inform finishing dumpGPR */
-	val = readl(CONFIG_RAMDUMP_DUMP_GPR_WAIT);
-	writel((val | (1 << cpu)), CONFIG_RAMDUMP_DUMP_GPR_WAIT);
+	/* Write own bit to inform finishing Cacheflush */
+	val = readl(CONFIG_RAMDUMP_CACHE_FLUSH_WAIT);
+	writel((val | (1 << cpu)), CONFIG_RAMDUMP_CACHE_FLUSH_WAIT);
 off:
 	if (cpu != 0) {
 		//cpu_boot(CPU_OFF_PSCI_ID, 0, 0);
@@ -525,6 +544,7 @@ void dfd_soc_run_post_processing(void)
 	dfd_clear_reset_disable();
 
 	writel(0, CONFIG_RAMDUMP_DUMP_GPR_WAIT);
+	writel(0, CONFIG_RAMDUMP_CACHE_FLUSH_WAIT);
 	writel(0, CONFIG_RAMDUMP_WAKEUP_WAIT);
 
 	printf("---------------------------------------------------------\n");
@@ -548,11 +568,14 @@ void dfd_soc_run_post_processing(void)
 		ret = cpu_boot(CPU_ON_PSCI_ID, cpu_logical_map[cpu], (u64)dfd_entry_point);
 		if (ret) {
 			printf("Core%d: ERR failed power on: 0x%x\n", cpu, ret);
-			ret = readl(CONFIG_RAMDUMP_DUMP_GPR_WAIT);
-			writel((ret | 1 << cpu), CONFIG_RAMDUMP_DUMP_GPR_WAIT);
+			ret = readl(CONFIG_RAMDUMP_CACHE_FLUSH_WAIT);
+			writel((ret | 1 << cpu), CONFIG_RAMDUMP_CACHE_FLUSH_WAIT);
 			continue;
 		}
 		mdelay(100);
+
+		if (!dfd_wait_dumpgpr_complete(cpu))
+			printf("Core%d: ERR wait dumpgpr timeout.\n", cpu);
 	}
 
 	for (cpu = 0; cpu < NR_CPUS; cpu++) {
@@ -564,14 +587,14 @@ void dfd_soc_run_post_processing(void)
 		if (cpu == 0)
 			dfd_secondary_cpu_cache_flush(cpu);
 
-		if (!dfd_wait_complete(cpu)) {
-			printf("Core%d: ERR wait timeout.\n", cpu);
+		if (!dfd_wait_cacheflush_complete(cpu)) {
+			printf("Core%d: ERR wait cacheflush timeout.\n", cpu);
 			continue;
 		}
 
 		printf("Core%d: finished Cache Flush level:%d (0x%x)\n", cpu,
 		(readl(CONFIG_RAMDUMP_GPR_POWER_STAT + (cpu * REG_OFFSET))),
-		readl(CONFIG_RAMDUMP_DUMP_GPR_WAIT));
+		readl(CONFIG_RAMDUMP_CACHE_FLUSH_WAIT));
 	}
 	printf("---------------------------------------------------------\n");
 }
