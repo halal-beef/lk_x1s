@@ -54,6 +54,8 @@
 #define CPU_OFF_PSCI_ID			(0x84000002)
 #define COREREG_OFFSET			(0x200)
 #define REG_OFFSET			(0x4)
+#define CLUSTER0_STATUS			(0x1 << 1)
+#define CLUSTER1_STATUS			(0x1 << 2)
 
 #define CPU0_LOGICAL_MAP		0x0000
 #define CPU1_LOGICAL_MAP		0x0001

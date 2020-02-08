@@ -123,40 +123,55 @@ static void dfd_get_pc_value(void)
  */
 static void dfd_set_cache_flush_level(void)
 {
-	int cl0_on = -1, cl1_on = -1;
-	u64 cpu, val, stat;
+	int cl0_on_cpu = -1, cl1_on_cpu = -1;
+	int cl0_on = 0, cl1_on = 0;
+	u64 cpu, stat;
 	u64 *cpu_reg;
 
 	for (cpu = 0; cpu < NR_CPUS; cpu++) {
 		u32 offset = cpu * REG_OFFSET;
 		cpu_reg = (u64 *)(CONFIG_RAMDUMP_COREREG + (cpu * COREREG_OFFSET));
+
+		/* core0 has power states of cluster0 & cluster1 */
+		if (cpu == 0) {
+			if (cpu_reg[POWER_STATE] & CLUSTER0_STATUS) {
+				cl0_on = 1;
+				cpu_reg[POWER_STATE] &= ~CLUSTER0_STATUS;
+			}
+			if (cpu_reg[POWER_STATE] & CLUSTER1_STATUS) {
+				cl1_on = 1;
+				cpu_reg[POWER_STATE] &= ~CLUSTER1_STATUS;
+			}
+		}
+
 		if (!cpu_reg[POWER_STATE]) {
 			stat = FLUSH_SKIP;
 		} else {
 			stat = FLUSH_LEVEL1;
 			if (cpu <= LITTLE_CORE_LAST)
-				cl0_on = cpu;
+				cl0_on_cpu = cpu;
 			else
-				cl1_on = cpu;
+				cl1_on_cpu = cpu;
 		}
 		writel(stat, CONFIG_RAMDUMP_GPR_POWER_STAT + offset);
 	}
 
-	/* conclude core which runs cache flush level 2 in little cluster */
-	if (cl0_on <= 0) {
-		/* core0 runs cache flush level 2 */
-		val = FLUSH_LEVEL2;
-		cl0_on = 0;
-	} else {
-		val = FLUSH_LEVEL3;
+	/* conclude core which runs cache flush level 3 in cluster0 */
+	if (cl0_on) {
+		if (cl0_on_cpu < 0)
+			cl0_on_cpu = LITTLE_CORE_LAST;
+
+		stat = FLUSH_LEVEL3;
+		writel(stat, CONFIG_RAMDUMP_GPR_POWER_STAT + (cl0_on_cpu * REG_OFFSET));
 	}
 
-	stat = val;
-	writel(stat, CONFIG_RAMDUMP_GPR_POWER_STAT + (cl0_on * REG_OFFSET));
+	/* conclude core which runs cache flush level 3 in cluster1 */
+	if (cl1_on) {
+		if (cl1_on_cpu <= LITTLE_CORE_LAST)
+			cl1_on_cpu = BIG_CORE_START;
 
-	if (cl1_on >= 0) {
 		stat = FLUSH_LEVEL3;
-		writel(stat, CONFIG_RAMDUMP_GPR_POWER_STAT + (cl1_on * REG_OFFSET));
+		writel(stat, CONFIG_RAMDUMP_GPR_POWER_STAT + (cl1_on_cpu * REG_OFFSET));
 	}
 }
 
