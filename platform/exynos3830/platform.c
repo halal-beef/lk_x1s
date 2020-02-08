@@ -262,6 +262,9 @@ void platform_early_init(void)
 	}
 #endif
 
+	/* this function have to be called before calling printf */
+	dbg_snapshot_early_init();
+
 	uart_console_init();
 	printf("LK build date: %s, time: %s\n", __DATE__, __TIME__);
 	dss_boot_cnt();

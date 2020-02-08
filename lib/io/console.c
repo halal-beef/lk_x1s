@@ -31,7 +31,6 @@
 #include <lib/cbuf.h>
 #include <arch/ops.h>
 #include <platform.h>
-#include <platform/sfr.h>
 #include <platform/debug.h>
 #include <kernel/thread.h>
 #include <lk/init.h>
@@ -104,17 +103,6 @@ void unregister_print_callback(print_callback_t *cb)
 
 static ssize_t __debug_stdio_write(io_handle_t *io, const char *s, size_t len)
 {
-#ifdef CONFIG_RAMDUMP_MODE
-	u64 last_buf = readl(CONFIG_RAMDUMP_LASTBUF);
-
-	if ((last_buf <= CONFIG_RAMDUMP_BASE) ||
-			(last_buf >= (CONFIG_RAMDUMP_LOGBUF + CONFIG_RAMDUMP_LOGSZ)) ||
-			((CONFIG_RAMDUMP_LOGBUF + CONFIG_RAMDUMP_LOGSZ) < (last_buf + len)))
-		last_buf = CONFIG_RAMDUMP_LOGBUF;
-	strncpy((char *)last_buf, s, len);
-	last_buf += len;
-	writel(last_buf, CONFIG_RAMDUMP_LASTBUF);
-#endif
     out_count(s, len);
     return len;
 }
