@@ -36,6 +36,7 @@
 #include <platform/gpio.h>
 #include <part.h>
 #include <dev/scsi.h>
+#include <dev/debug/dss.h>
 #include <arch/arch_ops.h>
 
 /* Memory node */
@@ -707,8 +708,6 @@ int cmd_boot(int argc, const cmd_args *argv)
 	struct exynos_gpio_bank *bank = (struct exynos_gpio_bank *)EXYNOS9630_GPA1CON;
 	int gpio = 5;	/* Volume Up */
 #endif
-	fdt_dtb = (struct fdt_header *)DT_BASE;
-	dtbo_table = (struct dt_table_header *)DTBO_BASE;
 	unsigned int val;
 	uint32_t recovery_mode = 0;
 #if defined(CONFIG_USE_AVB20)
@@ -718,6 +717,8 @@ int cmd_boot(int argc, const cmd_args *argv)
 #endif
 	int ab_ret = 0;
 
+	fdt_dtb = (struct fdt_header *)DT_BASE;
+	dtbo_table = (struct dt_table_header *)DTBO_BASE;
 #if defined(CONFIG_FACTORY_MODE)
 	val = exynos_gpio_get_value(bank, gpio);
 	if (!val) {
@@ -815,6 +816,14 @@ int cmd_boot(int argc, const cmd_args *argv)
 
 	void (*kernel_entry)(int r0, int r1, int r2, int r3);
 
+	/* Turn on dumpEN for DumpGPR */
+#ifdef RAMDUMP_MODE_OFF
+	dfd_set_dump_en(0);
+	set_debug_level("low");
+#else
+	dfd_set_dump_en(1);
+	set_debug_level("mid");
+#endif
 	kernel_entry = (void (*)(int, int, int, int))KERNEL_BASE;
 	kernel_entry(DT_BASE, 0, 0, 0);
 

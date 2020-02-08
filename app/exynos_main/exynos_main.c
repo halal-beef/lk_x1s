@@ -168,15 +168,6 @@ fastboot:
 #endif
 
 reboot:
-
-	/* Turn on dumpEN for DumpGPR */
-#ifdef RAMDUMP_MODE_OFF
-	dfd_set_dump_en(0);
-	set_debug_level("low");
-#else
-	dfd_set_dump_en(1);
-	set_debug_level("mid");
-#endif
 	cmd_boot(0, 0);
 	return;
 }
