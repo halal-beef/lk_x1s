@@ -533,8 +533,12 @@ void dfd_soc_run_post_processing(void)
 		CPU7_LOGICAL_MAP
 	};
 	u32 cpu, val, cpu_mask = 0;
+	u32 arr_addr = (u32)dss_get_item_paddr("log_arrdumpreset");
+	u32 arr_size = (u32)dss_get_item_size("log_arrdumpreset");
+	int skip_arraydump = 0;
 	int ret;
 
+	skip_arraydump = (!arr_addr) || (!arr_size) || dfd_sjtag_status;
 	if (!(dfd_get_dump_en_before_reset() & DUMP_EN)) {
 		printf("DUMP_EN disabled. Skip debug info.\n");
 		return;
@@ -579,7 +583,7 @@ void dfd_soc_run_post_processing(void)
 	}
 
 	for (cpu = 0; cpu < NR_CPUS; cpu++) {
-		if (cpu && cpu_mask & (1 << cpu))
+		if (!skip_arraydump && cpu && cpu_mask & (1 << cpu))
 			dfd_ananke_arrays(cpu);
 
 		val = readl(CONFIG_RAMDUMP_WAKEUP_WAIT);
