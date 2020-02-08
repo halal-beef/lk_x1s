@@ -310,6 +310,7 @@ enum pt_reg {
 
 void llc_flush(u32 invway);
 unsigned int clear_llc_init_state(void);
+void dbg_snapshot_early_init(void);
 #ifdef CONFIG_RAMDUMP_GPR
 void dfd_entry_point(void);
 u64 cpu_boot(u64 id, u64 cpu, u64 fn);
