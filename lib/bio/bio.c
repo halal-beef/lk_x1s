@@ -835,6 +835,15 @@ static void bdev_inc_ref(bdev_t *dev)
     dev->ref++;;
 }
 
+static uint bio_new_set_wp(struct bdev *dev, int select, int enable, uint start, uint size)
+{
+    if (dev->new_set_wp_native == NULL) {
+        return ERR_NOT_SUPPORTED;
+    } else {
+        return dev->new_set_wp_native(dev, select, enable, start, size);
+    }
+}
+
 static void bdev_dec_ref(bdev_t *dev)
 {
     //int oldval = atomic_add(&dev->ref, -1);
@@ -1097,6 +1106,7 @@ void bio_initialize_bdev(bdev_t *dev,
     dev->new_byte_read = bio_new_byte_read;
     dev->new_byte_write = bio_new_byte_write;
     dev->new_byte_erase = bio_new_byte_erase;
+    dev->new_set_wp = bio_new_set_wp;
     dev->close = NULL;
 }
 
