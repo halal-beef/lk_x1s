@@ -315,7 +315,7 @@ int mmc_boot_switch_cmd(struct mmc *mmc, u8 set, u8 index, u8 value)
 
 	cmd.cmdidx = CMD6_SWITCH_FUNC;
 	cmd.resp_type = MMC_BOOT_RESP_R1B;
-	cmd.argument = (MMC_SWITCH_MODE_WRITE_BYTE << 24) | (index << 16) | (value << 8);
+	cmd.argument = (MMC_SWITCH_MODE_WRITE_BYTE << 24) | (index << 16) | (value << 8) | set;
 	cmd.data = NULL;
 
 	ret = mmc_send_command(mmc, &cmd);
@@ -957,12 +957,13 @@ mmc_boot_decode_mmc_info(struct mmc *mmc, unsigned int *raw_csd)
 			mmc->rpmb_size = ext_csd_buf[EXT_CSD_RPMB_MULT];
 
 		/* Get erase group data */
-		if (ext_csd_buf[EXT_CSD_ERASE_GROUP_DEF] & 0x01)
+		if (ext_csd_buf[EXT_CSD_ERASE_GROUP_DEF] & 0x01) {
 			mmc->erase_grp_size = ext_csd_buf[EXT_CSD_HC_ERASE_GRP_SIZE] *
 						512 * 1024 / mmc->wr_block_len;
-		else
+		} else {
 			mmc->erase_grp_size = (mmc_extract_bits(42, 46, mmc->csd) + 1) *
 						(mmc_extract_bits(37, 41, mmc->csd) + 1);
+		}
 
 		/* Check secure feature support */
 		mmc->sec_feature_support = ext_csd_buf[EXT_CSD_SEC_FEATURE_SUPPORT];
@@ -1848,9 +1849,164 @@ out:
 			ret = mmc_return;
 		}
 	}
+
 	return ret;
 }
 
+int mmc_set_boot_wp(struct mmc *mmc, int enable)
+{
+	int mmc_return = NO_ERROR;
+
+	mmc_return = mmc_boot_send_ext_cmd(mmc, ext_csd_buf);
+	if (mmc_return != NO_ERROR) {
+		printf("Error No.%d: Failure getting card's ExtCSD information!\n", mmc_return);
+		return mmc_return;
+	}
+	printf("before set BOOT_WP ext_csd[173] = %08x\n", ext_csd_buf[EXT_CSD_BOOT_WP]);
+	printf("before set BOOT_WP_STATUS ext_csd[174] = %08x\n", ext_csd_buf[EXT_CSD_BOOT_WP]);
+
+	if (enable)
+		mmc_return = mmc_boot_switch_cmd(mmc, EXT_CSD_CMD_SET_NORMAL, EXT_CSD_BOOT_WP,
+			EXT_CSD_BOOT_WP_B_PERM_WP_DIS | EXT_CSD_BOOT_WP_B_PWR_WP_EN);
+	else
+		mmc_return = mmc_boot_switch_cmd(mmc, EXT_CSD_CMD_SET_NORMAL, EXT_CSD_BOOT_WP,
+			EXT_CSD_BOOT_WP_B_PERM_WP_DIS);
+
+	if (mmc_return != NO_ERROR) {
+		printf("Error No.%d: Failue sending switch BOOT_WP\n", mmc_return);
+		return mmc_return;
+	}
+
+	mmc_return = mmc_boot_send_ext_cmd(mmc, ext_csd_buf);
+	if (mmc_return != NO_ERROR) {
+		printf("Error No.%d: Failure getting card's ExtCSD information!\n", mmc_return);
+		return mmc_return;
+	}
+	printf("after set BOOT_WP ext_csd[173] = %08x\n", ext_csd_buf[EXT_CSD_BOOT_WP]);
+	printf("after set BOOT_WP_STATUS ext_csd[174] = %08x\n", ext_csd_buf[EXT_CSD_BOOT_WP]);
+	printf("set write protection (boot partition)\n");
+
+	return mmc_return;
+}
+
+int mmc_set_user_wp(struct mmc *mmc, int enable, u32 start, u32 size)
+{
+	int mmc_return = NO_ERROR;
+	u32 status;
+	u32  wp_group_size, i, loop_count;
+	struct mmc_cmd cmd;
+
+	memset((struct mmc_cmd *)&cmd, 0,
+	       sizeof(struct mmc_cmd));
+
+	mmc_return = mmc_boot_send_ext_cmd(mmc, ext_csd_buf);
+	if (mmc_return != NO_ERROR) {
+		printf("Error No.%d: Failure getting card's ExtCSD information!\n", mmc_return);
+		return mmc_return;
+	}
+	printf("before set USER_WP ext_csd[171] = %08x\n", ext_csd_buf[EXT_CSD_USER_WP]);
+
+	if (enable) {
+		if (ext_csd_buf[EXT_CSD_ERASE_GROUP_DEF] & 0x01) {
+			/* wp_group_size = 512KB * HC_WP_GRP_SIZE * HC_ERASE_GRP_SIZE.
+			 * Getting write protect group size in sectors here.
+			 */
+
+			wp_group_size =
+			    (512 * 1024) * ext_csd_buf[EXT_CSD_HC_WP_GRP_SIZE] *
+			    ext_csd_buf[EXT_CSD_HC_ERASE_GRP_SIZE] / 512;
+		} else {
+			/* wp_group_size = (WP_GRP_SIZE + 1) * (ERASE_GRP_SIZE + 1)
+			 * (ERASE_GRP_MULT + 1).
+			 * This is defined as the number of write blocks directly
+			 */
+
+			wp_group_size = (mmc_extract_bits(32, 36, mmc->csd) + 1) *
+					(mmc_extract_bits(42, 46, mmc->csd) + 1) *
+					(mmc_extract_bits(37, 41, mmc->csd) + 1);
+		}
+
+		if (wp_group_size == 0)
+			return -1;
+		printf("MMC wp_group_size = 0x%x\n", wp_group_size);
+
+		mmc_return = mmc_boot_switch_cmd(mmc, EXT_CSD_CMD_SET_NORMAL, EXT_CSD_USER_WP,
+			EXT_CSD_USER_WP_B_PERM_WP_DIS | EXT_CSD_USER_WP_B_PWR_WP_EN);
+		if (mmc_return != NO_ERROR) {
+			printf("Error No.%d: Failue sending switch USER_WP\n", mmc_return);
+			return mmc_return;
+		}
+
+		mmc_return = mmc_boot_get_card_status(mmc, 1000, &status);
+		if (mmc_return != NO_ERROR) {
+			printf("Error No.%d: card status busy\n", mmc_return);
+			return mmc_return;
+		}
+	} else {
+		mmc_return = mmc_boot_switch_cmd(mmc, EXT_CSD_CMD_SET_NORMAL, EXT_CSD_USER_WP,
+			EXT_CSD_USER_WP_B_PERM_WP_DIS);
+		if (mmc_return != NO_ERROR) {
+			printf("Error No.%d: Failue sending switch USER_WP\n", mmc_return);
+			return mmc_return;
+		}
+	}
+
+	mmc_return = mmc_boot_send_ext_cmd(mmc, ext_csd_buf);
+	if (mmc_return != NO_ERROR) {
+		printf("Error No.%d: Failure getting card's ExtCSD information!\n", mmc_return);
+		return mmc_return;
+	}
+	printf("before set USER_WP ext_csd[171] = %08x\n", ext_csd_buf[EXT_CSD_USER_WP]);
+
+	if (enable) {
+		/* Calculating the loop count for sending SET_WRITE_PROTECT (CMD28)
+		 * or CLEAR_WRITE_PROTECT (CMD29).
+		 * We are write protecting the partitions in blocks of write protect
+		 * group sizes only */
+
+		if (size % wp_group_size)
+			loop_count = (size / wp_group_size) + 1;
+		else
+			loop_count = (size / wp_group_size);
+
+		cmd.cmdidx = CMD28_SET_WRITE_PROTECT;
+		cmd.resp_type = MMC_BOOT_RESP_R1B;
+		cmd.data = NULL;
+
+		for (i = 0; i < loop_count; i++) {
+			/* Sending CMD28 for each WP group size
+			 * address is in sectors already */
+			cmd.argument = start + (i * wp_group_size);
+			mmc_return = mmc_send_command(mmc, &cmd);
+			if (mmc_return != NO_ERROR) {
+				printf("Error No. %d: Failure set WP\n", mmc_return);
+				return mmc_return;
+			}
+
+			/* Checking ADDR_OUT_OF_RANGE error in CMD28 response */
+			if (cmd.response[0] & (0x1 << 31))
+				return -1;
+		}
+	}
+
+	return mmc_return;
+}
+
+static status_t mmc_bset_wp(struct bdev *dev, int select, int enable, uint start, uint size)
+{
+	mmc_device_t *mdev = (mmc_device_t *)dev->private;
+	struct mmc *mmc = (struct mmc *)mdev->mmc;
+	int ret = NO_ERROR;
+
+	if (select == 0)
+		ret = mmc_set_user_wp(mmc, enable, start, size);
+	else if (select == 1)
+		ret = mmc_set_boot_wp(mmc, enable);
+	else
+		ret = -1;
+
+	return ret;
+}
 /*
  * Get alloc mmc_device_t
  */
@@ -1925,6 +2081,9 @@ static int mmc_mmc_register(mmc_device_t *mdev, struct mmc *mmc, unsigned int pa
 		mdev->dev.new_erase_native = mmc_berase;
 		mdev->dev.erase_size = mmc->erase_grp_size;
 	}
+
+	if (partition == MMC_PARTITION_MMC_USER)
+		mdev->dev.new_set_wp_native = mmc_bset_wp;
 
 	mdev->dev.max_blkcnt_per_cmd = CONFIG_SYS_MMC_MAX_BLK_COUNT * block_size / USER_BLOCK_SIZE;
 
