@@ -3,6 +3,8 @@
 #include <dev/boot.h>
 #include <platform/delay.h>
 #include <platform/sfr.h>
+#include <dev/lk_acpm_ipc.h>
+#include <target/pmic.h>
 #if 0
 #include <dev/speedy_multi.h>
 #include <dev/pmic_s2mps_19_22.h>
@@ -36,15 +38,29 @@
 /* power on/off mmc channel */
 void mmc_power_set(unsigned int channel, unsigned int enable)
 {
-#if 0
 	unsigned char reg;
 
 	switch (channel) {
 		case 0:
+			/* Enable eMMC power */
+			i3c_read(0, S2MPU12_PM_ADDR, S2MPU12_PM_LDO2_CTRL, &reg);
+			if (enable)
+				reg |= 0xC0;
+			else
+				reg &= 0xC0;
+			i3c_write(0, S2MPU12_PM_ADDR, S2MPU12_PM_LDO2_CTRL, reg);
+
+			i3c_read(0, S2MPU12_PM_ADDR, S2MPU12_PM_LDO23_CTRL, &reg);
+			if (enable)
+				reg |= 0xC0;
+			else
+				reg &= 0xC0;
+			i3c_write(0, S2MPU12_PM_ADDR, S2MPU12_PM_LDO23_CTRL, reg);
 			return;
 		case 1:
 			return;
 		case 2:
+#if 0
 			speedy_read(CONFIG_SPEEDY0_BASE, S2MPS19_PM_ADDR, S2MPS19_PM_LDO2M_CTRL, &reg);
 			if (enable)
 				reg |= S2MPS_OUTPUT_ON_NORMAL;
@@ -57,13 +73,13 @@ void mmc_power_set(unsigned int channel, unsigned int enable)
 			else
 				reg &= ~S2MPS_OUTPUT_ON_NORMAL;
 			speedy_write(CONFIG_SPEEDY0_BASE, S2MPS19_PM_ADDR, S2MPS19_PM_LDO15M_CTRL, reg);
+#endif
 			return;
 		case 3:
 			return;
 		default :
 			return;
 	}
-#endif
 }
 
 /* set gpio for mmc channel */
@@ -161,8 +177,9 @@ int mmc_board_init(struct mmc *mmc, unsigned int channel)
 	mmc->channel = channel;
 	switch (channel) {
 		case 0:
-			mmc_gpio_set(channel, 0);
-			mmc_clock_set(channel, 0);
+			mmc_power_set(channel, 1);
+			mmc_gpio_set(channel, 1);
+			mmc_clock_set(channel, 1);
 			dwmci_init(mmc, channel);
 			break;
 
