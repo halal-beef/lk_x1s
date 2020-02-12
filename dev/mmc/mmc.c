@@ -20,8 +20,6 @@
 #include <part.h>
 
 #ifndef CONFIG_SYS_MMC_MAX_BLK_COUNT
-//#define CONFIG_SYS_MMC_MAX_BLK_COUNT 32767
-/* HACK MAX BLK */
 #define CONFIG_SYS_MMC_MAX_BLK_COUNT 4096
 #endif
 
@@ -408,7 +406,6 @@ static int mmc_boot_send_op_cond(struct mmc *mmc)
 	cmd.argument = mmc->ocr;
 	cmd.resp_type = MMC_BOOT_RESP_R3;
 
-	/* HACK */
 	cmd.argument = 0x40300000;
 
 	mmc_ret = mmc_send_command(mmc, &cmd);
@@ -851,7 +848,6 @@ static int mmc_boot_send_ext_cmd(struct mmc *mmc, unsigned char *buf)
 	memset((struct mmc_data *)&data, 0,
 	       sizeof(struct mmc_data));
 
-	/* HACK Check eMMC device */
 	mmc_boot_get_card_status(mmc, 1000, &status);
 
 	/* CMD8 */
@@ -909,8 +905,8 @@ mmc_boot_decode_mmc_info(struct mmc *mmc, unsigned int *raw_csd)
 	mmc->clock = freq * mult;
 
 	/* Decode block length data from csd */
-	mmc->rd_block_len = mmc_extract_bits(80, 83, mmc->csd);
-	mmc->wr_block_len = mmc_extract_bits(22, 25, mmc->csd);
+	mmc->rd_block_len = 1 << mmc_extract_bits(80, 83, mmc->csd);
+	mmc->wr_block_len = 1 << mmc_extract_bits(22, 25, mmc->csd);
 
 	/* Calculate capacity from csd */
 	if (mmc_is_hc(mmc)) {
@@ -928,10 +924,6 @@ mmc_boot_decode_mmc_info(struct mmc *mmc, unsigned int *raw_csd)
 
 	if (mmc->wr_block_len > MMC_MAX_BLOCK_LEN)
 		mmc->wr_block_len = MMC_MAX_BLOCK_LEN;
-
-	/* HACK read/write block size */
-	mmc->rd_block_len = MMC_MAX_BLOCK_LEN;
-	mmc->wr_block_len = MMC_MAX_BLOCK_LEN;
 
 	/* If mmc version higher than 4, support EXT_CSD register */
 	if (mmc->version >= 4) {
