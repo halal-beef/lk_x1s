@@ -319,6 +319,9 @@ struct mmc {
 	int (*voltage_switch)(struct mmc *mmc);
 	int (*change_clksel)(struct mmc *mmc, unsigned int pass_index);
 };
+#define MMC_CHANNEL_EMMC		0
+#define MMC_CHANNEL_SDIO		1
+#define MMC_CHANNEL_SD			2
 
 typedef struct mmc_device_s mmc_device_t;
 
@@ -334,7 +337,7 @@ struct mmc_device_s {
 	u32 block_size;
 	u32 block_cnt;
 };
-void mmc_init(void);
+void mmc_init(unsigned int channel);
 int mmc_reinit(struct bdev *);
 int mmc_board_init(struct mmc *mmc, unsigned int channel);
 int mmc_board_reinit(struct mmc *mmc);
