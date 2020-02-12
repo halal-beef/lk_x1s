@@ -123,7 +123,8 @@ int blk_set_boot_wp(int enable)
 #endif
 	} else {
 		printf("%s: MMC mode\n", __func__);
-//		ret = mmc_set_boot_wp(enable);
+		dev = blk_get_dev(0);
+		dev->new_set_wp(dev, 1, enable, 0, 0);
 	}
 
 	return ret;
@@ -138,7 +139,8 @@ int blk_set_user_wp(u32 start, u32 size)
 		printf("%s:NONE\n", __func__);
 	} else {
 		printf("%s: MMC mode\n", __func__);
-//		mmc_set_user_wp(start, size);
+		dev = blk_get_dev(0);
+		dev->new_set_wp(dev, 0, 1, start, size);
 	}
 
 	return ret;
