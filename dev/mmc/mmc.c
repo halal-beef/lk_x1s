@@ -2157,37 +2157,35 @@ static void mmc_register_bdev(struct mmc *mmc)
 /*
  * Initialize all mmc devices.
  */
-void mmc_init(void)
+void mmc_init(unsigned int channel)
 {
-	int i, err;
+	int err;
 	struct mmc *mmc;
 
-	for (i = 0; i < MMC_MAX_CHANNEL; i++) {
-		mmc = &mmc_channel[i];
-		err = mmc_board_init(mmc, i);
-		if (err) {
-			printf("MMC channel %d don't existed or not used\n", i);
-			continue;
-		}
-		err = mmc_boot_init_and_identify_card(mmc);
-		if (err) {
-			if (mmc->exist == 0) {
-				printf("MMC channel %d no card or error card\n", i);
-				continue;
-			}
-			printf("MMC channel %d initialize failed\n", i);
-			mmc->speed_mode = MMC_DENY_UHS;
-			mmc_board_reinit(mmc);
-			err = mmc_boot_init_and_identify_card(mmc);
-			if (err != NO_ERROR) {
-				printf("MMC channel %d reinitializing failed\n", mmc->channel);
-				continue;
-			} else 
-				printf("MMC channel %d reinitializing success without SDR104\n", mmc->channel);
-		}
-		mmc_register_bdev(mmc);
-		printf("MMC channel %d initialize success\n", i);
+	mmc = &mmc_channel[channel];
+	err = mmc_board_init(mmc, channel);
+	if (err != NO_ERROR) {
+		printf("MMC channel %d don't existed or not used\n", channel);
+		return;
 	}
+	err = mmc_boot_init_and_identify_card(mmc);
+	if (err) {
+		if (mmc->exist == 0) {
+			printf("MMC channel %d no device or error device\n", channel);
+			return;
+		}
+		printf("MMC channel %d initialize failed\n", channel);
+		mmc->speed_mode = MMC_DENY_UHS;
+		mmc_board_reinit(mmc);
+		err = mmc_boot_init_and_identify_card(mmc);
+		if (err != NO_ERROR) {
+			printf("MMC channel %d reinitializing failed\n", mmc->channel);
+			return;
+		} else
+			printf("MMC channel %d reinitializing success without SDR104\n", mmc->channel);
+	}
+	mmc_register_bdev(mmc);
+	printf("MMC channel %d initialize success\n", channel);
 
 	part_set_def_dev(DEV_MMC);
 #ifdef MMC_TEST
