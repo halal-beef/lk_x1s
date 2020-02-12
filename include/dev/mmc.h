@@ -107,6 +107,9 @@
 #define EXT_CSD_WR_REL_PARAM		166	/* R */
 #define EXT_CSD_WR_REL_SET		167	/* R/W */
 #define EXT_CSD_RPMB_MULT		168	/* RO */
+#define EXT_CSD_USER_WP			171	/* RO */
+#define EXT_CSD_BOOT_WP			173	/* RO */
+#define EXT_CSD_BOOT_WP_STATUS		174	/* RO */
 #define EXT_CSD_ERASE_GROUP_DEF		175	/* R/W */
 #define EXT_CSD_BOOT_BUS_WIDTH		177
 #define EXT_CSD_PART_CONF		179	/* R/W */
@@ -120,6 +123,22 @@
 #define EXT_CSD_BOOT_MULT		226	/* RO */
 #define EXT_CSD_SEC_FEATURE_SUPPORT	231	/* RO */
 #define EXT_CSD_BKOPS_SUPPORT		502	/* RO */
+
+/*
+ * EXT_CSD[173] BOOT_WP
+ */
+#define EXT_CSD_USER_WP_B_PWR_WP_DIS    (0x40)
+#define EXT_CSD_USER_WP_B_PERM_WP_DIS   (0x10)
+#define EXT_CSD_USER_WP_B_PERM_WP_EN    (0x04)
+#define EXT_CSD_USER_WP_B_PWR_WP_EN     (0x01)
+
+/*
+ * EXT_CSD[173] BOOT_WP
+ */
+#define EXT_CSD_BOOT_WP_B_PWR_WP_DIS    (0x40)
+#define EXT_CSD_BOOT_WP_B_PERM_WP_DIS   (0x10)
+#define EXT_CSD_BOOT_WP_B_PERM_WP_EN    (0x04)
+#define EXT_CSD_BOOT_WP_B_PWR_WP_EN     (0x01)
 
 /*
  * EXT_CSD[196] DEVICE_TYPE
