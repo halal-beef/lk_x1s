@@ -116,6 +116,7 @@ int blk_set_boot_wp(int enable)
 {
 	int ret = 0;
 	int bMode = get_boot_device();
+	bdev_t *dev;
 
 	if (bMode == BOOT_UFS) {
 #if defined(CONFIG_BOOT_PARTITION_WP_SW)
@@ -134,6 +135,7 @@ int blk_set_user_wp(u32 start, u32 size)
 {
 	int ret = 0;
 	int bMode = get_boot_device();
+	bdev_t *dev;
 
 	if (bMode == BOOT_UFS) {
 		printf("%s:NONE\n", __func__);
