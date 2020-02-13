@@ -96,9 +96,15 @@
 #define EXT_CSD_CARD_TYPE_52_DDR_18_30	(1 << 2)/* Card can run at 52MHz DDR 1.8V or 3V */
 #define EXT_CSD_CARD_TYPE_52_DDR_12	(1 << 3)/* Card can run at 52MHz DDR 1.2V */
 
+#define EXT_CSD_NO_POWER_NOTIFICATION	0
+#define EXT_CSD_POWER_ON		1
+#define EXT_CSD_POWER_OFF_SHORT		2
+#define EXT_CSD_POWER_OFF_LONG		3
+
 /*
  * EXT_CSD fields
  */
+#define EXT_CSD_POWER_OFF_NOTIFICATION	34	/* R/W */
 #define EXT_CSD_PARTITION_SETTING	155	/* R/W */
 #define EXT_CSD_PARTITIONS_ATTRIBUTE	156	/* R/W */
 #define EXT_CSD_PARTITIONING_SUPPORT	160	/* RO */

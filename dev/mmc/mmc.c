@@ -326,6 +326,40 @@ int mmc_boot_switch_cmd(struct mmc *mmc, u8 set, u8 index, u8 value)
 }
 
 /*
+ * EXT_CSD_POWER_ON: Device initialization
+ * EXT_CSD_POWER_OFF_LONG: Device shutdown
+ */
+int mmc_power_off_notification(struct bdev *dev)
+{
+	mmc_device_t *mdev = (mmc_device_t *)dev->private;
+	struct mmc *mmc = (struct mmc *)mdev->mmc;
+	int err = NO_ERROR;
+
+	err = mmc_boot_switch_cmd(mmc, EXT_CSD_CMD_SET_NORMAL,
+			EXT_CSD_POWER_OFF_NOTIFICATION, EXT_CSD_POWER_OFF_LONG);
+	if (err)
+		printf("MMC%d PON set fail : %d\n", mmc->channel, err);
+	else
+		printf("MMC%d PON set in %s\n", mmc->channel, __func__);
+
+	return err;
+}
+
+int mmc_power_on_notification(struct mmc *mmc)
+{
+	int err = NO_ERROR;
+
+	err = mmc_boot_switch_cmd(mmc, EXT_CSD_CMD_SET_NORMAL,
+			EXT_CSD_POWER_OFF_NOTIFICATION, EXT_CSD_POWER_ON);
+	if (err)
+		printf("MMC%d PON set fail : %d\n", mmc->channel, err);
+	else
+		printf("MMC%d PON set in %s\n", mmc->channel, __func__);
+
+	return err;
+}
+
+/*
  * Set cards init state
  */
 static int mmc_set_init_state(struct mmc *mmc)
