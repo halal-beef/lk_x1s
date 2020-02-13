@@ -404,7 +404,7 @@ void platform_init(void)
 	 * Sometimes need mmc device when it is not boot device.
 	 * So always call mmc_init().
 	 */
-	mmc_init();
+	mmc_init(MMC_CHANNEL_SD);
 	part_init();
 
 	dss_fdt_init();
