@@ -167,7 +167,7 @@ static int mmc_send_command(struct mmc *mmc, struct mmc_cmd *cmd)
 		if (ret == NO_ERROR)
 			return ret;
 	}
-	printf("send command failed\n");
+	printf("MMC%d send command %u failed\n", mmc->channel, cmd->cmdidx);
 	return ret;
 }
 
@@ -1849,6 +1849,7 @@ int mmc_set_boot_wp(struct mmc *mmc, int enable)
 {
 	int mmc_return = NO_ERROR;
 
+#ifdef MMC_TEST
 	mmc_return = mmc_boot_send_ext_cmd(mmc, ext_csd_buf);
 	if (mmc_return != NO_ERROR) {
 		printf("Error No.%d: Failure getting card's ExtCSD information!\n", mmc_return);
@@ -1856,6 +1857,7 @@ int mmc_set_boot_wp(struct mmc *mmc, int enable)
 	}
 	printf("before set BOOT_WP ext_csd[173] = %08x\n", ext_csd_buf[EXT_CSD_BOOT_WP]);
 	printf("before set BOOT_WP_STATUS ext_csd[174] = %08x\n", ext_csd_buf[EXT_CSD_BOOT_WP]);
+#endif
 
 	if (enable)
 		mmc_return = mmc_boot_switch_cmd(mmc, EXT_CSD_CMD_SET_NORMAL, EXT_CSD_BOOT_WP,
@@ -1865,10 +1867,11 @@ int mmc_set_boot_wp(struct mmc *mmc, int enable)
 			EXT_CSD_BOOT_WP_B_PERM_WP_DIS);
 
 	if (mmc_return != NO_ERROR) {
-		printf("Error No.%d: Failue sending switch BOOT_WP\n", mmc_return);
+		printf("MMC%d: Error No.%d: Failue sending switch BOOT_WP\n", mmc->channel, mmc_return);
 		return mmc_return;
 	}
 
+#ifdef MMC_TEST
 	mmc_return = mmc_boot_send_ext_cmd(mmc, ext_csd_buf);
 	if (mmc_return != NO_ERROR) {
 		printf("Error No.%d: Failure getting card's ExtCSD information!\n", mmc_return);
@@ -1876,7 +1879,8 @@ int mmc_set_boot_wp(struct mmc *mmc, int enable)
 	}
 	printf("after set BOOT_WP ext_csd[173] = %08x\n", ext_csd_buf[EXT_CSD_BOOT_WP]);
 	printf("after set BOOT_WP_STATUS ext_csd[174] = %08x\n", ext_csd_buf[EXT_CSD_BOOT_WP]);
-	printf("set write protection (boot partition)\n");
+#endif
+	printf("MMC%d: set write protection (boot partition)\n", mmc->channel);
 
 	return mmc_return;
 }
@@ -1891,12 +1895,14 @@ int mmc_set_user_wp(struct mmc *mmc, int enable, u32 start, u32 size)
 	memset((struct mmc_cmd *)&cmd, 0,
 	       sizeof(struct mmc_cmd));
 
+#ifdef MMC_TEST
 	mmc_return = mmc_boot_send_ext_cmd(mmc, ext_csd_buf);
 	if (mmc_return != NO_ERROR) {
 		printf("Error No.%d: Failure getting card's ExtCSD information!\n", mmc_return);
 		return mmc_return;
 	}
 	printf("before set USER_WP ext_csd[171] = %08x\n", ext_csd_buf[EXT_CSD_USER_WP]);
+#endif
 
 	if (enable) {
 		if (ext_csd_buf[EXT_CSD_ERASE_GROUP_DEF] & 0x01) {
@@ -1920,7 +1926,7 @@ int mmc_set_user_wp(struct mmc *mmc, int enable, u32 start, u32 size)
 
 		if (wp_group_size == 0)
 			return -1;
-		printf("MMC wp_group_size = 0x%x\n", wp_group_size);
+		printf("MMC%d: wp_group_size = 0x%x\n", mmc->channel, wp_group_size);
 
 		mmc_return = mmc_boot_switch_cmd(mmc, EXT_CSD_CMD_SET_NORMAL, EXT_CSD_USER_WP,
 			EXT_CSD_USER_WP_B_PERM_WP_DIS | EXT_CSD_USER_WP_B_PWR_WP_EN);
@@ -1943,12 +1949,14 @@ int mmc_set_user_wp(struct mmc *mmc, int enable, u32 start, u32 size)
 		}
 	}
 
+#ifdef MMC_TEST
 	mmc_return = mmc_boot_send_ext_cmd(mmc, ext_csd_buf);
 	if (mmc_return != NO_ERROR) {
 		printf("Error No.%d: Failure getting card's ExtCSD information!\n", mmc_return);
 		return mmc_return;
 	}
 	printf("before set USER_WP ext_csd[171] = %08x\n", ext_csd_buf[EXT_CSD_USER_WP]);
+#endif
 
 	if (enable) {
 		/* Calculating the loop count for sending SET_WRITE_PROTECT (CMD28)
@@ -1980,6 +1988,7 @@ int mmc_set_user_wp(struct mmc *mmc, int enable, u32 start, u32 size)
 				return -1;
 		}
 	}
+	printf("MMC%d: set write protection (user partition)\n", mmc->channel);
 
 	return mmc_return;
 }
