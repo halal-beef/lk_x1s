@@ -47,33 +47,31 @@ void mmc_power_set(unsigned int channel, unsigned int enable)
 			if (enable)
 				reg |= 0xC0;
 			else
-				reg &= 0xC0;
+				reg &= ~(0xC0);
 			i3c_write(0, S2MPU12_PM_ADDR, S2MPU12_PM_LDO2_CTRL, reg);
 
 			i3c_read(0, S2MPU12_PM_ADDR, S2MPU12_PM_LDO23_CTRL, &reg);
 			if (enable)
 				reg |= 0xC0;
 			else
-				reg &= 0xC0;
+				reg &= ~(0xC0);
 			i3c_write(0, S2MPU12_PM_ADDR, S2MPU12_PM_LDO23_CTRL, reg);
 			return;
 		case 1:
 			return;
 		case 2:
-#if 0
-			speedy_read(CONFIG_SPEEDY0_BASE, S2MPS19_PM_ADDR, S2MPS19_PM_LDO2M_CTRL, &reg);
+			i3c_read(0, S2MPU12_PM_ADDR, S2MPU12_PM_LDO10_CTRL, &reg);
 			if (enable)
-				reg |= S2MPS_OUTPUT_ON_NORMAL;
+				reg = 0xFC;
 			else
-				reg &= ~S2MPS_OUTPUT_ON_NORMAL;
-			speedy_write(CONFIG_SPEEDY0_BASE, S2MPS19_PM_ADDR, S2MPS19_PM_LDO2M_CTRL, reg);
-			speedy_read(CONFIG_SPEEDY0_BASE, S2MPS19_PM_ADDR, S2MPS19_PM_LDO15M_CTRL, &reg);
+				reg &= ~(0xC0);
+			i3c_write(0, S2MPU12_PM_ADDR, S2MPU12_PM_LDO10_CTRL, reg);
+			i3c_read(0, S2MPU12_PM_ADDR, S2MPU12_PM_LDO24_CTRL, &reg);
 			if (enable)
-				reg |= S2MPS_OUTPUT_ON_NORMAL;
+				reg |= 0xC0;
 			else
-				reg &= ~S2MPS_OUTPUT_ON_NORMAL;
-			speedy_write(CONFIG_SPEEDY0_BASE, S2MPS19_PM_ADDR, S2MPS19_PM_LDO15M_CTRL, reg);
-#endif
+				reg &= ~(0xC0);
+			i3c_write(0, S2MPU12_PM_ADDR, S2MPU12_PM_LDO24_CTRL, reg);
 			return;
 		case 3:
 			return;
@@ -160,7 +158,7 @@ void mmc_clock_set(unsigned int channel, unsigned int enable)
 			*(volatile u32 *)CLK_CON_DIV_CLK_CMU_HSI_MMC_CARD = reg;
 
 			reg = *(volatile u32 *)CLK_CON_MUX_CLK_CMU_HSI_MMC_CARD;
-			reg &= ~0x3;
+			reg &= ~0x7;
 			reg |= 0x1;
 			*(volatile u32 *)CLK_CON_MUX_CLK_CMU_HSI_MMC_CARD = reg;
 			return;
@@ -182,22 +180,16 @@ int mmc_board_init(struct mmc *mmc, unsigned int channel)
 			mmc_clock_set(channel, 1);
 			dwmci_init(mmc, channel);
 			break;
-
-			return -1;
 		case 1:
 			/* SDIO not used */
 			return -1;
 		case 2:
-#ifdef USE_SD
 			/* The SD card can be turned on regardless of the boot device. */
 			mmc_power_set(channel, 1);
 			mmc_gpio_set(channel, 1);
 			mmc_clock_set(channel, 1);
 			dwmci_init(mmc, channel);
 			break;
-#else
-			return -1;
-#endif
 		case 3:
 			return -1;
 		default:
@@ -236,14 +228,12 @@ int mmc_board_reinit(struct mmc *mmc)
 		case 1:
 			return -1;
 		case 2:
-#if 0
 			/* power off and power on */
 			mmc_power_set(channel, 0);
 			mdelay(1);
 			mmc_power_set(channel, 1);
 			mmc_gpio_set(channel, 1);
 			mmc_clock_set(channel, 1);
-#endif
 			break;
 		case 3:
 			return -1;

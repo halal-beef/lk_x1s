@@ -3,6 +3,8 @@
 #include <platform/sfr.h>
 #include <platform/delay.h>
 #include <platform/mmu/mmu_func.h>
+#include <dev/lk_acpm_ipc.h>
+#include <target/pmic.h>
 #if 0
 #include <dev/pmic_s2mps_19_22.h>
 #include <dev/speedy_multi.h>
@@ -146,15 +148,11 @@ static void sd_set_clk(unsigned int freq)
 /* SD card voltage switch 3.3V to 1.8V */
 static void sd_voltage_switch(void)
 {
-#if 0
 	unsigned char reg;
 
-	reg = 0;
-	speedy_write(CONFIG_SPEEDY0_BASE, S2MPS19_PM_ADDR, S2MPS19_PM_LDO2M_CTRL, reg);
-	mdelay(10);
-	reg = 0xc0;
-	speedy_write(CONFIG_SPEEDY0_BASE, S2MPS19_PM_ADDR, S2MPS19_PM_LDO2M_CTRL, reg);
-#endif
+	i3c_read(0, S2MPU12_PM_ADDR, S2MPU12_PM_LDO10_CTRL, &reg);
+	reg = 0xC0;
+	i3c_write(0, S2MPU12_PM_ADDR, S2MPU12_PM_LDO10_CTRL, reg);
 }
 
 static void cache_flush(void)
@@ -194,7 +192,7 @@ int dwmci_board_get_host(struct dw_mci *host, int channel)
 			host->set_clk = 0x0;
 			host->get_clk = sd_get_clk;
 			host->bus_clock = 0;
-//			host->sd_voltage_switch = sd_voltage_switch;
+			host->sd_voltage_switch = sd_voltage_switch;
 			host->fifo_depth = FIFO_DEPTH_DEAFULT;
 #if defined(CONFIG_MMU_ENABLE)
 			host->cache_flush = cache_flush;
