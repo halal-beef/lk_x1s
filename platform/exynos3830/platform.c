@@ -330,6 +330,7 @@ void platform_init(void)
 	ret < 0 ? (board_rev = 0):(board_rev = ret);
 
 	mmc_init(MMC_CHANNEL_EMMC);
+	mmc_init(MMC_CHANNEL_SD);
 	part_init();
 	if (is_first_boot() && *(unsigned int *)DRAM_BASE == 0xabcdef)
 		dss_fdt_init();
