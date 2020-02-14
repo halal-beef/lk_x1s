@@ -614,6 +614,8 @@ static int dwmci_start_cmd(struct dw_mci *host, struct mmc_cmd *cmd, unsigned in
 
 	if (!cmd->data)
 		dwmci_writel(host, mask, DWMCI_RINTSTS);
+	
+	dbg("dwmci : RINTSTS : %08x\n", mask);
 
 	if (mask & INTMSK_RTO) {
 		printf("dwmci : Response Timed Out\n");
@@ -674,17 +676,46 @@ static void dwmci_end_data(struct dw_mci *host)
 	dwmci_writel(host, reg, DWMCI_BMOD);
 }
 
+static void dwmci_simple_recovery(struct dw_mci *host)
+{
+	int loop_count;
+
+	dwmci_reset_ctrl(host, CTRL_RESET);
+	dwmci_reset_ctrl(host, FIFO_RESET);
+	dwmci_writel(host, INTMSK_ALL, DWMCI_RINTSTS);
+	dwmci_writel(host, 0, DWMCI_INTMSK);
+	dwmci_control_clken(host, CLK_DISABLE);
+	dwmci_writel(host, 0, DWMCI_CMD);
+	dwmci_writel(host, CMD_ONLY_CLK, DWMCI_CMD);
+	loop_count = 0x10000000;
+	do {
+		if (!(dwmci_readl(host, DWMCI_CMD) & CMD_STRT_BIT))
+			break;
+		loop_count--;
+	} while (loop_count);
+
+	if (loop_count <= 0)
+		printf("Simple Recovery has been failed.\n ");
+
+	dwmci_writel(host, dwmci_readl(host, DWMCI_CMD)&(~CMD_SEND_CLK_ONLY),
+			DWMCI_CMD);
+	dwmci_control_clken(host, CLK_ENABLE);
+
+	return;
+}
+
 /*
  * Transfer data and check error
  */
 static int dwmci_data_transfer(struct dw_mci *host)
 {
 	unsigned int mask;
-	unsigned int timeout = 100000;
+	unsigned int timeout = 2000000;
 
 	while (timeout--) {
 		mask = dwmci_readl(host, DWMCI_RINTSTS);
 		if (mask & (DATA_ERR | DATA_TOUT)) {
+			dwmci_simple_recovery(host);
 			dwmci_end_data(host);
 			dwmci_writel(host, 0x0, DWMCI_IDINTEN);
 			if (mask & DATA_TOUT) {
@@ -701,6 +732,7 @@ static int dwmci_data_transfer(struct dw_mci *host)
 			dwmci_writel(host, 0x0, DWMCI_IDINTEN);
 			break;
 		}
+		udelay(1);
 	}
 
 	if (timeout == 0) {
