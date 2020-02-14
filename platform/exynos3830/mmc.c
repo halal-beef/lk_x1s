@@ -35,6 +35,8 @@
 #define GPF2_CON				0x13430000
 #define GPF2_PUD				0x13430008
 #define GPF2_DRV				0x1343000c
+//#define USE_SD				1
+//#define USE_UHS				1
 /* power on/off mmc channel */
 void mmc_power_set(unsigned int channel, unsigned int enable)
 {
@@ -228,6 +230,10 @@ int mmc_board_reinit(struct mmc *mmc)
 		case 1:
 			return -1;
 		case 2:
+#if (USE_UHS != 1)
+			mmc->speed_mode = MMC_DENY_UHS;
+#endif
+#ifdef USE_SD
 			/* power off and power on */
 			mmc_power_set(channel, 0);
 			mdelay(1);
@@ -235,6 +241,9 @@ int mmc_board_reinit(struct mmc *mmc)
 			mmc_gpio_set(channel, 1);
 			mmc_clock_set(channel, 1);
 			break;
+#else
+			return -1;
+#endif
 		case 3:
 			return -1;
 		default:
