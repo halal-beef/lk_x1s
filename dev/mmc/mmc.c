@@ -537,7 +537,6 @@ static int mmc_boot_sd_init_card(struct mmc *mmc)
 	if (((mmc->ocr & (MMC_BOOT_SD_HC_HCS | MMC_BOOT_SD_OCR_S18R)) ==
 			(MMC_BOOT_SD_HC_HCS | MMC_BOOT_SD_OCR_S18R))
 			&& mmc->speed_mode != MMC_DENY_UHS) {
-		mmc->set_ios(mmc);
 		cmd.cmdidx = CMD11_SWITCH_VOLTAGE;
 		cmd.argument = 0;
 		cmd.resp_type = MMC_BOOT_RESP_R1;
@@ -548,6 +547,7 @@ static int mmc_boot_sd_init_card(struct mmc *mmc)
 		if (cmd.response[0] & (1<<19))
 			return ERR_GENERIC;
 		mmc->voltage_switch(mmc);
+		mmc->set_ios(mmc);
 		mmc->speed_mode = MMC_SET_UHS;
 	}
 	return NO_ERROR;
