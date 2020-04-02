@@ -171,8 +171,14 @@ int dwmci_board_get_host(struct dw_mci *host, int channel)
 			host->sdr = SDR_CH0;
 			host->ddr = DDR_CH0;
 			host->phase_devide = PHASE_DIVIDER_DEFAULT;
-			host->secure = 1;
-			host->mps_secure = 0xCFE2E000;
+
+			if (*(unsigned int *)DRAM_BASE == 0xabcdef) {
+				host->secure = 0;
+				host->mps_secure = 0;
+			} else {
+				host->secure = 1;
+				host->mps_secure = 0xCFE2E000;
+			}
 			host->set_clk = 0x0;
 			host->get_clk = mmc_get_clk;
 			host->bus_clock = 0;
