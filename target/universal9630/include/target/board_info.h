@@ -18,6 +18,7 @@
 
 #define CONFIG_USE_RPMB
 #define CONFIG_UFS_BOARD_TYPE 1        /* smdk : 0, universal : 1 */
+#define RPMB_BLOCK_PER_PARTITION      512
 
 #define CONFIG_GET_B_REV_FROM_ADC
 
