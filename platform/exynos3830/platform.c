@@ -189,8 +189,12 @@ static void read_dram_info(void)
 static void print_el3_monitor_version(void)
 {
 	char el3_mon_ver[EL3_MON_VERSION_STR_SIZE] = { 0, };
+	unsigned long long start, end;
 
 	if (*(unsigned int *)DRAM_BASE == 0xabcdef) {
+		start = (unsigned long long)el3_mon_ver;
+		end = start + EL3_MON_VERSION_STR_SIZE;
+		clean_invalidate_dcache_range(start, end);
 		/* This booting is from eMMC/UFS. not T32 */
 		get_el3_mon_version(el3_mon_ver, EL3_MON_VERSION_STR_SIZE);
 		printf("\nEL3 Monitor information: \n");
