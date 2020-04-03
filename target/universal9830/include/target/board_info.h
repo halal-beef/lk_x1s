@@ -20,6 +20,7 @@
 
 #define CONFIG_USE_RPMB
 #define CONFIG_USE_F2FS
+#define RPMB_BLOCK_PER_PARTITION      512
 
 #define BOOT_IMG_HDR_V2
 #define CONFIG_DTB_IN_BOOT
