@@ -25,7 +25,7 @@
 #define GPF0_CON				0x12070000
 #define GPF0_DAT				0x12070004
 #define GPF0_PUD				0x12070008
-#define GFF0_DRV				0x1207000c
+#define GPF0_DRV				0x1207000c
 
 #define GPF1_CON				0x12070020
 #define GPF1_PUD				0x12070028
@@ -96,8 +96,13 @@ void mmc_gpio_set(unsigned int channel, unsigned int enable)
 
 			reg = *(volatile u32 *)GPF0_PUD;
 			reg &= ~(0x00FFFF);
-			reg |= 0x0130;
-			*(volatile u32 *)GPF1_PUD = reg;
+			reg |= 0x3130;
+			*(volatile u32 *)GPF0_PUD = reg;
+
+			reg = *(volatile u32 *)GPF0_DRV;
+			reg &= ~(0xFFFF);
+			reg |= 0x3333;
+			*(volatile u32 *)GPF0_DRV = reg;
 
 			reg = *(volatile u32 *)GPF1_CON;
 			reg &= ~(0xFFFFFFFF);
@@ -109,6 +114,10 @@ void mmc_gpio_set(unsigned int channel, unsigned int enable)
 			reg |= 0x33333333;
 			*(volatile u32 *)GPF1_PUD = reg;
 
+			reg = *(volatile u32 *)GPF1_DRV;
+			reg &= ~(0xFFFFFFFF);
+			reg |= 0x33333333;
+			*(volatile u32 *)GPF1_DRV = reg;
 			return;
 		case 1:
 			return;
@@ -123,7 +132,7 @@ void mmc_gpio_set(unsigned int channel, unsigned int enable)
 			reg |= 0x00333330;
 			*(volatile u32 *)GPF2_PUD = reg;
 
-			reg = *(volatile u32 *)GPF1_DRV;
+			reg = *(volatile u32 *)GPF2_DRV;
 			reg &= ~(0x00FFFFFF);
 			reg |= 0x00222222;
 			*(volatile u32 *)GPF2_DRV = reg;
