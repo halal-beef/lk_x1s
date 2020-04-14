@@ -155,10 +155,10 @@ static void sd_voltage_switch(void)
 	i3c_write(0, S2MPU12_PM_ADDR, S2MPU12_PM_LDO10_CTRL, reg);
 }
 
-static void cache_flush(void)
+static void cache_flush(void *start, void *end)
 {
 #if defined(CONFIG_MMU_ENABLE)
-	clean_invalidate_dcache_all();
+	clean_invalidate_dcache_range((u64)start, (u64)end);
 #endif
 }
 
