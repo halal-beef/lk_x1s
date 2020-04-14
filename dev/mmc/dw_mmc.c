@@ -46,8 +46,12 @@ static void dwmci_clr(struct dw_mci *host, unsigned int value, unsigned int addr
 
 static void dwmci_cache_flush(struct dw_mci *host)
 {
+	if (!host->flush_start_addr || !host->flush_end_addr) {
+        	printf("dwmci : cache flush address is null\n");
+		return;
+	}
 	if (host->cache_flush)
-		host->cache_flush();
+		host->cache_flush(host->flush_start_addr, host->flush_end_addr);
 }
 
 static void dwmci_dumpregs_err(struct dw_mci *host)
@@ -496,6 +500,11 @@ static void dwmci_prepare_data(struct dw_mci *host, struct mmc_data *data)
 		data_cnt -= 8;
 		cur_idmac++;
 	}
+	host->flush_start_addr = (void *)idmac_desc;
+	host->flush_end_addr = (void *)(++cur_idmac);
+	dwmci_cache_flush(host);
+	host->flush_start_addr = (void *)buffer_addr;
+	host->flush_end_addr = (void *)(buffer_addr + (u64)((i + 1) * 0x1000));
 	dwmci_cache_flush(host);
 
 	dwmci_writel(host, (unsigned int)((u64)idmac_desc & 0xFFFFFFFF), DWMCI_DBADDRL);
@@ -707,7 +716,7 @@ static void dwmci_simple_recovery(struct dw_mci *host)
 /*
  * Transfer data and check error
  */
-static int dwmci_data_transfer(struct dw_mci *host)
+static int dwmci_data_transfer(struct dw_mci *host, struct mmc_data *data)
 {
 	unsigned int mask;
 	unsigned int timeout = 2000000;
@@ -740,6 +749,9 @@ static int dwmci_data_transfer(struct dw_mci *host)
 		return ERR_TIMED_OUT;
 	}
 
+	if (data->flags == MMC_DATA_READ)
+		dwmci_cache_flush(host);
+
 	return NO_ERROR;
 }
 
@@ -769,8 +781,6 @@ static int dwmci_send_command(struct mmc *mmc, struct mmc_cmd *cmd)
 
 	if (&(mmc->abort_cmd) == cmd)
 		dwmci_ready_abort_cmd(&flag);
-
-	dwmci_cache_flush(host);
 	wmb();
 
 	err = dwmci_start_cmd(host, cmd, flag);
@@ -779,9 +789,7 @@ static int dwmci_send_command(struct mmc *mmc, struct mmc_cmd *cmd)
 
 	dwmci_response_parse(host, cmd);
 	if (data)
-		err = dwmci_data_transfer(host);
-
-	dwmci_cache_flush(host);
+		err = dwmci_data_transfer(host, data);
 
 	if (err)
 		goto err;
