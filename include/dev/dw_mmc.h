@@ -433,12 +433,13 @@ struct dw_mci {
 	unsigned int mps_secure;
 	unsigned int min_clock;
 	unsigned int max_clock;
-
+	void *flush_start_addr;
+	void *flush_end_addr;
 
 	unsigned int (*get_clk)(void);
 	void (*set_clk)(unsigned int freq);
 	void (*sd_voltage_switch)(void);
-	void (*cache_flush)(void);
+	void (*cache_flush)(void *start, void *end);
 };
 int dwmci_init(struct mmc *mmc, int channel);
 int dwmci_board_get_host(struct dw_mci *host, int channel);
