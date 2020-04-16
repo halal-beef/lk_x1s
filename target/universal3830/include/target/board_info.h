@@ -21,6 +21,6 @@
 
 #define CONFIG_USE_RPMB
 #define USE_MMC0
-#define RPMB_BLOCK_PER_PARTITION       1024
+#define RPMB_BLOCK_PER_PARTITION       512
 
 #endif /*__BOARD_INFO_H__ */
