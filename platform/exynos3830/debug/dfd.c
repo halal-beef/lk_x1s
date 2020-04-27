@@ -29,6 +29,11 @@ void dfd_set_sjtag_status(void)
 	dfd_sjtag_status = exynos_smc(SMC_CMD_GET_SJTAG_STATUS, 0x3, 0, 0);
 	printf("DFD: sjtag is %sabled(%d)\n",
 		(dfd_sjtag_status == 0) ? "dis" : "en", dfd_sjtag_status);
+
+	if (dfd_sjtag_status)
+		writel(DUMPPC_SJTAG_MAGIC, DUMPPC_SJTAG_STATUS);
+	else
+		writel(0, DUMPPC_SJTAG_STATUS);
 }
 
 const u32 dbg_base[NR_CPUS] = {
