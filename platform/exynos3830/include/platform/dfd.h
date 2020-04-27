@@ -48,8 +48,11 @@
 #define LLC_INIT_BIT			(24)
 #define LLC_INIT			(1 << LLC_INIT_BIT)
 
+#define DUMPPC_SJTAG_STATUS		(0x02040200)
+#define DUMPPC_SJTAG_MAGIC		(0xc5100ced)
+
 #define DUMPGPR_BASE			(0x9000C800)
-#define DUMPPC_BASE			(0x90010a00)
+#define DUMPPC_BASE			(0x90010a08)
 #define CPU_ON_PSCI_ID			(0xC4000003)
 #define CPU_OFF_PSCI_ID			(0x84000002)
 #define COREREG_OFFSET			(0x200)
