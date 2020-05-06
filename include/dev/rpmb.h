@@ -132,5 +132,6 @@ int rpmb_set_lock_state(uint32_t state);
 #define HMAC_START_BYTE			196
 #define DATA_START_BYTE			228
 #define RPMB_SIZE			512
+#define RPMB_MAX_BLOCK			32
 
 #endif				/* __RPMB_H__ */

@@ -415,7 +415,7 @@ static int emmc_rpmb_commands(struct rpmb_packet *packet)
 	int result = -1;
 	u32 addr, start_blk, blk_cnt;
 	u32 *addrp = NULL;
-	uint8_t buf[RPMB_SIZE] __attribute__((__aligned__(CACHE_WRITEBACK_GRANULE_128)));
+	uint8_t buf[RPMB_SIZE * RPMB_MAX_BLOCK] __attribute__((__aligned__(CACHE_WRITEBACK_GRANULE_128)));
 	uint8_t hmac[HMAC_CALC_SIZE_128_GRANULE] __attribute__((__aligned__(CACHE_WRITEBACK_GRANULE_128)));
 	uint8_t output_data[CACHE_WRITEBACK_GRANULE_128] __attribute__((__aligned__(CACHE_WRITEBACK_GRANULE_128)));
 
@@ -770,6 +770,7 @@ static int emmc_rpmb_commands(struct rpmb_packet *packet)
 
 		if (result != 0) {
 			printf("HMAC compare fail !!\n");
+#ifdef RPMB_DEBUG
 			printf("HMAC Host value\n");
 			dump_packet(output_data, HMAC_SIZE);
 
@@ -781,6 +782,7 @@ static int emmc_rpmb_commands(struct rpmb_packet *packet)
 			dump_packet((void *)(buf + (blk_cnt - 1) * RPMB_SIZE), RPMB_SIZE);
 			printf("Authenticated data read response (Swapped)\n");
 			dump_packet((u8 *) packet, RPMB_SIZE);
+#endif
 		} else {
 #ifdef RPMB_DEBUG
 			dprintf(INFO, "HMAC compare success !!\n");
@@ -1197,6 +1199,7 @@ static int ufs_rpmb_commands(struct rpmb_packet *packet)
 
 		if (result != 0) {
 			printf("HMAC compare fail !!\n");
+#ifdef RPMB_DEBUG
 			printf("HMAC Host value\n");
 			dump_packet(output_data, HMAC_SIZE);
 
@@ -1208,6 +1211,7 @@ static int ufs_rpmb_commands(struct rpmb_packet *packet)
 			dump_packet((void *)(buf + (blk_cnt - 1) * RPMB_SIZE), RPMB_SIZE);
 			printf("Authenticated data read response (Swapped)\n");
 			dump_packet((u8 *) packet, RPMB_SIZE);
+#endif
 		} else {
 #ifdef RPMB_DEBUG
 			dprintf(INFO, "HMAC compare success !!\n");
