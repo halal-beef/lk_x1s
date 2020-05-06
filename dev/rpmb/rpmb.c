@@ -196,7 +196,10 @@ uint32_t get_RPMB_hmac(const uint8_t * input_data, size_t input_len, uint8_t * o
 	uint64_t r3 = 0;
 	uint32_t retry_cnt = 0;
 	uint32_t ret = RV_SUCCESS;
-
+#ifdef CACHE_ENABLED
+	uint8_t * rpmb_data_addr;
+	size_t rpmb_data_len;
+#endif
 	rpmb_param rpmb_data;
 
 	rpmb_data.input_data = (uint64_t)input_data;
@@ -204,7 +207,10 @@ uint32_t get_RPMB_hmac(const uint8_t * input_data, size_t input_len, uint8_t * o
 	rpmb_data.output_data = (uint64_t)output_data;
 
 #ifdef CACHE_ENABLED
-	CACHE_CLEAN(&rpmb_data, sizeof(rpmb_data));
+	rpmb_data_addr = (uint8_t *) &rpmb_data;
+	rpmb_data_len = (size_t) sizeof(rpmb_data);
+
+	CACHE_CLEAN(rpmb_data_addr, rpmb_data_len);
 	CACHE_CLEAN(input_data, input_len);
 	CACHE_INVALIDATE(output_data, RPMB_HMAC_LEN);
 #endif
