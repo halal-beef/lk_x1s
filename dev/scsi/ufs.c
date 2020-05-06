@@ -495,13 +495,20 @@ static int __utp_write_utrd(struct ufs_host *ufs, u32 type)
 	int r = 0;
 
 	struct ufs_utrd *utrd_ptr = ufs->utrd_addr;
-	u32 len = ufs->scsi_cmd->datalen;
-	u16 sg_segments = (u16)((len + UFS_SG_BLOCK_SIZE - 1) / UFS_SG_BLOCK_SIZE);
-
+	u32 len;
+	u16 sg_segments;
 	u32 data_direction;
 
 	switch (type) {
 	case UPIU_TRANSACTION_COMMAND:
+		if (!ufs->scsi_cmd) {
+			printf("UFS: scsi cmd is NULL\n");
+			r = -1;
+			break;
+		}
+
+		len = ufs->scsi_cmd->datalen;
+		sg_segments = (u16)((len + UFS_SG_BLOCK_SIZE - 1) / UFS_SG_BLOCK_SIZE);
 		data_direction = __utp_cmd_get_flags(ufs->scsi_cmd);
 
 		utrd_ptr->dw[0] = (u32)(data_direction | UTP_SCSI_COMMAND | UTP_REQ_DESC_INT_CMD);
