@@ -823,8 +823,6 @@ static int mmc_boot_send_scr(struct mmc *mmc, unsigned char *buf)
 	if (mmc == NULL)
 		return ERR_GENERIC;
 
-	memset(buf, 0, 64);
-
 	memset((struct mmc_cmd *)&cmd, 0,
 	       sizeof(struct mmc_cmd));
 	memset((struct mmc_data *)&data, 0,
@@ -1092,6 +1090,9 @@ mmc_boot_decode_sd_info(struct mmc *mmc, unsigned int *raw_csd)
 		printf("Error No. %d: Failure send app command before sending SCR\n", mmc_return);
 		return mmc_return;
 	}
+
+	/* scr buffer clear 8byte */
+	memset(scr_buf, 0, sizeof(scr_buf));
 
 	mmc_return = mmc_boot_send_scr(mmc, (unsigned char *)scr_buf);
 	if (mmc_return != NO_ERROR) {
