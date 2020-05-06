@@ -1458,6 +1458,9 @@ static int mmc_select_partition(mmc_device_t *mdev, struct mmc *mmc)
 	if (mmc_is_sd(mmc))
 		return NO_ERROR;
 
+	memset((struct mmc_cmd *)&cmd, 0,
+	       sizeof(struct mmc_cmd));
+
 	cmd.cmdidx = CMD6_SWITCH_FUNC;
 	cmd.resp_type = MMC_BOOT_RESP_R1B;
 	cmd.argument = (MMC_SWITCH_MODE_WRITE_BYTE<<24) |
