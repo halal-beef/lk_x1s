@@ -112,6 +112,9 @@ static void dfd_get_gpr(u64 cpu)
 	u64 *cpureg = (u64 *)(CONFIG_RAMDUMP_COREREG + (cpu * COREREG_OFFSET));
 	u64 *iram = (u64 *)DUMPGPR_BASE;
 
+	if (dfd_check_panic_stat(cpu))
+		return;
+
 	for (i = X0, idx = X0; i < GPR_END; ++i) {
 		if (i == X19)
 			idx = 19;
@@ -127,7 +130,8 @@ static void dfd_get_pc_value(void)
 		u64 *cpu_reg = (u64 *)(CONFIG_RAMDUMP_COREREG + (i * COREREG_OFFSET));
 		u64 iram = DUMPPC_BASE + (i * 0x10);
 
-		cpu_reg[PC] = readq(iram);
+		if (dfd_check_panic_stat(i) == 0)
+			cpu_reg[PC] = readq(iram);
 		cpu_reg[POWER_STATE] = readl(iram + 0x8);
 
 		if (((cpu_reg[PC] >> 40) & 0xff) == 0xff)
