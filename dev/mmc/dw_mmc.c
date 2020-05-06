@@ -760,13 +760,15 @@ static int dwmci_data_transfer(struct dw_mci *host, struct mmc_data *data)
  */
 static int dwmci_send_command(struct mmc *mmc, struct mmc_cmd *cmd)
 {
-	struct dw_mci *host = (struct dw_mci *)mmc->host;
+	struct dw_mci *host;
 	struct mmc_data *data = cmd->data;
 	int err;
 	unsigned int flag = 0;
 
-	if (mmc == NULL || cmd == NULL)
+	if (!mmc || !mmc->host || !cmd)
 		return ERR_GENERIC;
+
+	host = (struct dw_mci *)mmc->host;
 
 	err = dwmci_check_data_busy(host, cmd);
 	if (err)
