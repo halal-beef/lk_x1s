@@ -9,4 +9,5 @@ MODULES += \
   lib/cksum \
   lib/debugcommands \
   lib/libm \
+  lib/unittest \
   lib/version
