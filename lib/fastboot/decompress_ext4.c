@@ -112,8 +112,8 @@ int write_compressed_ext4(char* img_base, unsigned int sector_base) {
 	ext4_chunk_header *chunk_header;
 	ext4_file_header *file_header;
 	char *data;
-	u32 pattern;
-	u32 *p_i_buf;
+	u64 pattern;
+	u64 *p_i_buf;
 	unsigned int boot_dev = get_boot_device();
 	u64 chunk_in_bytes;
 
@@ -155,15 +155,15 @@ int write_compressed_ext4(char* img_base, unsigned int sector_base) {
 
 		case EXT4_CHUNK_TYPE_FILL:
 			/* Fill pattern */
-			pattern = *(u32 *)((char *)(&chunk_header->total_size) +
-					sizeof(u32));
+			pattern = *(u32 *)(img_base + sizeof(ext4_chunk_header));
 
-			p_i_buf = (u32 *)i_buf_for_sparse;
-			chunk_in_bytes = (u64)sector_size * PART_SECTOR_SIZE;
+			p_i_buf = (u64 *)i_buf_for_sparse;
+
+			chunk_in_bytes = (u64)sector_size * 512;
 			printf("*** CHUNK TYPE FILL (lba: %u, sct: %u, pat: 0x%08x) %llu***\n",
-					sector_base, sector_size, pattern, chunk_in_bytes / (u64)sizeof(u32));
-			for (i = 0; i < chunk_in_bytes / (u64)sizeof(u32); i++)
-				p_i_buf[i] = pattern;
+					sector_base, sector_size, (u32)pattern, chunk_in_bytes / (u64)sizeof(u32));
+			for (i = 0; i < chunk_in_bytes / (u64)sizeof(u64); i++)
+				p_i_buf[i] = (pattern | (pattern << 32));
 
 			/* Iterate block write as much as we allocate */
 			write_raw_chunk((char *)p_i_buf, sector_base, sector_size);
