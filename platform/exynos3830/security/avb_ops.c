@@ -40,7 +40,7 @@ uint32_t sb_get_avb_key(uint8_t *avb_pubkey, uint64_t pubkey_size,
 	ctx.ns_buf_addr = (uint64_t)avb_pubkey;
 	ctx.ns_buf_size = pubkey_size;
 	ctx.keyname_size = keyname_size;
-	if (keyname_size > SB_MAX_PUBKEY_LEN)
+	if (keyname_size > SB_KST_MAX_KEY_NAME_LEN)
 		return AVB_ERROR_INVALID_KEYNAME_SIZE;
 	memcpy(ctx.keyname, keyname, keyname_size);
 
