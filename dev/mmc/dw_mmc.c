@@ -761,7 +761,7 @@ static int dwmci_data_transfer(struct dw_mci *host, struct mmc_data *data)
 static int dwmci_send_command(struct mmc *mmc, struct mmc_cmd *cmd)
 {
 	struct dw_mci *host;
-	struct mmc_data *data = cmd->data;
+	struct mmc_data *data;
 	int err;
 	unsigned int flag = 0;
 
@@ -769,6 +769,7 @@ static int dwmci_send_command(struct mmc *mmc, struct mmc_cmd *cmd)
 		return ERR_GENERIC;
 
 	host = (struct dw_mci *)mmc->host;
+	data = cmd->data;
 
 	err = dwmci_check_data_busy(host, cmd);
 	if (err)
