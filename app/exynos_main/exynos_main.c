@@ -130,7 +130,7 @@ static void exynos_boot_task(const struct app_descriptor *app, void *args)
 		pmic_enable_manual_reset(PMIC_MRDT_3);
 		printf("Entering fastboot: not first_boot\n");
 		goto download;
-	} else if (rst_stat & (WARM_RESET | LITTLE_WDT_RESET | BIG_WDT_RESET)) {
+	} else if (rst_stat & (WARM_RESET | LITTLE_WDT_RESET | BIG_WDT_RESET | APM_WDT_RESET)) {
 		printf("Entering fastboot: Abnormal RST_STAT: 0x%x\n", rst_stat);
 		sdm_encrypt_secdram();
 		dfd_set_dump_en(0);
