@@ -104,6 +104,7 @@
 #define WARM_RESET								(1 << 28)
 #define LITTLE_WDT_RESET							(1 << 24)
 #define BIG_WDT_RESET								(1 << 23)
+#define APM_WDT_RESET								(1 << 20)
 #define PIN_RESET								(1 << 16)
 
 #define CONFIG_PRINT_TIMESTAMP
