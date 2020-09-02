@@ -400,6 +400,7 @@ static void print_pmudbg_registers(void)
 
 static void print_acpm_last_gpr(void)
 {
+	unsigned int reg;
 	if (readl(EXYNOS3830_DUMP_GPR_BASE) == 0xAAAAAAAA)
 		return;
 
@@ -420,6 +421,8 @@ static void print_acpm_last_gpr(void)
 	       readl(EXYNOS3830_DUMP_GPR_BASE + 0x34),
 	       readl(EXYNOS3830_DUMP_GPR_BASE + 0x38),
 	       readl(EXYNOS3830_DUMP_GPR_BASE + 0x3C));
+	reg = readl(EXYNOS3830_DUMP_GPR_BASE + 0xB0);
+	printf("ACPM TCXO STATUS  : %08x %s \n", reg, reg & (0x1 << 20) ? "ON" : "OFF");
 }
 
 void display_flexpmu_dbg(void)
