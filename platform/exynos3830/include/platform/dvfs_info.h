@@ -70,6 +70,7 @@ struct id_tbl_info {
 #define RGT_STEP_SIZE		(6250)
 
 #define LAST_FREQ_BASE		(0x900167D0)
+#define LAST_REQ_BASE		(0x90016750)
 
 struct last_freq_volt {
 	char domain_name[8];
@@ -77,4 +78,12 @@ struct last_freq_volt {
 	unsigned int volt_offset;
 };
 
+struct last_req_info {
+	u16 req_master;
+	u16 req_done;
+	u32 req_freq;
+};
+
+#define SIZE_LAST_REQ_INFO	(sizeof(struct last_req_info) / 4)
+#define MAX_REQ_DOMAINS		(8)
 #endif /* __DVFS_INFO_H__ */

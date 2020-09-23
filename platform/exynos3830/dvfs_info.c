@@ -17,6 +17,7 @@
 
 static struct asv_tbl_info asv_tbl;
 static struct id_tbl_info id_tbl;
+struct last_req_info last_req[8];
 static unsigned int rst_stat;
 
 void display_asv_info(void)
@@ -54,7 +55,7 @@ void display_asv_info(void)
 
 void display_last_freq_volt(void)
 {
-	unsigned int i;
+	unsigned int i, tmp, *p_last_req;
 	unsigned int rgt_val = 0, rgt_volt = 0, freq = 0;
 
 	struct last_freq_volt last_fv[MAX_VOLT_DOMAIN] = {
@@ -67,18 +68,35 @@ void display_last_freq_volt(void)
 		{"DISP", LAST_FREQ_BASE + 0x18, LAST_VOLT_BASE + 0x1c},	//buck2
 	};
 
+	char dvfs_request_master[3][5] = {
+		"AP",
+		"CP",
+		"GNSS",
+	};
+
+	p_last_req = (unsigned int *)&last_req;
+	for (i = 0; i < SIZE_LAST_REQ_INFO * MAX_VOLT_DOMAIN; i++) {
+		tmp = readl(LAST_REQ_BASE + (0x4 * i));
+		*(p_last_req + i) = (unsigned int)tmp;
+	}
+
 	if (rst_stat == (PORESET | PIN_RESET))
 		return ;
 
 	printf("\n### display_last_freq_volt:\n");
-
 	for (i = 0; i < MAX_VOLT_DOMAIN; i++) {
 		freq = readl(last_fv[i].freq_offset);
 		rgt_val = readb(last_fv[i].volt_offset);
 		rgt_volt = RGT_MIN_VOLT + (rgt_val - RGT_MIN_VAL) * RGT_STEP_SIZE;
 
-		printf("[%s] freq: %d [Mhz], volt: %d [uV]\n",
-				last_fv[i].domain_name, freq, rgt_volt);
+		printf("Request_master: [%s] Target_domain: [%s] ",
+				dvfs_request_master[last_req[i].req_master], last_fv[i].domain_name);
+
+		if (last_req[i].req_done == 1)
+			printf("freq: %d -> %d [Mhz], volt: %d [uV]\n",
+				freq, last_req[i].req_freq, rgt_volt);
+		else
+			printf("freq: %d [Mhz], volt: %d [uV]\n", freq, rgt_volt);
 	}
 
 }
