@@ -148,14 +148,11 @@ static const char *access_type[] = {
 };
 
 static const char *master[] = {
-	"none",
 	"AUD",
-	"VTS",
 	"CHUB",
 	"CP",
 	"GNSS",
 	"WLBT",
-	"none",
 	"AP",
 };
 
@@ -367,18 +364,18 @@ static void print_pmudbg_registers(void)
 	printf("%s%s - 0x%x\n", FLEXPMU_DBG_LOG, "CLUSTER1_CPU2_STATES", readl(EXYNOS3830_PMUDBG_BASE + 0x1c));
 	printf("%s%s - 0x%x\n", FLEXPMU_DBG_LOG, "CLUSTER1_CPU3_STATES", readl(EXYNOS3830_PMUDBG_BASE + 0x20));
 	printf("%s%s - 0x%x\n", FLEXPMU_DBG_LOG, "CLUSTER1_NONCPU_STATES", readl(EXYNOS3830_PMUDBG_BASE + 0x24));
+	printf("%s%s - 0x%x\n", FLEXPMU_DBG_LOG, "CP_STATES", readl(EXYNOS3830_PMUDBG_BASE + 0x88));
+	printf("%s%s - 0x%x\n", FLEXPMU_DBG_LOG, "GNSS_STATES", readl(EXYNOS3830_PMUDBG_BASE + 0x8c));
+	printf("%s%s - 0x%x\n", FLEXPMU_DBG_LOG, "WLBT_STATES", readl(EXYNOS3830_PMUDBG_BASE + 0x90));
 	printf("%s%s - 0x%x\n", FLEXPMU_DBG_LOG, "MIF_STATES", readl(EXYNOS3830_PMUDBG_BASE + 0x94));
 	printf("%s%s - 0x%x\n", FLEXPMU_DBG_LOG, "TOP_STATES", readl(EXYNOS3830_PMUDBG_BASE + 0x98));
 	mif_states = readl(EXYNOS3830_PMUDBG_BASE + 0x94);
-	printf("%s%s - 0x%x\n", FLEXPMU_DBG_LOG, "MIF_STATES", mif_states);
 	if (mif_states == 0x2 || mif_states == 0x3) {
 		printf("%s dump starts!\n", FLEXPMU_DBG_LOG);
 		print_mif_busmasters_status();
 	}
 
 	for (i = 0; i < 6; i++) {
-		if (i % 4 == 0)
-			printf("\n");
 		printf("%16s - 0x%x\t", pd_name[i], readl(EXYNOS3830_PMUDBG_BASE + pd_offset[i]));
 	}
 	printf("\n\n");
