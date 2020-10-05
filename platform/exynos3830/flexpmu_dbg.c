@@ -406,6 +406,8 @@ static void print_acpm_last_gpr(void)
 	       readl(EXYNOS3830_DUMP_GPR_BASE + 0x3C));
 	reg = readl(EXYNOS3830_DUMP_GPR_BASE + 0xB0);
 	printf("ACPM TCXO STATUS  : %08x %s \n", reg, reg & (0x1 << 20) ? "ON" : "OFF");
+	reg = readl(EXYNOS3830_DUMP_GPR_BASE + 0xB4);
+	printf("RCO PMU DIVRATIO  : %d\n", (reg & 0x3ff) + 1);
 }
 
 void display_flexpmu_dbg(void)
