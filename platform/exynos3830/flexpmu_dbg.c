@@ -370,7 +370,7 @@ static void print_pmudbg_registers(void)
 	printf("%s%s - 0x%x\n", FLEXPMU_DBG_LOG, "MIF_STATES", readl(EXYNOS3830_PMUDBG_BASE + 0x94));
 	printf("%s%s - 0x%x\n", FLEXPMU_DBG_LOG, "TOP_STATES", readl(EXYNOS3830_PMUDBG_BASE + 0x98));
 	mif_states = readl(EXYNOS3830_PMUDBG_BASE + 0x94);
-	if (mif_states != 0x0 || mif_states != 0x80) {
+	if (mif_states != 0x0 && mif_states != 0x80) {
 		printf("%s dump starts!\n", FLEXPMU_DBG_LOG);
 		print_mif_busmasters_status();
 	}
