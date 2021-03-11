@@ -138,12 +138,12 @@ void td4150_lcd_exit(unsigned int id, struct exynos_panel_info *lcd)
 {
 	if (dsim_wr_data(id, MIPI_DSI_DCS_SHORT_WRITE,
 				SEQ_DISPLAY_OFF[0], 0) < 0)
-		dsim_err("fail to send SEQ_DISPLAY_ON command.\n");
+		dsim_err("fail to send SEQ_DISPLAY_OFF command.\n");
 	mdelay(20);
 
 	if (dsim_wr_data(id, MIPI_DSI_DCS_SHORT_WRITE,
 				SEQ_SLEEP_IN[0], 0) < 0)
-		dsim_err("fail to send SEQ_SLEEP_OUT command.\n");
+		dsim_err("fail to send SEQ_SLEEP_IN command.\n");
 	mdelay(100);
 }
 

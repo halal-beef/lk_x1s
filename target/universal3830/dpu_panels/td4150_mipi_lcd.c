@@ -72,6 +72,7 @@ static int td4150_displayoff(struct dsim_device *dsim)
 
 static int td4150_suspend(struct dsim_device *dsim)
 {
+	dsim_info("%s\n", __func__);
 	td4150_lcd_exit(dsim->id, dsim->lcd_info);
 	return 1;
 }
