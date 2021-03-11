@@ -103,3 +103,12 @@ display_panel_power:
 
 	ret
 
+	.global display_panel_power_off
+display_panel_power_off:
+	ldr     x0, =EXYNOS3830_GPG2DAT
+	ldr     w1, [x0]
+	bic     w1, w1, #(0x1 << 1)
+	str     w1, [x0]
+
+	ret
+
