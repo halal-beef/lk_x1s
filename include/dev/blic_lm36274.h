@@ -57,5 +57,6 @@ void IIC_LM36274_ERead(unsigned char ChipId,
 void IIC_LM36274_EWrite(unsigned char ChipId,
                          unsigned char IicAddr, unsigned char IicData);
 void blic_init_LM36274(void);
+void blic_deinit_LM36274(void);
 
 #endif /*__BLIC_LM36274_H__*/
