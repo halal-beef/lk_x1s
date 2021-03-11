@@ -304,7 +304,7 @@ int dsim_set_panel_power(struct dsim_device *dsim, u32 on)
 {
 	dsim_dbg("%s +\n", __func__);
 
-	call_config_ops(dsim, set_gpio_lcd_power, dsim->board_type);
+	call_config_ops(dsim, set_gpio_lcd_power, dsim->board_type, on);
 
 	dsim_dbg("%s -\n", __func__);
 
@@ -345,14 +345,12 @@ static void clks_to_dsim_device(struct dsim_clks *clks,
 	dsim->clks.byte_clk = clks->byte_clk;
 }
 
-static int dsim_disable(struct dsim_device *dsim)
+int dsim_disable(struct dsim_device *dsim)
 {
 	int ret = 0;
 
 	if (dsim->state == DSIM_STATE_OFF)
 		return 0;
-
-	//call_panel_ops(dsim, suspend, dsim);
 
 	dsim_reg_stop(dsim->id, dsim->data_lane);
 
@@ -363,6 +361,8 @@ static int dsim_disable(struct dsim_device *dsim)
 	dsim_set_panel_power(dsim, 0);
 
 	dsim->state = DSIM_STATE_OFF;
+
+	dsim_info("dsim disable\n");
 
 	return ret;
 }

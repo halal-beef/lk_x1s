@@ -433,3 +433,41 @@ int display_drv_init(void)
 
 	return ret;
 }
+
+static int decon_disable(struct decon_device *decon)
+{
+	struct decon_mode_info psr = {0};
+
+	if (decon->state == DECON_STATE_OFF)
+		return 0;
+
+	decon_to_psr_info(decon, &psr);
+	decon_reg_stop(decon->id, 0, &psr, true, decon->lcd_info->fps);
+
+	decon->state = DECON_STATE_OFF;
+
+	decon_info("decon disable\n");
+
+	return 0;
+}
+
+int display_drv_deinit(void)
+{
+	struct decon_device *decon = decon_drvdata[0];
+	struct dsim_device *dsim = dsim0_for_decon;
+
+	decon_info("%s +\n", __func__);
+
+	if (decon->state == DECON_STATE_OFF)
+		return 0;
+
+	call_panel_ops(dsim, suspend, dsim);
+
+	decon_disable(decon);
+
+	dsim_disable(dsim);
+
+	decon_info("%s -\n", __func__);
+
+	return 0;
+}

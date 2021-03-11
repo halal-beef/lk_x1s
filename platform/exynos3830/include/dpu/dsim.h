@@ -379,4 +379,5 @@ void dsim_reg_set_link_clock(u32 id, u32 en);
 void dsim_reg_set_esc_clk_on_lane(u32 id, u32 en, u32 lane);
 void dsim_reg_enable_word_clock(u32 id, u32 en);
 void dpu_sysreg_dphy_reset(void __iomem *sysreg, u32 dsim_id, u32 rst);
+int dsim_disable(struct dsim_device *dsim);
 #endif /* __SAMSUNG_DSIM_H__ */
