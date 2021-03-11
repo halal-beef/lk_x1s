@@ -31,6 +31,7 @@ void display_te_init(void);
 void display_panel_reset(void);
 void display_panel_release(void);
 void display_panel_power(void);
+void display_panel_power_off(void);
 /*
  * ########## Machine dependency ##########
  */
@@ -98,14 +99,23 @@ static void set_gpio_lcd_reset(enum board_gpio_type gpio_type)
 }
 
 /* Configure and set a GPIO for LCD_POWER_ON */
-static void set_gpio_lcd_power(enum board_gpio_type gpio_type)
+static void set_gpio_lcd_power(enum board_gpio_type gpio_type, unsigned int enable)
 {
 	/* Enable Power */
 	printf("%s: +\n", __func__);
 
-	display_panel_power();
+	if (enable != 0) {
+		display_panel_power();
 
-	blic_init_LM36274();
+		blic_init_LM36274();
+	}
+	else {
+		display_panel_reset();
+		mdelay(10);
+		blic_deinit_LM36274();
+		mdelay(5);
+		display_panel_power_off();
+	}
 
 	printf("%s: -\n", __func__);
 	mdelay(10);

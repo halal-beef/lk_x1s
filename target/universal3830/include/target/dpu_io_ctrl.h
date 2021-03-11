@@ -39,7 +39,7 @@ struct exynos_display_config {
 	void (*set_mipi_phy)(unsigned int enable);
 	void (*set_gpio_hw_te)(void);
 	void (*set_gpio_lcd_reset)(enum board_gpio_type board_type);
-	void (*set_gpio_lcd_power)(enum board_gpio_type board_type);
+	void (*set_gpio_lcd_power)(enum board_gpio_type board_type, unsigned int enable);
 };
 
 extern enum board_gpio_type get_exynos_board_type(void);
