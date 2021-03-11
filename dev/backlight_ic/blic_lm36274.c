@@ -294,3 +294,10 @@ void blic_init_LM36274(void)
 	IIC_LM36274_EWrite(LM36274_W_ADDR, 0x08, 0x13);
 	printf("LM36274 enabled \n");
 }
+
+void blic_deinit_LM36274(void)
+{
+	IIC_LM36274_EWrite(LM36274_W_ADDR, 0x09, 0x98);
+	IIC_LM36274_EWrite(LM36274_W_ADDR, 0x08, 0x00);	/* BL_EN: BL disabled */
+	printf("LM36274 disabled \n");
+}
