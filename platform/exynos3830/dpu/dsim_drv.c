@@ -112,6 +112,7 @@ static void dsim_long_data_wr(struct dsim_device *dsim, unsigned long d0, u32 d1
 int dsim_write_data(struct dsim_device *dsim, u32 id, unsigned long d0, u32 d1)
 {
 	int ret = 0;
+	int cnt = 5000; /* for waiting empty status during 50ms */
 
 	if (dsim->state != DSIM_STATE_ON) {
 		dsim_err("DSIM is not ready. state(%d)\n", dsim->state);
@@ -172,6 +173,18 @@ int dsim_write_data(struct dsim_device *dsim, u32 id, unsigned long d0, u32 d1)
 
 	default:
 		dsim_info("data id %x is not supported.\n", id);
+		ret = -EINVAL;
+	}
+
+	do {
+		if (dsim_reg_payload_fifo_is_empty(dsim->id) &&
+				dsim_reg_header_fifo_is_empty(dsim->id))
+			break;
+		udelay(10);
+	} while (cnt--);
+
+	if (!cnt) {
+		dsim_err("ID(%d): DSIM command(%lx) fail\n", id, d0);
 		ret = -EINVAL;
 	}
 
