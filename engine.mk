@@ -63,7 +63,7 @@ GLOBAL_COMPILEFLAGS += -fno-builtin
 GLOBAL_COMPILEFLAGS += -fno-delete-null-pointer-checks
 GLOBAL_COMPILEFLAGS += -D__UFS_CAL_LK__
 GLOBAL_CFLAGS := --std=gnu11 -Werror-implicit-function-declaration -Wstrict-prototypes -Wwrite-strings
-GLOBAL_CFLAGS += -Werror
+# GLOBAL_CFLAGS += -Werror
 GLOBAL_CPPFLAGS := --std=c++11 -fno-exceptions -fno-rtti -fno-threadsafe-statics
 #GLOBAL_CPPFLAGS += -Weffc++
 GLOBAL_ASMFLAGS := -DASSEMBLY

@@ -14,6 +14,7 @@
 #include <lib/block.h>
 #include <lib/bio.h>
 #include <dev/scsi.h>
+#include <dev/mmc.h>
 
 #define CMD_STRING_MAX_SIZE     60
 #define BLKCNT_UFS_TO_MMC(x) (x << 3)
