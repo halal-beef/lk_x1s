@@ -84,6 +84,7 @@ unsigned int get_current_boot_device(void)
 
 void set_first_boot_device_info(void)
 {
+	#if 0
 	unsigned int boot_device = 0;
 	unsigned int boot_device_info = 0;
 
@@ -118,6 +119,7 @@ void set_first_boot_device_info(void)
 		boot_device = BOOT_UFS;
 
 	writel(boot_device, BOOT_DEV_INFO);
+	#endif
 }
 
 int get_boot_device(void)

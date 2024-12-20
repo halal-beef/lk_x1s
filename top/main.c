@@ -136,6 +136,14 @@ static int bootstrap2(void *arg)
     lk_primary_cpu_init_level(LK_INIT_LEVEL_THREADING, LK_INIT_LEVEL_ARCH - 1);
     arch_init();
 
+    char* base = (char*)0xf1000000;
+    for (int i = 0; i < 1440 * 3200 * 4; i += 4) {
+        base[i] = 0;      // Blue component
+        base[i + 1] = 255;  // Green component
+        base[i + 2] = 0;  // Red component
+        base[i + 3] = 255;        // Full opacity
+    }
+
     // initialize the rest of the platform
     dprintf(SPEW, "initializing platform\n");
     lk_primary_cpu_init_level(LK_INIT_LEVEL_ARCH, LK_INIT_LEVEL_PLATFORM - 1);
@@ -154,49 +162,3 @@ static int bootstrap2(void *arg)
 
     return 0;
 }
-
-#if WITH_SMP
-void lk_secondary_cpu_entry(void)
-{
-    uint cpu = arch_curr_cpu_num();
-
-    if (cpu > secondary_bootstrap_thread_count) {
-        dprintf(CRITICAL, "Invalid secondary cpu num %d, SMP_MAX_CPUS %d, secondary_bootstrap_thread_count %d\n",
-                cpu, SMP_MAX_CPUS, secondary_bootstrap_thread_count);
-        return;
-    }
-
-    thread_secondary_cpu_init_early();
-    thread_resume(secondary_bootstrap_threads[cpu - 1]);
-
-    dprintf(SPEW, "entering scheduler on cpu %d\n", cpu);
-    thread_secondary_cpu_entry();
-}
-
-static int secondary_cpu_bootstrap2(void *arg)
-{
-    /* secondary cpu initialize from threading level up. 0 to threading was handled in arch */
-    lk_init_level(LK_INIT_FLAG_SECONDARY_CPUS, LK_INIT_LEVEL_THREADING, LK_INIT_LEVEL_LAST);
-
-    return 0;
-}
-
-void lk_init_secondary_cpus(uint secondary_cpu_count)
-{
-    if (secondary_cpu_count >= SMP_MAX_CPUS) {
-        dprintf(CRITICAL, "Invalid secondary_cpu_count %d, SMP_MAX_CPUS %d\n",
-                secondary_cpu_count, SMP_MAX_CPUS);
-        secondary_cpu_count = SMP_MAX_CPUS - 1;
-    }
-    for (uint i = 0; i < secondary_cpu_count; i++) {
-        dprintf(SPEW, "creating bootstrap completion thread for cpu %d\n", i + 1);
-        thread_t *t = thread_create("secondarybootstrap2",
-                                    &secondary_cpu_bootstrap2, NULL,
-                                    DEFAULT_PRIORITY, DEFAULT_STACK_SIZE);
-        t->pinned_cpu = i + 1;
-        thread_detach(t);
-        secondary_bootstrap_threads[i] = t;
-    }
-    secondary_bootstrap_thread_count = secondary_cpu_count;
-}
-#endif

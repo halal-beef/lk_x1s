@@ -23,6 +23,50 @@
 #include <asm.h>
 #include <arch/asm_macros.h>
 
+FUNCTION(white)
+        sub     sp, sp, #32
+        str     w0, [sp, 12]
+        mov     x0, 4043309056
+        str     x0, [sp, 16]
+        str     wzr, [sp, 28]
+.L3:
+        ldr     w1, [sp, 28]
+        mov     w0, 16383
+        movk    w0, 0x119, lsl 16
+        cmp     w1, w0
+        bgt     .L2
+        ldrsw   x0, [sp, 28]
+        ldr     x1, [sp, 16]
+        add     x0, x1, x0
+        mov     w1, -1
+        strb    w1, [x0]
+        ldrsw   x0, [sp, 28]
+        add     x0, x0, 1
+        ldr     x1, [sp, 16]
+        add     x0, x1, x0
+        mov     w1, -1
+        strb    w1, [x0]
+        ldrsw   x0, [sp, 28]
+        add     x0, x0, 2
+        ldr     x1, [sp, 16]
+        add     x0, x1, x0
+        mov     w1, -1
+        strb    w1, [x0]
+        ldrsw   x0, [sp, 28]
+        add     x0, x0, 3
+        ldr     x1, [sp, 16]
+        add     x0, x1, x0
+        mov     w1, -1
+        strb    w1, [x0]
+        ldr     w0, [sp, 28]
+        add     w0, w0, 4
+        str     w0, [sp, 28]
+        b       .L3
+.L2:
+        nop
+        add     sp, sp, 32
+        ret
+
 /* void arm64_context_switch(vaddr_t *old_sp, vaddr_t new_sp); */
 FUNCTION(arm64_context_switch)
     /* save old frame */
