@@ -685,18 +685,12 @@ int fb_do_flashing(const char *cmd_buffer, unsigned int rx_sz)
 	sprintf(response,"OKAY");
 	if (!strcmp(cmd_buffer + 9, "lock")) {
 		printf("Lock this device.\n");
-		print_lcd_update(FONT_GREEN, FONT_BLACK, "Lock this device.");
-		if(set_lock_state(1))
-			sprintf(response, "FAILRPMB error: failed to change lock state on RPMB");
+		print_lcd_update(FONT_GREEN, FONT_BLACK, "User has a negative IQ");
+		sprintf(response, "FAILAre you serious? Why did you want to do this???");
 	} else if (!strcmp(cmd_buffer + 9, "unlock")) {
-		if (get_unlock_ability()) {
-			printf("Unlock this device.\n");
-			print_lcd_update(FONT_GREEN, FONT_BLACK, "Unlock this device.");
-			if(set_lock_state(0))
-				sprintf(response, "FAILRPMB error: failed to change lock state on RPMB");
-		} else {
-			sprintf(response, "FAILunlock_ability is 0");
-		}
+		printf("Unlock this device.\n");
+		print_lcd_update(FONT_GREEN, FONT_BLACK, "[2024] Knoz bypasz 100 per cent workz");
+		sprintf(response, "FAILThere is no way you thought this would work.");
 	} else if (!strcmp(cmd_buffer + 9, "lock_critical")) {
 		printf("Lock critical partitions of this device.\n");
 		print_lcd_update(FONT_GREEN, FONT_BLACK, "Lock critical partitions of this device.");
@@ -731,7 +725,6 @@ int fb_do_oem(const char *cmd_buffer, unsigned int rx_sz)
 
 		fastboot_send_status(response, strlen(response), FASTBOOT_TX_ASYNC);
 	} else {
-		printf("Unsupported oem command!\n");
 		sprintf(response, "FAILunsupported command");
 		fastboot_send_status(response, strlen(response), FASTBOOT_TX_ASYNC);
 	}
