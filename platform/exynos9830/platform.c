@@ -360,10 +360,32 @@ static void print_acpm_version(void)
 #endif /* ifdef EXYNOS_ACPM_BASE */
 }
 
+void troll()
+{
+	print_lcd_update(FONT_ORANGE, FONT_BLACK, "<!>");
+	print_lcd_update(FONT_ORANGE, FONT_BLACK, "");
+	print_lcd_update(FONT_WHITE, FONT_BLACK, "The boot loader is unlocked and software");
+	print_lcd_update(FONT_WHITE, FONT_BLACK, "integrity cannot be guaranteed. Any data");
+	print_lcd_update(FONT_WHITE, FONT_BLACK, "stored on this device may be available to");
+	print_lcd_update(FONT_WHITE, FONT_BLACK, "attackers. Do not store any sensitive data");
+	print_lcd_update(FONT_WHITE, FONT_BLACK, "on this device.");
+	print_lcd_update(FONT_WHITE, FONT_BLACK, "");
+	print_lcd_update(FONT_WHITE, FONT_BLACK, "Visit this link on another device:");
+	print_lcd_update(FONT_ORANGE, FONT_BLACK, "youtu.be/xvFZjo5PgG0");
+	print_lcd_update(FONT_WHITE, FONT_BLACK, "");
+	print_lcd_update(FONT_WHITE, FONT_BLACK, "Loading lk3rd. Be patient.");
+}
+
+void clear_screen(uint32_t color);
+
 void platform_init(void)
 {
 	u32 ret = 0;
 	u32 rst_stat = readl(POWER_RST_STAT);
+
+	clear_screen(0x000000);
+	troll();
+
 
 	display_flexpmu_dbg();
 	print_acpm_version();
@@ -381,6 +403,7 @@ void platform_init(void)
 	s2mu106_charger_init();
 	fg_init_s2mu106();
 #endif
+
 	/*
 	 * check_charger_connect();
 	 */
@@ -404,9 +427,6 @@ void platform_init(void)
 	if (rst_stat & (WARM_RESET | LITTLE_WDT_RESET))
 		dfd_run_post_processing();
 
-#ifdef CONFIG_EXYNOS_BOOTLOADER_DISPLAY
-	print_lcd(FONT_RED, FONT_BLACK, "LK Display is enabled!");
-#endif
 	dfd_display_core_stat();
 	if (*(unsigned int *)DRAM_BASE == 0xabcdef) {
 		unsigned int dfd_en =
