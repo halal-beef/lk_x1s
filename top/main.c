@@ -136,14 +136,6 @@ static int bootstrap2(void *arg)
     lk_primary_cpu_init_level(LK_INIT_LEVEL_THREADING, LK_INIT_LEVEL_ARCH - 1);
     arch_init();
 
-    char* base = (char*)0xf1000000;
-    for (int i = 0; i < 1440 * 3200 * 4; i += 4) {
-        base[i] = 0;      // Blue component
-        base[i + 1] = 255;  // Green component
-        base[i + 2] = 0;  // Red component
-        base[i + 3] = 255;        // Full opacity
-    }
-
     // initialize the rest of the platform
     dprintf(SPEW, "initializing platform\n");
     lk_primary_cpu_init_level(LK_INIT_LEVEL_ARCH, LK_INIT_LEVEL_PLATFORM - 1);

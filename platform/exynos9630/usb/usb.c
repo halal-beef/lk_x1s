@@ -46,8 +46,8 @@ void gadget_probe_pid_vid_version(unsigned short *vid, unsigned short *pid, unsi
 	*bcd_version = 0x0100;
 }
 
-static const char vendor_str[] = "Samsung Semiconductor, S.LSI Division";
-static const char product_str[] = "Exynos9630 LK Bootloader";
+static const char vendor_str[] = "Samsung Exynos probably :)";
+static const char product_str[] = "lk3rd [Exynos 990]";
 static char serial_id[16] = "No Serial";
 
 int gadget_get_vendor_string(void)

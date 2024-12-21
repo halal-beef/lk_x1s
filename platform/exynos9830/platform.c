@@ -265,11 +265,6 @@ static void read_dram_info(void)
 	printf("DRAM %llu GB %s %s %s M5=0x%02x M6=0x%02x M7=0x%02x M8=0x%02x\n",
 			dram_size_info,	type, rank_num, manufacturer,
 			M5, M6, M7, M8);
-#ifdef CONFIG_EXYNOS_BOOTLOADER_DISPLAY
-	print_lcd(FONT_WHITE, FONT_BLACK, "DRAM %lu GB %s %s %s M5=0x%02x M6=0x%02x M7=0x%02x M8=0x%02x",
-	          dram_size_info, type, rank_num, manufacturer,
-	          M5, M6, M7, M8);
-#endif
 }
 
 #define EL3_MON_VERSION_STR_SIZE (180)
@@ -389,9 +384,7 @@ void platform_init(void)
 	/*
 	 * check_charger_connect();
 	 */
-
 	if (get_boot_device() == BOOT_UFS) {
-		printf("get_boot_device() == BOOT_UFS\n");
 		ufs_alloc_memory();
 		ufs_init(2);
 		ret = ufs_set_configuration_descriptor();
@@ -404,7 +397,6 @@ void platform_init(void)
 	 * Sometimes need mmc device when it is not boot device.
 	 * So always call mmc_init().
 	 */
-	mmc_init(MMC_CHANNEL_SD);
 	part_init();
 
 	dss_fdt_init();
@@ -413,22 +405,8 @@ void platform_init(void)
 		dfd_run_post_processing();
 
 #ifdef CONFIG_EXYNOS_BOOTLOADER_DISPLAY
-	/* If the display_drv_init function is not called before,
-	 * you must use the print_lcd function.
-	 */
 	print_lcd(FONT_RED, FONT_BLACK, "LK Display is enabled!");
-	ret = display_drv_init();
-	if (ret == 0 && is_first_boot())
-		show_boot_logo();
-
-	/* If the display_drv_init function is called,
-	 * you must use the print_lcd_update function.
-	 */
-	//print_lcd_update(FONT_BLUE, FONT_BLACK, "LK display is enabled!");
 #endif
-	read_dram_info();
-
-	dfd_display_reboot_reason();
 	dfd_display_core_stat();
 	if (*(unsigned int *)DRAM_BASE == 0xabcdef) {
 		unsigned int dfd_en =

@@ -27,6 +27,8 @@
 #define HYNIX			0xad
 #define MICRON		0x2c
 
+#undef SCSI_UFS_DEBUG
+
 #ifdef	SCSI_UFS_DEBUG
 #define	ufs_debug(fmt,args...)	dprintf (INFO, fmt ,##args)
 #else
@@ -38,8 +40,7 @@
 #define UFS_QUIRK_USE_1LANE		(1<<1)
 #define UFS_QUIRK_BROKEN_HCE	(1<<2)
 
-#undef	SCSI_UFS_DEBUG
-//#define SCSI_UFS_DEBUG
+//#undef	SCSI_UFS_DEBUG
 
 #ifdef SCSI_UFS_DEBUG
 #define debug printf

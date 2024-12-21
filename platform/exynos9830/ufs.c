@@ -68,6 +68,7 @@ void ufs_set_unipro_clk(struct ufs_host *ufs)
 int ufs_board_init(int host_index, struct ufs_host *ufs)
 {
 	u32 reg;
+	printf("UFS: %s: Let's go!\n", __func__);
 	unsigned int rst_stat = readl(EXYNOS9830_POWER_RST_STAT);
 	unsigned int dfd_en = readl(EXYNOS9830_POWER_RESET_SEQUENCER_CONFIGURATION);
 	//u32 err;
@@ -77,6 +78,7 @@ int ufs_board_init(int host_index, struct ufs_host *ufs)
 		return -1;
 	}
 
+	printf("UFS: %s: mmio block begin!\n", __func__);
 	/* mmio */
 	sprintf(ufs->host_name, "ufs%d", host_index);
 	ufs->irq = 249;

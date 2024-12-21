@@ -36,7 +36,7 @@ int is_first_boot(void)
 	boot_device_info = get_boot_device_info();
 	if ((boot_device_info & 0xFF000000) != 0xCB000000) {
 		/* abnormal boot */
-		while (1) ;
+		return 1;
 	}
 
 	if (((boot_device_info >> 4) & 0xF) == BD_USB)
@@ -55,7 +55,7 @@ unsigned int get_current_boot_device(void)
 	boot_device_info = get_boot_device_info();
 	if ((boot_device_info & 0xFF000000) != 0xCB000000) {
 		/* abnormal boot */
-		while (1) ;
+		return 1;
 	}
 
 	switch ((boot_device_info >> 4) & 0xF) {
@@ -124,5 +124,5 @@ void set_first_boot_device_info(void)
 
 int get_boot_device(void)
 {
-	return BOOT_DEV;
+	return BOOT_UFS;
 }

@@ -316,30 +316,16 @@ void part_init(void)
 		s_def_boot_dev_id = DEV_UFS;
 
 	boot_dev = get_boot_device();
+	printf("got boot device\n");
 	/*
 	 * In USB 1st boot cases, part init needs to executed
 	 * based on SW intention.
 	 */
-	if (is_first_boot() && boot_dev != BOOT_USB) {
-		if (boot_dev == BOOT_UFS)
-			id = DEV_UFS;
-		else if (boot_dev == BOOT_EMMC || boot_dev == BOOT_MMCSD)
-			id = DEV_MMC;
-		else {
-			id = DEV_NONE;
-			print_lcd(FONT_RED, FONT_BLACK, "block dev not set\n");
-		}
-	} else {
-		/*
-		 * TODO: device driver should call something
-		 * in here to notify main storage
-		 */
-		id = s_def_boot_dev_id;
-	}
-
+	id = DEV_UFS;
 	s_boot_dev_id = id;
 
 	/* Get block device information */
+	printf("finished\n");
 	part_open_dev_once();
 #if INPUT_GPT_AS_PT
 	gpt_init(id);

@@ -18,6 +18,8 @@
 #include <platform/delay.h>
 #include <platform/mmu/barrier.h>
 #include <platform/sfr.h>
+#include <platform/smc.h>
+
 
 #define	SCSI_MAX_INITIATOR	1
 #define	SCSI_MAX_DEVICE		8
@@ -1810,10 +1812,11 @@ end:
 
 static void ufs_disable_ufsp(struct ufs_host *ufs)
 {
-	writel(0x0, ufs->fmp_addr + UFSP_UPSBEGIN0);
-	writel(0xffffffff, ufs->fmp_addr + UFSP_UPSEND0);
-	writel(0xff, ufs->fmp_addr + UFSP_UPLUN0);
-	writel(0xf1, ufs->fmp_addr + UFSP_UPSCTRL0);
+	// Secureboot fused SoCs. We need to enable FMP and not disable it.
+	exynos_smc(0x1810, 0, 0, 3);
+	exynos_smc(0x1850, 0, 0, 0);
+	printf("UFS: %s: FMP is up\n", __func__);
+	return;
 }
 
 /*
@@ -1827,14 +1830,19 @@ static int ufs_init_host(int host_index, struct ufs_host *ufs)
 	ufs->ufs_cmd_timeout = UTP_CMD_TIMEOUT;
 	ufs->uic_cmd_timeout = UIC_CMD_TIMEOUT;
 	ufs->ufs_query_req_timeout = QUERY_REQ_TIMEOUT;
+	printf("UFS: %s: Let's go!\n", __func__);
 
 	/* AP specific UFS host init */
 	if (ufs_board_init(host_index, ufs))
 		goto out;
 
+	printf("UFS: %s: Board init done.\n", __func__);
+
 	/* Read capabilities registers */
 	ufs->capabilities = readl(ufs->ioaddr + REG_CONTROLLER_CAPABILITIES);
+	printf("UFS: %s: Caps read\n", __func__);
 	ufs->ufs_version = readl(ufs->ioaddr + REG_UFS_VERSION);
+	printf("UFS: %s: Version read\n", __func__);
 
 	ufs_debug("%s\n\tcaps(0x%p) 0x%08x\n\tver(0x%p)  0x%08x\n\tPID(0x%p)  0x%08x\n\tMID(0x%p)  0x%08x\n",
 		ufs->host_name, ufs->ioaddr + REG_CONTROLLER_CAPABILITIES, ufs->capabilities,
@@ -1842,13 +1850,16 @@ static int ufs_init_host(int host_index, struct ufs_host *ufs)
 		readl(ufs->ioaddr + REG_CONTROLLER_PID),
 		ufs->ioaddr + REG_CONTROLLER_MID, readl(ufs->ioaddr + REG_CONTROLLER_MID));
 
+	printf("UFS: %s: mem initing!\n", __func__);
 	ufs_init_mem(ufs);
+	printf("UFS: %s: mem inited!\n", __func__);
 
 	if (*(unsigned int *)DRAM_BASE != 0xabcdef) {
 		/* It boots by T32. set FMP as by-passed */
 		ufs_disable_ufsp(ufs);
 	}
 
+	printf("UFS: %s: Time to init caldata!\n", __func__);
 	if (ufs_init_cal(ufs, host_index))
 		goto out;
 
@@ -2392,14 +2403,17 @@ status_t ufs_init(int mode)
 	ufs_lu_list.prev = 0;
 	ufs_lu_list.next = 0;
 
-	for (i = 0; i < SCSI_MAX_DEVICE; i++) {
-		if (LU_conf->unit[i].bLUEnable)
-			ufs_number_of_lus++;
-	}
+	printf("UFS: %s: Let's go!\n", __func__);
+	if (LU_conf->unit[0].bLUEnable)
+		ufs_number_of_lus++;
+
+	printf("UFS: %s: Got number of luns\n", __func__);
 
 	for (i = 0; i < SCSI_MAX_INITIATOR; i++) {
 		/* Initialize host */
+		printf("UFS: %s: Host init started.\n", __func__);
 		r = ufs_init_host(i, _ufs[i]);
+		printf("UFS: %s: Initialized UFS host\n", __func__);
 		if (r)
 			goto out;
 
@@ -2416,11 +2430,13 @@ status_t ufs_init(int mode)
 			goto out;
 
 		/* Check if boot LUs exist */
+		printf("UFS: %s: Checking for BootLUN\n", __func__);
 		r = ufs_identify_bootlun(_ufs[i]);
 		if (r)
 			goto out;
 
 		/* SCSI device enumeration */
+		printf("UFS: %s: Enumerating SCSI devices\n", __func__);
 		scsi_scan(ufs_dev[i], 0, ufs_number_of_lus, scsi_exec, NULL, 128, &ufs_lu_list);
 		if (r)
 			goto out;
@@ -2560,6 +2576,7 @@ int ufs_alloc_memory()
 		_ufs_curr_host = i;
 
 		/* Allocation for host */
+		printf("UFS: %s: Allocating for host\n", __func__);
 		len = sizeof(struct ufs_host);
 		if (!(_ufs[i] = malloc(len)))
 			goto end;
@@ -2567,22 +2584,26 @@ int ufs_alloc_memory()
 		memset(_ufs[i], 0x00, sizeof(struct ufs_host));
 
 		/* Allocation for CAL */
+		printf("UFS: %s: Allocating for cal data\n", __func__);
 		len = sizeof(struct ufs_cal_param);
 		if (!(ufs->cal_param = malloc(len)))
 			goto end;
 
 		/* Allocation for descriptor */
 		len = UFS_NUTRS * sizeof(struct ufs_cmd_desc);
+		printf("UFS: %s: Allocating for dscriptor\n", __func__);
 		if (!(ufs->cmd_desc_addr = memalign(0x1000, len))) {
 			printf("UFS: %s: cmd_desc_addr memory alloc error!!!\n", __func__);
 			goto end;
 		}
+		printf("UFS: %s: Allocating for cmds\n", __func__);
 		if ((u64)(ufs->cmd_desc_addr) & 0xfff) {
 			printf("UFS: %s: allocated cmd_desc_addr memory align error!!!\n", __func__);
 			goto end;
 		}
 
 		len = UFS_NUTRS * sizeof(struct ufs_utrd);
+		printf("UFS: %s: Allocating for utrd\n", __func__);
 		if (!(ufs->utrd_addr = memalign(0x1000, len))) {
 			printf("UFS: %s: utrd_addr memory alloc error!!!\n", __func__);
 			goto end;
@@ -2593,6 +2614,7 @@ int ufs_alloc_memory()
 		}
 
 		/* Allocation for device enumeration */
+		printf("UFS: %s: Allocating for device\n", __func__);
 		len = sizeof(scsi_device_t) * SCSI_MAX_DEVICE;
 		if (!(ufs_dev[i] = (scsi_device_t *)malloc(len))) {
 			printf("UFS: %s: ufs_dev memory allocation failed\n", __func__);
