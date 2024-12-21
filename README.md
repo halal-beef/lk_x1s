@@ -42,4 +42,23 @@ flowchart LR
     G --> H["Framebuffer is cleared once again, logs and then the fastboot text appears, when fastboot is launched, ready to take commands from the user"]
 ```
 
+You may be saying to yourself, wow. That process seems extremely long-winded.
+To that we say, yes it is and we are going to work on making it not long-winded.
+By the end of this we want the boot process to look more like this flowchart below.
+
+```mermaid
+flowchart LR
+    A["Pre S-LK<br> (BootROM, BL1, BL2, etc)"] --> B["S-LK"]
+    B --> C["Initialise Peripherals, Display and UFS"]
+    C --> D["Boot from boot partition, which has had a boot image with a payload as kernel (lk3rd)"]
+    D --> E["lk3rd relocates itself, sets up Peripherals, DECON, USB and UFS, but doesn't use the display, instead using the framebuffer"]
+    E --> F["Framebuffer is cleared once again, logs and then the fastboot text appears, when fastboot is launched, ready to take commands from the user"]
+```
+
+## TODO
+
+- [ ] Get UFS Fully up
+- [ ] Position independent code
+- [ ] Booting Android
+
 Cheers from the Exynos990-Mainline team!
