@@ -420,6 +420,11 @@ void platform_init(void)
 	 * Sometimes need mmc device when it is not boot device.
 	 * So always call mmc_init().
 	 */
+#ifndef CONFIG_SKIP_MMC_INIT
+	mmc_init(MMC_CHANNEL_SD);
+#else
+	print_lcd_update(FONT_WHITE, FONT_BLACK, "Device does not have an SD card slot! Skip SD init");
+#endif
 	part_init();
 
 	dss_fdt_init();

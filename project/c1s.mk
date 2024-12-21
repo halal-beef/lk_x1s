@@ -1,6 +1,6 @@
 ARCH := arm64
 ARM_CPU := cortex-a53
-TARGET := universal9830
+TARGET := c1s
 
 WITH_KERNEL_VM := 0
 WITH_LINKER_GC := 1
@@ -31,7 +31,6 @@ MODULE_DEPS += \
 	lib/fastboot \
 	lib/block \
 	dev/scsi \
-	dev/mmc \
 	dev/rpmb \
 	dev/adc \
 	dev/pmucal \
