@@ -22,6 +22,7 @@
 #include <platform/chip_id.h>
 
 #include <part.h>
+#include <config.h>
 
 #define SYSREG_USB_BASE			0x10a20000
 #define USB_SHARABLE_OFFSET		0x704
@@ -49,8 +50,8 @@ void gadget_probe_pid_vid_version(unsigned short *vid, unsigned short *pid, unsi
 	*bcd_version = 0x0100;
 }
 
-static const char vendor_str[] = "Samsung Exynos probably :)";
-static const char product_str[] = "lk3rd [Exynos 990]";
+static const char vendor_str[] = "Samsung - " PLATFORM;
+static const char product_str[] = TARGET " - lk3rd";
 static char serial_id[16] = "No Serial";
 
 int gadget_get_vendor_string(void)
