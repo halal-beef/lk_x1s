@@ -112,7 +112,7 @@ static int set_partition_table(bdev_t *dev, struct gpt_header *gpt_h,
 		offset = start + (pit->pte[i].blknum / num_blk_size);
 		if (offset > end_use_lba) {
 			printf("partition layout over disk size %u > %u\n", offset, end_use_lba);
-			goto out;
+			//goto out;
 		}
 		gpt_e[part_cnt].part_end_lba = offset - 1;
 		if (print) {

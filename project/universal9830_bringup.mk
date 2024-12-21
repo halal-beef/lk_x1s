@@ -31,7 +31,6 @@ MODULE_DEPS += \
 	lib/fastboot \
 	lib/block \
 	dev/scsi \
-	dev/mmc \
 	dev/rpmb \
 	dev/adc \
 	dev/pmucal \
