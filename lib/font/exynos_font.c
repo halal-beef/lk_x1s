@@ -19,6 +19,7 @@
  * limitations under the License.
  */
 
+#include <reg.h>
 #include <sys/types.h>
 #include <string.h>
 #include <stdio.h> /* TODO : divide print_lcd function */
@@ -42,9 +43,8 @@ static u32 y_pos = 0;
 
 /* Panel specific. If this bootloader would be useful this would be dynamic. */
 #define CONFIG_DISPLAY_FONT_BASE_ADDRESS 0xf1000000
-#define LCD_WIDTH 1080
-#define LCD_HEIGHT 2400
-
+#define LCD_WIDTH readl(0x19050200) & 0x3FFF
+#define LCD_HEIGHT (readl(0x19050200) >> 16) & 0x3FFF
 
 /* Fill the frame buffer one character at a time */
 static int fill_fb_one_char(u32 *fb_buf, u32 x_pos, u32 fb_width, char ascii,
