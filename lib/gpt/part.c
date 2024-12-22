@@ -185,7 +185,6 @@ int part_write_partial(void *part, void *buf, u64 offset, u64 size)
 	ret = gpt_write_part(entry, buf, offset, size);
 #else
 	struct pit_entry *ptn = (struct pit_entry *)part;
-
 	ret = pit_entry_write(ptn, buf, (u64)offset, size);
 #endif
 	return ret;
