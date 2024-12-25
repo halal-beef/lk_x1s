@@ -34,6 +34,8 @@
 void speedy_gpio_init(void);
 void xbootldo_gpio_init(void);
 void fg_init_s2mu004(void);
+void initialize_font_fb(void);
+void display_trip_info(void);
 
 unsigned int s5p_chip_id[4] = {0x0, 0x0, 0x0, 0x0};
 unsigned int charger_mode = 0;
@@ -51,132 +53,6 @@ static void read_chip_id(void)
 {
 	s5p_chip_id[0] = readl(EXYNOS9610_PRO_ID + CHIPID0_OFFSET);
 	s5p_chip_id[1] = readl(EXYNOS9610_PRO_ID + CHIPID1_OFFSET) & 0xFFFF;
-}
-
-static void read_dram_info(void)
-{
-	char type[16];
-	char rank_num[20];
-	char manufacturer[20];
-	unsigned int M5 = 0, M6 = 0, M7 = 0, M8 = 0;
-	unsigned int tmp = 0;
-
-	printf("%s %d\n", __func__, __LINE__);
-	/* 1. Type */
-	dram_info[0] = readl(DRAM_INFO);
-	tmp = dram_info[0] & 0xF;
-	printf("%s %d\n", __func__, __LINE__);
-
-	switch (tmp) {
-	case 0x0:
-		strcpy(type, "LPDDR4");
-		break;
-	case 0x2:
-		strcpy(type, "LPDDR4X");
-		break;
-	default:
-		printf("Type None!\n");
-	}
-
-	printf("%s %d\n", __func__, __LINE__);
-	/* 2. rank_num */
-	dram_info[0] = readl(DRAM_INFO);
-	tmp = (dram_info[0] >> 4) & 0xF;
-
-	printf("%s %d\n", __func__, __LINE__);
-	switch (tmp) {
-	case 0x0:
-		strcpy(rank_num, "1RANK");
-		break;
-	case 0x3:
-		strcpy(rank_num, "2RANK");
-		break;
-	default:
-		printf("Rank_num None!\n");
-	}
-
-	printf("%s %d\n", __func__, __LINE__);
-	/* 3. manufacturer */
-	dram_info[0] = readl(DRAM_INFO);
-	tmp = (dram_info[0] >> 8) & 0xFF;
-	M5 = tmp;
-
-	printf("%s %d\n", __func__, __LINE__);
-	switch (tmp) {
-	case 0x01:
-		strcpy(manufacturer, "Samsung");
-		break;
-	case 0x06:
-		strcpy(manufacturer, "SK hynix");
-		break;
-	case 0xFF:
-		strcpy(manufacturer, "Micron");
-		break;
-	default:
-		printf("Manufacturer None!\n");
-	}
-
-	printf("%s %d\n", __func__, __LINE__);
-	dram_info[1] = readl(DRAM_INFO + 0x4);
-	dram_info[2] = readl(DRAM_SIZE_INFO);
-	dram_info[3] = readl(DRAM_SIZE_INFO + 0x4);
-	dram_size_info |= (unsigned long long)(dram_info[2]);
-	dram_size_info |= (unsigned long long)(dram_info[3]) << 32;
-	/* Set to GB */
-	dram_size_info = dram_size_info / 1024 / 1024 / 1024;
-
-	M6 = dram_info[1] & 0xFF;
-	M7 = (dram_info[1] >> 8) & 0xFF;
-	M8 = (dram_info[0] & 0x3) | (((dram_info[0] >> 20) & 0xF) << 2) | ((dram_info[0]  >> 16 & 0x3) << 6);
-
-#ifdef CONFIG_EXYNOS_BOOTLOADER_DISPLAY
-	print_lcd(FONT_WHITE, FONT_BLACK, "DRAM %lu GB %s %s %s M5=0x%02x M6=0x%02x M7=0x%02x M8=0x%02x",
-		dram_size_info,	type, rank_num, manufacturer,
-		M5, M6, M7, M8);
-#endif
-}
-
-static void load_secure_payload(void)
-{
-	unsigned long ret = 0;
-	unsigned int boot_dev = 0;
-	unsigned int dfd_en = readl(EXYNOS9610_POWER_RESET_SEQUENCER_CONFIGURATION);
-	unsigned int rst_stat = readl(EXYNOS9610_POWER_RST_STAT);
-
-	if (*(unsigned int *)DRAM_BASE != 0xabcdef) {
-		printf("Running on DRAM by TRACE32: skip load_secure_payload()\n");
-	} else {
-		if (is_first_boot()) {
-			boot_dev = readl(EXYNOS9610_POWER_INFORM3);
-
-			/*
-			 * In case WARM Reset/Watchdog Reset and DumpGPR is enabled,
-			 * Secure payload doesn't have to be loaded.
-			 */
-			if (!((rst_stat & (WARM_RESET | LITTLE_WDT_RESET)) &&
-				dfd_en & EXYNOS9610_EDPCSR_DUMP_EN)) {
-				ret = load_sp_image(boot_dev);
-				if (ret)
-					/*
-					 * 0xFEED0002 : Signature check fail
-					 * 0xFEED0020 : Anti-rollback check fail
-					 */
-					printf("Fail to load Secure Payload!! [ret = 0x%lX]\n", ret);
-				else
-					printf("Secure Payload is loaded successfully!\n");
-			}
-
-			/*
-			 * If boot device is eMMC, emmc_endbootop() should be
-			 * implemented because secure payload is the last image
-			 * in boot partition.
-			 */
-			if (boot_dev == BOOT_EMMC)
-				emmc_endbootop();
-		} else {
-			/* second_boot = 1; */
-		}
-	}
 }
 
 static int check_charger_connect(void)
@@ -200,17 +76,6 @@ static int check_charger_connect(void)
 	return 0;
 }
 
-#ifdef CONFIG_EXYNOS_BOOTLOADER_DISPLAY
-extern int display_drv_init(void);
-void display_panel_init(void);
-
-static void initialize_fbs(void)
-{
-	memset((void *)CONFIG_DISPLAY_LOGO_BASE_ADDRESS, 0, LCD_WIDTH * LCD_HEIGHT * 4);
-	memset((void *)CONFIG_DISPLAY_FONT_BASE_ADDRESS, 0, LCD_WIDTH * LCD_HEIGHT * 4);
-}
-#endif
-
 void arm_generic_timer_disable(void)
 {
 	mask_interrupt(ARCH_TIMER_IRQ);
@@ -218,21 +83,8 @@ void arm_generic_timer_disable(void)
 
 void platform_early_init(void)
 {
-	unsigned int rst_stat = readl(EXYNOS9610_POWER_RST_STAT);
+	initialize_font_fb();
 
-	read_chip_id();
-
-	speedy_gpio_init();
-	xbootldo_gpio_init();
-#ifdef CONFIG_EXYNOS_BOOTLOADER_DISPLAY
-	display_panel_init();
-	initialize_fbs();
-#endif
-	set_first_boot_device_info();
-
-	if (is_first_boot() && !(rst_stat & (WARM_RESET | LITTLE_WDT_RESET)))
-		muic_sw_uart();
-	uart_test_function();
 	printf("LK build date: %s, time: %s\n", __DATE__, __TIME__);
 
 	arm_gic_init();
@@ -242,34 +94,6 @@ void platform_early_init(void)
 
 void platform_init(void)
 {
-	pmic_init();
-	fg_init_s2mu004();
-	check_charger_connect();
-	display_pmic_info_s2mpu09();
-
-	load_secure_payload();
-
-#ifdef CONFIG_EXYNOS_BOOTLOADER_DISPLAY
-	/* If the display_drv_init function is not called before,
-	 * you must use the print_lcd function.
-	 */
-	print_lcd(FONT_RED, FONT_BLACK, "LK Display is enabled!");
-	display_drv_init();
-	if (is_first_boot())
-		show_boot_logo();
-	/* If the display_drv_init function is called,
-	 * you must use the print_lcd_update function.
-	 */
-	//print_lcd_update(FONT_BLUE, FONT_BLACK, "LK display is enabled!");
-#endif
-	read_dram_info();
-	ufs_init(2);
-	ufs_set_configuration_descriptor();
-	pit_init();
-
 	display_tmu_info();
 	display_trip_info();
-	dfd_display_reboot_reason();
-	if (is_first_boot())
-		debug_snapshot_fdt_init();
 }

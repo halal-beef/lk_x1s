@@ -107,7 +107,7 @@ static int fill_fb_one_char(u32 *fb_buf, u32 x_pos, u32 fb_width, char ascii,
 #endif
 
 
-static void initialize_font_fb(void)
+void initialize_font_fb(void)
 {
 	memset((void *)CONFIG_DISPLAY_FONT_BASE_ADDRESS, 0, LCD_WIDTH * LCD_HEIGHT * 4);
 }
