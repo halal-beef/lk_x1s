@@ -15,17 +15,21 @@
 #include <reg.h>
 #include <string.h>
 #include <stdlib.h>
+#include <libfdt.h>
 #include <lib/console.h>
 #include <lib/font_display.h>
 #include "fastboot.h"
 #include <pit.h>
+#include <arch/arch_ops.h>
 #include <platform/sfr.h>
 #include <platform/smc.h>
 #include <platform/lock.h>
 #include <platform/ab_update.h>
+#include <platform/bootimg.h>
 #include <platform/environment.h>
 #include <platform/if_pmic_s2mu004.h>
 #include <platform/dfd.h>
+#include <platform/fdt.h>
 #include <dev/boot.h>
 
 #define FB_RESPONSE_BUFFER_SIZE 128
@@ -309,6 +313,16 @@ int fb_do_reboot(const char *cmd_buffer)
 	return 0;
 }
 
+int is_valid_bootimg(uintptr_t bootimg_addr)
+{
+	struct boot_img_hdr *b_hdr = (struct boot_img_hdr *)bootimg_addr;
+
+	if (memcmp(b_hdr->magic, FASTBOOT_BOOT_MAGIC, 8) == 0)
+		return 1;
+	else
+		return 0;
+}
+
 int fb_do_download(const char *cmd_buffer)
 {
 	char buf[FB_RESPONSE_BUFFER_SIZE];
@@ -463,12 +477,18 @@ struct cmd_fastboot cmd_list[] = {
 	{"flashing", fb_do_flashing},
 };
 
+void arm_generic_timer_disable(void);
+int cmd_scatter_load_boot(int argc, const cmd_args *argv);
+
 static int rx_handler (const unsigned char *buffer, unsigned int buffer_size)
 {
 	unsigned int i;
 	unsigned int rx_size;
 	unsigned int remain;
+	int ret;
 	const char *cmd_buffer;
+
+	cmd_args argv[6];
 
 	char buf[FB_RESPONSE_BUFFER_SIZE];
 	char *response = (char *)(((unsigned long)buf + 8) & ~0x07);
@@ -514,6 +534,46 @@ static int rx_handler (const unsigned char *buffer, unsigned int buffer_size)
 				start_ramdump((void *)buffer);
 			}
 
+			if (is_valid_bootimg(interface.transfer_buffer)) {
+				printf("Valid Android boot image found at 0x%lx\nBooting...\n", interface.transfer_buffer);
+
+				argv[1].u = interface.transfer_buffer;
+				argv[2].u = KERNEL_BASE;
+				argv[3].u = RAMDISK_BASE;
+				argv[4].u = DT_BASE;
+				argv[5].u = DTBO_BASE;
+				cmd_scatter_load_boot(5, argv);
+
+				/*
+				 * DT_BASE on exynos bootimages is usually passed as --second.
+				 *
+				 * TODO:
+				 * FDT manipulation has to be implemented for filling:
+				 * - initrd start and size in /chosen
+				 * - memory
+				 * - reserved memory
+				 */
+				ret = fdt_check_header(DT_BASE);
+				if (ret) {
+					printf("libfdt fdt_check_header(): %s\n", fdt_strerror(ret));
+					return ret;
+				}
+
+				/* notify EL3 Monitor end of bootloader */
+				exynos_smc(SMC_CMD_END_OF_BOOTLOADER, 0, 0, 0);
+
+				/* before jumping to kernel. disable interrupts */
+				arch_disable_ints();
+
+				/* before jumping to kernel. disble arch_timer */
+				arm_generic_timer_disable();
+
+				void (*kernel_entry)(int r0, int r1, int r2, int r3);
+
+				kernel_entry = (void (*)(int, int, int, int))KERNEL_BASE;
+				kernel_entry(DT_BASE, 0, 0, 0);
+			}
+
 			return 0;
 		}
 
@@ -548,9 +608,9 @@ int do_fastboot(int argc, const cmd_args *argv)
 	print_lcd_update(FONT_GREEN, FONT_BLACK, "Entering fastboot mode.");
 
 	/* display all entries */
-	pit_show_info();
+	// pit_show_info();
 
-	muic_sw_usb();
+	// muic_sw_usb();
 
 	do {
 		continue_from_disconnect = 0;
