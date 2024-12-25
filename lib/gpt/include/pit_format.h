@@ -29,7 +29,7 @@
  * User partition management is available in the area
  * where GPT and reserved area are excluded.
  */
-#define PIT_DISK_SIZE_LIMIT		16					/* Up to 127 entries */
+#define PIT_DISK_SIZE_LIMIT		64					/* Up to 127 entries */
 #define PIT_SIZE_LIMIT			(PIT_DISK_SIZE_LIMIT * PIT_SECTOR_SIZE)
 #define PIT_MAX_PART_NUM		60					/* PIT_MAX_PART_NUM + 1 should be 16 (=4096/256) */
 #define PIT_INVISIABLE_AREA		(32 * 1024 * 1024)			/* Total 32MB, GPT and reserved area */
