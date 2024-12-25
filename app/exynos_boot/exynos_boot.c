@@ -36,23 +36,11 @@ static void exynos_boot_task(const struct app_descriptor *app, void *args)
 		printf("cpu%d: 0x%x ", cpu-BIG_CORE_START, dfd_get_pmudbg_stat(cpu));
 	printf("\n");
 
-	if (*(unsigned int *)DRAM_BASE != 0xabcdef) {
-		printf("Running on DRAM by TRACE32: skip auto booting\n");
-		return;
-	}
-
-	dfd_display_reboot_reason();
-	dfd_display_core_stat();
-	if (!is_first_boot() || (rst_stat & (WARM_RESET | LITTLE_WDT_RESET | BIG_WDT_RESET)) ||
-		((readl(CONFIG_RAMDUMP_SCRATCH) == CONFIG_RAMDUMP_MODE) && get_charger_mode() == 0)) {
-		dfd_run_dump_gpr();
-		do_fastboot(0, 0);
-	} else {
-		/* Turn on dumpEN for DumpGPR */
-		dfd_set_dump_gpr(CACHE_RESET_EN | DUMPGPR_EN);
-
-		cmd_boot(0, 0);
-	}
+	/*
+	 * TODO:
+	 * Implement choosing between fastboot and autoboot
+	 */
+	do_fastboot(0, 0);
 
 	return;
 }
