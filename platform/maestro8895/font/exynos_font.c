@@ -19,20 +19,34 @@
  * limitations under the License.
  */
 
+#include <reg.h>
 #include <sys/types.h>
 #include <string.h>
 #include <stdio.h> /* TODO : divide print_lcd function */
 
 #include "exynos_font.h"
-#include <dev/dpu/lcd_ctrl.h>
+/*
 #include <target/dpu_config.h>
+#include <target/lcd_module.h>
+*/
 
-//static u32 x_pos = 0;
+typedef unsigned char u8;
+typedef unsigned int u32;
+
 static u32 y_pos = 0;
+
 #define MAX_NUM_CHAR_PER_LINE		(LCD_WIDTH / (FONT_X + 1))
 #define ALPHANUMERIC_OFFSET		32
 #define LENGTH_OF_A_CHAR_ARRAY		((FONT_Y) * 2)
 #define FONT_PTR_BIT			(((FONT_X) / 2) - 1)
+
+/* Panel specific. If this bootloader would be useful this would be dynamic. */
+#define CONFIG_DISPLAY_FONT_BASE_ADDRESS 0xcc000000
+#define LCD_WIDTH 1440
+#define LCD_HEIGHT 2960
+
+#define LK3RD_USER
+#ifdef LK3RD_USER
 
 /* Fill the frame buffer one character at a time */
 static int fill_fb_one_char(u32 *fb_buf, u32 x_pos, u32 fb_width, char ascii,
@@ -84,6 +98,15 @@ static int fill_fb_one_char(u32 *fb_buf, u32 x_pos, u32 fb_width, char ascii,
 	return 0;
 }
 
+#else
+static int fill_fb_one_char(u32 *fb_buf, u32 x_pos, u32 fb_width, char ascii,
+		u32 y_pos, u32 font_color, u32 bg_color)
+{
+	return 0;
+}
+#endif
+
+
 static void initialize_font_fb(void)
 {
 	memset((void *)CONFIG_DISPLAY_FONT_BASE_ADDRESS, 0, LCD_WIDTH * LCD_HEIGHT * 4);
@@ -96,14 +119,13 @@ static int _fill_fb_string(u32 *fb_buf, u32 x_pos, u8 *str,
 	int i = 0;
 	int cnt = 0;
 	char ch = 0;
-	struct decon_lcd *lcd_info = decon_get_lcd_info();
 
 	if (lgth > MAX_NUM_CHAR_PER_LINE)
 		cnt = MAX_NUM_CHAR_PER_LINE;
 	else
 		cnt = lgth;
 
-	if (y_pos > lcd_info->yres) {
+	if (y_pos > LCD_HEIGHT) {
 		/* Rolling fb, y_pos and fb address reinit */
 		y_pos = 0;
 		fb_buf = (u32 *)CONFIG_DISPLAY_FONT_BASE_ADDRESS;
@@ -112,7 +134,7 @@ static int _fill_fb_string(u32 *fb_buf, u32 x_pos, u8 *str,
 
 	for (i = 0; i < cnt; i++) {
 		ch = *(str++);
-		if (fill_fb_one_char(fb_buf, x_pos + (i * FONT_X), lcd_info->xres,
+		if (fill_fb_one_char(fb_buf, x_pos + (i * FONT_X), LCD_WIDTH,
 			ch, y_pos, font_color, bg_color)) {
 			printf("This(%c) character is not supported\n", ch);
 		}
@@ -130,7 +152,7 @@ int fill_fb_string(u32 *fb_buf, u32 x_pos, u8 *str, u32 font_color, u32 bg_color
 	int lgth = 0;
 
 	if (!str)
-		return -EINVAL;
+		return 1;
 	else
 		lgth = strlen((char *)str);
 
@@ -148,17 +170,16 @@ int fill_fb_string(u32 *fb_buf, u32 x_pos, u8 *str, u32 font_color, u32 bg_color
 	return 0;
 }
 
-#if defined(CONFIG_EXYNOS_BOOTLOADER_DISPLAY) && defined(CONFIG_DISPLAY_DRAWFONT)
 #define PRINT_BUF_SIZE 384
 #define TOP_MARGIN	40
-extern u32 win_fb0;
+extern u32 _win_fb0 = CONFIG_DISPLAY_FONT_BASE_ADDRESS;
 extern void decon_string_update(void);
 
 int print_lcd(u32 font_color, u32 bg_color, const char *fmt, ...)
 {
 	va_list args;
 	char printbuffer[PRINT_BUF_SIZE];
-	u64 ptr = win_fb0;
+	u64 ptr = _win_fb0;
 	va_start(args, fmt);
 
 	/* For this to work, printbuffer must be larger than
@@ -180,7 +201,7 @@ int print_lcd_update(u32 font_color, u32 bg_color, const char *fmt, ...)
 {
 	va_list args;
 	char printbuffer[PRINT_BUF_SIZE];
-	u64 ptr = win_fb0;
+	u64 ptr = _win_fb0;
 	va_start(args, fmt);
 
 	/* For this to work, printbuffer must be larger than
@@ -195,12 +216,7 @@ int print_lcd_update(u32 font_color, u32 bg_color, const char *fmt, ...)
 		return -1;
 	}
 
-	decon_string_update();
+	// decon_string_update();
 
 	return 0;
 }
-
-#endif /* defined(CONFIG_EXYNOS_BOOTLOADER_DISPLAY)
-	* && defined(CONFIG_DISPLAY_DRAWFONT)
-	*/
-

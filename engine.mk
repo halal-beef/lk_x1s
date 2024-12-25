@@ -150,7 +150,6 @@ include arch/$(ARCH)/rules.mk
 include top/rules.mk
 include lib/bio/rules.mk
 include lib/gpt/rules.mk
-include lib/font/rules.mk
 include lib/logo/rules.mk
 include lib/libavb/rules.mk
 include dev/scsi/rules.mk
