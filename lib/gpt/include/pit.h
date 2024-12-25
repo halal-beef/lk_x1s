@@ -27,6 +27,9 @@
 
 #define PIT_ENV_SIZE			(16 << 10)
 
+#define PIT_UFS_BLK_SIZE		4096
+#define PIT_UFS_FMP_USE_SIZE		40
+
 enum pit_op {
 	PIT_OP_FLASH = 0,
 	PIT_OP_ERASE,
