@@ -24,6 +24,8 @@
 #include <kernel/timer.h>
 #include <platform/mmu/mmu.h>
 
+#include <target/dpu_config.h>
+
 #include "dev/usb/gadget.h"
 #include "dwc3-reg.h"
 #include "dwc3-global.h"
@@ -37,7 +39,6 @@ struct timer config_timer;
 int retry_cnt;
 
 void muic_sw_usb(void);
-void clear_screen(int);
 static enum handler_return dwc3_dev_config_check(struct timer *timer, unsigned int now, void *arg);
 
 enum dwc3_dev_dbg_bit {
@@ -1240,19 +1241,35 @@ dwc3_dev_config_check(struct timer *timer, unsigned int now, void *arg) {
 	return INT_NO_RESCHEDULE;
 }
 
+void display_fastboot_splash(void)
+{
+	print_lcd_update(FONT_GREEN, FONT_BLACK, "--------------------");
+	print_lcd_update(FONT_GREEN, FONT_BLACK, "lk3rd fastboot mode");
+	print_lcd_update(FONT_GREEN, FONT_BLACK, "--------------------");
+	print_lcd_update(FONT_WHITE, FONT_BLACK, "lk3rd alpha. 2024-12-21");
+	print_lcd_update(FONT_RED, FONT_BLACK, "KEEP THIS BUILD PRIVATE");
+	print_lcd_update(FONT_ORANGE, FONT_BLACK, "Exynos990");
+}
+
 uint32_t read_secure_chip(void);
 
-void print_secboot_info()
+void print_secboot_info(void)
 {
-	if (read_secure_chip() == 0)
+	switch (read_secure_chip())
+	{
+	case 0:
 		print_lcd_update(FONT_WHITE, FONT_BLACK, "Secure boot is disabled (non-secure chip)\n");
-	else if (read_secure_chip() == 1)
+		break;
+	case 1:
 		print_lcd_update(FONT_WHITE, FONT_BLACK, "Secure boot is enabled (test key)\n");
-	else if (read_secure_chip() == 2)
+		break;
+	case 2:
 		print_lcd_update(FONT_WHITE, FONT_BLACK, "Secure boot is enabled (secure chip)\n");
-	else
+		break;
+	default:
 		print_lcd_update(FONT_RED, FONT_BLACK, "Invalid secureboot revision?\n");
-
+		break;
+	}
 }
 
 int dwc3_dev_init(void *dev_handle)
@@ -1386,13 +1403,8 @@ int dwc3_dev_init(void *dev_handle)
 
 	/* true Deivce */
 	dwc3_dev_set_rs(dwc3_dev_h, true);
-	clear_screen(0x000000);
-	print_lcd_update(FONT_GREEN, FONT_BLACK, "--------------------");
-	print_lcd_update(FONT_GREEN, FONT_BLACK, "lk3rd fastboot mode");
-	print_lcd_update(FONT_GREEN, FONT_BLACK, "--------------------");
-	print_lcd_update(FONT_WHITE, FONT_BLACK, "lk3rd alpha. 2024-12-21");
-	print_lcd_update(FONT_RED, FONT_BLACK, "KEEP THIS BUILD PRIVATE");
-	print_lcd_update(FONT_ORANGE, FONT_BLACK, "Exynos990");
+	initialize_fbs();
+	display_fastboot_splash();
 	print_secboot_info();
 
 	dwc3_dev_h->fastboot_mode = true;

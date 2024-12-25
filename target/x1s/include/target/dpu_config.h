@@ -23,6 +23,8 @@
 #ifndef __DISPLAY_CONFIG_H__
 #define __DISPLAY_CONFIG_H__
 
+#include <string.h>
+
 /* Enable BOOTLOADER DISPLAY : call display function at platform.c */
 #define CONFIG_EXYNOS_BOOTLOADER_DISPLAY
 /* Enable FONT : FONT CONFIG needs CONFIG_EXYNOS_BOOTLOADER_DISPLAY */
@@ -30,12 +32,13 @@
 /* Enable LOGO using PIT : FONT CONFIG needs CONFIG_EXYNOS_BOOTLOADER_DISPLAY */
 #define CONFIG_PIT
 
-#define CONFIG_DISPLAY_LOGO_BASE_ADDRESS	0xf9800000
-#define CONFIG_DISPLAY_FONT_BASE_ADDRESS	0xfac00000
-#define CONFIG_DISPLAY_TEMP_BASE_ADDRESS	0xfc000000
+#define CONFIG_DISPLAY_LOGO_BASE_ADDRESS	0xf1000000
+#define CONFIG_DISPLAY_FONT_BASE_ADDRESS	CONFIG_DISPLAY_LOGO_BASE_ADDRESS
+#define CONFIG_DISPLAY_TEMP_BASE_ADDRESS	CONFIG_DISPLAY_LOGO_BASE_ADDRESS
 
 #define LCD_WIDTH				1440
-#define LCD_HEIGHT				3040
+#define LCD_HEIGHT				3200
+
 
 
 /* =================================================== */
@@ -79,5 +82,12 @@ static inline struct decon_dt_info *get_decon_pdata(void)
 {
 	return &decon_dt;
 }
+
+static void initialize_fbs(void)
+{
+	memset((void *)CONFIG_DISPLAY_LOGO_BASE_ADDRESS, 0, LCD_WIDTH * LCD_HEIGHT * 4);
+}
+
+void display_panel_init(void);
 
 #endif /* __DISPLAY_CONFIG_H__ */

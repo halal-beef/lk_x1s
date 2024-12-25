@@ -15,6 +15,7 @@
 #define CONFIG_BOARD_X1S
 
 #define CONFIG_BOARD_ID		0x10
+#define CONFIG_BOARD_REV    21
 #define CONFIG_SUB_PMIC_S2DOS05
 #define CONFIG_UFS_BOARD_TYPE	1      /* smdk : 0, universal : 1 */
 
@@ -25,9 +26,6 @@
 #define BOOT_IMG_HDR_V2
 #define CONFIG_DTB_IN_BOOT
 #define CONFIG_RAMDISK_IN_BOOT
-
-#define CONFIG_GET_B_REV_FROM_ADC
-#define CONFIG_GET_B_REV_FROM_GPIO
 
 #define VOLDOWN_GPIOCON EXYNOS9830_GPA0CON
 #define VOLDOWN_BIT	4

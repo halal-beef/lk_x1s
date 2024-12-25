@@ -30,6 +30,7 @@ MODULE_DEPS += \
 	lib/lock \
 	lib/fastboot \
 	lib/block \
+	lib/easter_eggs \
 	dev/scsi \
 	dev/mmc \
 	dev/rpmb \
