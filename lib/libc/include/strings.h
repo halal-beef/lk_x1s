@@ -5,7 +5,7 @@
 
 __BEGIN_CDECLS;
 
-int strcasecmp(const char *s1, const char *s2);
+int strcicmp(const char *s1, const char *s2);
 
 __END_CDECLS;
 
