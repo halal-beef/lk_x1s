@@ -5,4 +5,9 @@ MODULE := $(LOCAL_DIR)
 MODULE_SRCS += \
 	$(LOCAL_DIR)/exynos_font.c \
 
+GLOBAL_DEFINES += \
+	BOOTLOADER_FB_ADDRESS=$(BOOTLOADER_FB_ADDRESS) \
+	LCD_WIDTH=$(LCD_WIDTH) \
+	LCD_HEIGHT=$(LCD_HEIGHT) \
+
 include make/module.mk
