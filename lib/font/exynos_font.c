@@ -41,10 +41,7 @@ static u32 y_pos = 0;
 #define LENGTH_OF_A_CHAR_ARRAY		((FONT_Y) * 2)
 #define FONT_PTR_BIT			(((FONT_X) / 2) - 1)
 
-/* Panel specific. If this bootloader would be useful this would be dynamic. */
-#define CONFIG_DISPLAY_FONT_BASE_ADDRESS 0xf1000000
-#define LCD_WIDTH readl(0x19050200) & 0x3FFF
-#define LCD_HEIGHT (readl(0x19050200) >> 16) & 0x3FFF
+#define CONFIG_DISPLAY_FONT_BASE_ADDRESS BOOTLOADER_FB_ADDRESS
 
 /* Fill the frame buffer one character at a time */
 static int fill_fb_one_char(u32 *fb_buf, u32 x_pos, u32 fb_width, char ascii,
