@@ -16,8 +16,10 @@
 #include <malloc.h>
 #include <lk/init.h>
 #include <list.h>
-
 #include <usb-def.h>
+#include <kernel/thread.h>
+#include <lk3rd/fastboot_menu.h>
+
 #include "dev/usb/gadget.h"
 
 #define LOCAL_TRACE 0
@@ -509,6 +511,21 @@ void gadget_notify_disconnect(void)
 __attribute__((weak)) void target_init_for_usb(void){}
 __attribute__((weak)) void target_terminate_for_usb(void){}
 
+int create_fastboot_menu_thread(void)
+{
+	thread_t *fastboot_menu = thread_create(
+		"fastboot_menu",
+		&fastboot_menu_entry,
+		NULL,
+		HIGH_PRIORITY,
+		DEFAULT_STACK_SIZE
+	);
+
+	thread_resume(fastboot_menu);
+
+	return 0;
+}
+
 /* APIs for application */
 int start_usb_gadget(void)
 {
@@ -532,6 +549,8 @@ int start_usb_gadget(void)
 		return 0;
 
 	udev_gadget.state = USB_DEV_STATE_DEFAULT;
+
+	create_fastboot_menu_thread();
 
 	return dev_ops->dev_start(udev_gadget.dev_handle);
 }
