@@ -597,18 +597,6 @@ status_t scsi_scan(scsi_device_t *sdev, u32 wlun, u32 dev_num, exec_t *func,
 			printf("[SCSI] LU%u\t%s\t%s\t%s\t%u\n", sdev->lun, sdev->vendor,
 					sdev->product, sdev->revision, block_count);
 
-#ifdef CONFIG_EXYNOS_BOOTLOADER_DISPLAY
-			capacity = ((block_size * block_count) / 1024 / 1024);
-
-			if (capacity > 1024) {
-				capacity /= 1024;
-				print_lcd(FONT_WHITE, FONT_BLACK, "[UFS] LU%u\t%s\t%s\t%s\t%s\t%3d GB",
-						sdev->lun, name, sdev->vendor, sdev->product, sdev->revision, capacity);
-			} else {
-				print_lcd(FONT_WHITE, FONT_BLACK, "[UFS] LU%u\t%s\t%s\t%s\t%s\t%3d MB",
-						sdev->lun, name, sdev->vendor, sdev->product, sdev->revision, capacity);
-			}
-#endif
 		} else {
 			/*
 			 * This is for RPMB W-LUN. Origially it's block size
