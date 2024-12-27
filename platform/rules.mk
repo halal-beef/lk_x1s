@@ -8,6 +8,11 @@ MODULE_SRCS += \
 	$(LOCAL_DIR)/init.c \
 	$(LOCAL_DIR)/power.c
 
+# lk3rd platform code
+MODULE_DEPS += \
+	lib/lk3rd \
+	lib/version
+
 include make/module.mk
 
 
