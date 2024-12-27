@@ -23,6 +23,23 @@ void avb_print_lcd(const char *str, char *color) {};
 #endif
 
 #if defined(CONFIG_USE_AVB20)
+
+void troll()
+{
+	print_lcd_update(FONT_ORANGE, FONT_BLACK, "<!>");
+	print_lcd_update(FONT_ORANGE, FONT_BLACK, "");
+	print_lcd_update(FONT_WHITE, FONT_BLACK, "The boot loader is unlocked and software");
+	print_lcd_update(FONT_WHITE, FONT_BLACK, "integrity cannot be guaranteed. Any data");
+	print_lcd_update(FONT_WHITE, FONT_BLACK, "stored on this device may be available to");
+	print_lcd_update(FONT_WHITE, FONT_BLACK, "attackers. Do not store any sensitive data");
+	print_lcd_update(FONT_WHITE, FONT_BLACK, "on this device.");
+	print_lcd_update(FONT_WHITE, FONT_BLACK, "");
+	print_lcd_update(FONT_WHITE, FONT_BLACK, "Visit this link on another device:");
+	print_lcd_update(FONT_ORANGE, FONT_BLACK, "youtu.be/xvFZjo5PgG0");
+	print_lcd_update(FONT_WHITE, FONT_BLACK, "");
+	print_lcd_update(FONT_WHITE, FONT_BLACK, "Loading lk3rd. Be patient.");
+}
+
 uint32_t avb_main(const char *suffix, char *cmdline, char *verifiedbootstate)
 {
 	bool unlock;
@@ -56,8 +73,12 @@ uint32_t avb_main(const char *suffix, char *cmdline, char *verifiedbootstate)
 	}
 	if (ret) {
 		if (unlock)
+		{
 			snprintf(buf, 100, "[AVB 2.0 warning] authentication fail [ret: 0x%X] (%s) "
 					"No effect on booting process", ret, color);
+			clear_screen(0x000000);
+			troll();
+		}
 		else
 			snprintf(buf, 100, "[AVB 2.0 ERR] authentication fail [ret: 0x%X] (%s)\n", ret, color);
 	} else {
