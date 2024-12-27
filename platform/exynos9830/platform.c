@@ -360,32 +360,10 @@ static void print_acpm_version(void)
 #endif /* ifdef EXYNOS_ACPM_BASE */
 }
 
-void troll()
-{
-	print_lcd_update(FONT_ORANGE, FONT_BLACK, "<!>");
-	print_lcd_update(FONT_ORANGE, FONT_BLACK, "");
-	print_lcd_update(FONT_WHITE, FONT_BLACK, "The boot loader is unlocked and software");
-	print_lcd_update(FONT_WHITE, FONT_BLACK, "integrity cannot be guaranteed. Any data");
-	print_lcd_update(FONT_WHITE, FONT_BLACK, "stored on this device may be available to");
-	print_lcd_update(FONT_WHITE, FONT_BLACK, "attackers. Do not store any sensitive data");
-	print_lcd_update(FONT_WHITE, FONT_BLACK, "on this device.");
-	print_lcd_update(FONT_WHITE, FONT_BLACK, "");
-	print_lcd_update(FONT_WHITE, FONT_BLACK, "Visit this link on another device:");
-	print_lcd_update(FONT_ORANGE, FONT_BLACK, "youtu.be/xvFZjo5PgG0");
-	print_lcd_update(FONT_WHITE, FONT_BLACK, "");
-	print_lcd_update(FONT_WHITE, FONT_BLACK, "Loading lk3rd. Be patient.");
-}
-
-void clear_screen(uint32_t color);
-
 void platform_init(void)
 {
 	u32 ret = 0;
 	u32 rst_stat = readl(POWER_RST_STAT);
-
-	clear_screen(0x000000);
-	troll();
-
 
 	display_flexpmu_dbg();
 	print_acpm_version();
@@ -423,7 +401,7 @@ void platform_init(void)
 #ifndef CONFIG_SKIP_MMC_INIT
 	mmc_init(MMC_CHANNEL_SD);
 #else
-	print_lcd_update(FONT_WHITE, FONT_BLACK, "Device does not have an SD card slot! Skip SD init");
+	printf("Device does not have an SD card slot! Skip SD init");
 #endif
 	part_init();
 
