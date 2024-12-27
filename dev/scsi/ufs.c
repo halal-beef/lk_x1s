@@ -2315,7 +2315,12 @@ int ufs_set_configuration_descriptor(void)
 	int lun = 0;
 	int ret = 0;
 
-	int retry_count = 3;
+	/*
+	 * Secure devices.
+	 * UFS provisioning will fail, and slow down
+	 * the boot process. Disable it for now.
+	*/
+	int retry_count = 0;
 	int retry = 0;
 
 	/* The pointer to represent whether capacity 0 LU is assigned which is LUN0 in general */
