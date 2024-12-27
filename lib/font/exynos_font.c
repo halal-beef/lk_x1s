@@ -26,6 +26,7 @@
 
 #include "exynos_font.h"
 #include <dpu/lcd_ctrl.h>
+
 /*
 #include <target/dpu_config.h>
 #include <target/lcd_module.h>
@@ -37,11 +38,26 @@ typedef unsigned int u32;
 static u32 y_pos = 0;
 
 #define MAX_NUM_CHAR_PER_LINE		(LCD_WIDTH / (FONT_X + 1))
-#define ALPHANUMERIC_OFFSET		32
+#define ALPHANUMERIC_OFFSET		0
 #define LENGTH_OF_A_CHAR_ARRAY		((FONT_Y) * 2)
 #define FONT_PTR_BIT			(((FONT_X) / 2) - 1)
 
 #define CONFIG_DISPLAY_FONT_BASE_ADDRESS BOOTLOADER_FB_ADDRESS
+
+/* Clears the framebuffer by filling it with a specified color */
+void clear_screen(uint32_t color)
+{
+	volatile u32 *_fb = (u32*)0xf1000000;
+	y_pos = 0;
+
+	for (uint32_t y = 0; y < LCD_HEIGHT; y++)
+	{
+		for (uint32_t x = 0; x < LCD_WIDTH; x++)
+		{
+			_fb[y * LCD_WIDTH + x] = color;
+		}
+	}
+}
 
 /* Fill the frame buffer one character at a time */
 static int fill_fb_one_char(u32 *fb_buf, u32 x_pos, u32 fb_width, char ascii,
