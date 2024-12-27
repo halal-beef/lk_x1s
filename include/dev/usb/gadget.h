@@ -14,6 +14,8 @@
 #ifndef _USB_GADGET_H_
 #define _USB_GADGET_H_
 
+#include <list.h>
+#include <stdbool.h>
 #include "usb-def.h"
 
 #define USB_STDREQ_OK  0
