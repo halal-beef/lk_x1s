@@ -37,7 +37,6 @@ struct timer config_timer;
 int retry_cnt;
 
 void muic_sw_usb(void);
-void clear_screen(int);
 static enum handler_return dwc3_dev_config_check(struct timer *timer, unsigned int now, void *arg);
 
 enum dwc3_dev_dbg_bit {
@@ -1240,21 +1239,6 @@ dwc3_dev_config_check(struct timer *timer, unsigned int now, void *arg) {
 	return INT_NO_RESCHEDULE;
 }
 
-uint32_t read_secure_chip(void);
-
-void print_secboot_info()
-{
-	if (read_secure_chip() == 0)
-		print_lcd_update(FONT_WHITE, FONT_BLACK, "Secure boot is disabled (non-secure chip)\n");
-	else if (read_secure_chip() == 1)
-		print_lcd_update(FONT_WHITE, FONT_BLACK, "Secure boot is enabled (test key)\n");
-	else if (read_secure_chip() == 2)
-		print_lcd_update(FONT_WHITE, FONT_BLACK, "Secure boot is enabled (secure chip)\n");
-	else
-		print_lcd_update(FONT_RED, FONT_BLACK, "Invalid secureboot revision?\n");
-
-}
-
 int dwc3_dev_init(void *dev_handle)
 {
 	u32 uRegData = 0;
@@ -1386,14 +1370,6 @@ int dwc3_dev_init(void *dev_handle)
 
 	/* true Deivce */
 	dwc3_dev_set_rs(dwc3_dev_h, true);
-	clear_screen(0x000000);
-	print_lcd_update(FONT_GREEN, FONT_BLACK, "--------------------");
-	print_lcd_update(FONT_GREEN, FONT_BLACK, "lk3rd fastboot mode");
-	print_lcd_update(FONT_GREEN, FONT_BLACK, "--------------------");
-	print_lcd_update(FONT_WHITE, FONT_BLACK, "lk3rd alpha. 2024-12-21");
-	print_lcd_update(FONT_RED, FONT_BLACK, "KEEP THIS BUILD PRIVATE");
-	print_lcd_update(FONT_ORANGE, FONT_BLACK, "Exynos990");
-	print_secboot_info();
 
 	dwc3_dev_h->fastboot_mode = true;
 
