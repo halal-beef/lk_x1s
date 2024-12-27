@@ -27,18 +27,6 @@ typedef unsigned char uint8_t;
 
 volatile u32 *fb = FB_BASE;
 
-/* Clears the framebuffer by filling it with a specified color */
-void clear_screen(uint32_t color)
-{
-	for (uint32_t y = 0; y < FB_HEIGHT; y++)
-	{
-		for (uint32_t x = 0; x < FB_WIDTH; x++)
-		{
-			fb[y * FB_WIDTH + x] = color;
-		}
-	}
-}
-
 // Helper function to draw a character.
 void putc_fb(u32 x, u32 y, char c, u32 color)
 {
