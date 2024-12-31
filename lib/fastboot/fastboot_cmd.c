@@ -499,10 +499,28 @@ static void flash_using_part(char *key, char *response,
 	}
 }
 
+const char *blocked_partitions[] = {
+	"bootloader",
+	"efs"
+};
+
+const int blocked_count = sizeof(blocked_partitions) /
+			  sizeof(blocked_partitions[0]);
+
+bool partition_is_blocked(const char* partition)
+{
+	for (int i = 0; i < blocked_count; i++)
+		if (strcmp(partition, blocked_partitions[i]) == 0)
+			return true; // Partition is blocked
+
+	return false; // Partition is not blocked
+}
+
 int fb_do_flash(const char *cmd_buffer, unsigned int rx_sz)
 {
 	char buf[FB_RESPONSE_BUFFER_SIZE];
 	char *response = (char *)(((unsigned long)buf + 8) & ~0x07);
+	const char *dest = cmd_buffer + 6;
 
 	LTRACE_ENTRY;
 
@@ -522,8 +540,15 @@ int fb_do_flash(const char *cmd_buffer, unsigned int rx_sz)
 #endif
 	dprintf(ALWAYS, "flash\n");
 
+	if(partition_is_blocked(dest))
+	{
+		strcpy(response, "FAILPartition is blocked from being flashed!");
+		fastboot_send_status(response, strlen(response), FASTBOOT_TX_ASYNC);
+		return 0;
+	}
+
 	strcpy(response,"OKAY");
-	flash_using_part((char *)cmd_buffer + 6, response,
+	flash_using_part(dest, response,
 			downloaded_data_size, (void *)interface.transfer_buffer);
 
 	fastboot_send_status(response, strlen(response), FASTBOOT_TX_ASYNC);
