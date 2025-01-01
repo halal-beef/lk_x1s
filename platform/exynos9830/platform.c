@@ -297,6 +297,9 @@ void arm_generic_timer_disable(void)
 	mask_interrupt(ARCH_TIMER_IRQ);
 }
 
+#define DECON_F_BASE		0x19050000
+#define HW_SW_TRIG_CONTROL	0x70
+
 void platform_early_init(void)
 {
 	unsigned int rst_stat = readl(EXYNOS9830_POWER_RST_STAT);
@@ -308,6 +311,9 @@ void platform_early_init(void)
 		cpu_common_init();
 		clean_invalidate_dcache_all();
 	}
+
+	// Temporary, since we do not have panel driver
+	*(int*) (DECON_F_BASE + HW_SW_TRIG_CONTROL) = 0x1281;
 
 	read_chip_id();
 	read_chip_rev();
