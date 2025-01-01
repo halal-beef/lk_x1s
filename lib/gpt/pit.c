@@ -19,6 +19,8 @@
 #include <string.h>
 #include <strings.h>
 
+#include <lib/font_display.h>
+
 #include "pit.h"
 
 static struct pit_info pit;
@@ -30,6 +32,9 @@ static bdev_t *pit_dev;
 // If we put this in the header it may
 // collide with the actual PIT structure info.
 static int pit_available = 0;
+
+// You shouldn't mess with this. Ever.
+static int read_raw_boot_partition = 0;
 
 /* -------------------- Private API -------------------- */
 
@@ -124,6 +129,48 @@ static int pit_load_blocks(void *buf)
 	return NO_ERROR;
 }
 
+/*
+ * pit_get_virtual_partition_entry - get a virtual partition entry from PIT
+ * @int: either 1 for boot, or 2 for lk3rd
+ *
+ * Do not use this as a public API, pit_get_part_info handles everything.
+ *
+ * Returns struct pit_entry.
+*/
+struct pit_entry *pit_get_virtual_partition_entry(int partition)
+{
+	struct pit_entry *pet;
+	struct pit_entry *new;
+
+	// Read the whole boot partition
+	read_raw_boot_partition = 1;
+	pet = pit_get_part_info("boot");
+	read_raw_boot_partition = 0;
+
+	new = malloc(sizeof(struct pit_entry));
+	memcpy(new, pet, sizeof(struct pit_entry));
+
+	if(partition == 1)
+	{
+		// Need to read the remainder of the partition
+		new->blkstart += 0x200000 / PIT_UFS_BLK_SIZE;
+		new->blknum -= 0x200000 / PIT_UFS_BLK_SIZE;
+		strcpy(new->name, "BOOT");
+	}
+	else if(partition == 2)
+	{
+		// Need to read only the first 0x200000 bytes
+		new->blknum = 0x200000 / PIT_UFS_BLK_SIZE;
+		strcpy(new->name, "LK3RD");
+	}
+	else
+	{
+		printf("%s: invalid partition type", __func__);
+	}
+end:
+	return new;
+}
+
 /* -------------------- Public API -------------------- */
 
 /*
@@ -197,20 +244,34 @@ error:
  * @name: partition name
  *
  * Gets the entry for a partition from the PIT.
+ * Also, handles the lk3rd virtual partition.
  *
  * Returns a pit_entry if the partition is found.
  * Otherwise, 0.
 */
 struct pit_entry *pit_get_part_info(const char *name)
 {
+	int need_to_lie = 0;
+
 	if (!pit_available)
 		return 0;
+
+	// Check for virtual partitions
+	if (strcicmp(name, "boot") == 0 && read_raw_boot_partition != 1)
+		need_to_lie = 1;
+	else if (strcicmp(name, "lk3rd") == 0)
+		need_to_lie = 2;
 
 	for (u32 i = 0; i < pit.count; i++) {
 		struct pit_entry *ptn = &pit.pte[i];
 
+		if(need_to_lie != 0)
+			return pit_get_virtual_partition_entry(need_to_lie);
+
 		if (strcicmp(name, ptn->name) == 0)
+		{
 			return ptn;
+		}
 	}
 
 	printf("Partition %s does not exist in PIT.\n", name);
