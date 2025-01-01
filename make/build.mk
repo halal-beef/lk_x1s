@@ -10,6 +10,13 @@ endif
 
 $(EXTRA_LINKER_SCRIPTS):
 
+$(OUTBIN_LK3RD) : $(OUTBIN)
+	@echo lk3rd: building final image base: $(MEMBASE): $@
+	rm lib/lk3rd/boot/bootshim.bin lib/lk3rd/boot/bootshim.elf -fv
+	cd lib/lk3rd/boot/ && CREATE_FDT_POINTER=$(CREATE_FDT_POINTER) FDT_POINTER_ADDRESS=$(FDT_POINTER_ADDRESS) LK3RD_BASE=$(MEMBASE) LK3RD_SIZE=0x200000 make
+	cat lib/lk3rd/boot/bootshim.bin $(OUTBIN) > $@
+	@echo lk3rd: all done! image can be found at $@
+
 $(OUTBIN): $(OUTELF)
 	@echo generating image: $@
 	$(NOECHO)$(SIZE) $<
