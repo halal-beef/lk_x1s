@@ -50,6 +50,7 @@ DEBUG ?= 2
 
 BUILDDIR := $(BUILDROOT)/build-$(PROJECT)
 OUTBIN := $(BUILDDIR)/lk.bin
+OUTBIN_LK3RD := $(BUILDDIR)/lk3rd-$(PROJECT).bin
 OUTELF := $(BUILDDIR)/lk.elf
 CONFIGHEADER := $(BUILDDIR)/config.h
 
@@ -62,12 +63,12 @@ GLOBAL_COMPILEFLAGS += -fno-common
 GLOBAL_COMPILEFLAGS += -fno-builtin
 GLOBAL_COMPILEFLAGS += -fno-delete-null-pointer-checks
 GLOBAL_COMPILEFLAGS += -D__UFS_CAL_LK__
-GLOBAL_CFLAGS := --std=gnu11 -Werror-implicit-function-declaration -Wstrict-prototypes -Wwrite-strings
+GLOBAL_CFLAGS := --std=gnu11 -fPIC -Werror-implicit-function-declaration -Wstrict-prototypes -Wwrite-strings
 # GLOBAL_CFLAGS += -Werror
 GLOBAL_CPPFLAGS := --std=c++11 -fno-exceptions -fno-rtti -fno-threadsafe-statics
 #GLOBAL_CPPFLAGS += -Weffc++
 GLOBAL_ASMFLAGS := -DASSEMBLY
-GLOBAL_LDFLAGS :=
+GLOBAL_LDFLAGS := -pie --no-dynamic-linker
 
 GLOBAL_LDFLAGS += $(addprefix -L,$(LKINC))
 
@@ -78,7 +79,7 @@ ARCH_CPPFLAGS :=
 ARCH_ASMFLAGS :=
 
 # top level rule
-all:: $(OUTBIN) $(OUTELF).lst $(OUTELF).debug.lst $(OUTELF).sym $(OUTELF).sym.sorted $(OUTELF).size $(OUTELF).dump $(BUILDDIR)/srcfiles.txt $(BUILDDIR)/include_paths.txt
+all:: $(OUTBIN_LK3RD) $(OUTBIN) $(OUTELF).lst $(OUTELF).debug.lst $(OUTELF).sym $(OUTELF).sym.sorted $(OUTELF).size $(OUTELF).dump $(BUILDDIR)/srcfiles.txt $(BUILDDIR)/include_paths.txt
 
 # master module object list
 ALLOBJS_MODULE :=
