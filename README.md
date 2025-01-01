@@ -22,9 +22,7 @@ An user build will come in the near future.
 We based lk3rd off of Linaro's source code for their Exynos 850 board, which contained code for Exynos 990 as well. Thus, the commit history is a mix of Linaro/Samsung/upstream.
 
 ## What works?
-Well, not much. Booting, display (look ma, decon is up!!!), and USB. Regulators seem to initialize, and the MAX77705 seems to be charging the device. However,
-we can't be too sure due to the lack of debug info. This should be fixed soon. The main breakage is UFS. Seems like it's UFS Protector that is not really working,
-so even if the link is up (you can briefly see the storage device and capacity on boot!) the device outputs unfortunate garbage.
+Booting, display (with DECON), UFS and USB. Regulators seem to initialize, and the device is charging.
 
 ## Boot Sequence
 You may be wondering, how the hell are you booting this? We can't replace our bootloaders!
@@ -57,7 +55,7 @@ flowchart LR
 
 ## TODO
 
-- [ ] Get UFS Fully up
+- [x] Get UFS Fully up
 - [ ] Position independent code
 - [ ] Booting Android
 
