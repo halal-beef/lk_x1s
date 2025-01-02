@@ -33,21 +33,6 @@ This flowchart of what happens will show you how we actually boot lk3rd.
 flowchart LR
     A["Pre S-LK<br> (BootROM, BL1, BL2, etc)"] --> B["S-LK"]
     B --> C["Initialise Peripherals, Display and UFS"]
-    C --> D["Boot from boot partition, which has had a boot image with a payload as kernel (uniLoader)"]
-    D --> E["uniLoader sets regs to the kernel (lk3rd) address, sets the decon hardware registers and copies our kernel to 0x90000000 (our base)"]
-    E --> F["uniLoader branches out to the base address, launching lk3rd"]
-    F --> G["lk3rd sets up Peripherals, USB and UFS, but doesn't use the display, instead using the framebuffer"]
-    G --> H["Framebuffer is cleared once again, logs and then the fastboot text appears, when fastboot is launched, ready to take commands from the user"]
-```
-
-You may be saying to yourself, wow. That process seems extremely long-winded.
-To that we say, yes it is and we are going to work on making it not long-winded.
-By the end of this we want the boot process to look more like this flowchart below.
-
-```mermaid
-flowchart LR
-    A["Pre S-LK<br> (BootROM, BL1, BL2, etc)"] --> B["S-LK"]
-    B --> C["Initialise Peripherals, Display and UFS"]
     C --> D["Boot from boot partition, which has had a boot image with a payload as kernel (lk3rd)"]
     D --> E["lk3rd relocates itself, sets up Peripherals, DECON, USB and UFS, but doesn't use the display, instead using the framebuffer"]
     E --> F["Framebuffer is cleared once again, logs and then the fastboot text appears, when fastboot is launched, ready to take commands from the user"]
@@ -56,7 +41,7 @@ flowchart LR
 ## TODO
 
 - [x] Get UFS Fully up
-- [ ] Position independent code
+- [x] Position independent code
 - [ ] Booting Android
 
 Cheers from the Exynos990-Mainline team!
