@@ -77,6 +77,14 @@ struct cmd_fastboot {
 	int (*handler)(const char *, unsigned int);
 };
 
+const char *blocked_partitions[] = {
+	"bootloader",
+	"efs"
+};
+
+const int blocked_count = sizeof(blocked_partitions) /
+						  sizeof(blocked_partitions[0]);
+
 __attribute__((weak)) void platform_prepare_reboot(void)
 {
 	/* WARNING : NOT MODIFY THIS FUNCTION
@@ -168,6 +176,15 @@ static void hex2str(u8 *buf, char *str, int len)
 	for (i = 0; i < len; i++) {
 		simple_byte_hextostr(buf[i], str + (i + 1) * 2);
 	}
+}
+
+bool partition_is_blocked(const char* partition)
+{
+	for (int i = 0; i < blocked_count; i++)
+		if (stricmp(partition, blocked_partitions[i]) == 0)
+			return true; // Partition is blocked
+
+	return false; // Partition is not blocked
 }
 
 int fb_do_getvar(const char *cmd_buffer, unsigned int rx_sz)
@@ -425,6 +442,13 @@ int fb_do_erase(const char *cmd_buffer, unsigned int rx_sz)
 			return 0;
 		}
 
+		if(partition_is_blocked(key))
+		{
+			strcpy(response, "FAILPartition is blocked from being erased!");
+			fastboot_send_status(response, strlen(response), FASTBOOT_TX_ASYNC);
+			return 0;
+		}
+
 		printf("erasing(formatting) '%s'\n", key);
 
 		status = part_erase(part);
@@ -497,23 +521,6 @@ static void flash_using_part(char *key, char *response,
 
 		free(env_val);
 	}
-}
-
-const char *blocked_partitions[] = {
-	"bootloader",
-	"efs"
-};
-
-const int blocked_count = sizeof(blocked_partitions) /
-			  sizeof(blocked_partitions[0]);
-
-bool partition_is_blocked(const char* partition)
-{
-	for (int i = 0; i < blocked_count; i++)
-		if (strcmp(partition, blocked_partitions[i]) == 0)
-			return true; // Partition is blocked
-
-	return false; // Partition is not blocked
 }
 
 int fb_do_flash(const char *cmd_buffer, unsigned int rx_sz)
