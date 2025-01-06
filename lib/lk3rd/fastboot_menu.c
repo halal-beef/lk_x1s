@@ -30,51 +30,46 @@ void notify_action_switch(int modifier)
 	current_action = current_action + modifier;
 
 	/* Rollover */
-	if(current_action == 4)
+	if(current_action == ACTION_END)
 	{
 		current_action = 0;
 	}
 
 	if(current_action == -1)
 	{
-		current_action = 3;
+		current_action = ACTION_END - 1;
 	}
 
 	draw_menu(current_action);
 }
 
-/*
- * The reboot modes aren't the real reboot modes for production boards.
- * We use the modes that were specified by this lk fork, as they are
- * ignored by the bootloader, but they succesfully get passed back
- * to us after a reboot. Thus, lk3rd is ran every reboot (except for dl mode).
-*/
-#define REBOOT_MODE_RECOVERY	0xFF
+void platform_prepare_reboot(void);
+void platform_do_reboot(const char *cmd_buf);
 
 void do_reboot(enum action action)
 {
-	/*
-	 * PON (Power off notification) to storage
-	 */
-	scsi_do_ssu();
+	platform_prepare_reboot();
 
 	switch(action)
 	{
-		case ACTION_POWEROFF:
-		case ACTION_REBOOTBOOTLOADER:
-			// Not implemented.
-			break;
-		case ACTION_REBOOTRECOVERY:
-			writel(REBOOT_MODE_RECOVERY, EXYNOS_POWER_SYSIP_DAT0);
-			writel(0, CONFIG_RAMDUMP_SCRATCH);
-			break;
 		case ACTION_START:
-			writel(CONFIG_RAMDUMP_MODE, CONFIG_RAMDUMP_SCRATCH);
+		case ACTION_POWEROFF:
+			// Not implemented.
+			platform_do_reboot("");
+			break;
+		case ACTION_REBOOT_BOOTLOADER:
+			platform_do_reboot("reboot-bootloader");
+			break;
+		case ACTION_REBOOT_RECOVERY:
+			platform_do_reboot("reboot-recovery");
+			break;
+		case ACTION_REBOOT_FASTBOOTD:
+			platform_do_reboot("reboot-fastboot");
+			break;
+		case ACTION_REBOOT_DOWNLOAD:
+			platform_do_reboot("reboot-download");
 			break;
 	}
-
-	writel(RAMDUMP_SIGN_BL_REBOOT, CONFIG_RAMDUMP_REASON);
-	writel(0x2, EXYNOS_POWER_SYSTEM_CONFIGURATION);
 
 	// Should never return.
 	thread_exit(0);

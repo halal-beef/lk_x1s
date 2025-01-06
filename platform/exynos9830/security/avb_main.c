@@ -26,6 +26,10 @@ void avb_print_lcd(const char *str, char *color) {};
 
 void troll()
 {
+	// Offset for curved displays
+        print_lcd_update(FONT_ORANGE, FONT_BLACK, "");
+        print_lcd_update(FONT_ORANGE, FONT_BLACK, "");
+        print_lcd_update(FONT_ORANGE, FONT_BLACK, "");
 	print_lcd_update(FONT_ORANGE, FONT_BLACK, "<!>");
 	print_lcd_update(FONT_ORANGE, FONT_BLACK, "");
 	print_lcd_update(FONT_WHITE, FONT_BLACK, "The boot loader is unlocked and software");
