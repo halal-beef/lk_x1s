@@ -61,6 +61,13 @@ static void exynos_boot_task(const struct app_descriptor *app, void *args)
 	mdelay(50);
 	val = exynos_gpio_get_value(bank, gpio);
 
+	if(readl(EXYNOS9830_POWER_SYSIP_DAT0) == REBOOT_MODE_LK3RD)
+	{
+		writel(0, EXYNOS9830_POWER_SYSIP_DAT0); // Clear reboot reason
+		start_usb_gadget();
+		return;
+	}
+
 	if (!val)
 		start_usb_gadget();
 	else
