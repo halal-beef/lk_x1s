@@ -25,6 +25,9 @@ case $1 in
         x1s)
                 rm -rf build-$1; make $1 -j16
                 ;;
+	z3s)
+		rm -rf build-$1; make $1 -j13
+		;;
 	erd3830)
 		rm -rf build-$1; make $1 -j16
 		;;
@@ -46,6 +49,7 @@ case $1 in
 		echo universal3830
 		echo c1s
 		echo x1s
+		echo z3s
 		echo "-----------------------------------------------------------------"
 		exit 0
 		;;
