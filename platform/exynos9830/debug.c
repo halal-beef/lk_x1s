@@ -13,66 +13,92 @@
 #include <platform/debug.h>
 #include <platform/uart.h>
 
-/* Temporary debug shit. TODO */
-
 #define FB_BASE ((u32 *)0xf1000000)
-#define FB_WIDTH 1080
-#define FB_HEIGHT 2400
+#define FB_WIDTH 1440
+#define FB_HEIGHT 3200
+
+volatile u32 *fb = FB_BASE;
+
+/* Clears the framebuffer by filling it with a specified color */
+void clear_screen(uint32_t color);
 
 typedef unsigned int uint32_t;
 typedef unsigned char uint8_t;
 
 #include <stdint.h>
-#include "../../lib/font/exynos_font.h"
+#include <kernel/thread.h>
+#include "exynos_font.h"
 
-volatile u32 *fb = FB_BASE;
+#define LCD_WIDTH 1440
+#define LCD_HEIGHT 3200
+
+// Global cursor position and color.
+static u32 cursor_x = 0;
+static u32 cursor_y = 0;
+static u32 text_color = 0xFFFFFF; // Default white color.
 
 // Helper function to draw a character.
-void putc_fb(u32 x, u32 y, char c, u32 color)
+void putc_fb(char c)
 {
-	// Address of framebuffer (assuming RGB format and 32-bit pixels).
-	volatile u32 *fb = FB_BASE;
+    // Address of framebuffer (assuming RGB format and 32-bit pixels).
+    volatile u32 *fb = FB_BASE;
 
-	// Get the font data for the character.
-	const u8 *char_data = &font[(c - ' ') * FONT_Y * 2];
+    // Handle newline.
+    if (c == '\n')
+    {
+        cursor_x = 0;
+        cursor_y += FONT_Y;
+        if (cursor_y + 3*FONT_Y > LCD_HEIGHT)
+        {
+            clear_screen(0); // Clear the screen.
+            cursor_y = 0; // Reset to the top if we overflow.
+        }
+        return;
+    }
 
-	// Iterate through each pixel of the character.
-	for (u32 row = 0; row < FONT_Y; ++row)
-	{
-		// Each row in the font is 2 bytes (16 bits).
-		u16 row_data = (char_data[row * 2] << 8) | char_data[row * 2 + 1];
+    const u8 *char_data = &font[(c - ' ') * FONT_Y * 2];
 
-		for (u32 col = 0; col < FONT_X; ++col)
-		{
-			// Check if the bit at position `col` is set.
-			if (row_data & (1 << (15 - col)))
-			{
-				// Draw the pixel at the corresponding framebuffer location.
-				fb[(y + row) * 1024 + (x + col)] = color;
-			}
-		}
-	}
-}
+    // Iterate through each pixel of the character.
+    for (u32 row = 0; row < FONT_Y; ++row)
+    {
+        // Each row in the font is 2 bytes (16 bits).
+        u16 row_data = (char_data[row * 2] << 8) | char_data[row * 2 + 1];
 
-// Helper function to draw a string to the framebuffer.
-void puts_fb(u32 x, u32 y, const char *str, u32 color)
-{
-	while (*str)
-	{
-		putc_fb(x, y, *str, color);
-		x += FONT_X; // Move to the next character position.
-		++str;
-	}
+        for (u32 col = 0; col < FONT_X; ++col)
+        {
+            // Check if the bit at position `col` is set.
+            if (row_data & (1 << (15 - col)))
+            {
+                // Draw the pixel at the corresponding framebuffer location.
+                u32 pixel_x = cursor_x + col;
+                u32 pixel_y = cursor_y + row;
+                if (pixel_x < LCD_WIDTH && pixel_y < LCD_HEIGHT)
+                {
+                    fb[pixel_y * LCD_WIDTH + pixel_x] = text_color;
+                }
+            }
+        }
+    }
+    // Move cursor to the next character position.
+    cursor_x += FONT_X;
+    if (cursor_x + FONT_X > LCD_WIDTH)
+    { // Handle line wrap.
+        cursor_x = 0;
+        cursor_y += FONT_Y;
+
+        if (cursor_y + FONT_Y > LCD_HEIGHT)
+        {
+            cursor_y = 0; // Reset to the top if we overflow.
+        }
+    }
 }
 
 void platform_dputc(char c)
 {
-	// putc(c);
+    putc_fb(c);
 }
-
-/* End TODO */
 
 int platform_dgetc(char *c, bool wait)
 {
-	return 0;
+    return 0;
 }
