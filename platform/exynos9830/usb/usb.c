@@ -395,10 +395,23 @@ void muic_sw_usb (void)
 	return;
 }
 
-#if 0
 /* Fastboot command related function */
 #include <dev/rpmb.h>
 #include <dev/scsi.h>
+
+void sec_set_reboot_magic(int magic, int offset, int mask)
+{
+	u32 tmp = 0;
+
+	tmp = readl(EXYNOS9830_POWER_BASE + SEC_DEBUG_MAGIC_INFORM);
+
+	mask <<= offset;
+	tmp &= ~mask;
+	tmp |= magic << offset;
+
+	writel(tmp, EXYNOS9830_POWER_BASE + SEC_DEBUG_MAGIC_INFORM);
+}
+
 void platform_prepare_reboot(void)
 {
 	/*
@@ -410,15 +423,28 @@ void platform_prepare_reboot(void)
 
 void platform_do_reboot(const char *cmd_buf)
 {
-	if(!memcmp(cmd_buf, "reboot-bootloader", strlen("reboot-bootloader"))) {
-		writel(REBOOT_MODE_FASTBOOT, EXYNOS9830_POWER_SYSIP_DAT0);
+	int reason = SEC_RESET_REASON_UNKNOWN;
+
+	if (!memcmp(cmd_buf, "reboot-bootloader", strlen("reboot-bootloader"))) {
+		writel(REBOOT_MODE_LK3RD, EXYNOS9830_POWER_SYSIP_DAT0);
+	} else if (!memcmp(cmd_buf, "reboot-recovery", strlen("reboot-recovery"))) {
+		reason = SEC_RESET_REASON_RECOVERY;
+	} else if (!memcmp(cmd_buf, "reboot-fastboot", strlen("reboot-fastboot"))) {
+		reason = SEC_RESET_REASON_RECOVERY;
+		writel(REBOOT_MODE_FASTBOOT_USER, EXYNOS9830_POWER_SYSIP_DAT0);
+	} else if(!memcmp(cmd_buf, "reboot-download", strlen("reboot-download"))) {
+		reason = SEC_RESET_REASON_DOWNLOAD;
 	} else {
 		writel(0, EXYNOS9830_POWER_SYSIP_DAT0);
-		writel(0, CONFIG_RAMDUMP_SCRATCH);
 	}
 
+	/* Set reboot reason */
+	writel(reason, EXYNOS9830_POWER_BASE + SEC_DEBUG_PANIC_INFORM);
+
+	writel(0, CONFIG_RAMDUMP_SCRATCH);
+	sec_set_reboot_magic(SEC_REBOOT_NORMAL, SEC_REBOOT_END_OFFSET, 0xFF);
+	writel(0, EXYNOS9830_POWER_RST_STAT);
 	writel(readl(EXYNOS9830_POWER_SYSTEM_CONFIGURATION) | 0x2, EXYNOS9830_POWER_SYSTEM_CONFIGURATION);
 
 	return;
 }
-#endif
