@@ -24,7 +24,7 @@ void avb_print_lcd(const char *str, char *color) {};
 
 #if defined(CONFIG_USE_AVB20)
 
-void troll()
+void troll(void)
 {
 	print_lcd_update(FONT_ORANGE, FONT_BLACK, "<!>");
 	print_lcd_update(FONT_ORANGE, FONT_BLACK, "");

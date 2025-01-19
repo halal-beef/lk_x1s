@@ -32,15 +32,25 @@ endef
 
 # generate a header file at $1 with an expanded variable in $2
 define MAKECONFIGHEADER
-	$(MKDIR); \
-	echo generating $1; \
-	rm -f $1.tmp; \
-	LDEF=`echo $1 | tr '/\\.-' '_' | sed "s/C++/CPP/g;s/c++/cpp/g"`; \
-	echo \#ifndef __$${LDEF}_H > $1.tmp; \
-	echo \#define __$${LDEF}_H >> $1.tmp; \
-	for d in `echo $($2) | tr '[:lower:]' '[:upper:]'`; do \
-		echo "#define $$d" | sed "s/=/\ /g;s/-/_/g;s/\//_/g;s/\./_/g;s/\//_/g;s/C++/CPP/g" >> $1.tmp; \
-	done; \
-	echo \#endif >> $1.tmp; \
-	$(call TESTANDREPLACEFILE,$1.tmp,$1)
+        $(MKDIR); \
+        echo generating $1; \
+        rm -f $1.tmp; \
+        LDEF=`echo $1 | tr '/\\.-' '_' | sed "s/C++/CPP/g;s/c++/cpp/g"`; \
+        echo \#ifndef __$${LDEF}_H > $1.tmp; \
+        echo \#define __$${LDEF}_H >> $1.tmp; \
+        for d in `echo $($2) | tr '[:lower:]' '[:upper:]'`; do \
+                case $$d in \
+                    TARGET) \
+                        if [ "$$1" = "module_config.h" ]; then \
+                            continue; \
+                        fi ;; \
+                    *_INCLUDES*|*_COMPILEFLAGS*|*_CFLAGS*|*_CPPFLAGS*|*_ASMFLAGS*|*_LDFLAGS*|*_OPTFLAGS*|*_SRCDEPS*|-WWRITE-STRINGS_*|MODULE_SRCS*|MODULE_DEPS*|-ILIB/CBUF/INCLUDE_*|-FDATA-SECTIONS_*|-FNO-THREADSAFE-STATICS*|--GC-SECTIONS_*|*.C|*.S) ;; \
+                    *) \
+                        if ! echo "#define $$d" | sed "s/=/\ /g;s/-/_/g;s/\//_/g;s/\./_/g;s/C++/CPP/g" | grep -q '_\"'; then \
+                            echo "#define $$d" | sed "s/=/\ /g;s/-/_/g;s/\//_/g;s/\./_/g;s/C++/CPP/g" >> $1.tmp; \
+                        fi ;; \
+                esac; \
+        done; \
+        echo \#endif >> $1.tmp; \
+        $(call TESTANDREPLACEFILE,$1.tmp,$1)
 endef

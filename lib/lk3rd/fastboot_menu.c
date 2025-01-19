@@ -80,7 +80,7 @@ void do_reboot(enum action action)
 	thread_exit(0);
 }
 
-void notify_action_start()
+void notify_action_start(void)
 {
 	do_reboot(current_action);
 	return;
@@ -90,7 +90,7 @@ int fastboot_menu_entry(void *arg)
 {
 	struct exynos_gpio_bank *bank_volume = (struct exynos_gpio_bank *)EXYNOS9830_GPA0CON;
 	struct exynos_gpio_bank *bank_power = (struct exynos_gpio_bank *)EXYNOS9830_GPA2CON;
-	int volup, voldown, power, key_stuck;
+	int volup, voldown, power, key_stuck = 0;
 
 	setup_keys(bank_volume, BANK_GPA0);
 	setup_keys(bank_power, BANK_GPA2);
