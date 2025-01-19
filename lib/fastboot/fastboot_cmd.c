@@ -155,6 +155,84 @@ __attribute__((weak)) void get_serialno(int *chip_id)
 	 */
 }
 
+
+const char *fastboot_variables[] = 
+{
+	"version",
+	"product",
+	"serialno",
+	"downloadsize",
+	"max-download-size",
+	"partition-type",
+	"partition-size",
+	"erase-block-size",
+	"logical-block-size",
+	"slot-count",
+	"current-slot",
+	"slot-successful",
+	"slot-unbootable",
+	"slot-retry-count",
+	"has-slot",
+	"unlocked",
+	"uid",
+	"str_ram"
+};
+
+enum fastboot_variable_id
+{
+	VERSION = 0,
+	PRODUCT,
+	SERIALNO,
+	DOWNLOAD_SIZE,
+	MAX_DOWNLOAD_SIZE,
+	PARTITION_TYPE,
+	PARTITION_SIZE,
+	ERASE_BLOCK_SIZE,
+	LOGICAL_BLOCK_SIZE,
+	SLOT_COUNT,
+	CURRENT_SLOT,
+	SLOT_SUCESSFUL,
+	SLOT_UNBOOTABLE,
+	SLOT_RETRY_COUNT,
+	HAS_SLOT,
+	BL_UNLOCKED,
+	UID,
+	STR_RAM,
+	FASTBOOT_VARIABLE_END,
+	ALL = 0xA11,
+};
+
+const char *oem_commands[] = 
+{
+	"str_ram",
+	"reboot-download",
+};
+
+enum oem_commands_id
+{
+	OEM_STR_RAM = 0,
+	OEM_REBOOT_DOWNLOAD,
+	OEM_CMD_END,
+};
+
+enum fastboot_variable_id fastboot_variable_to_id(char *variable)
+{
+	for(int i = 0; i < FASTBOOT_VARIABLE_END; i++)
+		if(!strncmp(fastboot_variables[i], variable, strlen(fastboot_variables[i])))
+			return i;
+		else if(!strcmp("all", variable))
+			return ALL;
+	return -1;
+}
+
+enum oem_commands_id oem_command_to_id(char *oem_cmd)
+{
+	for(int i = 0; i < OEM_CMD_END; i++)
+		if(!strncmp(oem_commands[i], oem_cmd, strlen(oem_commands[i])))
+			return i;
+	return -1;
+}
+
 static void simple_byte_hextostr(u8 hex, char *str)
 {
 	int i;
@@ -191,235 +269,255 @@ int fb_do_getvar(const char *cmd_buffer, unsigned int rx_sz)
 {
 	char buf[FB_RESPONSE_BUFFER_SIZE];
 	char *response = (char *)(((unsigned long)buf + 8) & ~0x07);
+	char *variable = cmd_buffer + 7;
 	const char *tmp;
 	int ret;
+
+	int slot = -1;
 
 	LTRACEF("fast received cmd:%s\n", cmd_buffer);
 
 	sprintf(response,"OKAY");
 
-	if (!memcmp(cmd_buffer + 7, "version", strlen("version")))
+	switch (fastboot_variable_to_id(variable))
 	{
-		LTRACEF("fast cmd:version\n");
-		sprintf(response + 4, FASTBOOT_VERSION);
-	}
-	else if (!memcmp(cmd_buffer + 7, "product", strlen("product")))
-	{
-		LTRACEF("fast cmd:product name\n");
-		tmp = fastboot_get_product_string();
-		if (tmp)
-			sprintf(response + 4, tmp);
-	}
-	else if (!memcmp(cmd_buffer + 7, "serialno", strlen("serialno")))
-	{
-		LTRACEF("fast cmd:serial NO\n");
-		tmp = fastboot_get_serialno_string();
-		if (tmp)
-			sprintf(response + 4, tmp);
-	}
-	else if (!memcmp(cmd_buffer + 7, "downloadsize", strlen("downloadsize")))
-	{
-		LTRACEF("fast cmd:download sz\n");
-		if (interface.transfer_buffer_size)
-			sprintf(response + 4, "%08x", interface.transfer_buffer_size);
-	}
-	else if (!memcmp(cmd_buffer + 7, "max-download-size", strlen("max-download-size")))
-	{
-		LTRACEF("fast cmd:max-download-size\n");
-		if (interface.transfer_buffer_size)
-			sprintf(response + 4, "%d", interface.transfer_buffer_size);
-	}
-	else if (!memcmp(cmd_buffer + 7, "partition-type", strlen("partition-type")))
-	{
-		char *key;
-		void *part;
-		const char *type;
+		case VERSION: {
+			sprintf(response + 4, FASTBOOT_VERSION);
+			break;
+		}
+
+		case PRODUCT: {
+			tmp = fastboot_get_product_string();
+			if (tmp)
+				sprintf(response + 4, tmp);
+			break;
+		}
+
+		case SERIALNO: {
+			tmp = fastboot_get_serialno_string();
+			if (tmp)
+				sprintf(response + 4, tmp);
+				break;
+		}
+
+		case DOWNLOAD_SIZE: {
+			if (interface.transfer_buffer_size)
+				sprintf(response + 4, "%08x", interface.transfer_buffer_size);
+			break;
+		}
+
+		case MAX_DOWNLOAD_SIZE: {
+			if (interface.transfer_buffer_size)
+				sprintf(response + 4, "%d", interface.transfer_buffer_size);
+				break;
+		}
+
+		case ERASE_BLOCK_SIZE: {
+			sprintf(response + 4, "0x%x", part_get_block_size());
+			break;
+		}
+
+		case LOGICAL_BLOCK_SIZE: {
+			sprintf(response + 4, "0x%x", part_get_erase_size());
+			break;
+		}
+
+		case SLOT_COUNT: {
+			sprintf(response + 4, "0");
+			break;
+		}
+
+		case CURRENT_SLOT: {
+			sprintf(response + 4, " ");
+			break;
+		}
+
+		case SLOT_SUCESSFUL: {
+			slot = -1;
+
+			if (!strcmp(cmd_buffer + 7 + strlen("slot-successful:"), "_a"))
+				slot = 0;
+			else if (!strcmp(cmd_buffer + 7 + strlen("slot-successful:"), "_b"))
+				slot = 1;
+			else
+				sprintf(response, "FAILinvalid slot");
+
+			if (slot >= 0) {
+				if (ab_slot_successful(slot))
+					sprintf(response + 4, "yes");
+				else
+					sprintf(response + 4, "no");
+			}
+			break;
+		}
+
+		case SLOT_UNBOOTABLE: {
+			slot = -1;
+
+			if (!strcmp(cmd_buffer + 7 + strlen("slot-unbootable:"), "_a"))
+				slot = 0;
+			else if (!strcmp(cmd_buffer + 7 + strlen("slot-unbootable:"), "_b"))
+				slot = 1;
+			else
+				sprintf(response, "FAILinvalid slot");
+
+			if (slot >= 0) {
+				if (ab_slot_unbootable(slot))
+					sprintf(response + 4, "yes");
+				else
+					sprintf(response + 4, "no");
+			}
+			break;
+		}
+
+		case SLOT_RETRY_COUNT: {
+			slot = -1;
+
+			if (!strcmp(cmd_buffer + 7 + strlen("slot-retry-count:"), "_a"))
+				slot = 0;
+			else if (!strcmp(cmd_buffer + 7 + strlen("slot-retry-count:"), "_b"))
+				slot = 1;
+			else
+				sprintf(response, "FAILinvalid slot");
+
+			if (slot >= 0)
+				sprintf(response + 4, "%d", ab_slot_retry_count(slot));
+			break;
+		}
+
+		case BL_UNLOCKED: {
+			if (get_ldfw_load_flag()) {
+				int lock_state;
+				lock_state = get_lock_state();
+
+				if (!lock_state)
+					sprintf(response + 4, "yes");
+				else
+					sprintf(response + 4, "no");
+			} else {
+				sprintf(response + 4, "ignore");
+			}
+			break;
+		}
+
+		case UID: {
+			char uid_str[33] = {0};
+			uint32_t *p;
+			/* default is faked UID, for test purpose only */
+			uint8_t uid_buf[] = {0x41, 0xDC, 0x74, 0x4B,	\
+									0x00, 0x00, 0x00, 0x00,	\
+									0x00, 0x00, 0x00, 0x00,	\
+									0x00, 0x00, 0x00, 0x00};
+			int chip_id[2];
+
+			get_serialno(chip_id);
+			p = (uint32_t *)&uid_buf[0];
+			*p = ntohl(chip_id[1]);
+			p = (uint32_t *)&uid_buf[4];
+			*p = ntohl(chip_id[0]);
+
+			hex2str(uid_buf, uid_str, 16);
+
+			sprintf(response + 4, uid_str);
+			break;
+		}
+
+		case STR_RAM: {
+			debug_store_ramdump_getvar(cmd_buffer + 15, response + 4);
+			break;
+		}
+
+		case PARTITION_TYPE: {
+			char *key;
+			void *part;
+			const char *type;
+
 #if (INPUT_GPT_AS_PT == 0)
 #ifdef CONFIG_USE_F2FS
-		const char *str_f2fs = "f2fs";
+			const char *str_f2fs = "f2fs";
 #endif
+#endif // (INPUT_GPT_AS_PT == 0)
+
+			key = (char *)cmd_buffer + 7 + strlen("partition-type:");
+
+			if (!part_get_pt_type(key) && strcmp(key, "wipe")) {
+				part = part_get(key);
+				if (!part) {
+					sprintf(response, "FAILpartition does not exist");
+					fastboot_send_status(response, strlen(response), FASTBOOT_TX_ASYNC);
+					return 0;
+				}
+
+				type = part_get_fs_type(part);
+
+#if (INPUT_GPT_AS_PT == 0)
+				/*
+				 * With pit binary change, too many process troubles must follow
+				 * in old projects. So I kept partition type of userdata, F2FS,
+				 * to prevent from the troubles.
+				 */
+#ifdef CONFIG_USE_F2FS
+				if (!strcmp(key, "userdata"))
+					type = str_f2fs;
 #endif
+#endif // (INPUT_GPT_AS_PT == 0)
 
-		LTRACEF("fast cmd:partition-type\n");
+				if (type)
+					strcpy(response + 4, type);
+				break;
+		}
 
-		key = (char *)cmd_buffer + 7 + strlen("partition-type:");
-		if (!part_get_pt_type(key) && strcmp(key, "wipe")) {
+		case PARTITION_SIZE: {
+			char *key;
+			void *part;
+			u64 size;
+
+			key = (char *)cmd_buffer + 7 + strlen("partition-size:");
+
 			part = part_get(key);
-			if (!part) {
-				sprintf(response, "FAILpartition does not exist");
-				fastboot_send_status(response, strlen(response), FASTBOOT_TX_ASYNC);
-				return 0;
+			if (part) {
+				size = part_get_size_in_bytes(part);
+				sprintf(response + 4, "0x%llx", size);
 			}
-			type = part_get_fs_type(part);
-#if (INPUT_GPT_AS_PT == 0)
-			/*
-			 * With pit binary change, too many process troubles must follow
-			 * in old projects. So I kept partition type of userdata, F2FS,
-			 * to prevent from the troubles.
-			 */
-#ifdef CONFIG_USE_F2FS
-			if (!strcmp(key, "userdata"))
-				type = str_f2fs;
-#endif
-#endif
-			if (type)
-				strcpy(response + 4, type);
+			break;
 		}
-	}
-	else if (!memcmp(cmd_buffer + 7, "partition-size", strlen("partition-size")))
-	{
-		char *key;
-		void *part;
-		u64 size;
 
-		LTRACEF("fast cmd:partition-size\n");
+		case ALL: {
+			int i, var_cnt;
+			struct cmd_fastboot_variable *var_head;
 
-		key = (char *)cmd_buffer + 7 + strlen("partition-size:");
-		part = part_get(key);
-		if (part) {
-			size = part_get_size_in_bytes(part);
-			sprintf(response + 4, "0x%llx", size);
-		}
-	}
-	else if (!memcmp(cmd_buffer + 7, "erase-block-size", strlen("erase-block-size")))
-	{
-		sprintf(response + 4, "0x%x", part_get_block_size());
-	}
-	else if (!memcmp(cmd_buffer + 7, "logical-block-size", strlen("logical-block-size")))
-	{
-		sprintf(response + 4, "0x%x", part_get_erase_size());
-	}
-	else if (!strcmp(cmd_buffer + 7, "slot-count"))
-        {
-		sprintf(response + 4, "0");
-	}
-        else if (!strcmp(cmd_buffer + 7, "current-slot"))
-        {
-		sprintf(response + 4, " ");
-	}
-        else if (!memcmp(cmd_buffer + 7, "slot-successful", strlen("slot-successful")))
-        {
-		int slot = -1;
-		if (!strcmp(cmd_buffer + 7 + strlen("slot-successful:"), "_a"))
-			slot = 0;
-		else if (!strcmp(cmd_buffer + 7 + strlen("slot-successful:"), "_b"))
-			slot = 1;
-		else
-			sprintf(response, "FAILinvalid slot");
-		printf("slot: %d\n", slot);
-		if (slot >= 0) {
-			if (ab_slot_successful(slot))
-				sprintf(response + 4, "yes");
-			else
-				sprintf(response + 4, "no");
-		}
-	}
-        else if (!memcmp(cmd_buffer + 7, "slot-unbootable", strlen("slot-unbootable")))
-	{
-		int slot = -1;
+			var_head = fastboot_get_var_head();
+			var_cnt = fastboot_get_var_num();
 
-		LTRACEF("fast cmd:slot-unbootable\n");
-		if (!strcmp(cmd_buffer + 7 + strlen("slot-unbootable:"), "_a"))
-			slot = 0;
-		else if (!strcmp(cmd_buffer + 7 + strlen("slot-unbootable:"), "_b"))
-			slot = 1;
-		else
-			sprintf(response, "FAILinvalid slot");
-		if (slot >= 0) {
-			if (ab_slot_unbootable(slot))
-				sprintf(response + 4, "yes");
-			else
-				sprintf(response + 4, "no");
-		}
-	}
-	else if (!memcmp(cmd_buffer + 7, "slot-retry-count", strlen("slot-retry-count")))
-	{
-		int slot = -1;
+			if (var_cnt == -1 || var_head == NULL) {
+				strcpy(response,"FAIL");
+			} else {
+				for (i = 0; i < var_cnt; i++) {
+					strncpy(response,"INFO", 4);
+					strncpy(response + 4, var_head[i].name, strlen(var_head[i].name));
+					strncpy(response + 4 + strlen(var_head[i].name), ":", 1);
+					strcpy(response + 4 + strlen(var_head[i].name) + 1, var_head[i].string);
 
-		LTRACEF("fast cmd:slot-retry-count\n");
-		if (!strcmp(cmd_buffer + 7 + strlen("slot-retry-count:"), "_a"))
-			slot = 0;
-		else if (!strcmp(cmd_buffer + 7 + strlen("slot-retry-count:"), "_b"))
-			slot = 1;
-		else
-			sprintf(response, "FAILinvalid slot");
-		if (slot >= 0)
-			sprintf(response + 4, "%d", ab_slot_retry_count(slot));
-	}
-	else if (!memcmp(cmd_buffer + 7, "has-slot", strlen("has-slot"))) {
-		sprintf(response + 4, "no");
-	}
-	else if (!memcmp(cmd_buffer + 7, "unlocked", strlen("unlocked")))
-	{
-		if (get_ldfw_load_flag()) {
-			int lock_state;
-			lock_state = get_lock_state();
-			if (!lock_state)
-				sprintf(response + 4, "yes");
-			else
-				sprintf(response + 4, "no");
-		} else {
-			sprintf(response + 4, "ignore");
-		}
-	}
-	else if (!memcmp(cmd_buffer + 7, "uid", strlen("uid")))
-	{
-		char uid_str[33] = {0};
-		uint32_t *p;
-		/* default is faked UID, for test purpose only */
-		uint8_t uid_buf[] = {0x41, 0xDC, 0x74, 0x4B,	\
-								0x00, 0x00, 0x00, 0x00,	\
-								0x00, 0x00, 0x00, 0x00,	\
-								0x00, 0x00, 0x00, 0x00};
-		int chip_id[2];
+					fastboot_send_info(response, strlen(response));
+				}
 
-		get_serialno(chip_id);
-		p = (uint32_t *)&uid_buf[0];
-		*p = ntohl(chip_id[1]);
-		p = (uint32_t *)&uid_buf[4];
-		*p = ntohl(chip_id[0]);
-
-		hex2str(uid_buf, uid_str, 16);
-
-		sprintf(response + 4, uid_str);
-	}
-	else if (!memcmp(cmd_buffer + 7, "str_ram", strlen("str_ram")))
-	{
-		debug_store_ramdump_getvar(cmd_buffer + 15, response + 4);
-	}
-	else if (!memcmp(cmd_buffer + 7, "all", strlen("all")))
-	{
-		int i, var_cnt;
-		struct cmd_fastboot_variable *var_head;
-
-		var_head = fastboot_get_var_head();
-		var_cnt = fastboot_get_var_num();
-
-		if (var_cnt == -1 || var_head == NULL) {
-			strcpy(response,"FAIL");
-		} else {
-			for (i = 0; i < var_cnt; i++) {
-				strncpy(response,"INFO", 4);
-				strncpy(response + 4, var_head[i].name, strlen(var_head[i].name));
-				strncpy(response + 4 + strlen(var_head[i].name), ":", 1);
-				strcpy(response + 4 + strlen(var_head[i].name) + 1, var_head[i].string);
-				fastboot_send_info(response, strlen(response));
+				strcpy(response,"OKAY");
+				strcpy(response + 4,"Done!");
 			}
+			break;
+		}
 
-			strcpy(response,"OKAY");
-			strcpy(response + 4,"Done!");
+		default: {
+			ret = dss_getvar_item(cmd_buffer + 7, response + 4);
+
+			if (ret != 0)
+				sprintf(response, "FAIL");
+			break;
 		}
 	}
-	else
-	{
-		LTRACEF("fast cmd:vendor\n");
-		ret = dss_getvar_item(cmd_buffer + 7, response + 4);
-		if (ret != 0)
-			sprintf(response, "FAIL");
-	}
+}
 
 	fastboot_send_status(response, strlen(response), FASTBOOT_TX_ASYNC);
-
 	return 0;
 }
 
@@ -571,39 +669,11 @@ int fb_do_reboot(const char *cmd_buffer, unsigned int rx_sz)
 	char buf[FB_RESPONSE_BUFFER_SIZE];
 	char *response = (char *)(((unsigned long)buf + 8) & ~0x07);
 
-	/*
-	 * PON (Power off notification) to storage
-	 *
-	 * Even with its failure, subsequential operations should be executed.
-	 */
-#ifndef CONFIG_NOT_SCSI
-	scsi_do_ssu();
-#endif
-	//platform_prepare_reboot(); // NEUS branch
-
 	sprintf(response, "OKAY");
 	fastboot_send_status(response, strlen(response), FASTBOOT_TX_SYNC);
 
-	//platform_do_reboot(cmd_buffer); // NEUS branch
-
-	if (!memcmp(cmd_buffer, "reboot-bootloader", strlen("reboot-bootloader"))) {
-		writel(CONFIG_RAMDUMP_MODE, CONFIG_RAMDUMP_SCRATCH);
-	}
-	else if (!memcmp(cmd_buffer, "reboot-fastboot", strlen("reboot-fastboot"))) {
-		writel(REBOOT_MODE_FASTBOOT_USER, EXYNOS_POWER_SYSIP_DAT0);
-		writel(0, CONFIG_RAMDUMP_SCRATCH);
-	}
-	else if (!memcmp(cmd_buffer, "reboot-recovery", strlen("reboot-recovery"))) {
-		writel(REBOOT_MODE_RECOVERY, EXYNOS_POWER_SYSIP_DAT0);
-		writel(0, CONFIG_RAMDUMP_SCRATCH);
-	} else {
-		writel(0, CONFIG_RAMDUMP_SCRATCH);
-	}
-
-	/* write reboot reasen (bootloader reboot) */
-	writel(RAMDUMP_SIGN_BL_REBOOT, CONFIG_RAMDUMP_REASON);
-
-	writel(0x2, EXYNOS_POWER_SYSTEM_CONFIGURATION);
+	platform_prepare_reboot();
+	platform_do_reboot(cmd_buffer);
 
 	return 0;
 }
@@ -691,6 +761,7 @@ int fb_do_set_active(const char *cmd_buffer, unsigned int rx_sz)
 	LTRACEF_LEVEL(INFO, "set_active\n");
 
 	sprintf(response, "OKAY");
+
 	if (!strcmp(cmd_buffer + 11, "a")) {
 		printf("Set slot 'a' active.\n");
 		print_lcd_update(FONT_GREEN, FONT_BLACK, "Set slot 'a' active.");
@@ -748,18 +819,30 @@ int fb_do_oem(const char *cmd_buffer, unsigned int rx_sz)
 {
 	char buf[FB_RESPONSE_BUFFER_SIZE];
 	char *response = (char *)(((unsigned long)buf + 8) & ~0x07);
+	char *oem_command = cmd_buffer + 4;
 
-	if (!strncmp(cmd_buffer + 4, "str_ram", 7)) {
+	switch (oem_command_to_id(oem_command))
+	{
+	case OEM_STR_RAM:
 		if (!debug_store_ramdump_oem(cmd_buffer + 12))
 			sprintf(response, "OKAY");
 		else
 			sprintf(response, "FAILunsupported command");
+		break;
+	
+	case OEM_REBOOT_DOWNLOAD:
+			sprintf(response, "OKAY");
+			fastboot_send_status(response, strlen(response), FASTBOOT_TX_ASYNC);
+			platform_prepare_reboot();
+			platform_do_reboot("reboot-download");
+			break;
 
-		fastboot_send_status(response, strlen(response), FASTBOOT_TX_ASYNC);
-	} else {
+	default:
 		sprintf(response, "FAILunsupported command");
-		fastboot_send_status(response, strlen(response), FASTBOOT_TX_ASYNC);
+		break;
 	}
+
+	fastboot_send_status(response, strlen(response), FASTBOOT_TX_ASYNC);
 
 	return 0;
 }

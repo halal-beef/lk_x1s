@@ -37,6 +37,7 @@
 #define LCD_WIDTH				1440
 #define LCD_HEIGHT				3200
 
+#define CONFIG_HAS_CURVED_DISPLAY
 
 /* =================================================== */
 /* Below configs can be used by display member only.

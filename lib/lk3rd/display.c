@@ -31,16 +31,31 @@ void draw_current_action(enum action current_action)
 			print_lcd_update(FONT_GREEN, FONT_BLACK, "START");
 			draw_line_lcd(FONT_GREEN, FONT_BLACK);
 			break;
-		case ACTION_REBOOTRECOVERY:
+	
+		case ACTION_REBOOT_RECOVERY:
 			draw_line_lcd(FONT_YELLOW, FONT_BLACK);
 			print_lcd_update(FONT_YELLOW, FONT_BLACK, "Reboot recovery");
 			draw_line_lcd(FONT_YELLOW, FONT_BLACK);
 			break;
-		case ACTION_REBOOTBOOTLOADER:
+
+		case ACTION_REBOOT_BOOTLOADER:
 			draw_line_lcd(FONT_RED, FONT_BLACK);
 			print_lcd_update(FONT_RED, FONT_BLACK, "Reboot bootloader");
 			draw_line_lcd(FONT_RED, FONT_BLACK);
 			break;
+
+		case ACTION_REBOOT_FASTBOOTD:
+			draw_line_lcd(FONT_ORANGE, FONT_BLACK);
+			print_lcd_update(FONT_ORANGE, FONT_BLACK, "Reboot FastbootD");
+			draw_line_lcd(FONT_ORANGE, FONT_BLACK);
+			break;
+
+		case ACTION_REBOOT_DOWNLOAD:
+			draw_line_lcd(FONT_BLUE, FONT_BLACK);
+			print_lcd_update(FONT_BLUE, FONT_BLACK, "Reboot Download");
+			draw_line_lcd(FONT_BLUE, FONT_BLACK);
+			break;
+
 		case ACTION_POWEROFF:
 			draw_line_lcd(FONT_RED, FONT_BLACK);
 			print_lcd_update(FONT_RED, FONT_BLACK, "Power off");
@@ -52,6 +67,14 @@ void draw_current_action(enum action current_action)
 void draw_menu(enum action current_action)
 {
 	clear_screen(FONT_BLACK);
+
+#if defined(CONFIG_HAS_CURVED_DISPLAY)
+	// Offset for curved displays
+	print_lcd_update(FONT_WHITE, FONT_BLACK, "");
+	print_lcd_update(FONT_WHITE, FONT_BLACK, "");
+	print_lcd_update(FONT_WHITE, FONT_BLACK, "");
+#endif
+
 	draw_current_action(current_action);
 	print_lcd_update(FONT_WHITE, FONT_BLACK, "");
 	print_lcd_update(FONT_WHITE, FONT_BLACK, "Press volume key to select, and press power key to select");
