@@ -298,7 +298,7 @@ void arm_generic_timer_disable(void)
 }
 
 #define DECON_F_BASE		0x19050000
-#define HW_SW_TRIG_CONTROL	0x70
+#define HW_SW_TRIG_CONTROL	0x0070
 
 void platform_early_init(void)
 {
