@@ -51,6 +51,7 @@ DEBUG ?= 2
 BUILDDIR := $(BUILDROOT)/build-$(PROJECT)
 OUTBIN := $(BUILDDIR)/lk.bin
 OUTBIN_LK3RD := $(BUILDDIR)/lk3rd-$(PROJECT).bin
+ANDROID_BOOT_IMAGE := $(BUILDROOT)/boot-$(PROJECT).img
 OUTELF := $(BUILDDIR)/lk.elf
 CONFIGHEADER := $(BUILDDIR)/config.h
 
@@ -79,7 +80,7 @@ ARCH_CPPFLAGS :=
 ARCH_ASMFLAGS :=
 
 # top level rule
-all:: $(OUTBIN_LK3RD) $(OUTBIN) $(OUTELF).lst $(OUTELF).debug.lst $(OUTELF).sym $(OUTELF).sym.sorted $(OUTELF).size $(OUTELF).dump $(BUILDDIR)/srcfiles.txt $(BUILDDIR)/include_paths.txt
+all:: $(ANDROID_BOOT_IMAGE) $(OUTBIN_LK3RD) $(OUTBIN) $(OUTELF).lst $(OUTELF).debug.lst $(OUTELF).sym $(OUTELF).sym.sorted $(OUTELF).size $(OUTELF).dump $(BUILDDIR)/srcfiles.txt $(BUILDDIR)/include_paths.txt
 
 # master module object list
 ALLOBJS_MODULE :=
