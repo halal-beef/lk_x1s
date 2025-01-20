@@ -16,3 +16,4 @@ scripts/toolpaths.local
 .project
 .settings/
 .vscode/
+*.img

@@ -10,6 +10,11 @@ endif
 
 $(EXTRA_LINKER_SCRIPTS):
 
+$(ANDROID_BOOT_IMAGE) : $(OUTBIN_LK3RD)
+	@echo lk3rd: creating an android boot image for $(PROJECT)
+	mkbootimg --kernel $(OUTBIN_LK3RD) --ramdisk ./Resources/dummyramdisk $(MKBOOTIMG_ARGS) -o $@
+	@echo lk3rd: all done! image can be found at $@
+
 $(OUTBIN_LK3RD) : $(OUTBIN)
 	@echo lk3rd: building final image base: $(MEMBASE): $@
 	rm lib/lk3rd/boot/bootshim.bin lib/lk3rd/boot/bootshim.elf -fv
