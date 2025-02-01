@@ -14,6 +14,9 @@ BOOTLOADER_FB_ADDRESS := 0xf1000000
 LCD_WIDTH := 1080
 LCD_HEIGHT := 2400
 
+GLOBAL_DEFINES += \
+        FDT_POINTER_ADDRESS=$(FDT_POINTER_ADDRESS)
+
 # Boot image creation arguments
 MKBOOTIMG_ARGS := \
                  --dtb $(BUILDROOT)/Resources/DTBs/exynos9830.dtb \
