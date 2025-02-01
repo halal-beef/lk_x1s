@@ -38,6 +38,8 @@
 #include <dev/mmc.h>
 #include <arch/arch_ops.h>
 
+#include <kernel/thread.h>
+
 /* Memory node */
 #define SIZE_4GB		(0x100000000)
 #define SIZE_2GB		(0x80000000)
@@ -64,6 +66,8 @@ struct bootargs_prop {
 };
 static struct bootargs_prop prop[32] = { { { 0, }, { 0, } }, };
 static int prop_cnt = 0;
+
+extern volatile char *bootloader_cmdline;
 
 static int bootargs_init(void)
 {
@@ -272,6 +276,10 @@ static void configure_dtb(void)
 	bool unlock;
 #endif
 
+	int ret;
+	char path[BUFFER_SIZE];
+	char reg_value[BUFFER_SIZE];
+
 	/* Get Secure DRAM information */
 	soc_ver = exynos_smc(SMC_CMD_GET_SOC_INFO, SOC_INFO_TYPE_VERSION, 0, 0);
 	if (soc_ver == SOC_INFO_VERSION(SOC_INFO_MAJOR_VERSION, SOC_INFO_MINOR_VERSION)) {
@@ -409,6 +417,38 @@ skip_carve_out_harx:
 		printf("Enter factory mode...");
 	}
 
+	snprintf(path, sizeof(path), "/reserved-memory/kaslr");
+	ret = make_fdt_node("/reserved-memory", "kaslr");
+	if (ret) {
+		printf("Failed to create /reserved-memory/kaslr node\n");
+		print_lcd_update(FONT_RED, FONT_BLACK, "Failed to create kaslr");
+	}
+	set_fdt_val(path, "compatible", "kernel-kaslr");
+	snprintf(reg_value, sizeof(reg_value), "<0x00 0x80001000 0x1000>");
+	set_fdt_val(path, "reg", reg_value);
+
+	snprintf(path, sizeof(path), "/reserved-memory/el2_earlymem");
+	ret = make_fdt_node("/reserved-memory", "el2_earlymem");
+	if (ret) {
+		printf("Failed to create /reserved-memory/el2_earlymem node\n");
+		print_lcd_update(FONT_RED, FONT_BLACK, "Failed to create el2_earlymem");
+	}
+	set_fdt_val(path, "compatible", "el2,uh");
+	snprintf(reg_value, sizeof(reg_value), "<0x0a 0xfe800000 0x1800000>");
+	set_fdt_val(path, "reg", reg_value);
+
+	snprintf(path, sizeof(path), "/reserved-memory/el2_code");
+	ret = make_fdt_node("/reserved-memory", "el2_code");
+	if (ret) {
+		printf("Failed to create /reserved-memory/el2_code node\n");
+		print_lcd_update(FONT_RED, FONT_BLACK, "Failed to create el2_code");
+	}
+	set_fdt_val(path, "compatible", "el2,uh");
+	snprintf(reg_value, sizeof(reg_value), "<0x00 0xc1400000 0x200000>");
+	set_fdt_val(path, "reg", reg_value);
+
+	print_lcd_update(FONT_GREEN, FONT_BLACK, "EL2 and KASLR nodes created!");
+
 	/* Secure memories are carved-out in case of EVT1 */
 	/*
 	 * 1st DRAM node
@@ -426,9 +466,17 @@ skip_carve_out_harx:
 	}
 
 	if (sec_pt_base && sec_pt_size) {
+		/*
+		 * HACK: On retail Exynos9830 (atleast) 0xC0000000 is an empty memory region,
+		 * the current behaviour of this bootloader makes it map it as a non-empty
+		 * memory and also skips out a memory region in the process, making the
+		 * kernel crash.
+		 */
 		add_dt_memory_node(sec_dram_end,
-		                   sec_pt_base - sec_dram_end);
+		                   0);
 
+		add_dt_memory_node(0xc1200000,
+				   0x1ee00000);
 		if (dram_size >= SIZE_2GB) {
 			add_dt_memory_node(sec_pt_end,
 			                   (DRAM_BASE + SIZE_2GB)
@@ -503,6 +551,12 @@ mem_node_out:
 		snprintf(str, BUFFER_SIZE, "%s %s", np, "root=/dev/ram0");
 		fdt_setprop(fdt_dtb, noff, "bootargs", str, strlen(str) + 1);
 	}
+
+	/*
+	 * HACK: FORCE BOOTARGS
+	 */
+	snprintf(str, BUFFER_SIZE, "%s", bootloader_cmdline);
+	fdt_setprop(fdt_dtb, noff, "bootargs", str, strlen(str) + 1);
 
 	printf("\nbootargs\n");
 	noff = fdt_path_offset(fdt_dtb, "/chosen");
@@ -617,6 +671,12 @@ int cmd_boot(int argc, const cmd_args *argv)
 	/* notify EL3 Monitor end of bootloader */
 	exynos_smc(SMC_CMD_END_OF_BOOTLOADER, 0, 0, 0);
 
+	print_lcd_update(FONT_GREEN, FONT_BLACK, "About to jump to kernel! Good night!");
+
+	thread_sleep(100); // Give DECON ample time to render before shutdown.
+
+	printf("DECON0: HW_SW_TRIG Restore\n");
+	writel(0x3070, 0x19050070);
 
 	/* before jumping to kernel. disble arch_timer */
 	arm_generic_timer_disable();
