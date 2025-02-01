@@ -19,6 +19,7 @@
 #include <part_gpt.h>
 #include <dev/boot.h>
 #include <dev/rpmb.h>
+#include <dev/usb/gadget.h>
 #include <platform/exynos9830.h>
 #include <platform/smc.h>
 #include <platform/hvc.h>
@@ -612,6 +613,14 @@ int load_boot_images(void)
 		return -1;
 	} else {
 		pit_access(ptn, PIT_OP_LOAD, (u64)DTBO_BASE, 0);
+	}
+
+	boot_img_hdr *boot_image = (boot_img_hdr *)BOOT_BASE;
+
+	if(strncmp(boot_image->magic, BOOT_MAGIC, 8))
+	{
+		start_usb_gadget();
+		while(1){}
 	}
 
 	argv[1].u = BOOT_BASE;
