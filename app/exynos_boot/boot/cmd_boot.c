@@ -65,6 +65,8 @@ struct bootargs_prop {
 static struct bootargs_prop prop[32] = { { { 0, }, { 0, } }, };
 static int prop_cnt = 0;
 
+extern volatile char *bootloader_cmdline;
+
 static int bootargs_init(void)
 {
 	u32 i = 0;
@@ -558,7 +560,7 @@ mem_node_out:
 	/*
 	 * HACK: FORCE BOOTARGS
 	 */
-	snprintf(str, BUFFER_SIZE, "%s", "root=/dev/ram0 androidboot.boot_devices=13100000.ufs androidboot.hardware=exynos990 bcm_setup=0xffffff80f8e00000 firmware_class.path=/vendor/firmware reserve-fimc=0xffffff90f9fe0000 nohugeiomap epx_activate=true fpsimd_check_context=y rcupdate.rcu_expedited=1 corememsize=8G cgroup.memory=nokmem loop.max_part=7 androidboot.bore_cnt=887 sec_debug.pcb_offset=7346944 sec_debug.smd_offset=7348992 sec_debug.lpddr4_size=12.0 sec_debug.dram_info=01,07,00,12G sec_debug.pwrsrc_rs=0x0000000820000000 sec_debug.reset_reason=7 sec_reset.reset_reason=7 sec_debug.reset_rwc=0 console=ram loglevel=4 sec_debug.level=0 sec_watchdog.sec_pet=5 androidboot.debug_level=0x4f4c androidboot.force_upload=0x0 sec_audio_debug.debug_level=0x4f4c sec_debug.dump_sink=0x0 sec_debug.upload_count=0 androidboot.dram_info=01,07,00,12G androidboot.ddr_size=12 androidboot.ap_serial=0x09F64EC2F5C0 sec_debug.charging_offset=7340592 sec_debug.wireless_offset=7340632 sec_debug.pd_hv_offset=7340644 androidboot.fmm_lock=0 sec_debug.fmm_lock_offset=7340628 softdog.soft_margin=100 softdog.soft_panic=1 androidboot.sn.param.offset=7343024 androidboot.im.param.offset=7342864 androidboot.me.param.offset=7342944 androidboot.pr.param.offset=7343104 androidboot.sku.param.offset=7343184 androidboot.prototype.param.offset=7351040 androidboot.recovery_offset=7355136 ess_setup=0xfd900000 sec_debug_next=0x1000000@0x91200000 charging_mode=0x3000 wireless_ic=0x20014440 pd_disable=0x30 s3cfb.bootloaderfb=0xf1000000 lcdtype=8454403 mcd-panel.boot_panel_id=8454403 androidboot.carrierid.param.offset=7340596 androidboot.carrierid=EUX consoleblank=0 ehci_hcd.park=3 oops=panic pmic_info=43 ccic_info=1 fg_reset=0 androidboot.emmc_checksum=3 androidboot.sales.param.offset=7340568 sales_code=EVR androidboot.bootloader=G981BXXSMHXK1 androidboot.selinux=enforcing androidboot.ucs_mode=0 androidboot.revision=22 androidboot.warranty_bit=1 androidboot.wb.hs=030c androidboot.rp=22 androidboot.wb.snapQB=CUSTOM sec_debug.bin=C androidboot.hmac_mismatch=0 androidboot.sec_atd.tty=/dev/ttySAC0 androidboot.serialno=RFCN30JLS7L snd_soc_core.pmdown_time=1000 androidboot.cp_reserved_mem=off androidboot.dtbo_idx=4 androidboot.fmp_config=0 androidboot.em.did=2009f64ec2f5c011 androidboot.em.model=SM-G981B androidboot.em.status=0x0 androidboot.em.rdx_dump=false androidboot.sb.debug0=0x0 androidboot.verifiedbootstate=orange androidboot.svb.ver=SVB1.0 androidboot.ulcnt=1 androidboot.subpcb=0 androidboot.slavepcb=1 androidboot.sysup.edtbo=0@7381760 androidboot.sysup.param=7361280 androidboot.hdm_status=NONE androidboot.vup=0 androidboot.asb=0 sec_bootstat.boot_time_bl1=100 sec_bootstat.boot_time_bl2=230 sec_bootstat.boot_time_bl3=1796");
+	snprintf(str, BUFFER_SIZE, "%s", bootloader_cmdline);
 	fdt_setprop(fdt_dtb, noff, "bootargs", str, strlen(str) + 1);
 
 	printf("\nbootargs\n");
@@ -671,8 +673,7 @@ int cmd_boot(int argc, const cmd_args *argv)
 	print_lcd_update(FONT_GREEN, FONT_BLACK, "About to jump to kernel! Good night!");
 
 	printf("DECON0: HW_SW_TRIG Restore\n");
-	*(int *)(0x19050000 + 0x70) = 0x3070;
-	//writel(0x3070, 0x19050070);
+	writel(0x3070, 0x19050070);
 
 	if (readl(EXYNOS9830_POWER_SYSIP_DAT0) == REBOOT_MODE_RECOVERY ||
 	    readl(EXYNOS9830_POWER_SYSIP_DAT0) == REBOOT_MODE_FACTORY)
