@@ -1,0 +1,5 @@
+DEFCONFIG=y2s
+GCC_VERSION=aarch64-linux-gnu-14.2.0-Linux-x86_64
+FILES="
+build-y2s/lk.bin:bootloader.img
+"
