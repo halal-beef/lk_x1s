@@ -59,7 +59,7 @@ int merge_dto_to_main_dtb(unsigned int board_id, unsigned int board_rev)
 		u32 id = fdt32_to_cpu(dt_entry->id);
 		u32 rev = fdt32_to_cpu(dt_entry->rev);
 
-		if ((id == board_id) && (rev == board_rev)) {
+		if(fdt32_to_cpu(dt_entry->custom[0]) <= board_rev && fdt32_to_cpu(dt_entry->custom[1]) >= board_rev) {
 			dtbo_idx = i;
 			printf("DTBO: id: 0x%x, rev: 0x%x, dtbo_idx: %d\n", id, rev, dtbo_idx);
 			print_lcd_update(FONT_YELLOW, FONT_BLACK,
