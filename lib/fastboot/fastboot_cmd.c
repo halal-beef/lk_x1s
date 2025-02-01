@@ -691,11 +691,11 @@ int fb_do_flash(const char *cmd_buffer, unsigned int rx_sz)
 		}
 
 		lk3rd->os_version = android->os_version;
-                print_lcd_update(FONT_ORANGE, FONT_BLACK, "OS Version / Patch Level patched, reflashing...");
+		print_lcd_update(FONT_ORANGE, FONT_BLACK, "OS Version / Patch Level patched, reflashing...");
 
 		flash_using_part("lk3rd", response, lk3rd_entry->blknum * PIT_UFS_BLK_SIZE, (void *)BOOT_BASE);
 
-                print_lcd_update(FONT_GREEN, FONT_BLACK, "Patch complete!");
+		print_lcd_update(FONT_GREEN, FONT_BLACK, "Patch complete!");
 
 		void *part_boot = part_get("boot");
 		struct pit_entry *boot_entry = (struct pit_entry *)part_boot;
@@ -704,6 +704,43 @@ int fb_do_flash(const char *cmd_buffer, unsigned int rx_sz)
 			print_lcd_update(FONT_ORANGE, FONT_BLACK, "This looks like a raw dump. Trimming off lk3rd VPart size");
 			downloaded_data_size = downloaded_data_size - 512 * PIT_UFS_BLK_SIZE;
 		}
+	}
+	else if(!strcmp(dest, "lk3rd"))
+	{
+		print_lcd_update(FONT_ORANGE, FONT_BLACK, "Patching LK3RD, please do not turn off/reboot your device.");
+
+		void *part = part_get("lk3rd");
+		struct pit_entry *lk3rd_entry = (struct pit_entry *)part;
+
+		part_read(part, (void *)BOOT_BASE);
+
+		boot_img_hdr *lk3rd_device = (boot_img_hdr *)BOOT_BASE;
+		boot_img_hdr *lk3rd_update = (boot_img_hdr *)interface.transfer_buffer;
+
+		if(strncmp(lk3rd_update->magic, BOOT_MAGIC, 8)) {
+			print_lcd_update(FONT_RED, FONT_BLACK, "Invalid lk3rd image! Stopping flashing process.");
+			sprintf(response, "FAILInvalid lk3rd Image");
+        		fastboot_send_status(response, strlen(response), FASTBOOT_TX_ASYNC);
+			return -1;
+		}
+
+		if(strncmp(lk3rd_device->magic, BOOT_MAGIC, 8)) {
+			print_lcd_update(FONT_RED, FONT_BLACK, "Invalid lk3rd image on device, skip patching!");
+			goto flash;
+		}
+
+		lk3rd_update->os_version = lk3rd_device->os_version;
+		print_lcd_update(FONT_ORANGE, FONT_BLACK, "OS Version / Patch Level patched, continuing flash...");
+
+		flash_using_part("lk3rd", response,
+			downloaded_data_size, (void *)interface.transfer_buffer);
+
+		print_lcd_update(FONT_GREEN, FONT_BLACK, "Patch complete!");
+
+		fastboot_send_status(response, strlen(response), FASTBOOT_TX_ASYNC);
+
+		LTRACE_EXIT;
+		return 0;
 	}
 
 flash:
