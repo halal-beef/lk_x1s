@@ -77,6 +77,7 @@ unsigned int dram_info[24] = { 0, 0, 0, 0 };
 unsigned long long dram_size_info = 0;
 unsigned int secure_os_loaded = 0;
 
+volatile char *bootloader_cmdline;
 
 #ifdef CONFIG_GET_B_REV_FROM_ADC
 int get_board_rev_adc(int *sh)
@@ -122,6 +123,30 @@ int get_board_rev_gpio(void)
 
 }
 #endif
+
+void get_bootloader_cmdline(void)
+{
+        int offset;
+        int len, ret = 0;
+
+        u32 bootloader_fdt_location = readl(FDT_POINTER_ADDRESS);
+        void *bootloader_fdt = (void *)bootloader_fdt_location;
+
+        ret = fdt_check_header(bootloader_fdt);
+        if (ret) {
+                printf("libfdt fdt_check_header(): %s\n", fdt_strerror(ret));
+        }
+
+        offset = fdt_path_offset(bootloader_fdt, "/chosen");
+        if (offset < 0) {
+                printf("libfdt fdt_path_offset(): %s\n", fdt_strerror(offset));
+        }
+
+        bootloader_cmdline = fdt_getprop(bootloader_fdt, offset, "bootargs", &len);
+        if (len <= 0) {
+                printf("libfdt fdt_getprop(): %s\n", fdt_strerror(len));
+        }
+}
 
 void get_board_rev(void)
 {
@@ -394,6 +419,7 @@ void platform_init(void)
 	print_acpm_version();
 
 	display_rst_stat(rst_stat);
+	get_bootloader_cmdline();
 	get_board_rev();
 	pmic_init();
 	display_pmic_info();
