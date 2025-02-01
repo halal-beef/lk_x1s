@@ -41,8 +41,10 @@
 
 #include <lib/font_display.h>
 #include <lib/logo_display.h>
+#include <lib/fdtapi.h>
 #include <target/dpu_config.h>
 #include <stdio.h>
+#include <ctype.h>
 #include <platform/b_rev.h>
 
 #ifdef CONFIG_GET_B_REV_FROM_ADC
@@ -70,7 +72,7 @@ unsigned int s5p_chip_id[4] = { 0x0, 0x0, 0x0, 0x0 };
 struct chip_rev_info s5p_chip_rev;
 unsigned int charger_mode = 0;
 unsigned int board_id = CONFIG_BOARD_ID;
-unsigned int board_rev = 0;
+unsigned int board_rev = -1;
 unsigned int dram_info[24] = { 0, 0, 0, 0 };
 unsigned long long dram_size_info = 0;
 unsigned int secure_os_loaded = 0;
@@ -123,27 +125,47 @@ int get_board_rev_gpio(void)
 
 void get_board_rev(void)
 {
-#if defined(CONFIG_GET_B_REV_FROM_ADC) || defined(CONFIG_GET_B_REV_FROM_GPIO)
-	int shift = 0;
-	int value = 0;
-#endif
-#ifdef CONFIG_GET_B_REV_FROM_ADC
-	value = get_board_rev_adc(&shift);
-	if (value < 0) {
-		board_rev = 0xffffffff;
-		return;
+	const char *np;
+	int offset;
+	int len, ret = 0;
+
+	u32 bootloader_fdt_location = readl(FDT_POINTER_ADDRESS);
+	void *bootloader_fdt = (void *)bootloader_fdt_location;
+
+	int count = 0;
+
+	ret = fdt_check_header(bootloader_fdt);
+	if (ret) {
+		printf("libfdt fdt_check_header(): %s\n", fdt_strerror(ret));
 	}
-	board_rev |= (unsigned int) value;
-#endif
-#ifdef CONFIG_GET_B_REV_FROM_GPIO
-	value = get_board_rev_gpio();
-	if (value < 0) {
-		board_rev = 0xffffffff;
-		return;
+
+	offset = fdt_path_offset(bootloader_fdt, "/");
+	if (offset < 0) {
+		printf("libfdt fdt_path_offset(): %s\n", fdt_strerror(offset));
 	}
-	board_rev |= (unsigned int) value << shift;
-#endif
+
+	np = fdt_getprop(bootloader_fdt, offset, "model", &len);
+	if (len <= 0) {
+		printf("libfdt fdt_getprop(): %s\n", fdt_strerror(len));
+	}
+
+	char *token = strtok(np, " ");
+
+	while (token) {
+		if (isdigit(token[count])) {
+			count++;
+			if (count == 1) {
+				board_rev = atoi(token);
+				break;
+			}
+		}
+		token = strtok(NULL, " ");
+	}
+
+	if(board_rev == -1)
+		panic("Failed to find board_rev!");
 }
+
 unsigned int get_charger_mode(void)
 {
 	return charger_mode;
@@ -297,9 +319,6 @@ void arm_generic_timer_disable(void)
 	mask_interrupt(ARCH_TIMER_IRQ);
 }
 
-#define DECON_F_BASE		0x19050000
-#define HW_SW_TRIG_CONTROL	0x0070
-
 void platform_early_init(void)
 {
 	unsigned int rst_stat = readl(EXYNOS9830_POWER_RST_STAT);
@@ -313,7 +332,7 @@ void platform_early_init(void)
 	}
 
 	// Temporary, since we do not have panel driver
-	*(int*) (DECON_F_BASE + HW_SW_TRIG_CONTROL) = 0x1281;
+	writel(0x1281, DECON0_BASE_ADDR + HW_SW_TRIG_CONTROL);
 
 	read_chip_id();
 	read_chip_rev();
