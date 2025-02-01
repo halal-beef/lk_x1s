@@ -28,6 +28,7 @@
 #include <lib/lock.h>
 #include <lib/ab_update.h>
 #include <platform/environment.h>
+#include <platform/bootimg.h>
 #include <platform/mmu/mmu_func.h>
 #include <dev/debug/dss.h>
 #include <dev/debug/dss_store_ramdump.h>
@@ -591,10 +592,10 @@ static void flash_using_part(char *key, char *response,
 
 	if (!part) {
 		sprintf(response, "FAILpartition does not exist");
-	} else if ((downloaded_data_size > length) && (length != 0)) {
+	} else if ((size > length) && (length != 0)) {
 		sprintf(response, "FAILimage too large for partition");
 	} else {
-		if ((length != 0) && (downloaded_data_size > length)) {
+		if ((length != 0) && (size > length)) {
 			printf("flashing '%s' failed\n", key);
 			print_lcd_update(FONT_RED, FONT_BLACK, "flashing '%s' failed", key);
 			sprintf(response, "FAILfailed to too large image");
@@ -653,6 +654,33 @@ int fb_do_flash(const char *cmd_buffer, unsigned int rx_sz)
 	}
 
 	strcpy(response,"OKAY");
+
+	if(!strcmp(dest, "boot"))
+	{
+		print_lcd_update(FONT_ORANGE, FONT_BLACK, "Patching LK3RD, please do not turn off/reboot your device.");
+
+		void *part = part_get("lk3rd");
+		struct pit_entry *lk3rd_entry = (struct pit_entry *)part;
+
+		part_read(part, (void *)BOOT_BASE);
+
+		boot_img_hdr *lk3rd = (boot_img_hdr *)BOOT_BASE;
+		boot_img_hdr *android = (boot_img_hdr *)interface.transfer_buffer;
+
+		if(!strcmp(android->magic, BOOT_MAGIC) || !strcmp(lk3rd->magic, BOOT_MAGIC)) {
+			print_lcd_update(FONT_RED, FONT_BLACK, "Invalid boot image, skip patching!");
+			goto flash;
+		}
+
+		lk3rd->os_version = android->os_version;
+                print_lcd_update(FONT_ORANGE, FONT_BLACK, "OS Version / Patch Level patched, reflashing...");
+
+		flash_using_part("lk3rd", response, lk3rd_entry->blknum * PIT_UFS_BLK_SIZE, (void *)BOOT_BASE);
+
+                print_lcd_update(FONT_GREEN, FONT_BLACK, "Patch complete!");
+	}
+
+flash:
 	flash_using_part(dest, response,
 			downloaded_data_size, (void *)interface.transfer_buffer);
 
