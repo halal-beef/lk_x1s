@@ -140,10 +140,10 @@ int change_dt_psci_method(struct fdt_header *fdt_dtb)
 	int nodeoff, len, ret;
 	const char *namep;
 
-	if (is_harx_initialized == false) {
+	/*if (is_harx_initialized == false) {
 		printf("H-Arx is not initialized\n");
 		return -1;
-	}
+	}*/
 
 	if (fdt_dtb == NULL) {
 		printf("fdt_dtb is not set yet\n");
