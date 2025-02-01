@@ -675,7 +675,7 @@ int fb_do_flash(const char *cmd_buffer, unsigned int rx_sz)
 
 	if(!strcmp(dest, "boot"))
 	{
-		print_lcd_update(FONT_ORANGE, FONT_BLACK, "Patching LK3RD, please do not turn off/reboot your device.");
+		print_lcd_update(FONT_ORANGE, FONT_BLACK, "Patching lk3rd, please do not turn off/reboot your device.");
 
 		void *part = part_get("lk3rd");
 		struct pit_entry *lk3rd_entry = (struct pit_entry *)part;
@@ -696,6 +696,14 @@ int fb_do_flash(const char *cmd_buffer, unsigned int rx_sz)
 		flash_using_part("lk3rd", response, lk3rd_entry->blknum * PIT_UFS_BLK_SIZE, (void *)BOOT_BASE);
 
                 print_lcd_update(FONT_GREEN, FONT_BLACK, "Patch complete!");
+
+		void *part_boot = part_get("boot");
+		struct pit_entry *boot_entry = (struct pit_entry *)part_boot;
+		if(downloaded_data_size == (boot_entry->blknum * PIT_UFS_BLK_SIZE) + 512 * PIT_UFS_BLK_SIZE)
+		{
+			print_lcd_update(FONT_ORANGE, FONT_BLACK, "This looks like a raw dump. Trimming off lk3rd VPart size");
+			downloaded_data_size = downloaded_data_size - 512 * PIT_UFS_BLK_SIZE;
+		}
 	}
 
 flash:
