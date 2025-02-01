@@ -447,7 +447,7 @@ skip_carve_out_harx:
 	snprintf(reg_value, sizeof(reg_value), "<0x00 0xc1400000 0x200000>");
 	set_fdt_val(path, "reg", reg_value);
 
-	print_lcd_update(FONT_GREEN, FONT_BLACK, "EL2 and KASLR nodes created!");
+	//print_lcd_update(FONT_GREEN, FONT_BLACK, "EL2 and KASLR nodes created!");
 
 	/* Secure memories are carved-out in case of EVT1 */
 	/*
@@ -567,7 +567,7 @@ mem_node_out:
 	if (change_dt_psci_method(fdt_dtb))
 		printf("Do not change PSCI method\n");
 	else
-		harx_print_with_lcd("Change PSCI method to HVC\n");
+		//harx_print_with_lcd("Change PSCI method to HVC\n");
 
 	resize_dt(0);
 }
@@ -671,7 +671,7 @@ int cmd_boot(int argc, const cmd_args *argv)
 	/* notify EL3 Monitor end of bootloader */
 	exynos_smc(SMC_CMD_END_OF_BOOTLOADER, 0, 0, 0);
 
-	print_lcd_update(FONT_GREEN, FONT_BLACK, "About to jump to kernel! Good night!");
+	//print_lcd_update(FONT_GREEN, FONT_BLACK, "About to jump to kernel! Good night!");
 
 	thread_sleep(100); // Give DECON ample time to render before shutdown.
 
