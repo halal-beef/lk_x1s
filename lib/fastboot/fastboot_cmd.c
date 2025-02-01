@@ -80,7 +80,25 @@ struct cmd_fastboot {
 
 const char *blocked_partitions[] = {
 	"bootloader",
-	"efs"
+	"efs",
+	"blcmd",
+	"bota",
+	"cp_debug",
+	"cpefs",
+	"dqmdbg",
+	"efs",
+	"harx",
+	"keyrefuge",
+	"nad_refer",
+	"omr",
+	"param",
+	"persistent",
+	"radio",
+	"sec_efs",
+	"spu",
+	"steady",
+	"uh",
+	"uhcfg"
 };
 
 const int blocked_count = sizeof(blocked_partitions) /
