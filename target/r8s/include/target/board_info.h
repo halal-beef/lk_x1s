@@ -11,8 +11,8 @@
 #ifndef __BOARD_INFO_H__
 #define __BOARD_INFO_H__
 
-#define CONFIG_BOARD_NAME	"z3s"
-#define CONFIG_BOARD_Z3S
+#define CONFIG_BOARD_NAME	"r8s"
+#define CONFIG_BOARD_R8S
 
 #define CONFIG_BOARD_ID		0x10
 #define CONFIG_SUB_PMIC_S2DOS05
