@@ -686,6 +686,9 @@ int cmd_boot(int argc, const cmd_args *argv)
 	clean_invalidate_dcache_all();
 	disable_mmu_dcache();
 
+	/* GTFO KASLR - you're making VaultKeeper sad :( */
+	writel(0, 0x80001000 + sizeof(u32));
+
 	printf("Starting kernel...\n");
 	void (*kernel_entry)(int r0, int r1, int r2, int r3);
 
