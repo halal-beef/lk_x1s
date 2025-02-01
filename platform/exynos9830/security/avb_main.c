@@ -83,8 +83,8 @@ uint32_t avb_main(const char *suffix, char *cmdline, char *verifiedbootstate)
 		{
 			snprintf(buf, 100, "[AVB 2.0 warning] authentication fail [ret: 0x%X] (%s) "
 					"No effect on booting process", ret, color);
-			clear_screen(0x000000);
-			troll();
+			//clear_screen(0x000000);
+			//troll();
 		}
 		else
 			snprintf(buf, 100, "[AVB 2.0 ERR] authentication fail [ret: 0x%X] (%s)\n", ret, color);
@@ -93,7 +93,7 @@ uint32_t avb_main(const char *suffix, char *cmdline, char *verifiedbootstate)
 	}
 	strcat(verifiedbootstate, color);
 	printf(buf);
-	avb_print_lcd(buf, color);
+	//avb_print_lcd(buf, color);
 
 	/* AVB color policy */
 	if (!strncmp(color, "red", AVB_COLOR_MAX_SIZE))
