@@ -60,7 +60,7 @@ int merge_dto_to_main_dtb(unsigned int board_id, unsigned int board_rev)
 		u32 rev = fdt32_to_cpu(dt_entry->rev);
 
 		//if ((id == board_id) && (rev == board_rev)) {
-		if(fdt32_to_cpu(dt_entry->custom[0]) <= 22 && fdt32_to_cpu(dt_entry->custom[1]) >= 22) {
+		if(fdt32_to_cpu(dt_entry->custom[0]) <= board_rev && fdt32_to_cpu(dt_entry->custom[1]) >= board_rev) {
                         print_lcd_update(FONT_GREEN, FONT_BLACK,
                                "DTBO: Selected via custom0, custom1 range: %d-%d", fdt32_to_cpu(dt_entry->custom[0]), fdt32_to_cpu(dt_entry->custom[1]));
 
