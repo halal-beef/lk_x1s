@@ -3,7 +3,7 @@ MODULE := $(LOCAL_DIR)
 
 PLATFORM := exynos9830
 
-MEMBASE := 0x90000000
+MEMBASE := 0xe1900000
 MEMSIZE := 0x00F00000
 
 # BootShim
@@ -20,13 +20,13 @@ MKBOOTIMG_ARGS := \
                  --tags_offset 0x00000100 \
                  --second_offset 0xf0000000 \
                  --pagesize 2048 \
-                 --os_version "13.0.0" \
-                 --os_patch_level "2099-12" \
+                 --os_version "14.0.0" \
+                 --os_patch_level "2024-05" \
                  --kernel_offset 0x00008000 \
                  --header_version 2 \
                  --dtb_offset 0x00000000 \
-                 --cmdline "LK3RD BOOT IMAGE" \
-                 --board "" \
+                 --cmdline "androidboot.hardware=exynos990 loop.max_part=7" \
+                 --board "SRPSI19B023KU" \
                  --base 0x10000000
 
 MODULE_SRCS += \
