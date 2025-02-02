@@ -159,7 +159,7 @@ int write_compressed_ext4(char* img_base, unsigned int sector_base) {
 
 			p_i_buf = (u64 *)i_buf_for_sparse;
 
-			chunk_in_bytes = (u64)sector_size * 512;
+			chunk_in_bytes = (u64)sector_size * PIT_UFS_BLK_SIZE;
 			printf("*** CHUNK TYPE FILL (lba: %u, sct: %u, pat: 0x%08x) %llu***\n",
 					sector_base, sector_size, (u32)pattern, chunk_in_bytes / (u64)sizeof(u32));
 			for (i = 0; i < chunk_in_bytes / (u64)sizeof(u64); i++)
