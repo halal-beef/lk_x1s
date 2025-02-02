@@ -72,7 +72,7 @@ unsigned int s5p_chip_id[4] = { 0x0, 0x0, 0x0, 0x0 };
 struct chip_rev_info s5p_chip_rev;
 unsigned int charger_mode = 0;
 unsigned int board_id = CONFIG_BOARD_ID;
-unsigned int board_rev = -1;
+int board_rev = -1;
 unsigned int dram_info[24] = { 0, 0, 0, 0 };
 unsigned long long dram_size_info = 0;
 unsigned int secure_os_loaded = 0;
@@ -130,7 +130,7 @@ void get_bootloader_cmdline(void)
         int len, ret = 0;
 
         u32 bootloader_fdt_location = readl(FDT_POINTER_ADDRESS);
-        void *bootloader_fdt = (void *)bootloader_fdt_location;
+        void *bootloader_fdt = (void*)(uintptr_t)bootloader_fdt_location;
 
         ret = fdt_check_header(bootloader_fdt);
         if (ret) {
@@ -142,7 +142,7 @@ void get_bootloader_cmdline(void)
                 printf("libfdt fdt_path_offset(): %s\n", fdt_strerror(offset));
         }
 
-        bootloader_cmdline = fdt_getprop(bootloader_fdt, offset, "bootargs", &len);
+        bootloader_cmdline = (char*)fdt_getprop(bootloader_fdt, offset, "bootargs", &len);
         if (len <= 0) {
                 printf("libfdt fdt_getprop(): %s\n", fdt_strerror(len));
         }
@@ -150,12 +150,12 @@ void get_bootloader_cmdline(void)
 
 void get_board_rev(void)
 {
-	const char *np;
+	char *np;
 	int offset;
 	int len, ret = 0;
 
 	u32 bootloader_fdt_location = readl(FDT_POINTER_ADDRESS);
-	void *bootloader_fdt = (void *)bootloader_fdt_location;
+	void *bootloader_fdt = (void*)(uintptr_t)bootloader_fdt_location;
 
 	int count = 0;
 
@@ -169,7 +169,7 @@ void get_board_rev(void)
 		printf("libfdt fdt_path_offset(): %s\n", fdt_strerror(offset));
 	}
 
-	np = fdt_getprop(bootloader_fdt, offset, "model", &len);
+	np = (char*)fdt_getprop(bootloader_fdt, offset, "model", &len);
 	if (len <= 0) {
 		printf("libfdt fdt_getprop(): %s\n", fdt_strerror(len));
 	}
