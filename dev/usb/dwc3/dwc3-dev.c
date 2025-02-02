@@ -1273,17 +1273,15 @@ int dwc3_dev_init(void *dev_handle)
 			      isr_dwc3_dev,
 			      dwc3_dev_h);
 
-	if (dwc3_dev_h->p_oDevConfig->speed) {
-		if (!strcmp(dwc3_dev_h->p_oDevConfig->speed, "full"))
-			default_speed = USBSPEED_FULL;
-		else if (!strcmp(dwc3_dev_h->p_oDevConfig->speed, "super"))
-			default_speed = USBSPEED_SUPER;
-		else if (!strcmp(dwc3_dev_h->p_oDevConfig->speed, "superplus"))
-			default_speed = USBSPEED_SUPERPLUS;
-		else
-			default_speed = USBSPEED_HIGH;
-	} else
+	if (!strcmp(dwc3_dev_h->p_oDevConfig->speed, "full"))
+		default_speed = USBSPEED_FULL;
+	else if (!strcmp(dwc3_dev_h->p_oDevConfig->speed, "super"))
+		default_speed = USBSPEED_SUPER;
+	else if (!strcmp(dwc3_dev_h->p_oDevConfig->speed, "superplus"))
+		default_speed = USBSPEED_SUPERPLUS;
+	else
 		default_speed = USBSPEED_HIGH;
+
 	dwc3_dev_h->m_eEnumeratedSpeed = default_speed;
 	/* Set Device Config Register */
 	uRegData = 0;
