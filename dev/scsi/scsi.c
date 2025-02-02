@@ -581,9 +581,6 @@ status_t scsi_scan(scsi_device_t *sdev, u32 wlun, u32 dev_num, exec_t *func,
 
 		/* Get max LBA and block size */
 		if (wlun == 0) {
-#ifdef CONFIG_EXYNOS_BOOTLOADER_DISPLAY
-			u32 capacity = 0;
-#endif
 			ret = scsi_read_capacity_10(&sdev->dev, g_buf);
 			if (ret < 0) {
 				printf("[SCSI] READ CAPACITY 10 failed: %d\n",
