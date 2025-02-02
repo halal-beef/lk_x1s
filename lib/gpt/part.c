@@ -304,7 +304,6 @@ int part_open_dev_once(void)
 
 void part_init(void)
 {
-	unsigned int boot_dev;
 	enum __boot_dev_id id;
 
 	/*
@@ -314,8 +313,6 @@ void part_init(void)
 	if (s_def_boot_dev_id == 0xFFFFFFFF)
 		s_def_boot_dev_id = DEV_UFS;
 
-	boot_dev = get_boot_device();
-	printf("got boot device\n");
 	/*
 	 * In USB 1st boot cases, part init needs to executed
 	 * based on SW intention.
