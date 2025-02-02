@@ -157,7 +157,7 @@ static void IIC_S2MU106_FG_EAck_write(void)
 	/* Function <- Output (SDA) */
 	IIC_S2MU106_FG_ESDA_OUTP;
 
-	ack = (ack >> GPIO_DAT_FG_SHIFT) & 0x1;
+	ack = (ack >> GPIO_DAT_FG_SHIFT_S2MU106) & 0x1;
 
 	IIC_S2MU106_FG_SCLL_SDAL();
 }
@@ -311,7 +311,7 @@ void IIC_S2MU106_FG_ERead(unsigned char ChipId,
 		IIC_S2MU106_FG_ESCL_Lo;
 		Delay();
 
-		reg = (reg >> GPIO_DAT_FG_SHIFT) & 0x1;
+		reg = (reg >> GPIO_DAT_FG_SHIFT_S2MU106) & 0x1;
 
 		data |= reg << (i-1);
 	}
