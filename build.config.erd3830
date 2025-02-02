@@ -1,5 +1,0 @@
-DEFCONFIG=erd3830
-GCC_VERSION=aarch64-elf-5.3.0-Linux-x86_64
-FILES="
-build-erd3830/lk.bin:bootloader.img
-"
