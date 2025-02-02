@@ -108,7 +108,7 @@ static void IIC_MAX77705_EAck_write(void)
 	/* Function <- Output (SDA) */
 	IIC_MAX77705_ESDA_OUTP;
 
-	ack = (ack >> GPIO_DAT_SHIFT2) & 0x1;
+	ack = (ack >> GPIO_DAT_SHIFT2_MAX77705) & 0x1;
 
 	IIC_MAX77705_SCLL_SDAL();
 }
@@ -262,7 +262,7 @@ void IIC_MAX77705_ERead(unsigned char ChipId,
 		IIC_MAX77705_ESCL_Lo;
 		Delay();
 
-		reg = (reg >> GPIO_DAT_SHIFT2) & 0x1;
+		reg = (reg >> GPIO_DAT_SHIFT2_MAX77705) & 0x1;
 
 		data |= reg << (i - 1);
 	}
