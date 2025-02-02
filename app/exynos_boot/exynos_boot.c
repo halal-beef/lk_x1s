@@ -50,7 +50,6 @@ static void print_fastboot_reason(void)
 
 static void exynos_boot_task(const struct app_descriptor *app, void *args)
 {
-	unsigned int rst_stat = readl(EXYNOS_POWER_RST_STAT);
 	struct exynos_gpio_bank *bank = (struct exynos_gpio_bank *)EXYNOS9830_GPA0CON;
 	int gpio = 4;	/* Volume down */
 	int val;
