@@ -84,6 +84,6 @@ void draw_menu(enum action current_action)
 	print_lcd_update(FONT_WHITE, FONT_BLACK, "");
 	print_lcd_update(FONT_RED,   FONT_BLACK, "lk3rd FastBoot Mode", MAX_NUM_CHAR_PER_LINE);
 	print_lcd_update(FONT_WHITE, FONT_BLACK, "PRODUCT_NAME - %s", version.platform);
-	print_lcd_update(FONT_WHITE, FONT_BLACK, "BOOTLOADER VERSION - v1.0 (%s)", version.buildid);
+	print_lcd_update(FONT_WHITE, FONT_BLACK, "BOOTLOADER VERSION - DEV (%s)", version.buildid);
 	print_lcd_update(FONT_RED,   FONT_BLACK, "DEVICE STATE - unlocked");
 }
