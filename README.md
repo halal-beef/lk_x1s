@@ -11,12 +11,12 @@ It's a lot of things.
 * a learning experience :)
 
 ## Let me install it!
-NO. The current builds are not only unstable - they might hard brick your device easily. You are expected to know how to compile and package lk3rd to test it.
-An user build will come in the near future.
+Sure, check the release tab and follow the instructions. Be careful when using the bootloader though, we are not responsible for your actions when you use the bootloader, if you brick cause of it, it is not our fault.
 
 ## What devices does it run on?
 * the canvas family
 * the hubble family
+* r8s, has no family
 
 ## What is this commit history?!
 We based lk3rd off of Linaro's source code for their Exynos 850 board, which contained code for Exynos 990 as well. Thus, the commit history is a mix of Linaro/Samsung/upstream.
@@ -38,10 +38,18 @@ flowchart LR
     E --> F["Framebuffer is cleared once again, logs and then the fastboot text appears, when fastboot is launched, ready to take commands from the user"]
 ```
 
+## Credits
+
+- [Samsung](https://samsung.com) ```Making the bootloader```
+- [Linaro](https://www.linaro.org/) ```Specifically the 96Boards group, thanks to them we had a base bootloader from Samsung to modify```
+- [BotchedRPR](https://github.com/BotchedRPR) ```Did loads of work, rewrote the entire PIT library so we had UFS up and got the bootloader to initially boot```
+- [ExtremeXT](https://github.com/ExtremeXT) ```Gave us info on ECT (Exynos Characteristics Table), which helped us boot android```
+
 ## TODO
 
 - [x] Get UFS Fully up
 - [x] Position independent code
-- [ ] Booting Android
+- [x] Booting Android
+- [ ] Implement fastboot boot (80% done, just need to figure out why fastboot boot on android doesn't work)
 
 Cheers from the Exynos990-Mainline team!
