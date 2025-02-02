@@ -174,7 +174,7 @@ int fill_fb_string(u32 *fb_buf, u32 x_pos, u8 *str, u32 font_color, u32 bg_color
 
 #define PRINT_BUF_SIZE 384
 #define TOP_MARGIN	40
-extern u32 _win_fb0 = 0xf1000000;
+u32 _win_fb0 = 0xf1000000;
 extern void decon_string_update(void);
 
 int print_lcd(u32 font_color, u32 bg_color, const char *fmt, ...)
