@@ -31,7 +31,7 @@ void draw_current_action(enum action current_action)
 			print_lcd_update(FONT_GREEN, FONT_BLACK, "START");
 			draw_line_lcd(FONT_GREEN, FONT_BLACK);
 			break;
-	
+
 		case ACTION_REBOOT_RECOVERY:
 			draw_line_lcd(FONT_YELLOW, FONT_BLACK);
 			print_lcd_update(FONT_YELLOW, FONT_BLACK, "Reboot recovery");
@@ -60,6 +60,9 @@ void draw_current_action(enum action current_action)
 			draw_line_lcd(FONT_RED, FONT_BLACK);
 			print_lcd_update(FONT_RED, FONT_BLACK, "Power off");
 			draw_line_lcd(FONT_RED, FONT_BLACK);
+			break;
+
+		default:
 			break;
 	}
 }
