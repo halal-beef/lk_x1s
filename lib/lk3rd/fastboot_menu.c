@@ -35,11 +35,6 @@ void notify_action_switch(int modifier)
 		current_action = 0;
 	}
 
-	if(current_action == -1)
-	{
-		current_action = ACTION_END - 1;
-	}
-
 	draw_menu(current_action);
 }
 
@@ -68,6 +63,8 @@ void do_reboot(enum action action)
 			break;
 		case ACTION_REBOOT_DOWNLOAD:
 			platform_do_reboot("reboot-download");
+			break;
+		default:
 			break;
 	}
 
