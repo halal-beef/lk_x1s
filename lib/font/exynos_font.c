@@ -19,7 +19,7 @@
  * limitations under the License.
  */
 
-#include <reg.h>
+#include <lk/reg.h>
 #include <sys/types.h>
 #include <string.h>
 #include <stdio.h> /* TODO : divide print_lcd function */

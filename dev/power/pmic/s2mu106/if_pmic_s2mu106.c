@@ -8,14 +8,14 @@
  * to third parties without the express written permission of Samsung Electronics.
  */
 
-#include <debug.h>
+#include <lk/debug.h>
 #include <sys/types.h>
 #include <platform/delay.h>
 #include <dev/if_pmic_s2mu106.h>
 #include <platform/gpio.h>
 #include <platform/interrupts.h>
 #include <platform/sfr.h>
-#include <reg.h>
+#include <lk/reg.h>
 
 #define SMALL_CHARGER_CURRENT 100
 void set_charger_mode(int mode);

@@ -11,7 +11,7 @@
  */
 
 
-#include <reg.h>
+#include <lk/reg.h>
 #include <stdlib.h>
 #include <dev/ufs.h>
 #include <dev/ufs_provision.h>
@@ -19,7 +19,7 @@
 #include <platform/mmu/barrier.h>
 #include <platform/sfr.h>
 #include <platform/smc.h>
-
+#include <lk/err.h>
 
 #define	SCSI_MAX_INITIATOR	1
 #define	SCSI_MAX_DEVICE		8

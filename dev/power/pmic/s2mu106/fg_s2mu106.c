@@ -15,8 +15,8 @@
 
 */
 
-#include <reg.h>
-#include <debug.h>
+#include <lk/reg.h>
+#include <lk/debug.h>
 #include <sys/types.h>
 #include <platform/delay.h>
 #include <dev/fg_s2mu106.h>

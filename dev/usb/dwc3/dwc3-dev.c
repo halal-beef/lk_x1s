@@ -13,9 +13,9 @@
 
 #include <stdio.h>
 #include <string.h>
-#include <debug.h>
-#include <trace.h>
-#include <reg.h>
+#include <lk/debug.h>
+#include <lk/trace.h>
+#include <lk/reg.h>
 #include <malloc.h>
 #include <lk/init.h>
 #include <platform/delay.h>

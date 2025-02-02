@@ -12,7 +12,7 @@
  */
 
 #include <ctype.h>
-#include <err.h>
+#include <lk/err.h>
 #include <part_dev.h>
 #include <types.h>
 #include <stdlib.h>

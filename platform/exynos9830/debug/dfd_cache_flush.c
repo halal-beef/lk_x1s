@@ -14,7 +14,7 @@
  * published by the Free Software Foundation.
  */
 
-#include <reg.h>
+#include <lk/reg.h>
 #include <stdio.h>
 #include <string.h>
 #include <arch/ops.h>

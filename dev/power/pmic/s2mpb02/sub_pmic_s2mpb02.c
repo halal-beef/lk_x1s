@@ -8,7 +8,7 @@
  * to third parties without the express written permission of Samsung Electronics.
  */
 
-#include <debug.h>
+#include <lk/debug.h>
 #include <dev/sub_pmic_s2mpb02.h>
 
 void IIC_Delay(void)

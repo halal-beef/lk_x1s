@@ -16,9 +16,9 @@
 
 
 //#include <asm/io.h>
-#include <debug.h>
+#include <lk/debug.h>
 #include <string.h>
-#include <reg.h>
+#include <lk/reg.h>
 #include <malloc.h>
 #include <platform/delay.h>
 #include "phy-samsung-usb-cal.h"

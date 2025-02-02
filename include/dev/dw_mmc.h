@@ -21,9 +21,9 @@
 #include <dev/mmc.h>
 #include <sys/types.h>
 #include <lib/bio.h>
-#include <err.h>
+#include <lk/err.h>
 #include <string.h>
-#include <reg.h>
+#include <lk/reg.h>
 
 #define dwmci_readl(host, reg) readl(host->ioaddr + reg)
 #define dwmci_writel(host, value, reg) writel(value, host->ioaddr + reg)

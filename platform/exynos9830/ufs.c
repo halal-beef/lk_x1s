@@ -8,7 +8,7 @@
  * to third parties without the express written permission of Samsung Electronics.
  */
 
-#include <reg.h>
+#include <lk/reg.h>
 #include <dev/ufs.h>
 #include <platform/sfr.h>
 #include <platform/ufs-dump.h>

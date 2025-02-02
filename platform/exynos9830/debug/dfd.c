@@ -10,7 +10,7 @@
  * without the express written permission of Samsung Electronics.
  *
  */
-#include <reg.h>
+#include <lk/reg.h>
 #include <string.h>
 #include <pit.h>
 #include <arch/ops.h>

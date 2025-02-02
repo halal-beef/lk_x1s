@@ -15,6 +15,7 @@
 #include <platform/delay.h>
 #include <platform/mmu/barrier.h>
 #include <platform/mmu/mmu_func.h>
+#include <lk/err.h>
 
 #define MAX_DIV 0xFF
 

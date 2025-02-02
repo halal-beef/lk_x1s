@@ -5,7 +5,7 @@
  * Functions for sending message to APM
  */
 
-#include <reg.h>
+#include <lk/reg.h>
 #include <dev/lk_acpm_ipc.h>
 #include "lk_acpm_mfd.h"
 

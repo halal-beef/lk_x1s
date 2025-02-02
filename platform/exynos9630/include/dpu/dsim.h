@@ -23,7 +23,7 @@
 #ifndef __SAMSUNG_DSIM_H__
 #define __SAMSUNG_DSIM_H__
 
-#include <reg.h>
+#include <lk/reg.h>
 #include <sys/types.h>
 #include <stdio.h>
 #include <errno.h>

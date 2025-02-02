@@ -8,8 +8,8 @@
  * to third parties without the express written permission of Samsung Electronics.
  */
 
-#include <debug.h>
-#include <reg.h>
+#include <lk/debug.h>
+#include <lk/reg.h>
 #include <app.h>
 #include <part.h>
 #include <stdlib.h>

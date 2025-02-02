@@ -8,11 +8,11 @@
  * to third parties without the express written permission of Samsung Electronics.
  */
 
-#include <reg.h>
+#include <lk/reg.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include <list.h>
+#include <lk/list.h>
 #include <lib/io.h>
 #include <lib/fdtapi.h>
 #include <lib/font_display.h>

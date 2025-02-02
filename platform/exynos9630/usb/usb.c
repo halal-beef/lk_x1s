@@ -5,13 +5,13 @@
  *      Author: sunghyun.na
  */
 
-#include <debug.h>
+#include <lk/debug.h>
 #include <string.h>
-#include <reg.h>
+#include <lk/reg.h>
 #include <malloc.h>
 #include <lk/init.h>
-#include <list.h>
-#include <err.h>
+#include <lk/list.h>
+#include <lk/err.h>
 
 #include <usb-def.h>
 #include "dev/usb/gadget.h"

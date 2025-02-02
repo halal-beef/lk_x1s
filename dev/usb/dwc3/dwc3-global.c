@@ -13,8 +13,8 @@
 
 #include <stdio.h>
 #include <string.h>
-#include <debug.h>
-#include <reg.h>
+#include <lk/debug.h>
+#include <lk/reg.h>
 #include <malloc.h>
 #include <platform/delay.h>
 #include <platform/interrupts.h>

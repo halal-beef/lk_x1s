@@ -8,7 +8,7 @@
  * to third parties without the express written permission of Samsung Electronics.
  */
 
-#include <debug.h>
+#include <lk/debug.h>
 #include <sys/types.h>
 #include <platform/delay.h>
 #include <target/pmic.h>

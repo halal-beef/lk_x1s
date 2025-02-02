@@ -8,7 +8,7 @@
  * to third parties without the express written permission of Samsung Electronics.
  */
 
-#include <err.h>
+#include <lk/err.h>
 #include <platform/sfr.h>
 #include <platform/bl_sys_info.h>
 #include <platform/dram_training.h>

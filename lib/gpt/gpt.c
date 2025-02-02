@@ -24,7 +24,7 @@
 #include <lib/cksum.h>
 #include <lib/font_display.h>
 #include <lib/sysparam.h>
-#include <trace.h>
+#include <lk/trace.h>
 
 #define LOCAL_TRACE 0
 #undef GPT_DEBUG

@@ -16,7 +16,7 @@
 #define __MMC__
 
 #include <lib/bio.h>
-#include <err.h>
+#include <lk/err.h>
 
 #define MMC_MAX_CHANNEL 3
 #define MMC_MAX_DEVICE 16

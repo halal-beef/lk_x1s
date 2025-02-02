@@ -1,4 +1,4 @@
-#include <reg.h>
+#include <lk/reg.h>
 #include <pit.h>
 #include <arch/ops.h>
 #include <lib/font_display.h>

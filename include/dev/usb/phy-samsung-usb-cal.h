@@ -13,7 +13,7 @@
 #ifndef __PHY_SAMSUNG_USB_FW_CAL_H__
 #define __PHY_SAMSUNG_USB_FW_CAL_H__
 
-#include <list.h>
+#include <lk/list.h>
 
 #define EXYNOS_USBCON_VER_01_0_0	0x0100	/* Istor	*/
 #define EXYNOS_USBCON_VER_01_0_1	0x0101	/* JF 3.0	*/

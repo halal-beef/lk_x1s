@@ -13,7 +13,7 @@
  */
 
 #define __ASSEMBLY__
-#include <asm.h>
+#include <lk/asm.h>
 #include <arch/ops.h>
 #include <arch/defines.h>
 #include <platform/dfd.h>

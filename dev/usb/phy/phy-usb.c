@@ -5,9 +5,9 @@
  *      Author: sunghyun.na
  */
 
-#include <debug.h>
-#include <trace.h>
-#include <list.h>
+#include <lk/debug.h>
+#include <lk/trace.h>
+#include <lk/list.h>
 #include <lk/init.h>
 
 #include "dev/phy-usb.h"

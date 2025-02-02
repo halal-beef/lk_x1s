@@ -8,7 +8,7 @@
  * to third parties without the express written permission of Samsung Electronics.
  */
 
-#include <reg.h>
+#include <lk/reg.h>
 #include <sys/types.h>
 #include <dev/boot.h>
 #include <platform/sfr.h>

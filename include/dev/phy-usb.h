@@ -8,7 +8,7 @@
 #ifndef _PHY_USB_H_
 #define _PHY_USB_H_
 
-#include <list.h>
+#include <lk/list.h>
 
 enum usb_phy_type {
 	phy_usb2_utmi = 0x11,

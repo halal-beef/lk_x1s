@@ -12,7 +12,7 @@
  * to third parties without the express written permission of Samsung Electronics.
  */
 
-#include <debug.h>
+#include <lk/debug.h>
 #include <string.h>
 #include <platform/chip_id.h>
 #include "fastboot.h"

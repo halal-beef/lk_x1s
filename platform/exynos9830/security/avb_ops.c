@@ -9,7 +9,7 @@
  * without the express written permission of Samsung Electronics.
  */
 
-#include <debug.h>
+#include <lk/debug.h>
 #include <stdlib.h>
 #include <string.h>
 #include <pit.h>
