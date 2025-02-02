@@ -75,7 +75,7 @@ struct cmd_fastboot_interface interface = {
 
 struct cmd_fastboot {
 	const char *cmd_name;
-	int (*handler)(const char *, unsigned int);
+	int (*handler)(char *, unsigned int);
 };
 
 const char *blocked_partitions[] = {
@@ -284,7 +284,7 @@ bool partition_is_blocked(const char* partition)
 	return false; // Partition is not blocked
 }
 
-int fb_do_getvar(const char *cmd_buffer, unsigned int rx_sz)
+int fb_do_getvar(char *cmd_buffer, unsigned int rx_sz)
 {
 	char buf[FB_RESPONSE_BUFFER_SIZE];
 	char *response = (char *)(((unsigned long)buf + 8) & ~0x07);
@@ -316,7 +316,7 @@ int fb_do_getvar(const char *cmd_buffer, unsigned int rx_sz)
 			tmp = fastboot_get_serialno_string();
 			if (tmp)
 				sprintf(response + 4, tmp);
-				break;
+			break;
 		}
 
 		case DOWNLOAD_SIZE: {
@@ -328,7 +328,7 @@ int fb_do_getvar(const char *cmd_buffer, unsigned int rx_sz)
 		case MAX_DOWNLOAD_SIZE: {
 			if (interface.transfer_buffer_size)
 				sprintf(response + 4, "%d", interface.transfer_buffer_size);
-				break;
+			break;
 		}
 
 		case ERASE_BLOCK_SIZE: {
@@ -540,7 +540,7 @@ int fb_do_getvar(const char *cmd_buffer, unsigned int rx_sz)
 	return 0;
 }
 
-int fb_do_erase(const char *cmd_buffer, unsigned int rx_sz)
+int fb_do_erase(char *cmd_buffer, unsigned int rx_sz)
 {
 	char buf[FB_RESPONSE_BUFFER_SIZE];
 	char *response = (char *)(((unsigned long)buf + 8) & ~0x07);
@@ -583,7 +583,7 @@ int fb_do_erase(const char *cmd_buffer, unsigned int rx_sz)
 	return 0;
 }
 
-static void flash_using_part(char *key, char *response,
+static void flash_using_part(const char *key, char *response,
 		u32 size, void *addr)
 {
 	void *part;
@@ -640,7 +640,7 @@ static void flash_using_part(char *key, char *response,
 	}
 }
 
-int fb_do_flash(const char *cmd_buffer, unsigned int rx_sz)
+int fb_do_flash(char *cmd_buffer, unsigned int rx_sz)
 {
 	char buf[FB_RESPONSE_BUFFER_SIZE];
 	char *response = (char *)(((unsigned long)buf + 8) & ~0x07);
@@ -685,7 +685,7 @@ int fb_do_flash(const char *cmd_buffer, unsigned int rx_sz)
 		boot_img_hdr *lk3rd = (boot_img_hdr *)BOOT_BASE;
 		boot_img_hdr *android = (boot_img_hdr *)interface.transfer_buffer;
 
-		if(strncmp(android->magic, BOOT_MAGIC, 8) || strncmp(lk3rd->magic, BOOT_MAGIC, 8)) {
+		if(strncmp((char*)android->magic, BOOT_MAGIC, 8) || strncmp((char*)lk3rd->magic, BOOT_MAGIC, 8)) {
 			print_lcd_update(FONT_RED, FONT_BLACK, "Invalid boot image, skip patching!");
 			goto flash;
 		}
@@ -710,21 +710,20 @@ int fb_do_flash(const char *cmd_buffer, unsigned int rx_sz)
 		print_lcd_update(FONT_ORANGE, FONT_BLACK, "Patching LK3RD, please do not turn off/reboot your device.");
 
 		void *part = part_get("lk3rd");
-		struct pit_entry *lk3rd_entry = (struct pit_entry *)part;
 
 		part_read(part, (void *)BOOT_BASE);
 
 		boot_img_hdr *lk3rd_device = (boot_img_hdr *)BOOT_BASE;
 		boot_img_hdr *lk3rd_update = (boot_img_hdr *)interface.transfer_buffer;
 
-		if(strncmp(lk3rd_update->magic, BOOT_MAGIC, 8)) {
+		if(strncmp((char*)lk3rd_update->magic, BOOT_MAGIC, 8)) {
 			print_lcd_update(FONT_RED, FONT_BLACK, "Invalid lk3rd image! Stopping flashing process.");
 			sprintf(response, "FAILInvalid lk3rd Image");
         		fastboot_send_status(response, strlen(response), FASTBOOT_TX_ASYNC);
 			return -1;
 		}
 
-		if(strncmp(lk3rd_device->magic, BOOT_MAGIC, 8)) {
+		if(strncmp((char*)lk3rd_device->magic, BOOT_MAGIC, 8)) {
 			print_lcd_update(FONT_RED, FONT_BLACK, "Invalid lk3rd image on device, skip patching!");
 			goto flash;
 		}
@@ -755,7 +754,7 @@ flash:
 
 extern void fastboot_rx_datapayload(int dir, const unsigned char *addr, unsigned int len);
 
-int fb_do_reboot(const char *cmd_buffer, unsigned int rx_sz)
+int fb_do_reboot(char *cmd_buffer, unsigned int rx_sz)
 {
 	char buf[FB_RESPONSE_BUFFER_SIZE];
 	char *response = (char *)(((unsigned long)buf + 8) & ~0x07);
@@ -769,7 +768,7 @@ int fb_do_reboot(const char *cmd_buffer, unsigned int rx_sz)
 	return 0;
 }
 
-int fb_do_download(const char *cmd_buffer, unsigned int rx_sz)
+int fb_do_download(char *cmd_buffer, unsigned int rx_sz)
 {
 	char buf[FB_RESPONSE_BUFFER_SIZE];
 	char *response = (char *)(((unsigned long)buf + 8) & ~0x07);
@@ -815,7 +814,7 @@ static void start_ramdump(void *buffer)
 	fastboot_send_status(buf, strlen(buf), FASTBOOT_TX_SYNC);
 }
 
-int fb_do_ramdump(const char *cmd_buffer, unsigned int rx_sz)
+int fb_do_ramdump(char *cmd_buffer, unsigned int rx_sz)
 {
 	char buf[FB_RESPONSE_BUFFER_SIZE];
 	char *response = (char *)(((unsigned long)buf + 8) & ~0x07);
@@ -844,7 +843,7 @@ int fb_do_ramdump(const char *cmd_buffer, unsigned int rx_sz)
 	return 0;
 }
 
-int fb_do_set_active(const char *cmd_buffer, unsigned int rx_sz)
+int fb_do_set_active(char *cmd_buffer, unsigned int rx_sz)
 {
 	char buf[FB_RESPONSE_BUFFER_SIZE];
 	char *response = (char *)(((unsigned long)buf + 8) & ~0x07);
@@ -871,7 +870,7 @@ int fb_do_set_active(const char *cmd_buffer, unsigned int rx_sz)
 }
 
 /* Lock/unlock device */
-int fb_do_flashing(const char *cmd_buffer, unsigned int rx_sz)
+int fb_do_flashing(char *cmd_buffer, unsigned int rx_sz)
 {
 	char buf[FB_RESPONSE_BUFFER_SIZE];
 	char *response = (char *)(((unsigned long)buf + 8) & ~0x07);
@@ -906,7 +905,7 @@ int fb_do_flashing(const char *cmd_buffer, unsigned int rx_sz)
 	return 0;
 }
 
-int fb_do_oem(const char *cmd_buffer, unsigned int rx_sz)
+int fb_do_oem(char *cmd_buffer, unsigned int rx_sz)
 {
 	char buf[FB_RESPONSE_BUFFER_SIZE];
 	char *response = (char *)(((unsigned long)buf + 8) & ~0x07);
@@ -938,7 +937,7 @@ int fb_do_oem(const char *cmd_buffer, unsigned int rx_sz)
 	return 0;
 }
 
-int fb_do_diskinfo(const char *cmd_buffer, unsigned int rx_sz)
+int fb_do_diskinfo(char *cmd_buffer, unsigned int rx_sz)
 {
 	char buf[FB_RESPONSE_BUFFER_SIZE];
 	char *response = (char *)(((unsigned long)buf + 8) & ~0x07);
@@ -970,7 +969,7 @@ int fb_do_diskinfo(const char *cmd_buffer, unsigned int rx_sz)
 	return 0;
 }
 
-int fb_do_partinfo(const char *cmd_buffer, unsigned int rx_sz)
+int fb_do_partinfo(char *cmd_buffer, unsigned int rx_sz)
 {
 	char buf[FB_RESPONSE_BUFFER_SIZE];
 	char *response = (char *)(((unsigned long)buf + 8) & ~0x07);
@@ -1014,7 +1013,7 @@ static u32 start_diskdump(void *buf, u32 start_in_secs, u32 size_in_bytes)
 }
 void muic_sw_usb(void);
 
-int fb_do_diskdump(const char *cmd_buffer, unsigned int rx_sz)
+int fb_do_diskdump(char *cmd_buffer, unsigned int rx_sz)
 {
 	char buf[FB_RESPONSE_BUFFER_SIZE];
 	char *response = (char *)(((unsigned long)buf + 8) & ~0x07);
@@ -1097,7 +1096,7 @@ struct cmd_fastboot cmd_list[] = {
 int rx_handler(const unsigned char *buffer, unsigned int buffer_size)
 {
 	unsigned int i;
-	const char *cmd_buffer;
+	char *cmd_buffer;
 
 	LTRACE_ENTRY;
 
