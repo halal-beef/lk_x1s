@@ -1183,12 +1183,6 @@ static AvbSlotVerifyResult load_and_verify_vbmeta(
 
       case AVB_DESCRIPTOR_TAG_PROPERTY:
 	{
-	AvbPropertyDescriptor *prop_desc = (AvbPropertyDescriptor *)descriptors[n];
-	uint64_t key_num_bytes = avb_be64toh(prop_desc->key_num_bytes);
-	uint64_t value_num_bytes = avb_be64toh(prop_desc->value_num_bytes);
-	char *key = (char *)((uint64_t)prop_desc + sizeof(AvbPropertyDescriptor));
-	char *value = (char *)((uint64_t)prop_desc + sizeof(AvbPropertyDescriptor)
-			+ key_num_bytes + 1);
 //	avb_set_patch_level(key, value, value_num_bytes);
         break;
 	}
