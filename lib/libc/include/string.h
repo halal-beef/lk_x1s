@@ -45,6 +45,7 @@ void   bzero(void *, size_t);
 size_t strlcat(char *, char const *, size_t);
 size_t strlcpy(char *, char const *, size_t);
 int    strncasecmp(char const *, char const *, size_t)  __PURE;
+int    strcicmp(char const *a, char const *b);
 int    strnicmp(char const *, char const *, size_t) __PURE;
 size_t strnlen(char const *s, size_t count) __PURE;
 unsigned long long strtoull(const char *cp, char **endp, unsigned int base) __PURE;
