@@ -32,7 +32,6 @@
 #include <platform/timer.h>
 #include <sys/types.h>
 #include <platform/debug.h>
-#include <reg.h>
 #include <platform/delay.h>
 #include <platform/sfr.h>
 

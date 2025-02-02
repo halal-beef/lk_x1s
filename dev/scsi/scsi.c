@@ -12,6 +12,7 @@
 
 #include <dev/scsi.h>
 #include <lib/font_display.h>
+#include <lk/err.h>
 
 #define	SCSI_UNMAP_DESC_LEN	16
 

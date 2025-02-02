@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include <debug.h>
+#include <lk/debug.h>
 #include <stdlib.h>
 #include <pit.h>
 #include <lib/ab_update.h>

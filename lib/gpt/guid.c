@@ -16,7 +16,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <err.h>
+#include <lk/err.h>
 #include <ctype.h>
 
 int uid_str_valid(const char *uid)

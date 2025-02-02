@@ -7,8 +7,8 @@
  * electronic, mechanical, manual or otherwise, or disclosed
  * to third parties without the express written permission of Samsung Electronics.
  */
-#include <debug.h>
-#include <reg.h>
+#include <lk/debug.h>
+#include <lk/reg.h>
 #include <sys/types.h>
 #include <platform/delay.h>
 #include <platform/exynos9830.h>

@@ -8,7 +8,7 @@
  * to third parties without the express written permission of Samsung Electronics.
  */
 
-#include <debug.h>
+#include <lk/debug.h>
 #include <stdlib.h>
 #include <part_gpt.h>
 #include <pit.h>

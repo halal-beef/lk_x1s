@@ -7,7 +7,7 @@
  * electronic, mechanical, manual or otherwise, or disclosed
  * to third parties without the express written permission of Samsung Electronics.
  */
-#include <debug.h>
+#include <lk/debug.h>
 #include <stdlib.h>
 #include <libfdt_env.h>
 #include <fdt.h>

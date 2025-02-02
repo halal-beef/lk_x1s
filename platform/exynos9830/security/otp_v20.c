@@ -23,7 +23,7 @@
  * MA 02111-1307 USA
  */
 
-#include <debug.h>
+#include <lk/debug.h>
 #include <sys/types.h>
 #include <string.h>
 #include <platform/otp_v20.h>

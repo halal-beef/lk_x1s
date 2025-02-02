@@ -8,8 +8,8 @@
  * to third parties without the express written permission of Samsung Electronics.
  */
 
-#include <debug.h>
-#include <reg.h>
+#include <lk/debug.h>
+#include <lk/reg.h>
 #include <platform/sfr.h>
 
 #define DIV_ROUND_UP(n,d) (((n) + (d) - 1) / (d))

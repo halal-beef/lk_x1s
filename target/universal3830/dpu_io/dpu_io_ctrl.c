@@ -20,7 +20,7 @@
  * limitations under the License.
  */
 
-#include <reg.h>
+#include <lk/reg.h>
 #include <stdio.h>
 #include <platform/sfr.h>
 #include <platform/delay.h>

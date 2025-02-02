@@ -15,7 +15,7 @@
 
 #include <sys/types.h>
 #include <lib/bio.h>
-#include <err.h>
+#include <lk/err.h>
 #include <string.h>
 
 typedef struct scsi_command_meta scm;

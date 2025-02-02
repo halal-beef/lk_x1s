@@ -8,9 +8,9 @@
  * to third parties without the express written permission of Samsung Electronics.
  */
 
-#include <debug.h>
-#include <err.h>
-#include <compiler.h>
+#include <lk/debug.h>
+#include <lk/err.h>
+#include <lk/compiler.h>
 #include <sys/types.h>
 #include <platform/sfr.h>
 #include <platform/uart.h>

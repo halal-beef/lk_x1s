@@ -13,10 +13,10 @@
 
 #include <stdio.h>
 #include <string.h>
-#include <debug.h>
-#include <trace.h>
-#include <reg.h>
-#include <list.h>
+#include <lk/debug.h>
+#include <lk/trace.h>
+#include <lk/reg.h>
+#include <lk/list.h>
 #include <malloc.h>
 #include <lk/init.h>
 #include <arch/spinlock.h>

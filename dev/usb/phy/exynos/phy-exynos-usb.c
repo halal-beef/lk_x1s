@@ -5,10 +5,10 @@
  *      Author: sunghyun.na
  */
 
-#include <list.h>
+#include <lk/list.h>
 #include <lk/init.h>
-#include <debug.h>
-#include <trace.h>
+#include <lk/debug.h>
+#include <lk/trace.h>
 #include <lib/heap.h>
 
 #include "dev/phy-usb.h"

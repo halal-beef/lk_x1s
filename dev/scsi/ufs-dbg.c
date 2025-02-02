@@ -1,4 +1,4 @@
-#include <reg.h>
+#include <lk/reg.h>
 #include <dev/ufs.h>
 
 static void print_scsi_cmd(scm * pscm)

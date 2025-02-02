@@ -10,12 +10,12 @@
  * to third parties without the express written permission of Samsung Electronics.
  *
  */
-#include <debug.h>
-#include <trace.h>
+#include <lk/debug.h>
+#include <lk/trace.h>
 #include <string.h>
 #include <malloc.h>
 #include <lk/init.h>
-#include <list.h>
+#include <lk/list.h>
 #include <usb-def.h>
 #include <kernel/thread.h>
 #include <lk3rd/fastboot_menu.h>

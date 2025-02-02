@@ -9,7 +9,7 @@
  * without the express written permission of Samsung Electronics.
  */
 
-#include <debug.h>
+#include <lk/debug.h>
 #include <platform/secure_boot.h>
 #include <platform/sfr.h>
 #include <platform/otp_v20.h>

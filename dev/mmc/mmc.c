@@ -12,11 +12,11 @@
  */
 
 #include <dev/mmc.h>
-#include <reg.h>
+#include <lk/reg.h>
 #include <stdlib.h>
 #include <string.h>
 #include <platform/delay.h>
-#include <err.h>
+#include <lk/err.h>
 #include <part.h>
 
 #ifndef CONFIG_SYS_MMC_MAX_BLK_COUNT

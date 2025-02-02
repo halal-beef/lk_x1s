@@ -20,7 +20,7 @@
  * limitations under the License.
  */
 
-#include <reg.h>
+#include <lk/reg.h>
 #include <stdio.h>
 #include <platform/exynos9830.h>
 #include <platform/delay.h>

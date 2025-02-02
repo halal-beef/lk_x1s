@@ -27,9 +27,9 @@
  *
  * Copyright@ Samsung Electronics Co. LTD
  */
-#include <debug.h>
+#include <lk/debug.h>
 #include <string.h>
-#include <reg.h>
+#include <lk/reg.h>
 #include <part.h>
 #include <platform/sfr.h>
 

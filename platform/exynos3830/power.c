@@ -4,9 +4,9 @@
  *  Created on: 2019. 5. 7.
  *      Author: sunghyun.na
  */
-#include <debug.h>
-#include <err.h>
-#include <compiler.h>
+#include <lk/debug.h>
+#include <lk/err.h>
+#include <lk/compiler.h>
 #include <platform.h>
 #include <platform/debug.h>
 #include <kernel/thread.h>

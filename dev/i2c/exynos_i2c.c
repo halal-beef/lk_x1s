@@ -1,4 +1,4 @@
-#include <reg.h>
+#include <lk/reg.h>
 #include <platform.h>
 #include <platform/delay.h>
 #include <platform/gpio.h>

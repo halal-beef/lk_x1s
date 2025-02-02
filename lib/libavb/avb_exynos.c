@@ -9,7 +9,7 @@
  * without the express written permission of Samsung Electronics.
  */
 
-#include <debug.h>
+#include <lk/debug.h>
 #include "avb_exynos.h"
 
 void abort(void)

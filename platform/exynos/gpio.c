@@ -16,7 +16,7 @@
 */
 
 
-#include <reg.h>
+#include <lk/reg.h>
 #include <platform/sfr.h>
 #include <platform/gpio.h>
 

@@ -14,7 +14,7 @@
 #include <lib/font_display.h>
 #include <platform.h>
 #include <platform/gpio.h>
-#include <reg.h>
+#include <lk/reg.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>
