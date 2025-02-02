@@ -12,6 +12,8 @@
  */
 #include <platform/debug.h>
 #include <platform/uart.h>
+#include <types.h>
+#include <stdint.h>
 
 #define FB_BASE ((u32 *)0xf1000000)
 #define FB_WIDTH 1440
