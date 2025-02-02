@@ -48,7 +48,6 @@ static int read_raw_boot_partition = 0;
 static int pit_set_final_block_count(struct pit_info *pit)
 {
 	struct pit_entry *ptn;
-	int ret;
 
 	ptn = pit_get_part_info("PIT");
 	if (!ptn)
@@ -119,7 +118,7 @@ static int pit_check_header(struct pit_info *pit)
 */
 static int pit_load_blocks(void *buf)
 {
-	uint blks;
+	int blks;
 
 	blks = pit_dev->new_read(pit_dev, buf, PIT_DISK_LOC, pit_blk_count);
 
@@ -293,11 +292,8 @@ struct pit_entry *pit_get_part_info(const char *name)
 */
 int pit_access(struct pit_entry *ptn, int op, u64 addr, u32 size)
 {
-	int ret;
-	unsigned int len;
-	char str[PIT_MAX_PART_NUM];
 	bdev_t *dev;
-	u64 start, num;
+	u64 num, start, ret;
 
 	if(!pit_available)
 		return ERR_NOT_CONFIGURED;
@@ -329,7 +325,7 @@ int pit_access(struct pit_entry *ptn, int op, u64 addr, u32 size)
 	/* Sanity checks, cleanup */
 	bio_close(dev);
 
-	if(ret != num)
+	if (ret != num)
 		ret = ERR_IO;
 	else
 		ret = NO_ERROR;
@@ -369,9 +365,8 @@ u64 pit_get_length(struct pit_entry *ptn)
 */
 int pit_entry_write(struct pit_entry *ptn, void *buf, u64 offset, u64 size)
 {
-	int ret = 0;
 	bdev_t *dev;
-	u64 start, num;
+	u64 num, start, ret;
 
 	if(!pit_available)
 		return ERR_NOT_CONFIGURED;
@@ -406,9 +401,8 @@ int pit_entry_write(struct pit_entry *ptn, void *buf, u64 offset, u64 size)
 */
 int pit_entry_read(struct pit_entry *ptn, void *buf, u64 offset, u64 size)
 {
-	int ret = 0;
 	bdev_t *dev;
-	u64 start, num;
+	u64 num, start, ret;
 
 	if(!pit_available)
 		return ERR_NOT_CONFIGURED;
@@ -442,9 +436,8 @@ int pit_entry_read(struct pit_entry *ptn, void *buf, u64 offset, u64 size)
 */
 int pit_entry_erase(struct pit_entry *ptn, u64 offset, u64 size)
 {
-	int ret = 0;
 	bdev_t *dev;
-	u64 start, num;
+	u64 num, start, ret;
 
 	if(!pit_available)
 		return ERR_NOT_CONFIGURED;
