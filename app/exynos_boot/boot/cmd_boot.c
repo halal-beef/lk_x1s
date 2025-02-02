@@ -419,32 +419,32 @@ skip_carve_out_harx:
 	}
 
 	snprintf(path, sizeof(path), "/reserved-memory/kaslr");
-	ret = make_fdt_node("/reserved-memory", "kaslr");
+	ret = make_fdt_node("/reserved-memory", (char *)"kaslr");
 	if (ret) {
 		printf("Failed to create /reserved-memory/kaslr node\n");
 		print_lcd_update(FONT_RED, FONT_BLACK, "Failed to create kaslr");
 	}
-	set_fdt_val(path, "compatible", "kernel-kaslr");
+	set_fdt_val(path, "compatible", (char *)"kernel-kaslr");
 	snprintf(reg_value, sizeof(reg_value), "<0x00 0x80001000 0x1000>");
 	set_fdt_val(path, "reg", reg_value);
 
 	snprintf(path, sizeof(path), "/reserved-memory/el2_earlymem");
-	ret = make_fdt_node("/reserved-memory", "el2_earlymem");
+	ret = make_fdt_node("/reserved-memory", (char *)"el2_earlymem");
 	if (ret) {
 		printf("Failed to create /reserved-memory/el2_earlymem node\n");
 		print_lcd_update(FONT_RED, FONT_BLACK, "Failed to create el2_earlymem");
 	}
-	set_fdt_val(path, "compatible", "el2,uh");
+	set_fdt_val(path, "compatible", (char *)"el2,uh");
 	snprintf(reg_value, sizeof(reg_value), "<0x0a 0xfe800000 0x1800000>");
 	set_fdt_val(path, "reg", reg_value);
 
 	snprintf(path, sizeof(path), "/reserved-memory/el2_code");
-	ret = make_fdt_node("/reserved-memory", "el2_code");
+	ret = make_fdt_node("/reserved-memory", (char *)"el2_code");
 	if (ret) {
 		printf("Failed to create /reserved-memory/el2_code node\n");
 		print_lcd_update(FONT_RED, FONT_BLACK, "Failed to create el2_code");
 	}
-	set_fdt_val(path, "compatible", "el2,uh");
+	set_fdt_val(path, "compatible", (char *)"el2,uh");
 	snprintf(reg_value, sizeof(reg_value), "<0x00 0xc1400000 0x200000>");
 	set_fdt_val(path, "reg", reg_value);
 
@@ -617,7 +617,7 @@ int load_boot_images(void)
 
 	boot_img_hdr *boot_image = (boot_img_hdr *)BOOT_BASE;
 
-	if(strncmp(boot_image->magic, BOOT_MAGIC, 8))
+	if(strncmp((char*)boot_image->magic, BOOT_MAGIC, 8))
 	{
 		start_usb_gadget();
 		while(1){}
