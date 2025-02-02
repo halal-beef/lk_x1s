@@ -22,11 +22,15 @@
 //#include <lib/fastboot.h>
 #include <part.h>
 #include <pit.h>
+#include <app/exynos_boot.h>
+#include <arch/arch_ops.h>
+#include <platform/secure_boot.h>
 #include <platform/sfr.h>
 #include <platform/smc.h>
 #include <platform/ldfw.h>
 #include <lib/lock.h>
 #include <lib/ab_update.h>
+#include <lib/fdtapi.h>
 #include <platform/environment.h>
 #include <platform/bootimg.h>
 #include <platform/mmu/mmu_func.h>
@@ -37,6 +41,7 @@
 #include <dev/boot.h>
 #include <dev/rpmb.h>
 #include <dev/scsi.h>
+#include <dev/mmc.h>
 #include <dev/pmucal_local.h>
 
 #include "usb-def.h"
@@ -175,7 +180,7 @@ __attribute__((weak)) void get_serialno(int *chip_id)
 }
 
 
-const char *fastboot_variables[] = 
+const char *fastboot_variables[] =
 {
 	"version",
 	"product",
@@ -221,7 +226,7 @@ enum fastboot_variable_id
 	ALL = 0xA11,
 };
 
-const char *oem_commands[] = 
+const char *oem_commands[] =
 {
 	"str_ram",
 	"reboot-download",
@@ -919,7 +924,7 @@ int fb_do_oem(char *cmd_buffer, unsigned int rx_sz)
 		else
 			sprintf(response, "FAILunsupported command");
 		break;
-	
+
 	case OEM_REBOOT_DOWNLOAD:
 			sprintf(response, "OKAY");
 			fastboot_send_status(response, strlen(response), FASTBOOT_TX_ASYNC);
@@ -1078,6 +1083,129 @@ int fb_do_diskdump(char *cmd_buffer, unsigned int rx_sz)
 	return 0;
 }
 
+int fb_do_boot(char *cmd_buffer, unsigned int rx_sz)
+{
+	char buf[FB_RESPONSE_BUFFER_SIZE];
+	char *response = (char *)(((unsigned long)buf + 8) & ~0x07);
+
+#if defined(CONFIG_USE_AVB20)
+	static char cmdline[AVB_CMD_MAX_SIZE];
+	static char verifiedbootstate[AVB_VBS_MAX_SIZE] = "androidboot.verifiedbootstate=";
+#endif
+
+	cmd_args argv[6];
+	struct pit_entry *ptn;
+
+	fdt_dtb = (struct fdt_header *)DT_BASE;
+	dtbo_table = (struct dt_table_header *)DTBO_BASE;
+
+	print_lcd_update(FONT_ORANGE, FONT_BLACK, "Temporary booting... Please wait.");
+
+	memcpy((void *)BOOT_BASE, (void *)interface.transfer_buffer, downloaded_data_size);
+
+        //flash_using_part(dest, response,
+        //                downloaded_data_size, (void *)interface.transfer_buffer);
+
+#ifndef CONFIG_DTB_IN_BOOT
+	ptn = pit_get_part_info("dtb");
+	if (ptn == 0) {
+		printf("Partition 'dtb' does not exist\n");
+                sprintf(response, "FAILDTB Does not exist");
+                fastboot_send_status(response, strlen(response), FASTBOOT_TX_SYNC);
+		return -1;
+	} else {
+		pit_access(ptn, PIT_OP_LOAD, (u64)DT_BASE, 0);
+	}
+#endif
+	ptn = pit_get_part_info("dtbo");
+	if (ptn == 0) {
+		printf("Partition 'dtbo' does not exist\n");
+                sprintf(response, "FAILDTBO Does not exist");
+                fastboot_send_status(response, strlen(response), FASTBOOT_TX_SYNC);
+		return -1;
+	} else {
+		pit_access(ptn, PIT_OP_LOAD, (u64)DTBO_BASE, 0);
+	}
+
+	boot_img_hdr *boot_image = (boot_img_hdr *)BOOT_BASE;
+
+	if(strncmp((char*)boot_image->magic, BOOT_MAGIC, 8))
+	{
+		sprintf(response, "FAILThis image is not an android image!");
+		fastboot_send_status(response, strlen(response), FASTBOOT_TX_SYNC);
+	}
+
+	argv[1].u = BOOT_BASE;
+	argv[2].u = KERNEL_BASE;
+#if defined(CONFIG_RAMDISK_IN_BOOT)
+	argv[3].u = RAMDISK_BASE;
+#else
+	argv[3].u = 0;
+#endif
+#if defined(CONFIG_DTB_IN_BOOT)
+	argv[4].u = DT_BASE;
+#else
+	argv[4].u = 0;
+#endif
+	argv[5].u = 0;
+	cmd_scatter_load_boot(6, argv);
+
+#if defined(CONFIG_USE_AVB20)
+#if defined(CONFIG_AVB_ABUPDATE)
+	if (ab_current_slot())
+		avb_main("_b", cmdline, verifiedbootstate);
+	else
+		avb_main("_a", cmdline, verifiedbootstate);
+#else
+	avb_main("", cmdline, verifiedbootstate);
+#endif
+#endif
+
+	configure_dtb();
+	configure_ddi_id();
+
+	printf("scsi_do_ssu\n");
+	/*
+	 * PON (Power off notification) to storage
+	 *
+	 * Even with its failure, subsequential operations should be executed.
+	 */
+	scsi_do_ssu();
+
+        /* power off sd slot before starting kernel */
+	printf("mmc_power_off\n");
+	mmc_power_set(2, 0);
+
+	/* notify EL3 Monitor end of bootloader */
+	exynos_smc(SMC_CMD_END_OF_BOOTLOADER, 0, 0, 0);
+
+	printf("DECON0: HW_SW_TRIG Restore\n");
+	writel(0x3070, 0x19050070);
+
+	/* before jumping to kernel. disble arch_timer */
+	arm_generic_timer_disable();
+	/* before jumping to kernel. disable interrupt */
+	arch_disable_ints();
+
+	clean_invalidate_dcache_all();
+	disable_mmu_dcache();
+
+	/* Disable KASLR */
+	writel(0, 0x80001000 + sizeof(u32));
+
+	printf("Starting kernel...\n");
+	void (*kernel_entry)(int r0, int r1, int r2, int r3);
+
+	kernel_entry = (void (*)(int, int, int, int))KERNEL_BASE;
+
+	sprintf(response, "OKAY");
+	fastboot_send_status(response, strlen(response), FASTBOOT_TX_SYNC);
+
+	kernel_entry(DT_BASE, 0, 0, 0);
+
+	return -1; // We should not get here
+}
+
 struct cmd_fastboot cmd_list[] = {
 	{"reboot", fb_do_reboot},
 	{"flash:", fb_do_flash},
@@ -1091,6 +1219,7 @@ struct cmd_fastboot cmd_list[] = {
 	{"diskinfo:", fb_do_diskinfo},
 	{"partinfo:", fb_do_partinfo},
 	{"diskdump:", fb_do_diskdump},
+	{"boot", fb_do_boot}
 };
 
 int rx_handler(const unsigned char *buffer, unsigned int buffer_size)

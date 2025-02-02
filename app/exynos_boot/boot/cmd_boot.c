@@ -249,7 +249,7 @@ static void set_bootargs(void)
 	bootargs_update();
 }
 
-static void configure_dtb(void)
+void configure_dtb(void)
 {
 	char str[BUFFER_SIZE];
 	u32 soc_ver = 0;
