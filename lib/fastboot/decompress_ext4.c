@@ -127,7 +127,7 @@ int write_compressed_ext4(char* img_base, unsigned int sector_base) {
 	while(total_chunks) {
 		chunk_header = (ext4_chunk_header*)img_base;
 		chunk_in_bytes = (u64)chunk_header->chunk_size * file_header->block_size;
-		sector_size = chunk_in_bytes / (u64)PART_SECTOR_SIZE;
+		sector_size = chunk_in_bytes / (u64)PIT_UFS_BLK_SIZE;
 
 		printf("*** raw_chunk (lba: %u, sct: %u) ***\n",
 				sector_base, sector_size);	// todo:
@@ -144,7 +144,7 @@ int write_compressed_ext4(char* img_base, unsigned int sector_base) {
 			data = (char *)(img_base + EXT4_CHUNK_HEADER_SIZE);
 			if ((boot_dev != BOOT_UFS) &&
 					((((unsigned long)data % ALIGN_FOR_EXYNOS)) != 0)) {
-				chunk_in_bytes = (u64) sector_size * PART_SECTOR_SIZE;
+				chunk_in_bytes = (u64) sector_size * PIT_UFS_BLK_SIZE;
 				memcpy((void *)i_buf_for_sparse, (void *)data, chunk_in_bytes);
 				data = (char *)i_buf_for_sparse;
 			}
