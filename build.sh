@@ -19,6 +19,9 @@ case $1 in
 	phoenix9830)
 		rm -rf build-$1; make $1 -j16
 		;;
+	beyond2lte)
+		rm -rf build-$1; make $1 -j16
+		;;
         c1s)
                 rm -rf build-$1; make $1 -j16
                 ;;
@@ -56,6 +59,7 @@ case $1 in
 		echo phoenix9830
 		echo erd3830
 		echo universal3830
+		echo beyond2lte
 		echo c1s
 		echo c2s
 		echo r8s

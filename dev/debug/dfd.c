@@ -20,6 +20,7 @@
 #include <platform/smc.h>
 #include <platform/delay.h>
 #include <platform/dfd.h>
+#include <stdio.h>
 
 unsigned int dump_en_before_reset = 0xFFFFFFFF;
 

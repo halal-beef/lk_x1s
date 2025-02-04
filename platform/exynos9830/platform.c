@@ -209,7 +209,6 @@ static void read_chip_rev(void)
 	s5p_chip_rev.sub = (val >> 16) & 0xf;
 }
 
-
 static void display_rst_stat(u32 rst_stat)
 {
 	u32 temp = rst_stat & (WARM_RESET | LITTLE_WDT_RESET | BIG_WDT_RESET | PIN_RESET);

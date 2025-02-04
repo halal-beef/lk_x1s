@@ -21,8 +21,8 @@
  */
 
 #include <malloc.h>
-#include <dpu/decon.h>
-#include <target/dpu_config.h>
+//#include <dpu/decon.h>
+//#include <target/dpu_config.h>
 
 //#ifdef CONFIG_PIT
 //#include <pit.h>

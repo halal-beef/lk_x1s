@@ -20,24 +20,25 @@
 #include <dev/boot.h>
 #include <dev/rpmb.h>
 #include <dev/usb/gadget.h>
-#include <platform/exynos9830.h>
+//#include <platform/exynos9830.h>
 #include <platform/smc.h>
 #include <platform/hvc.h>
 #include <platform/sfr.h>
-#include <platform/ldfw.h>
-#include <platform/h-arx.h>
-#include <platform/charger.h>
+//#include <platform/ldfw.h>
+//#include <platform/h-arx.h>
+//#include <platform/charger.h>
 #include <lib/ab_update.h>
 #include <platform/secure_boot.h>
 #include <platform/sizes.h>
 #include <platform/bootimg.h>
 #include <lib/fdtapi.h>
-#include <platform/chip_id.h>
+//#include <platform/chip_id.h>
 #include <platform/mmu/mmu_func.h>
 #include <pit.h>
 #include <dev/scsi.h>
 #include <dev/mmc.h>
 #include <arch/arch_ops.h>
+#include <lib/font_display.h>
 
 #include <kernel/thread.h>
 
@@ -401,7 +402,7 @@ skip_carve_out_harx:
 	resize_dt(SZ_4K);
 
 	/* Disable CCI unit for USB */
-	exynos_usb_cci_control(0);
+	//exynos_usb_cci_control(0);
 
 
 	if (readl(EXYNOS9830_POWER_SYSIP_DAT0) == REBOOT_MODE_RECOVERY) {

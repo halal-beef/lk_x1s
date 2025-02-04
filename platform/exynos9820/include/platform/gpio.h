@@ -12,7 +12,7 @@
 #ifndef __ASM_ARCH_GPIO_H
 #define __ASM_ARCH_GPIO_H
 
-#include "exynos9830.h"
+#include "exynos9820.h"
 
 #ifndef __ASSEMBLY__
 struct exynos_gpio_bank {
@@ -48,9 +48,9 @@ struct exynos_gpio_bank {
 #define GPIO_PER_BANK	8
 
 /* lk3rd - platform commonization */
-#define EXYNOS_GPA0CON					EXYNOS9830_GPA0CON;
-#define EXYNOS_GPA1CON					EXYNOS9830_GPA1CON;
-#define EXYNOS_GPA2CON					EXYNOS9830_GPA2CON;
+#define EXYNOS_GPA0CON                                  EXYNOS9820_GPA0CON;
+#define EXYNOS_GPA1CON                                  EXYNOS9820_GPA1CON;
+#define EXYNOS_GPA2CON                                  EXYNOS9820_GPA2CON;
 
 /* functions */
 void exynos_gpio_cfg_pin(struct exynos_gpio_bank *bank, int gpio, int cfg);

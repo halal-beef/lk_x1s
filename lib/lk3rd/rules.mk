@@ -7,5 +7,4 @@ MODULE_SRCS += \
 	$(LOCAL_DIR)/fastboot_menu.c \
 	$(LOCAL_DIR)/keys.c \
 
-
 include make/module.mk

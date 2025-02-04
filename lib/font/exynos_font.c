@@ -25,7 +25,7 @@
 #include <stdio.h> /* TODO : divide print_lcd function */
 
 #include "exynos_font.h"
-#include <dpu/lcd_ctrl.h>
+//#include <dpu/lcd_ctrl.h>
 
 /*
 #include <target/dpu_config.h>
@@ -47,7 +47,7 @@ static u32 y_pos = 0;
 /* Clears the framebuffer by filling it with a specified color */
 void clear_screen(uint32_t color)
 {
-	volatile u32 *_fb = (u32*)0xf1000000;
+	volatile u32 *_fb = (u32*)CONFIG_DISPLAY_FONT_BASE_ADDRESS;
 	y_pos = 0;
 
 	for (uint32_t y = 0; y < LCD_HEIGHT; y++)
@@ -174,7 +174,7 @@ int fill_fb_string(u32 *fb_buf, u32 x_pos, u8 *str, u32 font_color, u32 bg_color
 
 #define PRINT_BUF_SIZE 384
 #define TOP_MARGIN	40
-u32 _win_fb0 = 0xf1000000;
+u32 _win_fb0 = CONFIG_DISPLAY_FONT_BASE_ADDRESS;
 extern void decon_string_update(void);
 
 int print_lcd(u32 font_color, u32 bg_color, const char *fmt, ...)
@@ -218,7 +218,7 @@ int print_lcd_update(u32 font_color, u32 bg_color, const char *fmt, ...)
 		return -1;
 	}
 
-	decon_string_update();
+	//decon_string_update();
 
 	return 0;
 }

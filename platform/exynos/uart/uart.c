@@ -85,28 +85,7 @@ static void uart_GPIOInit(void)
 /* UART USI initialize code */
 static void uart_UartInit(unsigned int uUartBase, unsigned int clk, unsigned int nBaudrate)
 {
-	unsigned int udiv;
-	double fdiv;
-
-	globalUartBase = uUartBase;
-
-	/* usi_uart setting */
-	/* Set this AFTER GPIO setting. */
-	SetBits(uUartBase+rUART_USI_CON, 0, 0x1, 0);
-
-	/* uart init */
-	Outp32(uUartBase+rUART_ULCONN, 0x3);
-	Outp32(uUartBase+rUART_UCONN, 0x3005);
-	Outp32(uUartBase+rUART_UFCONN, 0x1);
-
-	Outp32(uUartBase+rUART_UMCONN, 0x0);
-	Outp32(uUartBase+rUART_UTRSTATN, 0x6);
-
-	udiv = fdiv = (clk/16.0/(double)nBaudrate)-1;
-	SetBits(uUartBase+rUART_UBRDIVN,0,0xffff, udiv);
-	SetBits(uUartBase+rUART_UFRACVAL,0,0xffff,  (unsigned int)((fdiv - udiv)*16)  );
-
-	Outp32(uUartBase+rUART_UINTMN, 0xf);
+	return;
 }
 
 static void itoa_base_custom(unsigned int number, unsigned int uBaseUnit, unsigned int uUnitWidth, char *Converted)
@@ -146,11 +125,7 @@ static void UART_WaitForTxEmpty(void)
 
 void uart_char_in(char *cData)
 {
-	unsigned int reg;
-
-	UART_WaitForRxReady();
-	reg = Get32(globalUartBase + rUART_URXHN);
-	*cData = (char)reg;
+	return;
 }
 
 void uart_char_out(char cData)
@@ -158,7 +133,7 @@ void uart_char_out(char cData)
      UART_WaitForTxEmpty();
      Outp32(globalUartBase+rUART_UTXHN, cData);
 	 if(cData == '\n')
-		 uart_char_out('\r');
+		 platform_dputc('\r');
 }
 
 static void uart_string_out(const char * string)
@@ -168,10 +143,10 @@ static void uart_string_out(const char * string)
 		if(*string=='\n')
 		{
 			string++;
-			uart_char_out('\r');
-			uart_char_out('\n');
+			platform_dputc('\r');
+			platform_dputc('\n');
 		}
 		else
-			uart_char_out(*string++);
+			platform_dputc(*string++);
 	}
 }

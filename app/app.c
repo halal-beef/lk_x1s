@@ -19,15 +19,21 @@ void apps_init(void)
 {
     const struct app_descriptor *app;
 
+    dprintf(SPEW, "top of apps_init\n");
+
     /* call all the init routines */
     for (app = &__start_apps; app != &__stop_apps; app++) {
         if (app->init)
+        {
+            dprintf(SPEW, "app_init app: %s\n", app->name);
             app->init(app);
+        }
     }
 
     /* start any that want to start on boot */
     for (app = &__start_apps; app != &__stop_apps; app++) {
         if (app->entry && (app->flags & APP_FLAG_DONT_START_ON_BOOT) == 0) {
+            dprintf(SPEW, "starting app: %s\n", app->name);
             start_app(app);
         }
     }

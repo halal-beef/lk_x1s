@@ -9,12 +9,10 @@
  */
 
 #ifndef __UFS__
-
 #define __UFS__
 
 #include <types.h>
 #include <dev/scsi.h>
-#include <platform/ufs-cal.h>
 
 #define RET_SUCCESS		0	/* 0 = Success */
 #define RET_FAILURE		1	/* 1 = Failure */
@@ -746,7 +744,7 @@ struct ufs_host {
 	u8 upiu_data[UPIU_DATA_SIZE * 4];
 	struct ufs_cal_param	*cal_param;
 	u32 mclk_rate;
-	struct uic_pwr_mode pmd_cxt;
+	//struct uic_pwr_mode pmd_cxt;
 	u32 dev_pwr_shift;
 	u32 support_tw;
 	u32 gear_mode;
