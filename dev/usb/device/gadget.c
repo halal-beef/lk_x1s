@@ -44,9 +44,6 @@ struct _udev_gadget {
 	struct list_node string_desc_list_head;
 	int sting_cnt;
 
-	unsigned short platform_vid;
-	unsigned short platform_pid;
-	unsigned short platform_bcd_dev_verion;
 	unsigned char vendor_str_num;
 	unsigned char product_str_num;
 	unsigned char serial_str_num;
@@ -305,9 +302,9 @@ int make_dev_desc(USB_SPEED speed, USB_DEVICE_DESCRIPTOR *dev_desc)
 		dev_desc->bcdUSB = 0x0210;	// Ver 2.10
 		dev_desc->bMaxPacketSize0 = 64;
 	}
-	dev_desc->idVendor = udev_gadget.platform_vid;
-	dev_desc->idProduct = udev_gadget.platform_pid;
-	dev_desc->bcdDevice = udev_gadget.platform_bcd_dev_verion;
+	dev_desc->idVendor = USB_DEVICE_VENDOR_ID;
+	dev_desc->idProduct = USB_DEVICE_PRODUCT_ID;
+	dev_desc->bcdDevice = USB_DEVICE_REVISION_ID;
 
 	dev_desc->iManufacturer = udev_gadget.vendor_str_num;
 	dev_desc->iProduct = udev_gadget.product_str_num;
@@ -598,8 +595,6 @@ static void gadget_init(uint level)
 		list_initialize(&udev_gadget.dev_infor_list_head);
 	if (udev_gadget.string_desc_list_head.next == NULL)
 		list_initialize(&udev_gadget.string_desc_list_head);
-	/* Get VID, PID and Device Version from platform or target */
-	gadget_probe_pid_vid_version(&udev_gadget.platform_vid, &udev_gadget.platform_pid, &udev_gadget.platform_bcd_dev_verion);
 	/* Get Vendor(Manufacture) String */
 	udev_gadget.vendor_str_num = gadget_get_vendor_string();
 	/* Get Product String */

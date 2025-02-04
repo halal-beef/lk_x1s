@@ -22,6 +22,12 @@
 #define	USB_STDREQ_NOT_MINE 1
 #define	USB_STDREQ_ERROR -1
 
+/* Generic fastboot bootloader interface properties */
+/* From android_winusb.inf */
+#define USB_DEVICE_VENDOR_ID 0x18D1
+#define USB_DEVICE_PRODUCT_ID 0x4D00
+#define USB_DEVICE_REVISION_ID 0x0000
+
 enum gadget_buf_opt {
 	GADGET_BUF_NO_OPTION = 0,
 
