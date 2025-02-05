@@ -1,3 +1,12 @@
+/*
+ * Copyright (c) 2024 Igor Belwon <igor.belwon@mentallysanemainliners.org>
+ *
+ * Use of this source code is governed by a MIT-style
+ * license that can be found in the LICENSE file or at
+ * https://opensource.org/licenses/MIT
+ *
+ */
+
 #ifndef KEYS_H
 #define KEYS_H
 

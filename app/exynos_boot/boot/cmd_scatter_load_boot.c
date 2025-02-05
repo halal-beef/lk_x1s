@@ -13,6 +13,7 @@
 #include <stdlib.h>
 #include <platform/bootimg.h>
 #include <lib/console.h>
+#include <libfdt.h>
 
 int cmd_scatter_load_boot(int argc, const cmd_args *argv)
 {
@@ -59,7 +60,8 @@ int cmd_scatter_load_boot(int argc, const cmd_args *argv)
 	dtb_offset = second_stage_offset;
 #endif
 
-	dtb_offset = dtb_offset + 0x40;
+	if(fdt_check_header((const void *)(boot_addr + dtb_offset)))
+		dtb_offset = dtb_offset + 0x40;
 
 	if (kernel_addr)
 		memcpy((void *)kernel_addr, (const void *)(boot_addr + kernel_offset), (size_t)b_hdr->kernel_size);
