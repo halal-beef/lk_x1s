@@ -70,6 +70,15 @@ static int prop_cnt = 0;
 
 extern volatile char *bootloader_cmdline;
 
+typedef struct {
+	const char *node;
+	char compatible[65];
+	char reg[65];
+} bootloader_reserved_region;
+
+extern volatile bootloader_reserved_region bootloader_reserved_regions[];
+extern volatile int bootloader_reserved_region_count;
+
 static int bootargs_init(void)
 {
 	u32 i = 0;
@@ -418,35 +427,20 @@ skip_carve_out_harx:
 		printf("Enter factory mode...");
 	}
 
-	snprintf(path, sizeof(path), "/reserved-memory/kaslr");
-	ret = make_fdt_node("/reserved-memory", (char *)"kaslr");
-	if (ret) {
-		printf("Failed to create /reserved-memory/kaslr node\n");
-		print_lcd_update(FONT_RED, FONT_BLACK, "Failed to create kaslr");
-	}
-	set_fdt_val(path, "compatible", (char *)"kernel-kaslr");
-	snprintf(reg_value, sizeof(reg_value), "<0x00 0x80001000 0x1000>");
-	set_fdt_val(path, "reg", reg_value);
+	for(int i = 0; i < bootloader_reserved_region_count; i++) {
+		snprintf(path, sizeof(path), "/reserved-memory/%s", bootloader_reserved_regions[i].node);
+		ret = make_fdt_node("/reserved-memory", (char *)bootloader_reserved_regions[i].node);
 
-	snprintf(path, sizeof(path), "/reserved-memory/el2_earlymem");
-	ret = make_fdt_node("/reserved-memory", (char *)"el2_earlymem");
-	if (ret) {
-		printf("Failed to create /reserved-memory/el2_earlymem node\n");
-		print_lcd_update(FONT_RED, FONT_BLACK, "Failed to create el2_earlymem");
-	}
-	set_fdt_val(path, "compatible", (char *)"el2,uh");
-	snprintf(reg_value, sizeof(reg_value), "<0x0a 0xfe800000 0x1800000>");
-	set_fdt_val(path, "reg", reg_value);
+		if(ret) {
+			printf("Failed to create %s node\n", path);
+			print_lcd_update(FONT_RED, FONT_BLACK, "Failed to create %s node", path);
+		}
 
-	snprintf(path, sizeof(path), "/reserved-memory/el2_code");
-	ret = make_fdt_node("/reserved-memory", (char *)"el2_code");
-	if (ret) {
-		printf("Failed to create /reserved-memory/el2_code node\n");
-		print_lcd_update(FONT_RED, FONT_BLACK, "Failed to create el2_code");
+		set_fdt_val(path, "compatible", (char *)bootloader_reserved_regions[i].compatible);
+
+		snprintf(reg_value, sizeof(reg_value), (char *)bootloader_reserved_regions[i].reg);
+		set_fdt_val(path, "reg", reg_value);
 	}
-	set_fdt_val(path, "compatible", (char *)"el2,uh");
-	snprintf(reg_value, sizeof(reg_value), "<0x00 0xc1400000 0x200000>");
-	set_fdt_val(path, "reg", reg_value);
 
 	//print_lcd_update(FONT_GREEN, FONT_BLACK, "EL2 and KASLR nodes created!");
 
