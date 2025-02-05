@@ -23,8 +23,10 @@
 #include <dev/boot.h>
 #include <dev/debug/dss.h>
 #include <dev/debug/dss_store_ramdump.h>
+#include <lk3rd/mainline_quirks.h>
 
 int cmd_boot(int argc, const cmd_args *argv);
+void mainline_boot(void);
 
 static unsigned int need_do_fastboot = 0;
 static const char *fastboot_reason[] = {
@@ -70,7 +72,12 @@ static void exynos_boot_task(const struct app_descriptor *app, void *args)
 	if (!val)
 		start_usb_gadget();
 	else
-		cmd_boot(0, 0);
+	{
+		if (lk3rd_get_mainline_quirks() == 0)
+			cmd_boot(0, 0);
+		else
+			mainline_boot();
+	}
 
 	return;
 }
