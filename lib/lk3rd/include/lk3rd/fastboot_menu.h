@@ -1,3 +1,12 @@
+/*
+ * Copyright (c) 2024 Igor Belwon <igor.belwon@mentallysanemainliners.org>
+ *
+ * Use of this source code is governed by a MIT-style
+ * license that can be found in the LICENSE file or at
+ * https://opensource.org/licenses/MIT
+ *
+ */
+
 #ifndef FASTBOOT_MENU
 #define FASTBOOT_MENU
 
@@ -12,5 +21,6 @@ enum action {
 };
 
 int fastboot_menu_entry(void*);
+void notify_action_switch(int modifier);
 
 #endif /* FASTBOOT_MENU */

@@ -6,6 +6,7 @@ MODULE_SRCS += \
 	$(LOCAL_DIR)/display.c \
 	$(LOCAL_DIR)/fastboot_menu.c \
 	$(LOCAL_DIR)/keys.c \
-
+	$(LOCAL_DIR)/mainline-quirks.c \
+	$(LOCAL_DIR)/persistentstorage.c \
 
 include make/module.mk

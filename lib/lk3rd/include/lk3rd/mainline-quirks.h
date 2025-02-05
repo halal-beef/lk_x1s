@@ -7,16 +7,10 @@
  *
  */
 
-#ifndef DISPLAY
-#define DISPLAY
+#ifndef MAINLINE_QUIRKS_H
+#define MAINLINE_QUIRKS_H
 
-#include <lib/font_display.h>
+int lk3rd_switch_mainline_quirks(bool enable);
+int lk3rd_get_mainline_quirks(void);
 
-#include "fastboot_menu.h"
-
-#define FONT_X 16
-#define MAX_NUM_CHAR_PER_LINE ((LCD_WIDTH / FONT_X) - 6)
-
-void draw_menu(enum action current_action);
-
-#endif /* DISPLAY */
+#endif
