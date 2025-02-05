@@ -13,6 +13,7 @@
 
 #include "include/lk3rd/display.h"
 #include "include/lk3rd/fastboot_menu.h"
+#include "include/lk3rd/mainline_quirks.h"
 
 void draw_line_lcd(int color_fg, int color_bg)
 {
@@ -67,6 +68,8 @@ void draw_current_action(enum action current_action)
 	}
 }
 
+
+
 void draw_menu(enum action current_action)
 {
 	clear_screen(FONT_BLACK);
@@ -86,4 +89,10 @@ void draw_menu(enum action current_action)
 	print_lcd_update(FONT_WHITE, FONT_BLACK, "PRODUCT_NAME - %s", version.platform);
 	print_lcd_update(FONT_WHITE, FONT_BLACK, "BOOTLOADER VERSION - DEV (%s)", version.buildid);
 	print_lcd_update(FONT_RED,   FONT_BLACK, "DEVICE STATE - unlocked");
+
+	if(lk3rd_get_mainline_quirks() == 1)
+		print_lcd_update(FONT_YELLOW, FONT_BLACK, "MAINLINE QUIRKS - enabled");
+	else
+		print_lcd_update(FONT_GREEN, FONT_BLACK, "MAINLINE QUIRKS - disabled");
+
 }

@@ -38,6 +38,8 @@
 #include <dev/rpmb.h>
 #include <dev/scsi.h>
 #include <dev/pmucal_local.h>
+#include <lk3rd/mainline_quirks.h>
+#include <lk3rd/fastboot_menu.h>
 
 #include "usb-def.h"
 
@@ -221,16 +223,20 @@ enum fastboot_variable_id
 	ALL = 0xA11,
 };
 
-const char *oem_commands[] = 
+const char *oem_commands[] =
 {
 	"str_ram",
 	"reboot-download",
+	"enable-mainline-quirks",
+	"disable-mainline-quirks",
 };
 
 enum oem_commands_id
 {
 	OEM_STR_RAM = 0,
 	OEM_REBOOT_DOWNLOAD,
+	OEM_ENABLE_MAINLINE_QUIRKS,
+	OEM_DISABLE_MAINLINE_QUIRKS,
 	OEM_CMD_END,
 };
 
@@ -907,29 +913,48 @@ int fb_do_flashing(char *cmd_buffer, unsigned int rx_sz)
 
 int fb_do_oem(char *cmd_buffer, unsigned int rx_sz)
 {
+	int ret;
 	char buf[FB_RESPONSE_BUFFER_SIZE];
 	char *response = (char *)(((unsigned long)buf + 8) & ~0x07);
 	char *oem_command = cmd_buffer + 4;
 
 	switch (oem_command_to_id(oem_command))
 	{
-	case OEM_STR_RAM:
-		if (!debug_store_ramdump_oem(cmd_buffer + 12))
-			sprintf(response, "OKAY");
-		else
-			sprintf(response, "FAILunsupported command");
-		break;
-	
-	case OEM_REBOOT_DOWNLOAD:
-			sprintf(response, "OKAY");
-			fastboot_send_status(response, strlen(response), FASTBOOT_TX_ASYNC);
-			platform_prepare_reboot();
-			platform_do_reboot("reboot-download");
+		case OEM_STR_RAM:
+			if (!debug_store_ramdump_oem(cmd_buffer + 12))
+				sprintf(response, "OKAY");
+			else
+				sprintf(response, "FAILunsupported command");
 			break;
 
-	default:
-		sprintf(response, "FAILunsupported command");
-		break;
+		case OEM_REBOOT_DOWNLOAD:
+				sprintf(response, "OKAY");
+				fastboot_send_status(response, strlen(response), FASTBOOT_TX_ASYNC);
+				platform_prepare_reboot();
+				platform_do_reboot("reboot-download");
+				break;
+
+		case OEM_ENABLE_MAINLINE_QUIRKS:
+				ret = lk3rd_switch_mainline_quirks(1);
+				if(ret != 1)
+					sprintf(response, "FAIL");
+				else
+					sprintf(response, "OKAY");
+				notify_action_switch(0);
+				break;
+
+		case OEM_DISABLE_MAINLINE_QUIRKS:
+				ret = lk3rd_switch_mainline_quirks(0);
+				if(ret != 0)
+					sprintf(response, "FAIL");
+				else
+					sprintf(response, "OKAY");
+				notify_action_switch(0);
+				break;
+
+		default:
+			sprintf(response, "FAILunsupported command");
+			break;
 	}
 
 	fastboot_send_status(response, strlen(response), FASTBOOT_TX_ASYNC);
