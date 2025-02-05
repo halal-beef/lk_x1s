@@ -27,6 +27,7 @@
 #include <platform/ldfw.h>
 #include <lib/lock.h>
 #include <lib/ab_update.h>
+#include <platform/delay.h>
 #include <platform/environment.h>
 #include <platform/bootimg.h>
 #include <platform/mmu/mmu_func.h>
@@ -283,6 +284,9 @@ bool partition_is_blocked(const char* partition)
 
 	return false; // Partition is not blocked
 }
+
+u32 get_ldfw_load_flag(){return 0;}
+int rpmb_get_lock_state(u32* lstate){lstate=0; printf("%x", *lstate); return 0;}
 
 int fb_do_getvar(char *cmd_buffer, unsigned int rx_sz)
 {
@@ -795,7 +799,7 @@ int fb_do_download(char *cmd_buffer, unsigned int rx_sz)
 static void start_ramdump(void *buffer)
 {
 	struct fastboot_ramdump_hdr *hdr = buffer;
-	static uint32_t ramdump_cnt = 0;
+	//static uint32_t ramdump_cnt = 0;
 	char buf[] = "OKAY";
 
 	LTRACEF_LEVEL(INFO, "\nramdump start address is [0x%lx]\n", hdr->base);
@@ -807,8 +811,8 @@ static void start_ramdump(void *buffer)
 	}
 
 	/* dont't generate DECERR even if permission failure of ASP occurs */
-	if (ramdump_cnt++ == 0)
-		set_tzasc_action(0);
+	//if (ramdump_cnt++ == 0)
+		//set_tzasc_action(0);
 
 	fastboot_set_payload_data(USBDIR_IN, (void *)hdr->base, hdr->size);
 	fastboot_send_status(buf, strlen(buf), FASTBOOT_TX_SYNC);

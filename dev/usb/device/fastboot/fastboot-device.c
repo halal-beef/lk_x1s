@@ -65,7 +65,7 @@ enum {
 	FASTBOOT_PAYLOAD_START_MARK = 2,
 };
 
-unsigned int s_fb_on_diskdump = false;
+extern unsigned int s_fb_on_diskdump;
 
 void fastboot_send_status(char *response, unsigned int len, int sync);
 
@@ -107,7 +107,7 @@ static void check_payload_done(unsigned int xfer_sz)
 			(fastboot_h.payload_dir == USBDIR_OUT) ? "download" : "upload",
 			fastboot_h.paylod_buf, xfer_sz);
 	LTRACEF("Payload Req Sz:0x%x,Xfer done Sz:0x%x\n", fastboot_h.payload_req_len, xfer_sz);
-	//(xfer_sz);
+	fb_cmd_set_downloaded_sz(xfer_sz);
 
 	if (fastboot_h.payload_req_len < xfer_sz)
 		fastboot_h.payload_req_len = 0;
@@ -278,7 +278,7 @@ static int wait_rx_done(void *arg)
 			check_payload_done(rx_sz);
 		else {
 			fastboot_h.prot_req_rx_sz = 0;
-			//rx_handler(fastboot_h.rx_cmd_buf, rx_sz);
+			rx_handler(fastboot_h.rx_cmd_buf, rx_sz);
 			memset(fastboot_h.rx_cmd_buf, '\0', rx_sz);
 		}
 		LTRACE_EXIT;

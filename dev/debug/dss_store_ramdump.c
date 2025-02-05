@@ -11,6 +11,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <part.h>
+#include <lk/reg.h>
 #include <lib/console.h>
 #include <lib/fdtapi.h>
 #include <lib/font_display.h>
@@ -166,8 +167,9 @@ static int debug_store_check_dpm_policy(void)
 	int ret;
 	u32 reg;
 
-	ret = get_fdt_dpm_val("/fragment@debug_policy/__overlay__/dpm/feature/dump-mode",
-								"file-support", (char *)&reg);
+	ret = -1;
+	//ret = get_fdt_dpm_val("/fragment@debug_policy/__overlay__/dpm/feature/dump-mode",
+		//						"file-support", (char *)&reg);
 	if (ret) {
 		printf("%s: There is no file-support node\n", __func__);
 		goto out;

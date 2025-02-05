@@ -1218,10 +1218,10 @@ static enum handler_return
 dwc3_dev_config_check(struct timer *timer, unsigned int now, void *arg) {
 	if (!usb_config_state) {
 		muic_sw_usb();
-		mdelay(10);
+		mdelay(50);
 		printf("%s: DCTL runstop cnt %d!\n", __func__, retry_cnt);
 		dwc3_dev_set_rs(arg, false);
-		mdelay(10);
+		mdelay(50);
 		dwc3_dev_set_rs(arg, true);
 	} else {
 		printf("%s: configuration done. delete timer!!\n", __func__);
@@ -1371,7 +1371,7 @@ int dwc3_dev_init(void *dev_handle)
 
 	dwc3_dev_h->fastboot_mode = true;
 
-	//muic_sw_usb();
+	muic_sw_usb();
 	timer_initialize(&config_timer);
 	timer_set_periodic(&config_timer, 2000, dwc3_dev_config_check, dwc3_dev_h);
 

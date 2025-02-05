@@ -11,6 +11,7 @@ MODULE_SRCS += \
 	$(LOCAL_DIR)/usb/usb.c \
 
 MODULE_DEPS += \
+	dev/debug \
    	dev/interrupt/arm_gic \
 	dev/timer/arm_generic \
 	dev/usb/dwc3 \

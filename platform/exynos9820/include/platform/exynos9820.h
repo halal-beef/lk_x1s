@@ -42,9 +42,6 @@
 
 #define DECON0_BASE_ADDRESS                             0x19030000
 #define HW_SW_TRIG_CONTROL                              0x0070
-void platform_delay(int u_sec);
-#define u_delay(x)	platform_delay(x)
-#define mdelay(x) u_delay((x) * (1000))
 
 /* CHIP ID */
 #define CHIPID0_OFFSET					0x4

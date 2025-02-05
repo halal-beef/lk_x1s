@@ -21,6 +21,8 @@ MODULES += \
 
 MODULE_DEPS += \
 	platform/exynos \
+	lib/ab_update \
+	lib/fastboot \
 	lib/font \
 	lib/logo \
 	lib/cksum \
