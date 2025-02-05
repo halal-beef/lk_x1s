@@ -1,5 +1,0 @@
-DEFCONFIG=c1s
-GCC_VERSION=aarch64-linux-gnu-14.2.0-Linux-x86_64
-FILES="
-build-c1s/lk.bin:bootloader.img
-"
