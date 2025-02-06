@@ -103,5 +103,8 @@ void pmic_init(void);
 void display_pmic_info(void);
 void display_pmic_rtc_time(void);
 int get_pmic_rtc_time(char *buf);
+void pmic_disable_wtsr(void);
+void pmic_disable_smpl(void);
+void pmic_shutdown(void);
 
 #endif /*__S2MPS_19_22_PMIC_H__*/
