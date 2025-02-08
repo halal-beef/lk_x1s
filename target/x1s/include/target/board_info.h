@@ -18,6 +18,8 @@
 #define CONFIG_SUB_PMIC_S2DOS05
 #define CONFIG_UFS_BOARD_TYPE	1      /* smdk : 0, universal : 1 */
 
+#define CONFIG_SKIP_MMC_INIT
+
 #define CONFIG_USE_RPMB
 #define CONFIG_USE_F2FS
 #define RPMB_BLOCK_PER_PARTITION      512
