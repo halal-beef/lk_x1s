@@ -79,6 +79,21 @@ unsigned int secure_os_loaded = 0;
 
 volatile char *bootloader_cmdline;
 
+typedef struct {
+	const char *node;
+	char compatible[65];
+	char reg[65];
+} bootloader_reserved_region;
+
+volatile bootloader_reserved_region bootloader_reserved_regions[] = {
+	{"kaslr", "PANIC", "PANIC"},
+	{"el2_earlymem", "PANIC", "PANIC"},
+	{"el2_code", "PANIC", "PANIC"},
+};
+
+volatile int bootloader_reserved_region_count = sizeof(bootloader_reserved_regions) /
+										sizeof(bootloader_reserved_regions[0]);
+
 #ifdef CONFIG_GET_B_REV_FROM_ADC
 int get_board_rev_adc(int *sh)
 {
@@ -146,6 +161,56 @@ void get_bootloader_cmdline(void)
         if (len <= 0) {
                 printf("libfdt fdt_getprop(): %s\n", fdt_strerror(len));
         }
+}
+
+void get_bootloader_reserved_memory(void)
+{
+	const char *compatible;
+	const fdt32_t *reg;
+	int offset;
+	int len, ret = 0;
+
+	u32 bootloader_fdt_location = readl(FDT_POINTER_ADDRESS);
+	void *bootloader_fdt = (void *)(uintptr_t)bootloader_fdt_location;
+
+	ret = fdt_check_header(bootloader_fdt);
+	if (ret) {
+		printf("libfdt fdt_check_header(): %s\n", fdt_strerror(ret));
+	}
+
+	offset = fdt_path_offset(bootloader_fdt, "/reserved-memory");
+	if (offset < 0) {
+		printf("libfdt fdt_path_offset(): %s\n", fdt_strerror(offset));
+	}
+
+	for (int subnode = fdt_first_subnode(bootloader_fdt, offset); subnode >= 0;
+				subnode = fdt_next_subnode(bootloader_fdt, subnode)) {
+		for(int i = 0; i < bootloader_reserved_region_count; i++) {
+			const char *name = fdt_get_name(bootloader_fdt, subnode, NULL);
+
+			if(!strcmp(name, bootloader_reserved_regions[i].node)) {
+				compatible = fdt_getprop(bootloader_fdt, subnode, "compatible", &len);
+
+				if(compatible)
+					strcpy((char *)bootloader_reserved_regions[i].compatible, compatible);
+
+				reg = fdt_getprop(bootloader_fdt, subnode, "reg", &len);
+
+				if(reg) {
+					char reg_value[64] = {};
+
+					sprintf(reg_value, "<0x%llx 0x%llx 0x%x>", (u64)fdt32_to_cpu(reg[0]), (u64)fdt32_to_cpu(reg[1]), fdt32_to_cpu(reg[2]));
+					strcpy((char *)bootloader_reserved_regions[i].reg, reg_value);
+				}
+			}
+		}
+	}
+
+	// Validation
+	for (int i = 0; i < bootloader_reserved_region_count; i++) {
+		if(!strcmp((char *)bootloader_reserved_regions[i].compatible, "PANIC") || !strcmp((char *)bootloader_reserved_regions[i].reg, "PANIC"))
+			panic("Unable to find reserved memory regions!");
+	}
 }
 
 void get_board_rev(void)
@@ -420,6 +485,7 @@ void platform_init(void)
 
 	display_rst_stat(rst_stat);
 	get_bootloader_cmdline();
+	get_bootloader_reserved_memory();
 	get_board_rev();
 	pmic_init();
 	display_pmic_info();
