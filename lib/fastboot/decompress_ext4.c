@@ -74,22 +74,10 @@ int check_compress_ext4(char *img_base, unsigned long long parti_size) {
 
 int write_raw_chunk(char* data, unsigned int sector, unsigned int sector_size) {
 	bdev_t *dev;
-	unsigned int boot_dev;
-	const char *str;
 	unsigned int blks;
 	int ret;
 
-	boot_dev = get_boot_device();
-	if (boot_dev == BOOT_UFS) {
-		str = "scsi0";
-	} else if (boot_dev == BOOT_EMMC) {
-		str = "mmc0";
-	} else {
-		printf("Boot device: 0x%x. Unsupported boot device!\n", boot_dev);
-		return 0;
-	}
-
-	dev = bio_open(str);
+	dev = bio_open("scsi0");
 
 	ext4_printf("write raw data in %d size %d \n", sector, sector_size);
 
@@ -106,7 +94,7 @@ int write_raw_chunk(char* data, unsigned int sector, unsigned int sector_size) {
 	return ret;
 }
 
-int write_compressed_ext4(char* img_base, unsigned int sector_base) {
+int write_compressed_ext4(char* img_base, unsigned int base) {
 	unsigned int sector_size, i;
 	int total_chunks;
 	ext4_chunk_header *chunk_header;
@@ -114,7 +102,6 @@ int write_compressed_ext4(char* img_base, unsigned int sector_base) {
 	char *data;
 	u64 pattern;
 	u64 *p_i_buf;
-	unsigned int boot_dev = get_boot_device();
 	u64 chunk_in_bytes;
 
 	file_header = (ext4_file_header*)img_base;
@@ -127,30 +114,20 @@ int write_compressed_ext4(char* img_base, unsigned int sector_base) {
 	while(total_chunks) {
 		chunk_header = (ext4_chunk_header*)img_base;
 		chunk_in_bytes = (u64)chunk_header->chunk_size * file_header->block_size;
-		sector_size = chunk_in_bytes / (u64)PART_SECTOR_SIZE;
+		sector_size = chunk_in_bytes / (u64)PIT_UFS_BLK_SIZE;
 
 		printf("*** raw_chunk (lba: %u, sct: %u) ***\n",
-				sector_base, sector_size);	// todo:
+				base, sector_size);	// todo:
 		switch(chunk_header->type)
 		{
 		case EXT4_CHUNK_TYPE_RAW:
 			printf("*** CHUNK TYPE RAW (lba: %u, sct: %u) ***\n",
-					sector_base, sector_size);
+					base, sector_size);
 
-			/*
-			 * Memory copy if transfer buffer address is not
-			 * aligned to eight bytes.
-			 */
 			data = (char *)(img_base + EXT4_CHUNK_HEADER_SIZE);
-			if ((boot_dev != BOOT_UFS) &&
-					((((unsigned long)data % ALIGN_FOR_EXYNOS)) != 0)) {
-				chunk_in_bytes = (u64) sector_size * PART_SECTOR_SIZE;
-				memcpy((void *)i_buf_for_sparse, (void *)data, chunk_in_bytes);
-				data = (char *)i_buf_for_sparse;
-			}
 
-			write_raw_chunk(data, sector_base, sector_size);
-			sector_base += sector_size;
+			write_raw_chunk(data, base, sector_size);
+			base += sector_size;
 			break;
 
 		case EXT4_CHUNK_TYPE_FILL:
@@ -159,27 +136,27 @@ int write_compressed_ext4(char* img_base, unsigned int sector_base) {
 
 			p_i_buf = (u64 *)i_buf_for_sparse;
 
-			chunk_in_bytes = (u64)sector_size * 512;
+			chunk_in_bytes = (u64)sector_size * PIT_UFS_BLK_SIZE;
 			printf("*** CHUNK TYPE FILL (lba: %u, sct: %u, pat: 0x%08x) %llu***\n",
-					sector_base, sector_size, (u32)pattern, chunk_in_bytes / (u64)sizeof(u32));
+					base, sector_size, (u32)pattern, chunk_in_bytes / (u64)sizeof(u32));
 			for (i = 0; i < chunk_in_bytes / (u64)sizeof(u64); i++)
 				p_i_buf[i] = (pattern | (pattern << 32));
 
 			/* Iterate block write as much as we allocate */
-			write_raw_chunk((char *)p_i_buf, sector_base, sector_size);
-			sector_base += sector_size;
+			write_raw_chunk((char *)p_i_buf, base, sector_size);
+			base += sector_size;
 			break;
 
 		case EXT4_CHUNK_TYPE_NONE:
 			printf("*** CHUNK TYPE NONE (lba: %u, sct: %u) ***\n",
-					sector_base, sector_size);
-			sector_base += sector_size;
+					base, sector_size);
+			base += sector_size;
 			break;
 
 		default:
 			printf("*** CHUNK TYPE INVALID (lba: %u, sct: %u) ***\n",
-					sector_base, sector_size);
-			sector_base += sector_size;
+					base, sector_size);
+			base += sector_size;
 			break;
 		}
 		total_chunks--;

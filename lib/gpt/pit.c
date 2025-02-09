@@ -19,6 +19,8 @@
 #include <string.h>
 #include <strings.h>
 
+#include <platform/decompress_ext4.h>
+
 #include <lib/font_display.h>
 
 #include "pit.h"
@@ -277,6 +279,29 @@ struct pit_entry *pit_get_part_info(const char *name)
 	return 0;
 }
 
+static int pit_flash_sparse(struct pit_entry *ptn, u64 addr)
+{
+	bdev_t *dev;
+	int res = 0;
+	u64 start = ptn->blkstart << 3;
+
+        /* Open device, do operation */
+        dev = bio_open("scsi0");
+
+	if (!check_compress_ext4((char *)addr,
+				pit_get_length(ptn)) != 0) {
+		printf("Compressed image\n");
+		res = write_compressed_ext4((char *)addr, start);
+	} else {
+		printf("[PIT] %s flash failed on UFS\n", ptn->name);
+		res = 1;
+	}
+
+	bio_close(dev);
+
+	return res;
+}
+
 /*
  * pit_access - do an operation on a block device
  * @ptn: PIT entry
@@ -297,6 +322,14 @@ int pit_access(struct pit_entry *ptn, int op, u64 addr, u32 size)
 
 	if(!pit_available)
 		return ERR_NOT_CONFIGURED;
+
+	/* Sparse case */
+	if (op == PIT_OP_FLASH &&
+			(ptn->filesys == FS_TYPE_SPARSE_EXT4 ||
+			 ptn->filesys == FS_TYPE_SPARSE_F2FS)) {
+		printf("[PIT(%s)] flash on UFS..  \n", ptn->name);
+		return pit_flash_sparse(ptn, addr);
+	}
 
 	/* Open device, do operation */
 	dev = bio_open("scsi0");
@@ -347,10 +380,10 @@ u64 pit_get_length(struct pit_entry *ptn)
 		return 0;
 
 	/* UFS uses FMP for the userdata partition */
-	if(!strcmp("userdata", ptn->name))
-		return (ptn->blknum - PIT_UFS_FMP_USE_SIZE) * PIT_UFS_BLK_SIZE;
+	if(!stricmp("userdata", ptn->name))
+		return (u64)((u64)(ptn->blknum - PIT_UFS_FMP_USE_SIZE)) * PIT_UFS_BLK_SIZE;
 
-	return ptn->blknum * PIT_UFS_BLK_SIZE;
+	return (u64)((u64)ptn->blknum) * PIT_UFS_BLK_SIZE;
 }
 
 /*
@@ -370,6 +403,13 @@ int pit_entry_write(struct pit_entry *ptn, void *buf, u64 offset, u64 size)
 
 	if(!pit_available)
 		return ERR_NOT_CONFIGURED;
+
+	/* Sparse case */
+	if (ptn->filesys == FS_TYPE_SPARSE_EXT4
+			|| ptn->filesys == FS_TYPE_SPARSE_F2FS) {
+		printf("[PIT(%s)] flash on UFS..  \n", ptn->name);
+		return pit_flash_sparse(ptn, (u64)buf);
+	}
 
 	dev = bio_open("scsi0");
 	if (!dev)
