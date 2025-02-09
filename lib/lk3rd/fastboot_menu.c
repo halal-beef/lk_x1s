@@ -14,6 +14,7 @@
 #include <lib/font_display.h>
 #include <platform.h>
 #include <platform/gpio.h>
+#include <platform/sfr.h>
 #include <lk/reg.h>
 #include <stdlib.h>
 #include <string.h>
@@ -22,6 +23,10 @@
 #include "include/lk3rd/keys.h"
 #include "include/lk3rd/fastboot_menu.h"
 #include "include/lk3rd/display.h"
+
+#if WITH_DEV_POWER_PMIC_S2MPS_19_22
+#include <dev/pmic_s2mps_19_22.h>
+#endif
 
 enum action current_action = ACTION_START;
 
@@ -46,27 +51,57 @@ void platform_do_reboot(const char *cmd_buf);
 
 void do_reboot(enum action action)
 {
-	platform_prepare_reboot();
-
 	switch(action)
 	{
 		case ACTION_START:
-		case ACTION_POWEROFF:
-			// Not implemented.
+			platform_prepare_reboot();
 			platform_do_reboot("");
 			break;
 		case ACTION_REBOOT_BOOTLOADER:
+			platform_prepare_reboot();
 			platform_do_reboot("reboot-bootloader");
 			break;
 		case ACTION_REBOOT_RECOVERY:
+			platform_prepare_reboot();
 			platform_do_reboot("reboot-recovery");
 			break;
 		case ACTION_REBOOT_FASTBOOTD:
+			platform_prepare_reboot();
 			platform_do_reboot("reboot-fastboot");
 			break;
 		case ACTION_REBOOT_DOWNLOAD:
+			platform_prepare_reboot();
 			platform_do_reboot("reboot-download");
 			break;
+		case ACTION_POWEROFF:
+#if WITH_DEV_POWER_PMIC_S2MPS_19_22
+			while(true) {
+				clear_screen(FONT_BLACK);
+
+				if(!exynos_gpio_get_value((struct exynos_gpio_bank *)EXYNOS9830_GPA2CON, GPIO_POWER)) {
+					udelay(1000000);
+					continue;
+				}
+
+				u32 ps_hold;
+
+				pmic_disable_wtsr();
+				pmic_disable_smpl();
+				pmic_shutdown();
+
+				ps_hold = readl(EXYNOS_PMU_PS_HOLD_CONTROL);
+				ps_hold &= 0xfffffeff;
+
+				writel(ps_hold, EXYNOS_PMU_PS_HOLD_CONTROL);
+				break;
+			}
+			break;
+#else
+			// For platforms with shutdown unimplemented.
+			platform_prepare_reboot();
+			platform_do_reboot("");
+			break;
+#endif
 		default:
 			break;
 	}

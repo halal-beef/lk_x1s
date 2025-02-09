@@ -190,3 +190,30 @@ int get_pmic_rtc_time(char *buf)
 
 	return 0;
 }
+
+void pmic_disable_wtsr(void) {
+	unsigned char reg;
+
+	speedy_read(CONFIG_SPEEDY0_BASE, S2MPS19_RTC_ADDR, S2MPS19_RTC_WTSR_SMPL, &reg);
+
+	reg &= ~(1 << 6); // Clear bit 6 (WTSR)
+
+	speedy_write(CONFIG_SPEEDY0_BASE, S2MPS19_RTC_ADDR, S2MPS19_RTC_WTSR_SMPL, reg);
+}
+
+void pmic_disable_smpl(void) {
+	unsigned char reg;
+
+	speedy_read(CONFIG_SPEEDY0_BASE, S2MPS19_RTC_ADDR, S2MPS19_RTC_WTSR_SMPL, &reg);
+
+	reg &= ~(1 << 7); // Clear bit 7 (SMPL)
+	reg &= ~(1 << 8); // Clear bit 8 (SUB_SMPL)
+
+	speedy_write(CONFIG_SPEEDY0_BASE, S2MPS19_RTC_ADDR, S2MPS19_RTC_WTSR_SMPL, reg);
+}
+
+void pmic_shutdown(void) {
+	unsigned char reg = 0x80;
+
+	speedy_write(CONFIG_SPEEDY1_BASE, S2MPS22_PM_ADDR, S2MPS22_PM_CTRL1, reg);
+}
